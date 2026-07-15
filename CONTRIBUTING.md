@@ -11,19 +11,6 @@ You do not need to be a .NET expert or a changelog nerd to help.
 
 ---
 
-## Contents
-
-- [Code of Conduct](#code-of-conduct)
-- [Ways to contribute](#ways-to-contribute)
-- [Before you start](#before-you-start)
-- [Project setup](#project-setup)
-- [Build and test](#build-and-test)
-- [Commit convention](#commit-convention)
-- [Opening a pull request](#opening-a-pull-request)
-- [Questions](#questions)
-
----
-
 ## Code of Conduct
 
 This project follows a [Code of Conduct](CODE_OF_CONDUCT.md).
