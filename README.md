@@ -19,20 +19,6 @@ It grounds every generated line against the actual facts of your PRs, so the out
 
 ---
 
-## Contents
-
-- [Status](#status)
-- [Why Chartula?](#why-chartula)
-- [Core ideas](#core-ideas)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Configuration](#configuration)
-- [Roadmap](#roadmap)
-- [Contributing](#contributing)
-- [License](#license)
-
----
-
 ## Status
 
 > 🚧 **Early development.** Chartula is being built in the open.
