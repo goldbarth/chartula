@@ -8,7 +8,7 @@ technical, customer-facing, and product, from a single source of truth, without 
 [![Status](https://img.shields.io/badge/status-early%20development-orange)](#status)
 [![.NET](https://img.shields.io/badge/.NET-cross--platform-512BD4?logo=dotnet&logoColor=white)](#)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 </div>
 
