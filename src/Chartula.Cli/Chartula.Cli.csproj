@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+
+    <!-- Assembly / tool identity -->
+    <AssemblyName>chartula</AssemblyName>
+    <RootNamespace>Chartula.Cli</RootNamespace>
+
+    <!-- Packaging as a dotnet tool (used from Phase 3; harmless now) -->
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>chartula</ToolCommandName>
+    <PackageId>Chartula</PackageId>
+    <Version>0.1.0-alpha</Version>
+    <Authors>Felix Wahl</Authors>
+    <Description>Multi-audience, grounded changelog generator for your repository.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>
