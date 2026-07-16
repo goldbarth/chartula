@@ -12,4 +12,11 @@ namespace Chartula.Core.Prompting;
 public interface IChangelogPromptBuilder
 {
     ChangelogPrompt BuildRephrasePrompt(GroundedFacts facts, Audience audience);
+
+    /// <summary>
+    /// Builds the prompt for the thorough faithfulness check: verify the generated
+    /// output against the facts and flag any unsupported claim, including
+    /// meaning-level distortions.
+    /// </summary>
+    ChangelogPrompt BuildFaithfulnessPrompt(string output, GroundedFacts facts);
 }

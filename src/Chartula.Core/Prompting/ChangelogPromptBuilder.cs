@@ -39,6 +39,15 @@ public sealed partial class ChangelogPromptBuilder : IChangelogPromptBuilder
         return system.ToString();
     }
 
+    public ChangelogPrompt BuildFaithfulnessPrompt(string output, GroundedFacts facts)
+    {
+        ArgumentNullException.ThrowIfNull(output);
+        ArgumentNullException.ThrowIfNull(facts);
+
+        string user = string.Format(CultureInfo.InvariantCulture, FaithfulnessUserFormat, FormatFacts(facts), output);
+        return new ChangelogPrompt(FaithfulnessSystem, user);
+    }
+
     private static string AudienceGuidance(Audience audience) => audience switch
     {
         Audience.Technical => AudienceTechnical,

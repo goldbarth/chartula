@@ -39,13 +39,11 @@ public sealed class ChatModel(IChatClient chat, IChangelogPromptBuilder promptBu
     {
         ArgumentNullException.ThrowIfNull(request);
 
+        ChangelogPrompt prompt = _promptBuilder.BuildFaithfulnessPrompt(request.Output, request.Facts);
         List<ChatMessage> messages =
         [
-            new(ChatRole.System,
-                "Check whether every claim in the output is backed by the facts. " +
-                "Report any claim that is not supported."),
-            new(ChatRole.User,
-                $"Facts:\n{FormatFacts(request.Facts)}\n\nOutput:\n{request.Output}"),
+            new(ChatRole.System, prompt.System),
+            new(ChatRole.User, prompt.User),
         ];
 
         ChatResponse<FaithfulnessReport> response =
@@ -55,7 +53,4 @@ public sealed class ChatModel(IChatClient chat, IChangelogPromptBuilder promptBu
             ? report
             : new FaithfulnessReport(IsFaithful: false, UnsupportedClaims: []);
     }
-
-    private static string FormatFacts(Facts.GroundedFacts facts)
-        => string.Join('\n', facts.Statements.Select(static s => $"- {s}"));
 }

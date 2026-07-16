@@ -41,4 +41,13 @@ public sealed partial class ChangelogPromptBuilder
         "Audience: Product. Group related changes by theme.";
 
     private const string AudienceFallbackFormat = "Audience: {0}.";
+
+    private const string FaithfulnessSystem =
+        "You verify a changelog against the established facts. Flag any claim in " +
+        "the output that the facts do not support - including meaning-level " +
+        "distortions where the wording overstates or changes what happened (for " +
+        "example, a bug fix described as a security fix). Report each unsupported " +
+        "claim; if every claim is supported, report none.";
+
+    private const string FaithfulnessUserFormat = "Facts:\n{0}\n\nOutput:\n{1}";
 }
