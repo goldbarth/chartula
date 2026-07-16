@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "tag": "v2.0.0",
+  "changes": [
+    {
+      "title": "feat!: drop the v1 configuration format",
+      "number": 70,
+      "url": "https://github.com/owner/repo/pull/70",
+      "category": "Feature",
+      "userVisible": true,
+      "breaking": true,
+      "linkedIssues": [
+        64
+      ],
+      "description": "The v1 keys are no longer read. Migrate to the sectioned format."
+    },
+    {
+      "title": "fix!: rename the --target option to --tag",
+      "number": 71,
+      "url": "https://github.com/owner/repo/pull/71",
+      "category": "Fix",
+      "userVisible": true,
+      "breaking": true,
+      "linkedIssues": [],
+      "description": "The old spelling was inconsistent with every other command."
+    },
+    {
+      "title": "feat: add a preview command",
+      "number": 72,
+      "url": "https://github.com/owner/repo/pull/72",
+      "category": "Feature",
+      "userVisible": true,
+      "breaking": false,
+      "linkedIssues": [],
+      "description": "Shows what a run would produce without writing."
+    }
+  ],
+  "renderings": {}
+}

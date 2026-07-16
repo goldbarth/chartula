@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "tag": "v1.2.0",
+  "changes": [
+    {
+      "title": "feat: add dark mode",
+      "number": 42,
+      "url": "https://github.com/owner/repo/pull/42",
+      "category": "Feature",
+      "userVisible": true,
+      "breaking": false,
+      "linkedIssues": [
+        12
+      ],
+      "description": "Adds a dark theme toggle to the settings page."
+    },
+    {
+      "title": "fix: reject expired tokens on sign-in",
+      "number": 43,
+      "url": "https://github.com/owner/repo/pull/43",
+      "category": "Fix",
+      "userVisible": true,
+      "breaking": false,
+      "linkedIssues": [
+        38,
+        39
+      ],
+      "description": "Expired tokens were accepted for up to 5 minutes past expiry."
+    },
+    {
+      "title": "perf: cache the release lookup",
+      "number": 44,
+      "url": "https://github.com/owner/repo/pull/44",
+      "category": "Performance",
+      "userVisible": true,
+      "breaking": false,
+      "linkedIssues": [],
+      "description": "Cuts a repeated API call on every run."
+    },
+    {
+      "title": "docs: document the configuration sections",
+      "number": 45,
+      "url": "https://github.com/owner/repo/pull/45",
+      "category": "Documentation",
+      "userVisible": false,
+      "breaking": false,
+      "linkedIssues": [],
+      "description": "Adds a table per section."
+    },
+    {
+      "title": "refactor: extract the fact-base builder",
+      "number": 46,
+      "url": "https://github.com/owner/repo/pull/46",
+      "category": "Refactor",
+      "userVisible": false,
+      "breaking": false,
+      "linkedIssues": [],
+      "description": "No behavior change."
+    }
+  ],
+  "renderings": {}
+}

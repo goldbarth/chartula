@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "tag": "v0.9.1",
+  "changes": [
+    {
+      "title": "fix: handle a missing tag without crashing",
+      "number": null,
+      "url": null,
+      "category": "Fix",
+      "userVisible": true,
+      "breaking": false,
+      "linkedIssues": [],
+      "description": null
+    },
+    {
+      "title": "chore: bump the pinned SDK",
+      "number": null,
+      "url": null,
+      "category": "Internal",
+      "userVisible": false,
+      "breaking": false,
+      "linkedIssues": [],
+      "description": null
+    }
+  ],
+  "renderings": {}
+}
