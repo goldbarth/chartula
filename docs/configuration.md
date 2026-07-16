@@ -55,6 +55,18 @@ How much source material feeds the fact base.
 | --- | --- | --- |
 | `depth` | `title-and-description` | One of `title-only`, `title-and-description`, `title-description-and-issues`. |
 
+### `categories`
+
+How categories are presented in the output.
+
+| Key | Default | Description |
+| --- | --- | --- |
+| `order` | `[Feature, Fix, Performance, Documentation, Refactor, Other, Internal]` | The order categories appear in. Unlisted categories sort last. |
+| `names` | (enum names) | Map of category name to display name (e.g. `Fix: Bug Fixes`). |
+| `breakingProminent` | `true` | Whether breaking changes float to the top, shown near the top. |
+
+Valid category names: `Feature`, `Fix`, `Performance`, `Documentation`, `Refactor`, `Internal`, `Other`.
+
 ### `faithfulness`
 
 The faithfulness checks. The rule-based check always runs and is not configurable.
@@ -88,6 +100,12 @@ filter:
 
 factBase:
   depth: title-description-and-issues
+
+categories:
+  order: [Feature, Fix, Performance, Documentation, Refactor, Other, Internal]
+  names:
+    Fix: Bug Fixes
+  breakingProminent: true
 
 faithfulness:
   thorough: true

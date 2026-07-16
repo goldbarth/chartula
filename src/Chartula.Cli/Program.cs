@@ -88,6 +88,7 @@ internal static class Program
             .AddChartulaLabelRules(configuration)
             .AddChartulaFilter(configuration)
             .AddChartulaFactBase(configuration)
+            .AddChartulaCategories(configuration)
             .AddChartulaGeneration()
             .AddChartulaFaithfulness(configuration)
             .AddChartulaReview(configuration)
