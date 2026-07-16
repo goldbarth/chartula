@@ -20,6 +20,7 @@ internal static class Program
 
         using ServiceProvider services = new ServiceCollection()
             .AddChartulaLlm(configuration)
+            .AddChartulaHistory()
             .BuildServiceProvider();
 
         // The rest of the code depends only on the interface, never on a provider.
