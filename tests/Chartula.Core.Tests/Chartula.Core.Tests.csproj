@@ -22,4 +22,9 @@
     <ProjectReference Include="..\..\src\Chartula.Core\Chartula.Core.csproj" />
   </ItemGroup>
 
+  <!-- Stored fact bases the tests replay, so the suite never needs a live LLM. -->
+  <ItemGroup>
+    <Content Include="Fixtures\*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

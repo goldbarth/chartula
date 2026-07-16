@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "tag": "v1.2.1",
+  "changes": [
+    {
+      "title": "refactor: split the pipeline into named steps",
+      "number": 80,
+      "url": "https://github.com/owner/repo/pull/80",
+      "category": "Refactor",
+      "userVisible": false,
+      "breaking": false,
+      "linkedIssues": [],
+      "description": "No behavior change."
+    },
+    {
+      "title": "docs: fix a broken link in the readme",
+      "number": 81,
+      "url": "https://github.com/owner/repo/pull/81",
+      "category": "Documentation",
+      "userVisible": false,
+      "breaking": false,
+      "linkedIssues": [],
+      "description": null
+    }
+  ],
+  "renderings": {}
+}
