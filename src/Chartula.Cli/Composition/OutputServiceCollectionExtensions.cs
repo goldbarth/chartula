@@ -5,9 +5,8 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Chartula.Cli.Composition;
 
 /// <summary>
-/// Composition root for release outputs. The concrete writer (a file in the
-/// working directory) is chosen here; the pipeline depends only on
-/// <see cref="IChangelogJsonWriter"/>.
+/// Composition root for release outputs. The concrete writers (files in the
+/// working directory) are chosen here; the pipeline depends only on the ports.
 /// </summary>
 internal static class OutputServiceCollectionExtensions
 {
@@ -15,6 +14,8 @@ internal static class OutputServiceCollectionExtensions
     {
         services.AddSingleton<IChangelogJsonWriter>(
             _ => new FileChangelogJsonWriter(Directory.GetCurrentDirectory()));
+        services.AddSingleton<IChangelogMarkdownWriter>(
+            _ => new FileChangelogMarkdownWriter(Directory.GetCurrentDirectory()));
         return services;
     }
 }
