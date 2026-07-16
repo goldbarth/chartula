@@ -30,6 +30,7 @@ internal static class Program
             .AddChartulaFaithfulness(configuration)
             .AddChartulaReview(configuration)
             .AddChartulaOutputs()
+            .AddChartulaReleaseNotes(configuration)
             .BuildServiceProvider();
 
         // The rest of the code depends only on the interface, never on a provider.
