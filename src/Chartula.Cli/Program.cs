@@ -22,6 +22,7 @@ internal static class Program
             .AddChartulaLlm(configuration)
             .AddChartulaHistory()
             .AddChartulaPullRequests(configuration)
+            .AddChartulaCuration()
             .BuildServiceProvider();
 
         // The rest of the code depends only on the interface, never on a provider.
