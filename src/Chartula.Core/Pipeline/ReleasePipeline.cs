@@ -3,6 +3,7 @@ using Chartula.Core.Faithfulness;
 using Chartula.Core.Generation;
 using Chartula.Core.History;
 using Chartula.Core.Llm;
+using Chartula.Core.Observability;
 using Chartula.Core.PullRequests;
 using Chartula.Core.Releases;
 using Chartula.Core.Rendering;
@@ -17,7 +18,8 @@ namespace Chartula.Core.Pipeline;
 /// thorough faithfulness checks and review, and writes the outputs. The only
 /// difference between preview and generate is the final write step: preview writes
 /// and publishes nothing. The technical rendering feeds CHANGELOG.md and the
-/// release notes; every audience text is stored in changelog.json.
+/// release notes; every audience text is stored in changelog.json. Along the way it
+/// records what each faithfulness check caught, so the run reports its own cost.
 /// </summary>
 public sealed class ReleasePipeline(
     IReleaseCommitReader commitReader,
@@ -29,8 +31,11 @@ public sealed class ReleasePipeline(
     IReviewCoordinator reviewCoordinator,
     IChangelogJsonWriter jsonWriter,
     IChangelogMarkdownWriter markdownWriter,
-    IReleaseNotesWriter releaseNotesWriter) : IReleasePipeline
+    IReleaseNotesWriter releaseNotesWriter,
+    IRunMetrics? metrics = null) : IReleasePipeline
 {
+    private readonly IRunMetrics _metrics = metrics ?? NullRunMetrics.Instance;
+
     public async Task<ReleaseOutcome> RunAsync(
         ReleaseRequest request,
         PipelineMode mode,
@@ -70,16 +75,20 @@ public sealed class ReleasePipeline(
             ? await WriteOutputsAsync(request, factBase, finalTexts, cancellationToken)
             : [];
 
-        return new ReleaseOutcome(request.Tag, mode, outcomes, written);
+        return new ReleaseOutcome(request.Tag, mode, outcomes, written, _metrics.Snapshot());
     }
 
     private async Task<IReadOnlyList<string>> CollectFlagsAsync(
         string text, FactBase factBase, CancellationToken cancellationToken)
     {
-        List<string> flags = [.. ruleBasedChecker.Check(text, factBase).UnsupportedClaims];
+        IReadOnlyList<string> ruleBased = ruleBasedChecker.Check(text, factBase).UnsupportedClaims;
         FaithfulnessReport thorough = await thoroughChecker.CheckAsync(text, factBase, cancellationToken);
-        flags.AddRange(thorough.UnsupportedClaims);
-        return flags;
+
+        // Both findings go in together, so the report can tell what the paid check
+        // caught over and above the free one.
+        _metrics.RecordFaithfulnessChecks(ruleBased, thorough.UnsupportedClaims);
+
+        return [.. ruleBased, .. thorough.UnsupportedClaims];
     }
 
     private async Task<IReadOnlyList<string>> WriteOutputsAsync(

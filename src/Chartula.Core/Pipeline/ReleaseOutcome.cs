@@ -1,4 +1,5 @@
 using Chartula.Core.Llm;
+using Chartula.Core.Observability;
 
 namespace Chartula.Core.Pipeline;
 
@@ -22,8 +23,21 @@ public sealed record AudienceOutcome(
 /// <param name="WrittenOutputs">
 /// Paths and links written this run. Empty in preview mode - nothing is written.
 /// </param>
+/// <param name="Metrics">What the run did and what it cost in tokens.</param>
 public sealed record ReleaseOutcome(
     string Tag,
     PipelineMode Mode,
     IReadOnlyList<AudienceOutcome> Renderings,
-    IReadOnlyList<string> WrittenOutputs);
+    IReadOnlyList<string> WrittenOutputs)
+{
+    public RunReport Metrics { get; init; } = RunReport.Empty;
+
+    public ReleaseOutcome(
+        string tag,
+        PipelineMode mode,
+        IReadOnlyList<AudienceOutcome> renderings,
+        IReadOnlyList<string> writtenOutputs,
+        RunReport metrics)
+        : this(tag, mode, renderings, writtenOutputs)
+        => Metrics = metrics;
+}

@@ -81,6 +81,7 @@ internal static class Program
             .Build();
 
         return new ServiceCollection()
+            .AddChartulaObservability()
             .AddChartulaLlm(configuration)
             .AddChartulaHistory()
             .AddChartulaPullRequests(configuration)

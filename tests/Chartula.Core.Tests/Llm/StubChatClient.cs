@@ -5,9 +5,10 @@ namespace Chartula.Core.Tests.Llm;
 /// <summary>
 /// A stand-in <see cref="IChatClient"/> that records the messages it receives and
 /// returns a fixed response. It lets the tests prove the seam works over an
-/// arbitrary provider, with no live LLM call.
+/// arbitrary provider, with no live LLM call. A provider may or may not report token
+/// usage, so <paramref name="usage"/> is optional.
 /// </summary>
-internal sealed class StubChatClient(string responseText) : IChatClient
+internal sealed class StubChatClient(string responseText, UsageDetails? usage = null) : IChatClient
 {
     public IReadOnlyList<ChatMessage>? LastMessages { get; private set; }
 
@@ -20,7 +21,8 @@ internal sealed class StubChatClient(string responseText) : IChatClient
     {
         LastMessages = messages.ToList();
         CallCount++;
-        return Task.FromResult(new ChatResponse(new ChatMessage(ChatRole.Assistant, responseText)));
+        return Task.FromResult(
+            new ChatResponse(new ChatMessage(ChatRole.Assistant, responseText)) { Usage = usage });
     }
 
     public IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(

@@ -75,6 +75,8 @@ The faithfulness checks. The rule-based check always runs and is not configurabl
 | --- | --- | --- |
 | `thorough` | `true` | Whether the thorough (second-pass LLM) check runs. |
 
+Every run reports what each check caught and what it cost - see [`run-metrics.md`](run-metrics.md) for deciding whether the thorough check earns its tokens.
+
 ### `review`
 
 Review mode - present generated texts for human sign-off before writing.
