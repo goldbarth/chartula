@@ -1,4 +1,5 @@
 using System.Text;
+using Chartula.Core.Observability;
 using Chartula.Core.Pipeline;
 using Chartula.Core.PullRequests;
 
@@ -82,6 +83,9 @@ internal static class ReleaseCommand
         {
             builder.AppendLine("Nothing to write.");
         }
+
+        builder.AppendLine();
+        builder.Append(RunReportFormatter.Format(outcome.Metrics));
 
         return builder.ToString();
     }
