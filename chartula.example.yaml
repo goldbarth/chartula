@@ -1,0 +1,18 @@
+# Chartula configuration - copy to chartula.yaml to use.
+#
+# Chartula runs with sensible defaults, so this file is optional and only exists
+# to refine that default behavior. Everything below is commented out; uncomment
+# and change only what you need. Full options are documented in
+# docs/configuration.md.
+
+# llm:
+#   model: claude-opus-4-8
+
+# filter:
+#   excludeCategories: [Internal]
+
+# factBase:
+#   depth: title-and-description
+
+# faithfulness:
+#   thorough: true
