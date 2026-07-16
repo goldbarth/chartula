@@ -4,15 +4,54 @@
 # to refine that default behavior. Everything below is commented out; uncomment
 # and change only what you need. Full options are documented in
 # docs/configuration.md.
+#
+# Every setting can also be given as an environment variable, which overrides
+# this file: Chartula__Section__Key, for example Chartula__Faithfulness__Thorough.
+#
+# API keys and tokens are never read from this file. Only the *name* of the
+# environment variable holding them is configured here.
 
+# The model provider and which model to use.
 # llm:
+#   provider: anthropic
 #   model: claude-opus-4-8
+#   apiKeyEnvironmentVariable: ANTHROPIC_API_KEY
 
+# How the GitHub API is reached. Override the base URL for GitHub Enterprise.
+# github:
+#   apiBaseUrl: https://api.github.com/
+#   tokenEnvironmentVariable: GITHUB_TOKEN
+
+# Steer curation with GitHub labels. With no rules, labels are ignored.
+# labels:
+#   exclude: [wontfix, duplicate]
+#   category:
+#     security: Fix
+#   onlyIncludeLabeled: false
+
+# Which categories are dropped from the changelog. An explicit list replaces
+# the default.
 # filter:
 #   excludeCategories: [Internal]
 
+# How much source material feeds the fact base.
+# One of: title-only, title-and-description, title-description-and-issues.
 # factBase:
 #   depth: title-and-description
 
+# How categories are presented in the output.
+# categories:
+#   order: [Feature, Fix, Performance, Documentation, Refactor, Other, Internal]
+#   names:
+#     Fix: Bug Fixes
+#   breakingProminent: true
+
+# The faithfulness checks. The rule-based check always runs and is not
+# configurable. See docs/run-metrics.md for judging whether the thorough
+# check earns its tokens.
 # faithfulness:
 #   thorough: true
+
+# Review mode - present generated texts for sign-off before writing.
+# review:
+#   enabled: false
