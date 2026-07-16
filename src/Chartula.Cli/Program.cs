@@ -1,24 +1,68 @@
+using Chartula.Cli.Commands;
 using Chartula.Cli.Composition;
-using Chartula.Core.Llm;
+using Chartula.Core.Pipeline;
+using Chartula.Core.PullRequests;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Chartula.Cli;
 
 /// <summary>
-/// Entry point for the Chartula CLI.
-/// This is a scaffold - the real command surface (generate, preview, ...)
-/// arrives with Phase 1 of the roadmap.
+/// Entry point for the Chartula CLI. Dispatches the <c>generate</c> and
+/// <c>preview</c> commands; both run the same pipeline, but preview writes nothing.
 /// </summary>
 internal static class Program
 {
-    private static int Main(string[] args)
+    private static async Task<int> Main(string[] args)
+    {
+        if (args.Length == 0 || IsHelp(args[0]))
+        {
+            PrintUsage();
+            return 0;
+        }
+
+        PipelineMode? mode = args[0] switch
+        {
+            "generate" => PipelineMode.Generate,
+            "preview" => PipelineMode.Preview,
+            _ => null,
+        };
+
+        if (mode is null)
+        {
+            Console.Error.WriteLine($"Unknown command '{args[0]}'.");
+            PrintUsage();
+            return 1;
+        }
+
+        string? tag = CommandLineArguments.GetOption(args, "--tag");
+        if (string.IsNullOrWhiteSpace(tag))
+        {
+            Console.Error.WriteLine("Missing required option --tag <release-tag>.");
+            return 1;
+        }
+
+        if (!ReleaseCommand.TryParseRepository(
+                CommandLineArguments.GetOption(args, "--repo"), out RepositoryCoordinates repository))
+        {
+            Console.Error.WriteLine("Missing or invalid option --repo <owner/name>.");
+            return 1;
+        }
+
+        using ServiceProvider services = BuildServices();
+        IReleasePipeline pipeline = services.GetRequiredService<IReleasePipeline>();
+
+        return await ReleaseCommand.RunAsync(
+            pipeline, mode.Value, new ReleaseRequest(tag, repository), Console.Out, CancellationToken.None);
+    }
+
+    private static ServiceProvider BuildServices()
     {
         IConfiguration configuration = new ConfigurationBuilder()
             .AddEnvironmentVariables()
             .Build();
 
-        using ServiceProvider services = new ServiceCollection()
+        return new ServiceCollection()
             .AddChartulaLlm(configuration)
             .AddChartulaHistory()
             .AddChartulaPullRequests(configuration)
@@ -31,15 +75,19 @@ internal static class Program
             .AddChartulaReview(configuration)
             .AddChartulaOutputs()
             .AddChartulaReleaseNotes(configuration)
+            .AddChartulaPipeline()
             .BuildServiceProvider();
+    }
 
-        // The rest of the code depends only on the interface, never on a provider.
-        IChangelogModel model = services.GetRequiredService<IChangelogModel>();
+    private static bool IsHelp(string arg)
+        => arg is "-h" or "--help" or "help";
 
+    private static void PrintUsage()
+    {
         Console.WriteLine("Chartula - multi-audience, grounded changelog generator.");
-        Console.WriteLine("Early development. Nothing to generate yet - see the roadmap.");
-        Console.WriteLine(
-            $"LLM seam ready: {nameof(IChangelogModel)} -> {model.GetType().Name} over a swappable provider.");
-        return 0;
+        Console.WriteLine();
+        Console.WriteLine("Usage:");
+        Console.WriteLine("  chartula preview  --tag <release-tag> --repo <owner/name>   Show what would be produced (dry run).");
+        Console.WriteLine("  chartula generate --tag <release-tag> --repo <owner/name>   Produce and write the outputs.");
     }
 }
