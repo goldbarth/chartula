@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using Chartula.Core.Facts;
 using Chartula.Core.Llm;
@@ -10,7 +11,11 @@ namespace Chartula.Core.Prompting;
 /// fact's category and breaking marker as given. Thin facts yield sparse output.
 /// The user prompt carries only the facts; nothing is added to pad them.
 /// </summary>
-public sealed class ChangelogPromptBuilder : IChangelogPromptBuilder
+/// <remarks>
+/// The prompt text lives in the <c>ChangelogPromptBuilder.Prompts.cs</c> partial;
+/// this file only composes it.
+/// </remarks>
+public sealed partial class ChangelogPromptBuilder : IChangelogPromptBuilder
 {
     public ChangelogPrompt BuildRephrasePrompt(GroundedFacts facts, Audience audience)
     {
@@ -24,29 +29,21 @@ public sealed class ChangelogPromptBuilder : IChangelogPromptBuilder
     private static string BuildSystemPrompt(Audience audience)
     {
         StringBuilder system = new();
-        system.AppendLine(
-            "You write release changelog entries by rephrasing established facts. " +
-            "Follow these rules exactly:");
-        system.AppendLine("- Rephrase only. Never introduce a fact, number, name, or detail " +
-            "that is not in the provided list.");
-        system.AppendLine("- Each fact's category and any \"(breaking)\" marker are established. " +
-            "Use them as given; do not change, infer, or add them.");
-        system.AppendLine("- If the facts are thin, keep the output brief. Do not pad, speculate, " +
-            "or invent detail to make it read fuller.");
-        system.AppendLine("- Do not add a preamble or a conclusion; output only the entries.");
+        system.AppendLine(SystemHeader);
+        system.AppendLine(RuleRephraseOnly);
+        system.AppendLine(RuleCategoryEstablished);
+        system.AppendLine(RuleStaySparse);
+        system.AppendLine(RuleNoPreamble);
         system.Append(AudienceGuidance(audience));
         return system.ToString();
     }
 
     private static string AudienceGuidance(Audience audience) => audience switch
     {
-        Audience.Technical =>
-            "Audience: Technical. Keep precise terminology, and call out breaking changes explicitly.",
-        Audience.Customer =>
-            "Audience: Customer. Focus on what changed for the user in plain language.",
-        Audience.Product =>
-            "Audience: Product. Group related changes by theme.",
-        _ => $"Audience: {audience}.",
+        Audience.Technical => AudienceTechnical,
+        Audience.Customer => AudienceCustomer,
+        Audience.Product => AudienceProduct,
+        _ => string.Format(CultureInfo.InvariantCulture, AudienceFallbackFormat, audience),
     };
 
     private static string FormatFacts(GroundedFacts facts)
