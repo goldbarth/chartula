@@ -11,7 +11,8 @@ namespace Chartula.Core.Serialization;
 public sealed record ChangelogDocument(
     [property: JsonPropertyName("schemaVersion")] int SchemaVersion,
     [property: JsonPropertyName("tag")] string Tag,
-    [property: JsonPropertyName("changes")] IReadOnlyList<ChangelogChange> Changes);
+    [property: JsonPropertyName("changes")] IReadOnlyList<ChangelogChange> Changes,
+    [property: JsonPropertyName("renderings")] IReadOnlyDictionary<string, string> Renderings);
 
 /// <summary>One change entry in <see cref="ChangelogDocument"/>.</summary>
 public sealed record ChangelogChange(

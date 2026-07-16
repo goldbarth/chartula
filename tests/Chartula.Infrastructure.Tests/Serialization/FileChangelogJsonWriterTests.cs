@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Chartula.Core.Categorization;
 using Chartula.Core.Facts;
+using Chartula.Core.Llm;
 using Chartula.Core.Serialization;
 using Chartula.Infrastructure.Serialization;
 
@@ -60,6 +61,37 @@ public sealed class FileChangelogJsonWriterTests : IDisposable
         string path = await new FileChangelogJsonWriter(nested).WriteAsync(Sample());
 
         Assert.True(File.Exists(path));
+    }
+
+    [Fact]
+    public async Task Stores_customer_and_product_texts_in_changelog_json()
+    {
+        Dictionary<Audience, string> renderings = new()
+        {
+            [Audience.Customer] = "Search is here.",
+            [Audience.Product] = "Search feature shipped.",
+        };
+
+        string path = await new FileChangelogJsonWriter(_directory).WriteAsync(Sample(), renderings);
+
+        ChangelogDocument document = ChangelogJsonSerializer.Deserialize(await File.ReadAllTextAsync(path));
+        Assert.Equal("Search is here.", document.Renderings["customer"]);
+        Assert.Equal("Search feature shipped.", document.Renderings["product"]);
+    }
+
+    [Fact]
+    public async Task Writes_no_separate_marketing_files_only_changelog_json()
+    {
+        Dictionary<Audience, string> renderings = new()
+        {
+            [Audience.Customer] = "Search is here.",
+            [Audience.Product] = "Search feature shipped.",
+        };
+
+        await new FileChangelogJsonWriter(_directory).WriteAsync(Sample(), renderings);
+
+        string[] files = Directory.GetFiles(_directory).Select(Path.GetFileName).ToArray()!;
+        Assert.Equal(["changelog.json"], files); // the audience texts live inside, not as extra files
     }
 
     public void Dispose()

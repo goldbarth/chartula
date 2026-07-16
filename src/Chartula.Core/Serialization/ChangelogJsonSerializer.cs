@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Chartula.Core.Facts;
+using Chartula.Core.Llm;
 
 namespace Chartula.Core.Serialization;
 
@@ -8,14 +9,21 @@ namespace Chartula.Core.Serialization;
 /// Serializes a <see cref="FactBase"/> to the stable <c>changelog.json</c> format
 /// (and back). Pure and deterministic; uses source-generated metadata so it stays
 /// AOT- and trim-safe. The category is written as its name for a stable, readable
-/// record.
+/// record. The rendered audience texts are stored alongside the facts, so the
+/// customer and product versions are backed up without extra files in the repo.
 /// </summary>
 public static class ChangelogJsonSerializer
 {
     /// <summary>The current on-disk schema version.</summary>
     public const int SchemaVersion = 1;
 
-    public static string Serialize(FactBase factBase)
+    // Fixed order, so the stored renderings object is deterministic.
+    private static readonly Audience[] RenderingOrder =
+        [Audience.Technical, Audience.Customer, Audience.Product];
+
+    public static string Serialize(
+        FactBase factBase,
+        IReadOnlyDictionary<Audience, string>? renderings = null)
     {
         ArgumentNullException.ThrowIfNull(factBase);
 
@@ -30,9 +38,29 @@ public static class ChangelogJsonSerializer
                 change.IsUserVisible,
                 change.IsBreaking,
                 change.LinkedIssues,
-                change.Description)).ToArray());
+                change.Description)).ToArray(),
+            BuildRenderings(renderings));
 
         return JsonSerializer.Serialize(document, ChangelogJsonContext.Default.ChangelogDocument);
+    }
+
+    private static Dictionary<string, string> BuildRenderings(IReadOnlyDictionary<Audience, string>? renderings)
+    {
+        Dictionary<string, string> map = [];
+        if (renderings is null)
+        {
+            return map;
+        }
+
+        foreach (Audience audience in RenderingOrder)
+        {
+            if (renderings.TryGetValue(audience, out string? text))
+            {
+                map[audience.ToString().ToLowerInvariant()] = text;
+            }
+        }
+
+        return map;
     }
 
     /// <summary>Reads a document back, for tests and downstream outputs.</summary>
