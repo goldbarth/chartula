@@ -5,10 +5,10 @@
 **Turn your merged pull requests into audience-ready release notes**
 technical, customer-facing, and product, from a single source of truth, without the hallucinations.
 
-[![Status](https://img.shields.io/badge/status-early%20development-orange)](#status)
-[![.NET](https://img.shields.io/badge/.NET-cross--platform-512BD4?logo=dotnet&logoColor=white)](#)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![Status](https://img.shields.io/badge/status-early%20development-orange?style=flat-square)](#status)
+[![.NET](https://img.shields.io/badge/.NET-cross--platform-512BD4?style=flat-square&logo=dotnet&logoColor=white)](#)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](CONTRIBUTING.md)
 
 </div>
 
@@ -103,7 +103,7 @@ See the [project board](https://github.com/goldbarth/chartula/projects) for deta
 
 ## Out of scope (for now)
 
-These have been considered deliberately and set aside — not forgotten.
+These have been considered deliberately and set aside - not forgotten.
 They may be revisited if there's real demand, so there's no need to open
 an issue proposing them from scratch.
 
@@ -112,11 +112,11 @@ an issue proposing them from scratch.
   you nothing" model. A "bring your own service" hook is the likely path
   instead.
 - **Read analytics & feedback buttons** (👍/👎, read counts). These need a
-  server to collect and store events — again, hosted infrastructure Chartula
+  server to collect and store events - again, hosted infrastructure Chartula
   intentionally avoids.
 - **Scripting-based configuration** (e.g. Lua). Chartula's config is
   declarative by nature; embedding a scripting runtime would add weight for
-  little gain — unless config ever needs real logic, at which point this
+  little gain - unless config ever needs real logic, at which point this
   becomes worth revisiting.
 
 ---
