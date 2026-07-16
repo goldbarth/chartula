@@ -10,12 +10,15 @@ namespace Chartula.Core.Tests.Facts;
 
 public sealed class FactBaseBuilderTests
 {
-    private static FactBaseBuilder Builder(LabelRules? labels = null, ChangeFilterRules? rules = null)
+    private static FactBaseBuilder Builder(
+        LabelRules? labels = null,
+        ChangeFilterRules? rules = null,
+        FactBaseDepth depth = FactBaseDepth.TitleAndDescription)
     {
         ConventionalCommitCategorizer categorizer = new();
         LabelRulePolicy labelPolicy = new(labels ?? LabelRules.None);
         ChangeFilter filter = new(categorizer, labelPolicy, rules ?? ChangeFilterRules.Default);
-        return new FactBaseBuilder(new ReleaseChangeResolver(), filter, categorizer, labelPolicy);
+        return new FactBaseBuilder(new ReleaseChangeResolver(), filter, categorizer, labelPolicy, depth);
     }
 
     private static CommitRange Range(params (string Sha, string Subject)[] commits)
@@ -45,11 +48,10 @@ public sealed class FactBaseBuilderTests
         Assert.Equal(ChangeCategory.Feature, feature.Category);
         Assert.True(feature.IsUserVisible);
         Assert.False(feature.IsBreaking);
-        Assert.Equal([12], feature.LinkedIssues);
         Assert.Equal("Adds a theme. Closes #12", feature.Description);
+        Assert.Empty(feature.LinkedIssues); // default depth excludes linked issues
 
         Assert.Equal(ChangeCategory.Fix, facts.Changes[1].Category);
-        Assert.Equal([34], facts.Changes[1].LinkedIssues);
     }
 
     [Fact]

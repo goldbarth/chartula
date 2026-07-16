@@ -18,7 +18,8 @@ public sealed partial class FactBaseBuilder(
     IReleaseChangeResolver resolver,
     IChangeFilter filter,
     IChangeCategorizer categorizer,
-    ILabelRulePolicy labelPolicy) : IFactBaseBuilder
+    ILabelRulePolicy labelPolicy,
+    FactBaseDepth depth) : IFactBaseBuilder
 {
     // Closing keywords that link an issue to a change (GitHub semantics).
     [GeneratedRegex(@"\b(?:close[sd]?|fixe?[sd]?|resolve[sd]?)\s+#(?<issue>\d+)",
@@ -50,6 +51,12 @@ public sealed partial class FactBaseBuilder(
         LabelDecision label = labelPolicy.Evaluate(change);
         ChangeCategory category = label.ForcedCategory ?? classification.Category;
 
+        // Depth controls how much source material feeds the fact.
+        string? description = depth == FactBaseDepth.TitleOnly ? null : change.Description;
+        IReadOnlyList<int> linkedIssues = depth == FactBaseDepth.TitleDescriptionAndIssues
+            ? ExtractLinkedIssues(change)
+            : [];
+
         return new ChangeFact(
             Title: change.Title,
             Number: change.Number,
@@ -57,8 +64,8 @@ public sealed partial class FactBaseBuilder(
             Category: category,
             IsUserVisible: IsUserVisible(category, classification.IsBreaking),
             IsBreaking: classification.IsBreaking,
-            LinkedIssues: ExtractLinkedIssues(change),
-            Description: change.Description);
+            LinkedIssues: linkedIssues,
+            Description: string.IsNullOrEmpty(description) ? null : description);
     }
 
     // Breaking changes are always user-visible; otherwise only outward-facing
