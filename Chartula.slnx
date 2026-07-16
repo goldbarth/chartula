@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/Chartula.Cli/Chartula.Cli.csproj" />
     <Project Path="src/Chartula.Core/Chartula.Core.csproj" />
     <Project Path="src/Chartula.Infrastructure/Chartula.Infrastructure.csproj" />
   </Folder>
@@ -8,5 +9,4 @@
     <Project Path="tests/Chartula.Core.Tests/Chartula.Core.Tests.csproj" />
     <Project Path="tests/Chartula.Infrastructure.Tests/Chartula.Infrastructure.Tests.csproj" />
   </Folder>
-  <Project Path="src/Chartula.Cli/Chartula.Cli.csproj" />
 </Solution>
