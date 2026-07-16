@@ -1,3 +1,9 @@
 <Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Chartula.Core/Chartula.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Chartula.Core.Tests/Chartula.Core.Tests.csproj" />
+  </Folder>
   <Project Path="src/Chartula.Cli/Chartula.Cli.csproj" />
 </Solution>
