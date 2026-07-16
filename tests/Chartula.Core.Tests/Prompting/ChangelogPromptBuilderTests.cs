@@ -51,6 +51,16 @@ public sealed class ChangelogPromptBuilderTests
     }
 
     [Fact]
+    public void Instructs_the_model_to_write_in_one_consistent_voice_and_format()
+    {
+        ChangelogPrompt prompt = _builder.BuildRephrasePrompt(
+            new GroundedFacts(["Feature: dark mode"]), Audience.Customer);
+
+        Assert.Contains("one consistent voice", prompt.System);
+        Assert.Contains("author", prompt.System); // do not carry over an author's tone
+    }
+
+    [Fact]
     public void Instructs_the_model_to_stay_sparse_on_thin_facts()
     {
         ChangelogPrompt prompt = _builder.BuildRephrasePrompt(

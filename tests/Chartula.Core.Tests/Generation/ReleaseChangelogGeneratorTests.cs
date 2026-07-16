@@ -1,5 +1,6 @@
 using Chartula.Core.Categorization;
 using Chartula.Core.Facts;
+using Chartula.Core.Formatting;
 using Chartula.Core.Generation;
 using Chartula.Core.Llm;
 
@@ -18,7 +19,7 @@ public sealed class ReleaseChangelogGeneratorTests
     {
         FakeChangelogModel model = FakeChangelogModel.Returning("Dark mode is here.");
         // The generator depends only on the interface, never on a provider.
-        IReleaseChangelogGenerator generator = new ReleaseChangelogGenerator(model);
+        IReleaseChangelogGenerator generator = new ReleaseChangelogGenerator(model, new ChangelogFormatter());
 
         ChangelogGenerationResult result = await generator.GenerateAsync(Sample(), Audience.Customer);
 
@@ -29,10 +30,21 @@ public sealed class ReleaseChangelogGeneratorTests
     }
 
     [Fact]
+    public async Task Normalizes_the_model_output_for_consistent_formatting()
+    {
+        FakeChangelogModel model = FakeChangelogModel.Returning("* Dark mode is here.  \n\n\n+ And search.");
+        IReleaseChangelogGenerator generator = new ReleaseChangelogGenerator(model, new ChangelogFormatter());
+
+        ChangelogGenerationResult result = await generator.GenerateAsync(Sample(), Audience.Customer);
+
+        Assert.Equal("- Dark mode is here.\n\n- And search.", result.Text);
+    }
+
+    [Fact]
     public async Task Feeds_the_grounded_facts_from_the_fact_base()
     {
         FakeChangelogModel model = FakeChangelogModel.Returning("...");
-        IReleaseChangelogGenerator generator = new ReleaseChangelogGenerator(model);
+        IReleaseChangelogGenerator generator = new ReleaseChangelogGenerator(model, new ChangelogFormatter());
 
         await generator.GenerateAsync(Sample(), Audience.Technical);
 
@@ -46,7 +58,7 @@ public sealed class ReleaseChangelogGeneratorTests
     {
         FakeChangelogModel model = FakeChangelogModel.Throwing(
             new InvalidOperationException("provider exploded"));
-        IReleaseChangelogGenerator generator = new ReleaseChangelogGenerator(model);
+        IReleaseChangelogGenerator generator = new ReleaseChangelogGenerator(model, new ChangelogFormatter());
 
         ChangelogGenerationResult result = await generator.GenerateAsync(Sample(), Audience.Product);
 
@@ -60,7 +72,7 @@ public sealed class ReleaseChangelogGeneratorTests
     public async Task Makes_no_call_for_an_empty_fact_base()
     {
         FakeChangelogModel model = FakeChangelogModel.Returning("should not be used");
-        IReleaseChangelogGenerator generator = new ReleaseChangelogGenerator(model);
+        IReleaseChangelogGenerator generator = new ReleaseChangelogGenerator(model, new ChangelogFormatter());
 
         ChangelogGenerationResult result = await generator.GenerateAsync(
             new FactBase("v1.0.0", []), Audience.Customer);
@@ -74,7 +86,7 @@ public sealed class ReleaseChangelogGeneratorTests
     public async Task Lets_cancellation_propagate()
     {
         FakeChangelogModel model = FakeChangelogModel.Returning("...");
-        IReleaseChangelogGenerator generator = new ReleaseChangelogGenerator(model);
+        IReleaseChangelogGenerator generator = new ReleaseChangelogGenerator(model, new ChangelogFormatter());
         using CancellationTokenSource cts = new();
         await cts.CancelAsync();
 

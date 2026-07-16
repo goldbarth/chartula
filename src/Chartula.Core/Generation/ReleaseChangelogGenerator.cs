@@ -1,5 +1,6 @@
 using System.Text;
 using Chartula.Core.Facts;
+using Chartula.Core.Formatting;
 using Chartula.Core.Llm;
 
 namespace Chartula.Core.Generation;
@@ -7,12 +8,16 @@ namespace Chartula.Core.Generation;
 /// <summary>
 /// Default <see cref="IReleaseChangelogGenerator"/>. It turns the fact base into
 /// grounded fact statements and makes exactly one <see cref="IChangelogModel"/>
-/// call per release. An empty fact base makes no call at all. Provider failures
-/// are caught and returned as a failed result; cancellation propagates.
+/// call per release, then normalizes the output for consistent formatting. An
+/// empty fact base makes no call at all. Provider failures are caught and
+/// returned as a failed result; cancellation propagates.
 /// </summary>
-public sealed class ReleaseChangelogGenerator(IChangelogModel model) : IReleaseChangelogGenerator
+public sealed class ReleaseChangelogGenerator(IChangelogModel model, IChangelogFormatter formatter)
+    : IReleaseChangelogGenerator
 {
     private readonly IChangelogModel _model = model ?? throw new ArgumentNullException(nameof(model));
+    private readonly IChangelogFormatter _formatter =
+        formatter ?? throw new ArgumentNullException(nameof(formatter));
 
     public async Task<ChangelogGenerationResult> GenerateAsync(
         FactBase factBase,
@@ -32,7 +37,7 @@ public sealed class ReleaseChangelogGenerator(IChangelogModel model) : IReleaseC
         try
         {
             string text = await _model.RephraseAsync(new RephraseRequest(facts, audience), cancellationToken);
-            return ChangelogGenerationResult.Success(text);
+            return ChangelogGenerationResult.Success(_formatter.Format(text));
         }
         catch (OperationCanceledException)
         {
