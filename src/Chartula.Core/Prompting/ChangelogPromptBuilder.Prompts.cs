@@ -26,6 +26,10 @@ public sealed partial class ChangelogPromptBuilder
     private const string RuleNoPreamble =
         "- Do not add a preamble or a conclusion; output only the entries.";
 
+    private const string RuleConsistentVoice =
+        "- Write in one consistent voice and format throughout, no matter how each " +
+        "source was written. Do not carry over an individual author's tone or phrasing.";
+
     private const string AudienceTechnical =
         "Audience: Technical. Keep precise terminology and any links, " +
         "and call out breaking changes explicitly.";

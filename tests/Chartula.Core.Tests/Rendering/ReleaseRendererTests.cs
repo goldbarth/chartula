@@ -1,5 +1,6 @@
 using Chartula.Core.Categorization;
 using Chartula.Core.Facts;
+using Chartula.Core.Formatting;
 using Chartula.Core.Generation;
 using Chartula.Core.Llm;
 using Chartula.Core.Rendering;
@@ -11,7 +12,7 @@ public sealed class ReleaseRendererTests
     private static (ReleaseRenderer Renderer, RecordingChangelogModel Model) Build()
     {
         RecordingChangelogModel model = new();
-        ReleaseRenderer renderer = new(new ReleaseChangelogGenerator(model));
+        ReleaseRenderer renderer = new(new ReleaseChangelogGenerator(model, new ChangelogFormatter()));
         return (renderer, model);
     }
 
@@ -86,7 +87,7 @@ public sealed class ReleaseRendererTests
         RecordingChangelogModel _ = new();
         // A generator whose model throws only for one audience.
         ReleaseRenderer renderer = new(new ReleaseChangelogGenerator(
-            new SelectiveFailingModel(failFor: Audience.Customer)));
+            new SelectiveFailingModel(failFor: Audience.Customer), new ChangelogFormatter()));
 
         IReadOnlyDictionary<Audience, ChangelogGenerationResult> renderings =
             await renderer.RenderAllAsync(Sample());

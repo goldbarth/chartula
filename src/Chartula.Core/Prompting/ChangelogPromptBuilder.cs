@@ -34,6 +34,7 @@ public sealed partial class ChangelogPromptBuilder : IChangelogPromptBuilder
         system.AppendLine(RuleCategoryEstablished);
         system.AppendLine(RuleStaySparse);
         system.AppendLine(RuleNoPreamble);
+        system.AppendLine(RuleConsistentVoice);
         system.Append(AudienceGuidance(audience));
         return system.ToString();
     }
