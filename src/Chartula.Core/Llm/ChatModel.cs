@@ -1,3 +1,4 @@
+using Chartula.Core.Prompting;
 using Microsoft.Extensions.AI;
 
 namespace Chartula.Core.Llm;
@@ -6,15 +7,14 @@ namespace Chartula.Core.Llm;
 /// The single shipped <see cref="IChangelogModel"/>, backed by a
 /// provider-agnostic <see cref="IChatClient"/>. Which concrete provider (and
 /// model) the <see cref="IChatClient"/> talks to is decided in the composition
-/// root; this class knows nothing about it.
+/// root; this class knows nothing about it. The rephrase prompt is owned by the
+/// <see cref="IChangelogPromptBuilder"/>, so this type just wires it to the client.
 /// </summary>
-/// <remarks>
-/// The prompts here are deliberately minimal placeholders. Prompt design is its
-/// own issue; this type exists to fix the seam, not to finalize the wording.
-/// </remarks>
-public sealed class ChatModel(IChatClient chat) : IChangelogModel
+public sealed class ChatModel(IChatClient chat, IChangelogPromptBuilder promptBuilder) : IChangelogModel
 {
     private readonly IChatClient _chat = chat ?? throw new ArgumentNullException(nameof(chat));
+    private readonly IChangelogPromptBuilder _promptBuilder =
+        promptBuilder ?? throw new ArgumentNullException(nameof(promptBuilder));
 
     public async Task<string> RephraseAsync(
         RephraseRequest request,
@@ -22,13 +22,11 @@ public sealed class ChatModel(IChatClient chat) : IChangelogModel
     {
         ArgumentNullException.ThrowIfNull(request);
 
+        ChangelogPrompt prompt = _promptBuilder.BuildRephrasePrompt(request.Facts, request.Audience);
         List<ChatMessage> messages =
         [
-            new(ChatRole.System,
-                "You rephrase established facts into changelog prose. Rephrase only; " +
-                "never introduce a fact that is not in the provided list. Tailor the " +
-                $"wording for the {request.Audience} audience."),
-            new(ChatRole.User, FormatFacts(request.Facts)),
+            new(ChatRole.System, prompt.System),
+            new(ChatRole.User, prompt.User),
         ];
 
         ChatResponse response = await _chat.GetResponseAsync(messages, cancellationToken: cancellationToken);

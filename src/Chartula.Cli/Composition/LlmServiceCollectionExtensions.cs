@@ -1,6 +1,7 @@
 using Anthropic;
 using Chartula.Cli.Configuration;
 using Chartula.Core.Llm;
+using Chartula.Core.Prompting;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,6 +23,7 @@ internal static class LlmServiceCollectionExtensions
 
         services.AddSingleton(options);
         services.AddSingleton(sp => CreateChatClient(options, configuration));
+        services.AddSingleton<IChangelogPromptBuilder, ChangelogPromptBuilder>();
         services.AddSingleton<IChangelogModel, ChatModel>();
         return services;
     }

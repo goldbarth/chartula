@@ -1,14 +1,23 @@
 using Chartula.Core.Facts;
 using Chartula.Core.Llm;
+using Chartula.Core.Prompting;
 
 namespace Chartula.Core.Tests.Llm;
 
 public sealed class ChatModelTests
 {
+    private static ChatModel Model(StubChatClient chat) => new(chat, new ChangelogPromptBuilder());
+
     [Fact]
     public void Constructor_rejects_a_null_chat_client()
     {
-        Assert.Throws<ArgumentNullException>(() => new ChatModel(null!));
+        Assert.Throws<ArgumentNullException>(() => new ChatModel(null!, new ChangelogPromptBuilder()));
+    }
+
+    [Fact]
+    public void Constructor_rejects_a_null_prompt_builder()
+    {
+        Assert.Throws<ArgumentNullException>(() => new ChatModel(new StubChatClient("x"), null!));
     }
 
     [Fact]
@@ -16,7 +25,7 @@ public sealed class ChatModelTests
     {
         StubChatClient chat = new("Signing in with an expired token now fails cleanly.");
         // The pipeline only ever sees the interface, never ChatModel or a provider.
-        IChangelogModel model = new ChatModel(chat);
+        IChangelogModel model = Model(chat);
 
         string result = await model.RephraseAsync(
             new RephraseRequest(
@@ -31,7 +40,7 @@ public sealed class ChatModelTests
     public async Task RephraseAsync_feeds_the_facts_and_audience_into_the_prompt()
     {
         StubChatClient chat = new("...");
-        IChangelogModel model = new ChatModel(chat);
+        IChangelogModel model = Model(chat);
 
         await model.RephraseAsync(
             new RephraseRequest(
@@ -48,7 +57,7 @@ public sealed class ChatModelTests
     {
         StubChatClient chat = new(
             """{"isFaithful":false,"unsupportedClaims":["closed a security hole"]}""");
-        IChangelogModel model = new ChatModel(chat);
+        IChangelogModel model = Model(chat);
 
         FaithfulnessReport report = await model.CheckFaithfulnessAsync(
             new FaithfulnessRequest(
@@ -63,7 +72,7 @@ public sealed class ChatModelTests
     public async Task CheckFaithfulnessAsync_reports_faithful_output()
     {
         StubChatClient chat = new("""{"isFaithful":true,"unsupportedClaims":[]}""");
-        IChangelogModel model = new ChatModel(chat);
+        IChangelogModel model = Model(chat);
 
         FaithfulnessReport report = await model.CheckFaithfulnessAsync(
             new FaithfulnessRequest(
