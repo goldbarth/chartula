@@ -21,7 +21,7 @@ public sealed class ReleaseChangelogGenerator(IChangelogModel model) : IReleaseC
     {
         ArgumentNullException.ThrowIfNull(factBase);
 
-        GroundedFacts facts = ToGroundedFacts(factBase);
+        GroundedFacts facts = ToGroundedFacts(factBase, audience);
 
         // Nothing to generate - skip the call entirely (keeps calls minimal).
         if (facts.Statements.Count == 0)
@@ -45,13 +45,21 @@ public sealed class ReleaseChangelogGenerator(IChangelogModel model) : IReleaseC
         }
     }
 
-    // One grounded statement per change, from established facts only. The wording
-    // here is a plain fact carrier; prompt design is its own issue.
-    private static GroundedFacts ToGroundedFacts(FactBase factBase)
+    // One grounded statement per change, from established facts only, selected and
+    // detailed for the audience: the customer view omits non-user-visible changes,
+    // and the technical view keeps the pull request link. The same fact base feeds
+    // every audience, so the renderings cannot contradict each other.
+    private static GroundedFacts ToGroundedFacts(FactBase factBase, Audience audience)
     {
         List<string> statements = [];
         foreach (ChangeFact change in factBase.Changes)
         {
+            // Customer entries are user-facing only.
+            if (audience == Audience.Customer && !change.IsUserVisible)
+            {
+                continue;
+            }
+
             StringBuilder statement = new();
             statement.Append(change.Category);
             if (change.IsBreaking)
@@ -63,6 +71,12 @@ public sealed class ReleaseChangelogGenerator(IChangelogModel model) : IReleaseC
             if (!string.IsNullOrEmpty(change.Description))
             {
                 statement.Append(" - ").Append(change.Description);
+            }
+
+            // Technical entries keep the link.
+            if (audience == Audience.Technical && !string.IsNullOrEmpty(change.Url))
+            {
+                statement.Append(" (").Append(change.Url).Append(')');
             }
 
             statements.Add(statement.ToString());

@@ -27,7 +27,8 @@ public sealed partial class ChangelogPromptBuilder
         "- Do not add a preamble or a conclusion; output only the entries.";
 
     private const string AudienceTechnical =
-        "Audience: Technical. Keep precise terminology, and call out breaking changes explicitly.";
+        "Audience: Technical. Keep precise terminology and any links, " +
+        "and call out breaking changes explicitly.";
 
     private const string AudienceCustomer =
         "Audience: Customer. Focus on what changed for the user in plain language.";
