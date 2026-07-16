@@ -1,5 +1,6 @@
 using Chartula.Cli.Commands;
 using Chartula.Cli.Composition;
+using Chartula.Cli.Configuration;
 using Chartula.Core.Pipeline;
 using Chartula.Core.PullRequests;
 using Microsoft.Extensions.Configuration;
@@ -49,16 +50,33 @@ internal static class Program
             return 1;
         }
 
-        using ServiceProvider services = BuildServices();
-        IReleasePipeline pipeline = services.GetRequiredService<IReleasePipeline>();
+        ServiceProvider services;
+        try
+        {
+            services = BuildServices();
+        }
+        catch (InvalidOperationException ex)
+        {
+            // A configuration error (e.g. an invalid value in chartula.yaml).
+            Console.Error.WriteLine($"Configuration error: {ex.Message}");
+            return 1;
+        }
 
-        return await ReleaseCommand.RunAsync(
-            pipeline, mode.Value, new ReleaseRequest(tag, repository), Console.Out, CancellationToken.None);
+        using (services)
+        {
+            IReleasePipeline pipeline = services.GetRequiredService<IReleasePipeline>();
+
+            return await ReleaseCommand.RunAsync(
+                pipeline, mode.Value, new ReleaseRequest(tag, repository), Console.Out, CancellationToken.None);
+        }
     }
 
     private static ServiceProvider BuildServices()
     {
+        // chartula.yaml refines behavior; environment variables override it. The
+        // tool runs with sensible defaults when neither is present.
         IConfiguration configuration = new ConfigurationBuilder()
+            .AddChartulaYaml(Directory.GetCurrentDirectory())
             .AddEnvironmentVariables()
             .Build();
 

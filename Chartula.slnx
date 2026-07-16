@@ -4,6 +4,7 @@
     <Project Path="src/Chartula.Infrastructure/Chartula.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Chartula.Cli.Tests/Chartula.Cli.Tests.csproj" />
     <Project Path="tests/Chartula.Core.Tests/Chartula.Core.Tests.csproj" />
     <Project Path="tests/Chartula.Infrastructure.Tests/Chartula.Infrastructure.Tests.csproj" />
   </Folder>
