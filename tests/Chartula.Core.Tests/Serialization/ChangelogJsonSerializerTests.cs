@@ -1,12 +1,52 @@
 using System.Text.Json;
 using Chartula.Core.Categorization;
 using Chartula.Core.Facts;
+using Chartula.Core.Llm;
 using Chartula.Core.Serialization;
 
 namespace Chartula.Core.Tests.Serialization;
 
 public sealed class ChangelogJsonSerializerTests
 {
+    [Fact]
+    public void Stores_the_customer_and_product_audience_texts()
+    {
+        Dictionary<Audience, string> renderings = new()
+        {
+            [Audience.Technical] = "Technical text.",
+            [Audience.Customer] = "Dark mode is here.",
+            [Audience.Product] = "Grouped by theme.",
+        };
+
+        using JsonDocument parsed = JsonDocument.Parse(ChangelogJsonSerializer.Serialize(Sample(), renderings));
+        JsonElement stored = parsed.RootElement.GetProperty("renderings");
+
+        Assert.Equal("Dark mode is here.", stored.GetProperty("customer").GetString());
+        Assert.Equal("Grouped by theme.", stored.GetProperty("product").GetString());
+        Assert.Equal("Technical text.", stored.GetProperty("technical").GetString());
+    }
+
+    [Fact]
+    public void Writes_an_empty_renderings_object_when_none_are_provided()
+    {
+        using JsonDocument parsed = JsonDocument.Parse(ChangelogJsonSerializer.Serialize(Sample()));
+        JsonElement stored = parsed.RootElement.GetProperty("renderings");
+
+        Assert.Equal(JsonValueKind.Object, stored.ValueKind);
+        Assert.Empty(stored.EnumerateObject());
+    }
+
+    [Fact]
+    public void Round_trips_the_stored_renderings()
+    {
+        Dictionary<Audience, string> renderings = new() { [Audience.Customer] = "Dark mode is here." };
+
+        ChangelogDocument document = ChangelogJsonSerializer.Deserialize(
+            ChangelogJsonSerializer.Serialize(Sample(), renderings));
+
+        Assert.Equal("Dark mode is here.", document.Renderings["customer"]);
+    }
+
     private static FactBase Sample() => new("v1.2.0", [
         new ChangeFact("feat: add dark mode", 42, "https://example/pull/42",
             ChangeCategory.Feature, IsUserVisible: true, IsBreaking: false, [12], "Adds a dark theme."),
