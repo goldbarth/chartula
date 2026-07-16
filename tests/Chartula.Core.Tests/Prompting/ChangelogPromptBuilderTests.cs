@@ -89,6 +89,18 @@ public sealed class ChangelogPromptBuilderTests
         Assert.Equal(string.Empty, prompt.User);
     }
 
+    [Fact]
+    public void Faithfulness_prompt_carries_the_facts_the_output_and_the_meaning_level_instruction()
+    {
+        ChangelogPrompt prompt = _builder.BuildFaithfulnessPrompt(
+            "This release closed a security hole.",
+            new GroundedFacts(["Fix: correct an off-by-one in the parser"]));
+
+        Assert.Contains("meaning-level", prompt.System);
+        Assert.Contains("correct an off-by-one in the parser", prompt.User);
+        Assert.Contains("This release closed a security hole.", prompt.User);
+    }
+
     [Theory]
     [InlineData(Audience.Technical)]
     [InlineData(Audience.Customer)]

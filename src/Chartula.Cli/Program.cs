@@ -27,7 +27,7 @@ internal static class Program
             .AddChartulaFilter(configuration)
             .AddChartulaFactBase(configuration)
             .AddChartulaGeneration()
-            .AddChartulaFaithfulness()
+            .AddChartulaFaithfulness(configuration)
             .AddChartulaOutputs()
             .BuildServiceProvider();
 
