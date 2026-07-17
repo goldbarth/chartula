@@ -22,6 +22,7 @@ internal static class LlmServiceCollectionExtensions
         LlmOptions options = ReadOptions(configuration);
 
         services.AddSingleton(options);
+        services.AddSingleton(new ChatModelOptions { MaxOutputTokens = options.MaxOutputTokens });
         services.AddSingleton(sp => CreateChatClient(options, configuration));
         services.AddSingleton<IChangelogPromptBuilder, ChangelogPromptBuilder>();
         services.AddSingleton<IChangelogModel, ChatModel>();
@@ -34,7 +35,27 @@ internal static class LlmServiceCollectionExtensions
         Model = configuration[$"{LlmOptions.SectionName}:Model"] ?? "claude-opus-4-8",
         ApiKeyEnvironmentVariable =
             configuration[$"{LlmOptions.SectionName}:ApiKeyEnvironmentVariable"] ?? "ANTHROPIC_API_KEY",
+        MaxOutputTokens = ReadMaxOutputTokens(configuration),
     };
+
+    // An unparsable or non-positive value would otherwise fall through to the
+    // provider default and truncate silently, so reject it loudly instead.
+    private static int ReadMaxOutputTokens(IConfiguration configuration)
+    {
+        string? raw = configuration[$"{LlmOptions.SectionName}:MaxOutputTokens"];
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return new LlmOptions().MaxOutputTokens;
+        }
+
+        if (!int.TryParse(raw, out int value) || value <= 0)
+        {
+            throw new InvalidOperationException(
+                $"Invalid llm.maxOutputTokens '{raw}'. Expected a positive whole number.");
+        }
+
+        return value;
+    }
 
     private static IChatClient CreateChatClient(LlmOptions options, IConfiguration configuration)
     {

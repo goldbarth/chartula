@@ -20,7 +20,7 @@ public sealed class ChatModelMetricsTests
         StubChatClient chat = new("Text.", new UsageDetails { InputTokenCount = 120, OutputTokenCount = 34 });
         RunMetrics metrics = new();
 
-        await new ChatModel(chat, new ChangelogPromptBuilder(), metrics)
+        await new ChatModel(chat, new ChangelogPromptBuilder(), metrics: metrics)
             .RephraseAsync(new RephraseRequest(Facts, Audience.Customer));
 
         LlmUsage usage = metrics.Snapshot().UsageOf(LlmOperation.Rephrase);
@@ -36,7 +36,7 @@ public sealed class ChatModelMetricsTests
             new UsageDetails { InputTokenCount = 900, OutputTokenCount = 12 });
         RunMetrics metrics = new();
 
-        await new ChatModel(chat, new ChangelogPromptBuilder(), metrics)
+        await new ChatModel(chat, new ChangelogPromptBuilder(), metrics: metrics)
             .CheckFaithfulnessAsync(new FaithfulnessRequest("Some output.", Facts));
 
         RunReport report = metrics.Snapshot();
@@ -52,7 +52,7 @@ public sealed class ChatModelMetricsTests
         StubChatClient chat = new("Text.");
         RunMetrics metrics = new();
 
-        await new ChatModel(chat, new ChangelogPromptBuilder(), metrics)
+        await new ChatModel(chat, new ChangelogPromptBuilder(), metrics: metrics)
             .RephraseAsync(new RephraseRequest(Facts, Audience.Customer));
 
         LlmUsage usage = metrics.Snapshot().UsageOf(LlmOperation.Rephrase);

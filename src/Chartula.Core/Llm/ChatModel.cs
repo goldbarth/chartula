@@ -16,12 +16,19 @@ namespace Chartula.Core.Llm;
 public sealed class ChatModel(
     IChatClient chat,
     IChangelogPromptBuilder promptBuilder,
+    ChatModelOptions? options = null,
     IRunMetrics? metrics = null) : IChangelogModel
 {
     private readonly IChatClient _chat = chat ?? throw new ArgumentNullException(nameof(chat));
     private readonly IChangelogPromptBuilder _promptBuilder =
         promptBuilder ?? throw new ArgumentNullException(nameof(promptBuilder));
+    private readonly ChatModelOptions _options = options ?? new ChatModelOptions();
     private readonly IRunMetrics _metrics = metrics ?? NullRunMetrics.Instance;
+
+    // Fresh per call: the typed-response path clones and augments these, so a shared
+    // instance would leak one call's response format into the next.
+    private ChatOptions RequestOptions()
+        => new() { MaxOutputTokens = _options.MaxOutputTokens };
 
     public async Task<string> RephraseAsync(
         RephraseRequest request,
@@ -36,7 +43,8 @@ public sealed class ChatModel(
             new(ChatRole.User, prompt.User),
         ];
 
-        ChatResponse response = await _chat.GetResponseAsync(messages, cancellationToken: cancellationToken);
+        ChatResponse response = await _chat.GetResponseAsync(
+            messages, RequestOptions(), cancellationToken);
         Record(LlmOperation.Rephrase, response.Usage);
         return response.Text;
     }
@@ -55,7 +63,8 @@ public sealed class ChatModel(
         ];
 
         ChatResponse<FaithfulnessReport> response =
-            await _chat.GetResponseAsync<FaithfulnessReport>(messages, cancellationToken: cancellationToken);
+            await _chat.GetResponseAsync<FaithfulnessReport>(
+                messages, RequestOptions(), cancellationToken: cancellationToken);
         Record(LlmOperation.FaithfulnessCheck, response.Usage);
 
         return response.TryGetResult(out FaithfulnessReport? report)
