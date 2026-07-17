@@ -11,11 +11,13 @@
 # API keys and tokens are never read from this file. Only the *name* of the
 # environment variable holding them is configured here.
 
-# The model provider and which model to use.
+# The model provider and which model to use. maxOutputTokens caps what the model
+# may produce per call; raise it for releases whose changelog runs long.
 # llm:
 #   provider: anthropic
 #   model: claude-opus-4-8
 #   apiKeyEnvironmentVariable: ANTHROPIC_API_KEY
+#   maxOutputTokens: 16000
 
 # How the GitHub API is reached. Override the base URL for GitHub Enterprise.
 # github:

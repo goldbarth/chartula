@@ -17,6 +17,10 @@ The model provider and which model to use. API keys are read by environment-vari
 | `provider` | `anthropic` | The LLM provider. Only `anthropic` is implemented today. |
 | `model` | `claude-opus-4-8` | The model id passed to the provider. |
 | `apiKeyEnvironmentVariable` | `ANTHROPIC_API_KEY` | Name of the environment variable holding the API key. |
+| `maxOutputTokens` | `16000` | Ceiling on the tokens the model may produce per call. |
+
+Raise `maxOutputTokens` for releases whose changelog runs long.
+A ceiling that is too low truncates the generated text mid-sentence rather than failing, so a run that ends abruptly is the signal to raise it.
 
 ### `github`
 

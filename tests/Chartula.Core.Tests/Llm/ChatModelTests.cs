@@ -82,4 +82,44 @@ public sealed class ChatModelTests
         Assert.True(report.IsFaithful);
         Assert.Empty(report.UnsupportedClaims);
     }
+
+    // Providers require an output ceiling and quietly substitute a small default when
+    // one is absent, which truncates a changelog mid-sentence. Every call must carry it.
+    [Fact]
+    public async Task RephraseAsync_sends_the_configured_output_ceiling()
+    {
+        StubChatClient chat = new("...");
+        IChangelogModel model = new ChatModel(
+            chat, new ChangelogPromptBuilder(), new ChatModelOptions { MaxOutputTokens = 12_345 });
+
+        await model.RephraseAsync(
+            new RephraseRequest(new GroundedFacts(["Added dark mode"]), Audience.Customer));
+
+        Assert.Equal(12_345, chat.LastOptions?.MaxOutputTokens);
+    }
+
+    [Fact]
+    public async Task CheckFaithfulnessAsync_sends_the_configured_output_ceiling()
+    {
+        StubChatClient chat = new("""{"isFaithful":true,"unsupportedClaims":[]}""");
+        IChangelogModel model = new ChatModel(
+            chat, new ChangelogPromptBuilder(), new ChatModelOptions { MaxOutputTokens = 12_345 });
+
+        await model.CheckFaithfulnessAsync(
+            new FaithfulnessRequest("Added dark mode.", new GroundedFacts(["Added dark mode"])));
+
+        Assert.Equal(12_345, chat.LastOptions?.MaxOutputTokens);
+    }
+
+    [Fact]
+    public async Task RephraseAsync_sends_an_output_ceiling_even_with_no_options_given()
+    {
+        StubChatClient chat = new("...");
+        IChangelogModel model = Model(chat);
+
+        await model.RephraseAsync(
+            new RephraseRequest(new GroundedFacts(["Added dark mode"]), Audience.Customer));
+
+        Assert.Equal(new ChatModelOptions().MaxOutputTokens, chat.LastOptions?.MaxOutputTokens);
+    }
 }

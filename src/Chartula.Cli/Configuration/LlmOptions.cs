@@ -18,4 +18,10 @@ public sealed class LlmOptions
 
     /// <summary>Name of the environment variable holding the API key.</summary>
     public string ApiKeyEnvironmentVariable { get; init; } = "ANTHROPIC_API_KEY";
+
+    /// <summary>
+    /// The ceiling on tokens the model may produce per call. Raise it for releases
+    /// whose changelog runs long; a too-low ceiling truncates the text mid-sentence.
+    /// </summary>
+    public int MaxOutputTokens { get; init; } = 16_000;
 }

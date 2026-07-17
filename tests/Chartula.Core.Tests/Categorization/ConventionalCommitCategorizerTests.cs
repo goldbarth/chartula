@@ -64,6 +64,35 @@ public sealed class ConventionalCommitCategorizerTests
     }
 
     [Fact]
+    public void Flags_a_hyphenated_breaking_change_footer()
+    {
+        ChangeClassification result = _categorizer.Classify(
+            Change("feat: new auth flow", "Details.\n\nBREAKING-CHANGE: tokens now expire."));
+
+        Assert.True(result.IsBreaking);
+    }
+
+    // The footer is a Conventional Commits marker, not a phrase. A body that merely
+    // discusses breaking changes describes the work; it does not declare one. The
+    // first case is taken verbatim from a pull request this mislabelled.
+    [Theory]
+    [InlineData(
+        "`CategorySettings` holds the category order, display names and breaking-change "
+        + "prominence, with `From(...)` parsing the raw configuration values.")]
+    [InlineData("This is not a breaking change.")]
+    [InlineData("Reviewers: check whether this is a BREAKING CHANGE before merging.")]
+    [InlineData("See the breaking change policy in CONTRIBUTING.md.")]
+    [InlineData("- [ ] Breaking change documented?")]
+    public void Does_not_flag_prose_that_merely_mentions_breaking_changes(string description)
+    {
+        ChangeClassification result = _categorizer.Classify(
+            Change("feat: add configuration sections for categories", description));
+
+        Assert.Equal(ChangeCategory.Feature, result.Category);
+        Assert.False(result.IsBreaking);
+    }
+
+    [Fact]
     public void Treats_a_breaking_type_prefix_as_breaking()
     {
         ChangeClassification result = _categorizer.Classify(Change("breaking: remove legacy API"));

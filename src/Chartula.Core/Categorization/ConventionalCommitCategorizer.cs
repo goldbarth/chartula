@@ -15,6 +15,15 @@ public sealed partial class ConventionalCommitCategorizer : IChangeCategorizer
     [GeneratedRegex(@"^(?<type>[a-zA-Z]+)(?:\([^)]*\))?(?<bang>!)?:", RegexOptions.CultureInvariant)]
     private static partial Regex ConventionalPrefix();
 
+    // The Conventional Commits breaking-change footer: uppercase, at the start of a
+    // line, terminated by a colon. Anchoring and case both matter - prose that merely
+    // discusses breaking changes ("...and breaking-change prominence...") is not a
+    // footer, and matching it loosely marks unrelated work as breaking.
+    [GeneratedRegex(
+        @"^BREAKING[ -]CHANGE:",
+        RegexOptions.Multiline | RegexOptions.CultureInvariant)]
+    private static partial Regex BreakingChangeFooter();
+
     public ChangeClassification Classify(ReleaseChange change)
     {
         ArgumentNullException.ThrowIfNull(change);
@@ -43,7 +52,5 @@ public sealed partial class ConventionalCommitCategorizer : IChangeCategorizer
     };
 
     private static bool MentionsBreakingChange(string? description)
-        => description is not null
-           && (description.Contains("BREAKING CHANGE", StringComparison.OrdinalIgnoreCase)
-               || description.Contains("BREAKING-CHANGE", StringComparison.OrdinalIgnoreCase));
+        => description is not null && BreakingChangeFooter().IsMatch(description);
 }

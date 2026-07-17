@@ -12,6 +12,8 @@ internal sealed class StubChatClient(string responseText, UsageDetails? usage = 
 {
     public IReadOnlyList<ChatMessage>? LastMessages { get; private set; }
 
+    public ChatOptions? LastOptions { get; private set; }
+
     public int CallCount { get; private set; }
 
     public Task<ChatResponse> GetResponseAsync(
@@ -20,6 +22,7 @@ internal sealed class StubChatClient(string responseText, UsageDetails? usage = 
         CancellationToken cancellationToken = default)
     {
         LastMessages = messages.ToList();
+        LastOptions = options;
         CallCount++;
         return Task.FromResult(
             new ChatResponse(new ChatMessage(ChatRole.Assistant, responseText)) { Usage = usage });
