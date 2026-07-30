@@ -23,9 +23,14 @@ public static class RunReportFormatter
         builder.AppendLine($"  Thorough check:   {Activity(report.Thorough)}, {Tokens(check.Tokens)}");
         builder.AppendLine(
             $"    caught {Claims(report.ThoroughOnlyFlags)} the rule-based check missed, "
-            + $"for {Count(check.Tokens.TotalTokens)} tokens in {Calls(check.Calls)}");
-        builder.AppendLine($"  Rephrasing:       {Calls(rephrase.Calls)}, {Tokens(rephrase.Tokens)}");
+            + $"for {Count(check.Tokens.TotalTokens)} tokens in {Calls(check.TotalCalls)}");
+        builder.AppendLine($"  Rephrasing:       {Calls(rephrase.TotalCalls)}, {Tokens(rephrase.Tokens)}");
         builder.AppendLine($"  Total:            {Count(report.TotalTokens.TotalTokens)} tokens");
+        if (report.CallsWithoutUsage > 0)
+        {
+            builder.AppendLine($"    lower bound, {report.CallsWithoutUsage} of {report.TotalCalls} calls unreported");
+        }
+
         return builder.ToString();
     }
 

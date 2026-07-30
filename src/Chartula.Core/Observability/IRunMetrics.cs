@@ -7,8 +7,12 @@ namespace Chartula.Core.Observability;
 /// </summary>
 public interface IRunMetrics
 {
-    /// <summary>Records one LLM call and the tokens it consumed.</summary>
-    void RecordLlmCall(LlmOperation operation, TokenUsage usage);
+    /// <summary>
+    /// Records one LLM call and the tokens it consumed. A null count means the provider did not
+    /// report that side of the usage. Any call missing either side is tallied separately, so a
+    /// low token total can be told apart from a cheap run.
+    /// </summary>
+    void RecordLlmCall(LlmOperation operation, long? inputTokens, long? outputTokens);
 
     /// <summary>
     /// Records one pass of both faithfulness checks over the same text. Passing both

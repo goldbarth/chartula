@@ -1,12 +1,13 @@
 namespace Chartula.Core.Observability;
 
 /// <summary>What one LLM operation cost across a run.</summary>
-/// <param name="Calls">How many calls were made.</param>
+/// <param name="TotalCalls">How many calls were made.</param>
+/// <param name="CallsWithoutUsage">How many calls were made without usage reported.</param>
 /// <param name="Tokens">The tokens those calls consumed.</param>
-public sealed record LlmUsage(int Calls, TokenUsage Tokens)
+public sealed record LlmUsage(int TotalCalls, int CallsWithoutUsage, TokenUsage Tokens)
 {
     /// <summary>Nothing called, nothing spent.</summary>
-    public static LlmUsage None { get; } = new(0, TokenUsage.None);
+    public static LlmUsage None { get; } = new(0, 0, TokenUsage.None);
 }
 
 /// <summary>How often a faithfulness check ran and how often it found something.</summary>
@@ -47,6 +48,12 @@ public sealed record RunReport(
 
     /// <summary>Tokens consumed by the whole run.</summary>
     public TokenUsage TotalTokens => Llm.Values.Aggregate(TokenUsage.None, static (sum, usage) => sum + usage.Tokens);
+
+    /// <summary>Total calls made to the LLM.</summary>
+    public int TotalCalls => Llm.Values.Sum(usage => usage.TotalCalls);
+
+    /// <summary>Calls whose usage the provider did not report in full - the token total is a lower bound by that many calls.</summary>
+    public int CallsWithoutUsage => Llm.Values.Sum(usage => usage.CallsWithoutUsage);
 
     /// <summary>Calls and tokens for one operation; none if it never ran.</summary>
     public LlmUsage UsageOf(LlmOperation operation)

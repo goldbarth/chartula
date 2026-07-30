@@ -13,7 +13,7 @@ public sealed class NullRunMetrics : IRunMetrics
     {
     }
 
-    public void RecordLlmCall(LlmOperation operation, TokenUsage usage)
+    public void RecordLlmCall(LlmOperation operation, long? inputTokens, long? outputTokens)
     {
     }
 
