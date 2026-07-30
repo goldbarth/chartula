@@ -9,17 +9,66 @@ public sealed class RunMetricsTests
     {
         RunMetrics metrics = new();
 
-        metrics.RecordLlmCall(LlmOperation.Rephrase, new TokenUsage(100, 20));
-        metrics.RecordLlmCall(LlmOperation.Rephrase, new TokenUsage(150, 30));
-        metrics.RecordLlmCall(LlmOperation.FaithfulnessCheck, new TokenUsage(200, 10));
+        metrics.RecordLlmCall(LlmOperation.Rephrase, 100, 20);
+        metrics.RecordLlmCall(LlmOperation.Rephrase, 150, 30);
+        metrics.RecordLlmCall(LlmOperation.FaithfulnessCheck, 200, 10);
 
         RunReport report = metrics.Snapshot();
 
-        Assert.Equal(2, report.UsageOf(LlmOperation.Rephrase).Calls);
+        Assert.Equal(2, report.UsageOf(LlmOperation.Rephrase).TotalCalls);
         Assert.Equal(new TokenUsage(250, 50), report.UsageOf(LlmOperation.Rephrase).Tokens);
-        Assert.Equal(1, report.UsageOf(LlmOperation.FaithfulnessCheck).Calls);
+        Assert.Equal(1, report.UsageOf(LlmOperation.FaithfulnessCheck).TotalCalls);
         Assert.Equal(new TokenUsage(200, 10), report.UsageOf(LlmOperation.FaithfulnessCheck).Tokens);
         Assert.Equal(510, report.TotalTokens.TotalTokens);
+    }
+
+    [Fact]
+    public void A_call_the_provider_reported_nothing_for_still_counts_as_a_call()
+    {
+        RunMetrics metrics = new();
+
+        metrics.RecordLlmCall(LlmOperation.Rephrase, null, null);
+
+        LlmUsage usage = metrics.Snapshot().UsageOf(LlmOperation.Rephrase);
+        Assert.Equal(1, usage.TotalCalls);
+        Assert.Equal(1, usage.CallsWithoutUsage);
+        Assert.Equal(TokenUsage.None, usage.Tokens);
+    }
+
+    [Fact]
+    public void A_call_that_reports_only_one_side_counts_as_a_call_without_usage()
+    {
+        RunMetrics metrics = new();
+
+        metrics.RecordLlmCall(LlmOperation.Rephrase, 100, null);
+        metrics.RecordLlmCall(LlmOperation.FaithfulnessCheck, null, 20);
+
+        RunReport report = metrics.Snapshot();
+
+        // One missing side makes the call's usage incomplete, so it is not counted as
+        // accounted for. The side that did arrive is still added to the tokens.
+        Assert.Equal(1, report.UsageOf(LlmOperation.Rephrase).CallsWithoutUsage);
+        Assert.Equal(new TokenUsage(100, 0), report.UsageOf(LlmOperation.Rephrase).Tokens);
+        Assert.Equal(1, report.UsageOf(LlmOperation.FaithfulnessCheck).CallsWithoutUsage);
+        Assert.Equal(new TokenUsage(0, 20), report.UsageOf(LlmOperation.FaithfulnessCheck).Tokens);
+    }
+
+    [Fact]
+    public void Calls_with_and_without_reported_usage_are_counted_side_by_side()
+    {
+        RunMetrics metrics = new();
+
+        metrics.RecordLlmCall(LlmOperation.Rephrase, 100, 20);
+        metrics.RecordLlmCall(LlmOperation.Rephrase, null, null);
+        metrics.RecordLlmCall(LlmOperation.Rephrase, 150, 30);
+
+        LlmUsage usage = metrics.Snapshot().UsageOf(LlmOperation.Rephrase);
+
+        // 250 in / 50 out over three calls, one of which the provider never accounted for -
+        // without that count the total reads as cheaper than the run actually was.
+        Assert.Equal(3, usage.TotalCalls);
+        Assert.Equal(1, usage.CallsWithoutUsage);
+        Assert.Equal(new TokenUsage(250, 50), usage.Tokens);
     }
 
     [Fact]
@@ -66,23 +115,24 @@ public sealed class RunMetricsTests
         RunMetrics metrics = new();
 
         metrics.RecordFaithfulnessChecks(ruleBasedFlags: ["a", "b"], thoroughFlags: ["a", "b"]);
-        metrics.RecordLlmCall(LlmOperation.FaithfulnessCheck, new TokenUsage(900, 40));
+        metrics.RecordLlmCall(LlmOperation.FaithfulnessCheck, 900, 40);
 
         RunReport report = metrics.Snapshot();
 
         // Nothing gained, 940 tokens spent - exactly the judgement the report must allow.
         Assert.Equal(0, report.ThoroughOnlyFlags);
         Assert.Equal(940, report.UsageOf(LlmOperation.FaithfulnessCheck).Tokens.TotalTokens);
+        Assert.Equal(0, report.UsageOf(LlmOperation.FaithfulnessCheck).CallsWithoutUsage);
     }
 
     [Fact]
     public void A_snapshot_does_not_change_when_recording_continues()
     {
         RunMetrics metrics = new();
-        metrics.RecordLlmCall(LlmOperation.Rephrase, new TokenUsage(10, 5));
+        metrics.RecordLlmCall(LlmOperation.Rephrase, 10, 5);
 
         RunReport taken = metrics.Snapshot();
-        metrics.RecordLlmCall(LlmOperation.Rephrase, new TokenUsage(1_000, 500));
+        metrics.RecordLlmCall(LlmOperation.Rephrase, 1_000, 500);
 
         Assert.Equal(15, taken.TotalTokens.TotalTokens);
     }
@@ -92,16 +142,19 @@ public sealed class RunMetricsTests
     {
         RunMetrics metrics = new();
 
-        Parallel.For(0, 200, _ =>
+        Parallel.For(0, 200, i =>
         {
-            metrics.RecordLlmCall(LlmOperation.Rephrase, new TokenUsage(1, 1));
+            // Every other call reports no usage, so both counters are under contention.
+            long? tokens = i % 2 == 0 ? 1 : null;
+            metrics.RecordLlmCall(LlmOperation.Rephrase, tokens, tokens);
             metrics.RecordFaithfulnessChecks(["a"], ["a", "b"]);
         });
 
         RunReport report = metrics.Snapshot();
 
-        Assert.Equal(200, report.UsageOf(LlmOperation.Rephrase).Calls);
-        Assert.Equal(400, report.TotalTokens.TotalTokens);
+        Assert.Equal(200, report.UsageOf(LlmOperation.Rephrase).TotalCalls);
+        Assert.Equal(100, report.UsageOf(LlmOperation.Rephrase).CallsWithoutUsage);
+        Assert.Equal(200, report.TotalTokens.TotalTokens);
         Assert.Equal(200, report.Thorough.Runs);
         Assert.Equal(200, report.ThoroughOnlyFlags);
     }
@@ -111,7 +164,7 @@ public sealed class RunMetricsTests
     {
         IRunMetrics metrics = NullRunMetrics.Instance;
 
-        metrics.RecordLlmCall(LlmOperation.Rephrase, new TokenUsage(100, 100));
+        metrics.RecordLlmCall(LlmOperation.Rephrase, 100, 100);
         metrics.RecordFaithfulnessChecks(["a"], ["b"]);
 
         Assert.Equal(RunReport.Empty, metrics.Snapshot());

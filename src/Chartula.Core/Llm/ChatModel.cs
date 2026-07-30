@@ -76,5 +76,6 @@ public sealed class ChatModel(
     private void Record(LlmOperation operation, UsageDetails? usage)
         => _metrics.RecordLlmCall(
             operation,
-            new TokenUsage(usage?.InputTokenCount ?? 0, usage?.OutputTokenCount ?? 0));
+            usage?.InputTokenCount,
+            usage?.OutputTokenCount);
 }

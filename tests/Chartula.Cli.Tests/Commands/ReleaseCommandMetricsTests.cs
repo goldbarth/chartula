@@ -21,8 +21,8 @@ public sealed class ReleaseCommandMetricsTests
     {
         RunMetrics metrics = new();
         metrics.RecordFaithfulnessChecks(["shared"], ["shared", "only thorough"]);
-        metrics.RecordLlmCall(LlmOperation.Rephrase, new TokenUsage(1_500, 300));
-        metrics.RecordLlmCall(LlmOperation.FaithfulnessCheck, new TokenUsage(2_000, 40));
+        metrics.RecordLlmCall(LlmOperation.Rephrase, 1_500, 300);
+        metrics.RecordLlmCall(LlmOperation.FaithfulnessCheck, 2_000, 40);
 
         ReleaseOutcome outcome = new(
             "v1.0.0",

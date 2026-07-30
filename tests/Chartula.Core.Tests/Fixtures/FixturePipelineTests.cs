@@ -121,7 +121,7 @@ public sealed class FixturePipelineTests
 
         Assert.All(outcome.Renderings, rendering => Assert.True(rendering.Success));
         Assert.Equal(3, outcome.Metrics.Thorough.Runs);
-        Assert.Equal(0, outcome.Metrics.UsageOf(LlmOperation.FaithfulnessCheck).Calls);
+        Assert.Equal(0, outcome.Metrics.UsageOf(LlmOperation.FaithfulnessCheck).TotalCalls);
     }
 
     [Fact]

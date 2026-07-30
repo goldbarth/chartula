@@ -24,7 +24,7 @@ public sealed class ChatModelMetricsTests
             .RephraseAsync(new RephraseRequest(Facts, Audience.Customer));
 
         LlmUsage usage = metrics.Snapshot().UsageOf(LlmOperation.Rephrase);
-        Assert.Equal(1, usage.Calls);
+        Assert.Equal(1, usage.TotalCalls);
         Assert.Equal(new TokenUsage(120, 34), usage.Tokens);
     }
 
@@ -40,7 +40,7 @@ public sealed class ChatModelMetricsTests
             .CheckFaithfulnessAsync(new FaithfulnessRequest("Some output.", Facts));
 
         RunReport report = metrics.Snapshot();
-        Assert.Equal(1, report.UsageOf(LlmOperation.FaithfulnessCheck).Calls);
+        Assert.Equal(1, report.UsageOf(LlmOperation.FaithfulnessCheck).TotalCalls);
         Assert.Equal(912, report.UsageOf(LlmOperation.FaithfulnessCheck).Tokens.TotalTokens);
         // The check's cost stays separate from rephrasing, or it could not be judged.
         Assert.Equal(LlmUsage.None, report.UsageOf(LlmOperation.Rephrase));
@@ -56,8 +56,10 @@ public sealed class ChatModelMetricsTests
             .RephraseAsync(new RephraseRequest(Facts, Audience.Customer));
 
         LlmUsage usage = metrics.Snapshot().UsageOf(LlmOperation.Rephrase);
-        Assert.Equal(1, usage.Calls);
+        Assert.Equal(1, usage.TotalCalls);
         Assert.Equal(TokenUsage.None, usage.Tokens);
+        // Zero tokens because nothing was reported, not because the call was free.
+        Assert.Equal(1, usage.CallsWithoutUsage);
     }
 
     [Fact]

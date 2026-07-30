@@ -17,12 +17,16 @@ public sealed class RunMetrics : IRunMetrics
     private int _thoroughFlags;
     private int _thoroughOnlyFlags;
 
-    public void RecordLlmCall(LlmOperation operation, TokenUsage usage)
+    public void RecordLlmCall(LlmOperation operation, long? inputTokens, long? outputTokens)
     {
         lock (_gate)
         {
+            int unreportedCalls = inputTokens is null || outputTokens is null ? 1 : 0;
             LlmUsage current = _llm.TryGetValue(operation, out LlmUsage? existing) ? existing : LlmUsage.None;
-            _llm[operation] = new LlmUsage(current.Calls + 1, current.Tokens + usage);
+            _llm[operation] = new LlmUsage(
+                current.TotalCalls + 1,
+                current.CallsWithoutUsage + unreportedCalls,
+                current.Tokens + new TokenUsage(inputTokens ?? 0, outputTokens ?? 0));
         }
     }
 
