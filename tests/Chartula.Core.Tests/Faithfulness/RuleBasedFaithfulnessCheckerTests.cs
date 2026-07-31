@@ -33,13 +33,25 @@ public sealed class RuleBasedFaithfulnessCheckerTests
         Assert.Contains(report.UnsupportedClaims, c => c.Contains("TurboSync"));
     }
 
+    // Breaking-change claims are the thorough check's job, not this one's: the
+    // output is free prose, and a regex on the word cannot tell an assertion from
+    // a mention. Both cases below are output this checker must leave alone.
     [Fact]
-    public void Flags_a_breaking_claim_when_no_fact_is_breaking()
+    public void Does_not_flag_prose_that_merely_mentions_breaking_changes()
+    {
+        FaithfulnessReport report = _checker.Check(
+            "Breaking changes now float to the top when breaking-change prominence is on.",
+            Facts());
+
+        Assert.True(report.IsFaithful);
+    }
+
+    [Fact]
+    public void Does_not_flag_a_breaking_change_claim_the_facts_do_not_support()
     {
         FaithfulnessReport report = _checker.Check("This is a breaking change.", Facts());
 
-        Assert.False(report.IsFaithful);
-        Assert.Contains(report.UnsupportedClaims, c => c.Contains("breaking"));
+        Assert.True(report.IsFaithful);
     }
 
     [Fact]
@@ -59,17 +71,6 @@ public sealed class RuleBasedFaithfulnessCheckerTests
             ChangeCategory.Feature, true, false, [], null));
 
         FaithfulnessReport report = _checker.Check("Adds the `search box`.", facts);
-
-        Assert.True(report.IsFaithful);
-    }
-
-    [Fact]
-    public void Does_not_flag_breaking_when_a_fact_is_breaking()
-    {
-        FactBase facts = Facts(new ChangeFact("feat!: drop the v1 endpoint", 9, null,
-            ChangeCategory.Feature, true, IsBreaking: true, [], null));
-
-        FaithfulnessReport report = _checker.Check("Breaking: the v1 endpoint is gone.", facts);
 
         Assert.True(report.IsFaithful);
     }
