@@ -16,6 +16,7 @@ public sealed class RunMetrics : IRunMetrics
     private int _thoroughRunsWithFindings;
     private int _thoroughFlags;
     private int _thoroughOnlyFlags;
+    private int _thoroughNotEvaluated;
 
     public void RecordLlmCall(LlmOperation operation, long? inputTokens, long? outputTokens)
     {
@@ -32,7 +33,8 @@ public sealed class RunMetrics : IRunMetrics
 
     public void RecordFaithfulnessChecks(
         IReadOnlyCollection<string> ruleBasedFlags,
-        IReadOnlyCollection<string> thoroughFlags)
+        IReadOnlyCollection<string> thoroughFlags,
+        bool thoroughEvaluated)
     {
         ArgumentNullException.ThrowIfNull(ruleBasedFlags);
         ArgumentNullException.ThrowIfNull(thoroughFlags);
@@ -57,6 +59,11 @@ public sealed class RunMetrics : IRunMetrics
                 _thoroughRunsWithFindings++;
             }
 
+            if (!thoroughEvaluated)
+            {
+                _thoroughNotEvaluated++;
+            }
+
             _thoroughOnlyFlags += onlyThorough;
         }
     }
@@ -68,6 +75,7 @@ public sealed class RunMetrics : IRunMetrics
             return new RunReport(
                 new CheckActivity(_ruleBasedRuns, _ruleBasedRunsWithFindings, _ruleBasedFlags),
                 new CheckActivity(_thoroughRuns, _thoroughRunsWithFindings, _thoroughFlags),
+                _thoroughNotEvaluated,
                 _thoroughOnlyFlags,
                 new Dictionary<LlmOperation, LlmUsage>(_llm));
         }

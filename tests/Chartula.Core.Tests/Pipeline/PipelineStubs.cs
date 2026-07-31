@@ -42,7 +42,7 @@ internal sealed class PassThroughThoroughChecker : IThoroughFaithfulnessChecker
 {
     public Task<FaithfulnessReport> CheckAsync(
         string output, FactBase factBase, CancellationToken cancellationToken = default)
-        => Task.FromResult(new FaithfulnessReport(true, []));
+        => Task.FromResult(FaithfulnessReport.Checked([]));
 }
 
 /// <summary>A writer spy that records whether it was called.</summary>

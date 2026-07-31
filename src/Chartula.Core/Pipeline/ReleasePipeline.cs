@@ -86,9 +86,19 @@ public sealed class ReleasePipeline(
 
         // Both findings go in together, so the report can tell what the paid check
         // caught over and above the free one.
-        _metrics.RecordFaithfulnessChecks(ruleBased, thorough.UnsupportedClaims);
+        bool thoroughEvaluated = thorough.Status != FaithfulnessCheckStatus.NotEvaluated;
+        _metrics.RecordFaithfulnessChecks(ruleBased, thorough.UnsupportedClaims, thoroughEvaluated);
 
-        return [.. ruleBased, .. thorough.UnsupportedClaims];
+        List<string> flags = [.. ruleBased, .. thorough.UnsupportedClaims];
+
+        // A check that ran and could not be read leaves the text unverified. Without a
+        // flag of its own that is indistinguishable from a check that found nothing.
+        if (!thoroughEvaluated)
+        {
+            flags.Add($"The thorough check could not be evaluated: {thorough.Reason}.");
+        }
+
+        return flags;
     }
 
     private async Task<IReadOnlyList<string>> WriteOutputsAsync(

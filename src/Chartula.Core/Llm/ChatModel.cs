@@ -62,14 +62,26 @@ public sealed class ChatModel(
             new(ChatRole.User, prompt.User),
         ];
 
-        ChatResponse<FaithfulnessReport> response =
-            await _chat.GetResponseAsync<FaithfulnessReport>(
+        ChatResponse<FaithfulnessVerdict> response =
+            await _chat.GetResponseAsync<FaithfulnessVerdict>(
                 messages, RequestOptions(), cancellationToken: cancellationToken);
         Record(LlmOperation.FaithfulnessCheck, response.Usage);
 
-        return response.TryGetResult(out FaithfulnessReport? report)
-            ? report
-            : new FaithfulnessReport(IsFaithful: false, UnsupportedClaims: []);
+        // A check we cannot read is not a check that passed. Both failures below leave
+        // the output unverified, and saying so is the only honest result - an empty
+        // claim list would read as a clean check.
+        if (!response.TryGetResult(out FaithfulnessVerdict? verdict))
+        {
+            return FaithfulnessReport.NotEvaluated("the response did not match the expected format");
+        }
+
+        IReadOnlyList<string> claims = verdict.UnsupportedClaims ?? [];
+        if (!verdict.IsFaithful && claims.Count == 0)
+        {
+            return FaithfulnessReport.NotEvaluated("the model called the output unfaithful but listed no claims");
+        }
+
+        return FaithfulnessReport.Checked(claims);
     }
 
     // Providers are not obliged to report usage; an unreported call is still a call.

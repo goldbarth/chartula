@@ -64,7 +64,7 @@ public sealed class ChatModelTests
                 "This release closed a security hole.",
                 new GroundedFacts(["Fixed a bug in the parser"])));
 
-        Assert.False(report.IsFaithful);
+        Assert.Equal(FaithfulnessCheckStatus.Checked, report.Status);
         Assert.Contains("closed a security hole", report.UnsupportedClaims);
     }
 
@@ -79,8 +79,38 @@ public sealed class ChatModelTests
                 "Fixed a parser bug.",
                 new GroundedFacts(["Fixed a bug in the parser"])));
 
-        Assert.True(report.IsFaithful);
+        Assert.Equal(FaithfulnessCheckStatus.Checked, report.Status);
         Assert.Empty(report.UnsupportedClaims);
+    }
+
+    // An answer we cannot read used to arrive as an empty claim list, which every caller
+    // reads as "nothing found". These two say the opposite: nothing was checked.
+    [Fact]
+    public async Task CheckFaithfulnessAsync_reports_an_unreadable_answer_as_not_evaluated()
+    {
+        StubChatClient chat = new("Sorry, I cannot produce JSON here.");
+        IChangelogModel model = Model(chat);
+
+        FaithfulnessReport report = await model.CheckFaithfulnessAsync(
+            new FaithfulnessRequest("Fixed a parser bug.", new GroundedFacts(["Fixed a bug in the parser"])));
+
+        Assert.Equal(FaithfulnessCheckStatus.NotEvaluated, report.Status);
+        Assert.Empty(report.UnsupportedClaims);
+        Assert.NotNull(report.Reason);
+    }
+
+    // "Unfaithful, and here is nothing" says something is wrong without saying what.
+    // Passing it on as a clean check would hide the same failure a second way.
+    [Fact]
+    public async Task CheckFaithfulnessAsync_reports_a_verdict_without_claims_as_not_evaluated()
+    {
+        StubChatClient chat = new("""{"isFaithful":false,"unsupportedClaims":[]}""");
+        IChangelogModel model = Model(chat);
+
+        FaithfulnessReport report = await model.CheckFaithfulnessAsync(
+            new FaithfulnessRequest("Fixed a parser bug.", new GroundedFacts(["Fixed a bug in the parser"])));
+
+        Assert.Equal(FaithfulnessCheckStatus.NotEvaluated, report.Status);
     }
 
     // Providers require an output ceiling and quietly substitute a small default when

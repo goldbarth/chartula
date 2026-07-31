@@ -21,6 +21,13 @@ public static class RunReportFormatter
         builder.AppendLine("Run metrics");
         builder.AppendLine($"  Rule-based check: {Activity(report.RuleBased)}, no tokens");
         builder.AppendLine($"  Thorough check:   {Activity(report.Thorough)}, {Tokens(check.Tokens)}");
+        if (report.ThoroughNotEvaluated > 0)
+        {
+            builder.AppendLine(
+                $"    {Count(report.ThoroughNotEvaluated)} of {Runs(report.Thorough.Runs)} came back unreadable "
+                + "and verified nothing");
+        }
+
         builder.AppendLine(
             $"    caught {Claims(report.ThoroughOnlyFlags)} the rule-based check missed, "
             + $"for {Count(check.Tokens.TotalTokens)} tokens in {Calls(check.TotalCalls)}");

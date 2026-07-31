@@ -60,7 +60,7 @@ public sealed partial class RuleBasedFaithfulnessChecker : IRuleBasedFaithfulnes
         }
 
         List<string> distinct = findings.Distinct().ToList();
-        return new FaithfulnessReport(distinct.Count == 0, distinct);
+        return FaithfulnessReport.Checked(distinct);
     }
 
     private static string BuildHaystack(FactBase factBase)

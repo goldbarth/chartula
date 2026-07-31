@@ -28,6 +28,10 @@ public sealed record CheckActivity(int Runs, int RunsWithFindings, int Flags);
 /// count how often it actually reached the model. Runs without calls mean the check was
 /// toggled off or had nothing to check.
 /// </param>
+/// <param name="ThoroughNotEvaluated">
+/// Thorough runs that reached the model and came back unreadable. Those runs verified
+/// nothing, so they are counted apart from runs that genuinely found no claims.
+/// </param>
 /// <param name="ThoroughOnlyFlags">
 /// Claims flagged by the thorough check that the rule-based check missed. This is the
 /// value the thorough check adds over the free check.
@@ -36,6 +40,7 @@ public sealed record CheckActivity(int Runs, int RunsWithFindings, int Flags);
 public sealed record RunReport(
     CheckActivity RuleBased,
     CheckActivity Thorough,
+    int ThoroughNotEvaluated,
     int ThoroughOnlyFlags,
     IReadOnlyDictionary<LlmOperation, LlmUsage> Llm)
 {
@@ -43,6 +48,7 @@ public sealed record RunReport(
     public static RunReport Empty { get; } = new(
         new CheckActivity(0, 0, 0),
         new CheckActivity(0, 0, 0),
+        0,
         0,
         new Dictionary<LlmOperation, LlmUsage>());
 

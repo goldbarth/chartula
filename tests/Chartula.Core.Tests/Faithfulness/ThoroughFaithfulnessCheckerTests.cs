@@ -16,13 +16,13 @@ public sealed class ThoroughFaithfulnessCheckerTests
     public async Task Runs_a_second_pass_and_flags_unsupported_claims_when_enabled()
     {
         StubFaithfulnessModel model = new(
-            new FaithfulnessReport(false, ["'security hole' is not supported: the fact is a parser bug fix"]));
+            FaithfulnessReport.Checked(["'security hole' is not supported: the fact is a parser bug fix"]));
         IThoroughFaithfulnessChecker checker = new ThoroughFaithfulnessChecker(
             model, new ThoroughFaithfulnessOptions(Enabled: true));
 
         FaithfulnessReport report = await checker.CheckAsync("This release closed a security hole.", Facts());
 
-        Assert.False(report.IsFaithful);
+        Assert.True(report.HasFindings);
         Assert.Contains(report.UnsupportedClaims, c => c.Contains("security hole"));
         Assert.Equal(1, model.CheckCallCount); // the second pass ran
     }
@@ -30,7 +30,7 @@ public sealed class ThoroughFaithfulnessCheckerTests
     [Fact]
     public async Task Feeds_the_output_and_the_grounded_facts_to_the_model()
     {
-        StubFaithfulnessModel model = new(new FaithfulnessReport(true, []));
+        StubFaithfulnessModel model = new(FaithfulnessReport.Checked([]));
         IThoroughFaithfulnessChecker checker = new ThoroughFaithfulnessChecker(
             model, new ThoroughFaithfulnessOptions(Enabled: true));
 
@@ -43,13 +43,13 @@ public sealed class ThoroughFaithfulnessCheckerTests
     [Fact]
     public async Task Makes_no_call_and_reports_faithful_when_disabled()
     {
-        StubFaithfulnessModel model = new(new FaithfulnessReport(false, ["should not be used"]));
+        StubFaithfulnessModel model = new(FaithfulnessReport.Checked(["should not be used"]));
         IThoroughFaithfulnessChecker checker = new ThoroughFaithfulnessChecker(
             model, new ThoroughFaithfulnessOptions(Enabled: false));
 
         FaithfulnessReport report = await checker.CheckAsync("This release closed a security hole.", Facts());
 
-        Assert.True(report.IsFaithful);
+        Assert.Equal(FaithfulnessCheckStatus.Skipped, report.Status);
         Assert.Empty(report.UnsupportedClaims);
         Assert.Equal(0, model.CheckCallCount); // toggle off: no second pass
     }
@@ -63,13 +63,13 @@ public sealed class ThoroughFaithfulnessCheckerTests
     [Fact]
     public async Task Makes_no_call_for_empty_output()
     {
-        StubFaithfulnessModel model = new(new FaithfulnessReport(true, []));
+        StubFaithfulnessModel model = new(FaithfulnessReport.Checked([]));
         IThoroughFaithfulnessChecker checker = new ThoroughFaithfulnessChecker(
             model, new ThoroughFaithfulnessOptions(Enabled: true));
 
         FaithfulnessReport report = await checker.CheckAsync(string.Empty, Facts());
 
-        Assert.True(report.IsFaithful);
+        Assert.Equal(FaithfulnessCheckStatus.Skipped, report.Status);
         Assert.Equal(0, model.CheckCallCount);
     }
 }
