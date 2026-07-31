@@ -9,11 +9,19 @@ namespace Chartula.Core.Faithfulness;
 /// hallucinations with no LLM call and zero token cost:
 /// <list type="bullet">
 ///   <item>a number in the output that is not present in the fact base;</item>
-///   <item>a quoted or backticked name that does not appear in the facts;</item>
-///   <item>a breaking-change claim when no fact is marked breaking.</item>
+///   <item>a quoted or backticked name that does not appear in the facts.</item>
 /// </list>
 /// Flags are advisory - they surface passages for review, not hard failures.
 /// </summary>
+/// <remarks>
+/// Both checks ask the same decidable question: is this token in the fact base or
+/// not. Breaking-change claims are deliberately not checked here. The output is
+/// free prose with no marker to anchor to, so telling "this release contains a
+/// breaking change" from prose that merely uses the word is a judgement, not a
+/// lookup - a regex on the word flags every mention. That claim belongs to
+/// <see cref="IThoroughFaithfulnessChecker"/>, whose prompt already covers
+/// meaning-level distortions and which sees which facts are marked breaking.
+/// </remarks>
 public sealed partial class RuleBasedFaithfulnessChecker : IRuleBasedFaithfulnessChecker
 {
     [GeneratedRegex(@"\d+(?:\.\d+)*", RegexOptions.CultureInvariant)]
@@ -23,9 +31,6 @@ public sealed partial class RuleBasedFaithfulnessChecker : IRuleBasedFaithfulnes
     // API, feature, or option name.
     [GeneratedRegex("`([^`]+)`|\"([^\"]+)\"", RegexOptions.CultureInvariant)]
     private static partial Regex QuotedName();
-
-    [GeneratedRegex(@"\bbreaking\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
-    private static partial Regex BreakingClaim();
 
     public FaithfulnessReport Check(string output, FactBase factBase)
     {
@@ -52,11 +57,6 @@ public sealed partial class RuleBasedFaithfulnessChecker : IRuleBasedFaithfulnes
             {
                 findings.Add($"'{name}' is not supported by the facts.");
             }
-        }
-
-        if (BreakingClaim().IsMatch(output) && !factBase.Changes.Any(static change => change.IsBreaking))
-        {
-            findings.Add("The output claims a breaking change, but the facts mark none.");
         }
 
         List<string> distinct = findings.Distinct().ToList();
