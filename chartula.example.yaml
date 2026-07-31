@@ -13,6 +13,8 @@
 
 # The model provider and which model to use. maxOutputTokens caps what the model
 # may produce per call; raise it for releases whose changelog runs long.
+# A cheaper model is a config change, not a code change - claude-sonnet-5 and
+# claude-haiku-4-5 both work here. See docs/configuration.md, "Choosing a model".
 # llm:
 #   provider: anthropic
 #   model: claude-opus-4-8

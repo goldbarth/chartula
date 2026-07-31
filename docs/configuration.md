@@ -15,12 +15,38 @@ The model provider and which model to use. API keys are read by environment-vari
 | Key | Default | Description |
 | --- | --- | --- |
 | `provider` | `anthropic` | The LLM provider. Only `anthropic` is implemented today. |
-| `model` | `claude-opus-4-8` | The model id passed to the provider. |
+| `model` | `claude-opus-4-8` | The model id passed to the provider. See [Choosing a model](#choosing-a-model). |
 | `apiKeyEnvironmentVariable` | `ANTHROPIC_API_KEY` | Name of the environment variable holding the API key. |
 | `maxOutputTokens` | `16000` | Ceiling on the tokens the model may produce per call. |
 
 Raise `maxOutputTokens` for releases whose changelog runs long.
 A ceiling that is too low truncates the generated text mid-sentence rather than failing, so a run that ends abruptly is the signal to raise it.
+
+#### Choosing a model
+
+`model` is a free-text id passed straight to the provider, but not every id is worth using.
+These are the ones Chartula is built for.
+
+| Model id | Input / output per MTok | Context | Max output | Notes |
+| --- | --- | --- | --- | --- |
+| `claude-opus-5` | $5 / $25 | 1M | 128K | The current top tier. |
+| `claude-opus-4-8` | $5 / $25 | 1M | 128K | The default. |
+| `claude-sonnet-5` | $3 / $15 | 1M | 128K | $2 / $10 introductory through 2026-08-31. |
+| `claude-haiku-4-5` | $1 / $5 | 200K | 64K | The cheapest. Keep `maxOutputTokens` at or below 64000. |
+
+Prices are Anthropic's first-party rates as of 2026-07-31 and change over time; treat the table as a starting point, not a quote.
+Model ids are complete as written - do not append a date suffix.
+
+All four support the structured output the thorough faithfulness check needs, so a cheaper model does not cost you that check.
+What it can cost you is changelog quality, which is the whole product - so read the output of a cheaper run before adopting it, rather than assuming the saving is free.
+
+The reason to care: a run pays per token twice over, once to rephrase and once for the thorough check, and prompt iteration means running it repeatedly.
+Generating the v0.1.0 changelog of this repository cost $1.78 on Opus 4.8.
+The same run on Haiku 4.5 costs a fifth of that at list prices, which is the difference between iterating freely and rationing runs.
+
+Haiku 4.5's 200K context is the one hard limit in the table.
+A release with many changes at `factBase.depth: title-and-description` produces a long fact list, and that list is sent once per audience plus once per thorough check.
+If a run fails on context rather than on quality, that is the signal to move up a tier rather than to trim the facts.
 
 ### `github`
 
