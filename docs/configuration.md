@@ -55,21 +55,36 @@ Thinking is reasoning the model does before it answers. You never see it in the 
 
 The default, `provider-default`, sends no thinking field at all and leaves every model on its own behavior - which is **not** the same behavior across models. Measured on the same release, same command, on 2026-07-31:
 
-| Model | Thinks by default | Thorough-check output for an identical "no findings" verdict |
-| --- | --- | --- |
-| `claude-opus-4-8` | no | 69 tokens |
-| `claude-haiku-4-5` | no | 238 tokens |
-| `claude-opus-5` | yes | 4,967 tokens |
-| `claude-sonnet-5` | yes | 6,982 tokens |
+| Model | Thinks by default | Cost as it comes | With `thinking: disabled` |
+| --- | --- | --- | --- |
+| `claude-haiku-4-5` | no | $0.12 | - |
+| `claude-sonnet-5` | **yes** | $0.55 | **$0.44** |
+| `claude-opus-4-8` | no | $0.89 | - |
+| `claude-opus-5` | **yes** | $1.34 | **$1.03** |
 
-That run cost $0.89 on Opus 4.8 and $1.34 on Opus 5 at an identical per-token price. Most of the difference is thinking.
+Opus 5 and Opus 4.8 cost the same per token, and the run still costs 50% more on Opus 5. Turning thinking off closes most of that gap.
+
+Setting it explicitly is also what makes the models comparable at all: read the middle column and Sonnet 5 looks like it sits between Haiku and Opus 4.8, when in fact it undercuts Opus 4.8 by half once both are measured the same way.
+
+The thorough check shows the mechanism most clearly, because its answer is a short JSON verdict whose length tracks how many claims it found:
+
+| Run | Thorough-check output | Claims found |
+| --- | --- | --- |
+| `claude-opus-4-8` | 69 tokens | 0 |
+| `claude-sonnet-5`, thinking off | 237 tokens | 2 |
+| `claude-haiku-4-5` | 238 tokens | 7 |
+| `claude-opus-5`, thinking off | 377 tokens | 4 |
+| `claude-opus-5`, thinking on | 4,967 tokens | 0 |
+| `claude-sonnet-5`, thinking on | 6,982 tokens | 0 |
+
+Everything in the top half scales with what was found. The two thinking runs spent thousands of tokens to report nothing - and the same models with thinking off reported two and four claims on the same text.
 
 Not every value works on every model, and a rejected value fails the run rather than falling back:
 
 - `adaptive` needs Claude 4.6 or newer. Haiku 4.5 has no adaptive mode and rejects it.
 - `disabled` is fine on the models above, but Claude Fable 5 always thinks and rejects an explicit off - leave `provider-default` there.
 
-Set `disabled` or `adaptive` to make the behavior the same on every model rather than a property of the one you picked. Which is better for a changelog is an open question: nothing measured so far shows thinking finding claims the non-thinking runs missed, but that was one clean release and is weak evidence either way. Change it deliberately and read the run metrics afterwards.
+Set `disabled` or `adaptive` to make the behavior the same on every model rather than a property of the one you picked. On the evidence so far, thinking costs 20-25% more and found fewer claims, not more - but that is one release, measured once, so treat it as a reason to set the value deliberately rather than as a settled answer. Read the run metrics after you change it.
 
 ### `github`
 
