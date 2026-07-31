@@ -1,3 +1,5 @@
+using Microsoft.Extensions.AI;
+
 namespace Chartula.Core.Llm;
 
 /// <summary>
@@ -15,4 +17,13 @@ public sealed class ChatModelOptions
     /// request is subject to.
     /// </summary>
     public int MaxOutputTokens { get; init; } = 16_000;
+
+    /// <summary>
+    /// An optional hook for provider-specific request fields that have no
+    /// provider-agnostic equivalent - thinking being the one Chartula needs. The
+    /// object it returns is the provider's own request type, so only the composition
+    /// root can build one; this type carries the delegate without naming a provider.
+    /// Null sends nothing extra, which leaves each model on its own default.
+    /// </summary>
+    public Func<IChatClient, object?>? RawRepresentationFactory { get; init; }
 }

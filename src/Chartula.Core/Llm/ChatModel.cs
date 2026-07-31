@@ -28,7 +28,11 @@ public sealed class ChatModel(
     // Fresh per call: the typed-response path clones and augments these, so a shared
     // instance would leak one call's response format into the next.
     private ChatOptions RequestOptions()
-        => new() { MaxOutputTokens = _options.MaxOutputTokens };
+        => new()
+        {
+            MaxOutputTokens = _options.MaxOutputTokens,
+            RawRepresentationFactory = _options.RawRepresentationFactory,
+        };
 
     public async Task<string> RephraseAsync(
         RephraseRequest request,

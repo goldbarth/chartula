@@ -20,6 +20,10 @@
 #   model: claude-opus-4-8
 #   apiKeyEnvironmentVariable: ANTHROPIC_API_KEY
 #   maxOutputTokens: 16000
+# thinking is provider-default, disabled or adaptive. The default sends nothing and
+# lets each model decide, and models decide differently - thinking bills as output
+# tokens, so set it explicitly if you want the same behavior on every model.
+#   thinking: provider-default
 
 # How the GitHub API is reached. Override the base URL for GitHub Enterprise.
 # github:

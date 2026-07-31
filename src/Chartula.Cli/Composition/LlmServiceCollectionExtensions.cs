@@ -22,7 +22,15 @@ internal static class LlmServiceCollectionExtensions
         LlmOptions options = ReadOptions(configuration);
 
         services.AddSingleton(options);
-        services.AddSingleton(new ChatModelOptions { MaxOutputTokens = options.MaxOutputTokens });
+        services.AddSingleton(new ChatModelOptions
+        {
+            MaxOutputTokens = options.MaxOutputTokens,
+            // The model and ceiling go in twice on purpose: once for the ordinary path,
+            // and once inside the fragment, which the adapter takes as given rather
+            // than merging. Both readings come from the same options so they cannot drift.
+            RawRepresentationFactory = AnthropicThinking.FactoryFor(
+                ThinkingModeParser.Parse(options.Thinking), options.Model, options.MaxOutputTokens),
+        });
         services.AddSingleton(sp => CreateChatClient(options, configuration));
         services.AddSingleton<IChangelogPromptBuilder, ChangelogPromptBuilder>();
         services.AddSingleton<IChangelogModel, ChatModel>();
@@ -36,6 +44,7 @@ internal static class LlmServiceCollectionExtensions
         ApiKeyEnvironmentVariable =
             configuration[$"{LlmOptions.SectionName}:ApiKeyEnvironmentVariable"] ?? "ANTHROPIC_API_KEY",
         MaxOutputTokens = ReadMaxOutputTokens(configuration),
+        Thinking = configuration[$"{LlmOptions.SectionName}:Thinking"],
     };
 
     // An unparsable or non-positive value would otherwise fall through to the
