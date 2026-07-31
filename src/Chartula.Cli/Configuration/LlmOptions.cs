@@ -24,4 +24,12 @@ public sealed class LlmOptions
     /// whose changelog runs long; a too-low ceiling truncates the text mid-sentence.
     /// </summary>
     public int MaxOutputTokens { get; init; } = 16_000;
+
+    /// <summary>
+    /// Whether the model thinks before answering: <c>provider-default</c>,
+    /// <c>disabled</c>, or <c>adaptive</c>. Unset leaves each model on its own
+    /// default, which is not the same across models - see
+    /// <see cref="ThinkingModeParser"/>.
+    /// </summary>
+    public string? Thinking { get; init; }
 }

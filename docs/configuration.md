@@ -18,6 +18,7 @@ The model provider and which model to use. API keys are read by environment-vari
 | `model` | `claude-opus-4-8` | The model id passed to the provider. See [Choosing a model](#choosing-a-model). |
 | `apiKeyEnvironmentVariable` | `ANTHROPIC_API_KEY` | Name of the environment variable holding the API key. |
 | `maxOutputTokens` | `16000` | Ceiling on the tokens the model may produce per call. |
+| `thinking` | `provider-default` | Whether the model reasons before answering. One of `provider-default`, `disabled`, `adaptive`. |
 
 Raise `maxOutputTokens` for releases whose changelog runs long.
 A ceiling that is too low truncates the generated text mid-sentence rather than failing, so a run that ends abruptly is the signal to raise it.
@@ -47,6 +48,23 @@ The same run on Haiku 4.5 costs a fifth of that at list prices, which is the dif
 Haiku 4.5's 200K context is the one hard limit in the table.
 A release with many changes at `factBase.depth: title-and-description` produces a long fact list, and that list is sent once per audience plus once per thorough check.
 If a run fails on context rather than on quality, that is the signal to move up a tier rather than to trim the facts.
+
+#### `thinking`
+
+Thinking is reasoning the model does before it answers. You never see it in the changelog, and it is billed as output tokens.
+
+The default, `provider-default`, sends no thinking field at all and leaves every model on its own behavior - which is **not** the same behavior across models. Measured on the same release, same command, on 2026-07-31:
+
+| Model | Thinks by default | Thorough-check output for an identical "no findings" verdict |
+| --- | --- | --- |
+| `claude-opus-4-8` | no | 69 tokens |
+| `claude-haiku-4-5` | no | 238 tokens |
+| `claude-opus-5` | yes | 4,967 tokens |
+| `claude-sonnet-5` | yes | 6,982 tokens |
+
+That run cost $0.89 on Opus 4.8 and $1.34 on Opus 5 at an identical per-token price. Most of the difference is thinking.
+
+Set `disabled` or `adaptive` to make the behavior the same on every model rather than a property of the one you picked. Which is better for a changelog is an open question: nothing measured so far shows thinking finding claims the non-thinking runs missed, but that was one clean release and is weak evidence either way. Change it deliberately and read the run metrics afterwards.
 
 ### `github`
 
