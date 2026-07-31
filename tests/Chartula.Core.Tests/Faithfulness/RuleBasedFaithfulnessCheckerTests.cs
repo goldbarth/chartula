@@ -20,7 +20,7 @@ public sealed class RuleBasedFaithfulnessCheckerTests
     {
         FaithfulnessReport report = _checker.Check("Added 3 new endpoints.", Facts());
 
-        Assert.False(report.IsFaithful);
+        Assert.True(report.HasFindings);
         Assert.Contains(report.UnsupportedClaims, c => c.Contains("3"));
     }
 
@@ -29,7 +29,7 @@ public sealed class RuleBasedFaithfulnessCheckerTests
     {
         FaithfulnessReport report = _checker.Check("Introduces the `TurboSync` API.", Facts());
 
-        Assert.False(report.IsFaithful);
+        Assert.True(report.HasFindings);
         Assert.Contains(report.UnsupportedClaims, c => c.Contains("TurboSync"));
     }
 
@@ -43,7 +43,7 @@ public sealed class RuleBasedFaithfulnessCheckerTests
             "Breaking changes now float to the top when breaking-change prominence is on.",
             Facts());
 
-        Assert.True(report.IsFaithful);
+        Assert.False(report.HasFindings);
     }
 
     [Fact]
@@ -51,7 +51,7 @@ public sealed class RuleBasedFaithfulnessCheckerTests
     {
         FaithfulnessReport report = _checker.Check("This is a breaking change.", Facts());
 
-        Assert.True(report.IsFaithful);
+        Assert.False(report.HasFindings);
     }
 
     [Fact]
@@ -60,7 +60,7 @@ public sealed class RuleBasedFaithfulnessCheckerTests
         FaithfulnessReport report = _checker.Check(
             "Dark mode is here (see PR 42, closes issue 7). Ships in 1.2.0.", Facts());
 
-        Assert.True(report.IsFaithful);
+        Assert.False(report.HasFindings);
         Assert.Empty(report.UnsupportedClaims);
     }
 
@@ -72,7 +72,7 @@ public sealed class RuleBasedFaithfulnessCheckerTests
 
         FaithfulnessReport report = _checker.Check("Adds the `search box`.", facts);
 
-        Assert.True(report.IsFaithful);
+        Assert.False(report.HasFindings);
     }
 
     [Fact]
@@ -91,6 +91,6 @@ public sealed class RuleBasedFaithfulnessCheckerTests
     [Fact]
     public void Passes_empty_output()
     {
-        Assert.True(_checker.Check(string.Empty, Facts()).IsFaithful);
+        Assert.False(_checker.Check(string.Empty, Facts()).HasFindings);
     }
 }

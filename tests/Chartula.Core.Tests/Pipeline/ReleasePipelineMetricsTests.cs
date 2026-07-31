@@ -17,7 +17,7 @@ internal sealed class FindingThoroughChecker(params string[] findings) : IThorou
 {
     public Task<FaithfulnessReport> CheckAsync(
         string output, FactBase factBase, CancellationToken cancellationToken = default)
-        => Task.FromResult(new FaithfulnessReport(findings.Length == 0, findings));
+        => Task.FromResult(FaithfulnessReport.Checked(findings));
 }
 
 public sealed class ReleasePipelineMetricsTests

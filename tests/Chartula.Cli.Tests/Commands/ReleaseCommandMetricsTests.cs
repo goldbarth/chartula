@@ -20,7 +20,7 @@ public sealed class ReleaseCommandMetricsTests
     private static async Task<string> RunAsync(PipelineMode mode)
     {
         RunMetrics metrics = new();
-        metrics.RecordFaithfulnessChecks(["shared"], ["shared", "only thorough"]);
+        metrics.RecordFaithfulnessChecks(["shared"], ["shared", "only thorough"], thoroughEvaluated: true);
         metrics.RecordLlmCall(LlmOperation.Rephrase, 1_500, 300);
         metrics.RecordLlmCall(LlmOperation.FaithfulnessCheck, 2_000, 40);
 

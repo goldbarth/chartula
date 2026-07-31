@@ -26,10 +26,11 @@ public sealed class ThoroughFaithfulnessChecker(
         ArgumentNullException.ThrowIfNull(output);
         ArgumentNullException.ThrowIfNull(factBase);
 
-        // Toggle off, or nothing to check: no second pass, no LLM call.
+        // Toggle off, or nothing to check: no second pass, no LLM call. Reported as
+        // skipped rather than clean - nothing was verified either way.
         if (!_options.Enabled || string.IsNullOrWhiteSpace(output))
         {
-            return new FaithfulnessReport(IsFaithful: true, UnsupportedClaims: []);
+            return FaithfulnessReport.Skipped;
         }
 
         GroundedFacts facts = ToGroundedFacts(factBase);

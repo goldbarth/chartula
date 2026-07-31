@@ -19,9 +19,16 @@ public interface IRunMetrics
     /// findings together is what lets the report tell which claims only the thorough
     /// check caught.
     /// </summary>
+    /// <param name="ruleBasedFlags">What the free check flagged.</param>
+    /// <param name="thoroughFlags">What the thorough check flagged.</param>
+    /// <param name="thoroughEvaluated">
+    /// False when the thorough check ran but produced no usable answer. Counted apart from
+    /// findings, because a check that could not be read has not cleared the text.
+    /// </param>
     void RecordFaithfulnessChecks(
         IReadOnlyCollection<string> ruleBasedFlags,
-        IReadOnlyCollection<string> thoroughFlags);
+        IReadOnlyCollection<string> thoroughFlags,
+        bool thoroughEvaluated);
 
     /// <summary>The report as it stands.</summary>
     RunReport Snapshot();

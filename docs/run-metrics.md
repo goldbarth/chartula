@@ -26,6 +26,22 @@ The rule-based check makes no LLM call, so it always costs no tokens.
 A thorough check with runs but no calls was toggled off, or had nothing to check.
 See [`configuration.md`](configuration.md) for the `faithfulness.thorough` toggle.
 
+## When a check verified nothing
+
+A thorough check reaches the model and can still come back with an answer that cannot be read.
+Those runs get a line of their own:
+
+```text
+  Thorough check:   3 runs, 0 with findings, 0 claims, 6,230 in / 130 out
+    3 of 3 runs came back unreadable and verified nothing
+```
+
+Read it as tokens spent for no verification, not as a clean bill of health.
+The same runs are flagged on each affected audience text, so review mode shows them too.
+
+The likeliest cause is a model that does not hold to the requested response format, which is worth knowing before trusting a provider or a smaller model with the check.
+Without this line the run would report `0 with findings`, which is what a genuinely clean check looks like.
+
 ## Judging whether the thorough check earns its cost
 
 The indented line under the thorough check is the whole point of this summary.

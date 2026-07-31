@@ -32,7 +32,7 @@ internal sealed class EchoingChangelogModel : IChangelogModel
         FaithfulnessRequest request, CancellationToken cancellationToken = default)
     {
         CheckCalls++;
-        return Task.FromResult(new FaithfulnessReport(IsFaithful: true, UnsupportedClaims: []));
+        return Task.FromResult(FaithfulnessReport.Checked([]));
     }
 }
 
@@ -47,7 +47,7 @@ internal sealed class InventingChangelogModel : IChangelogModel
 
     public Task<FaithfulnessReport> CheckFaithfulnessAsync(
         FaithfulnessRequest request, CancellationToken cancellationToken = default)
-        => Task.FromResult(new FaithfulnessReport(IsFaithful: true, UnsupportedClaims: []));
+        => Task.FromResult(FaithfulnessReport.Checked([]));
 }
 
 /// <summary>

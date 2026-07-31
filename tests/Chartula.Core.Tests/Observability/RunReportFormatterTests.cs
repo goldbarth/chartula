@@ -7,7 +7,7 @@ public sealed class RunReportFormatterTests
     private static RunReport Report()
     {
         RunMetrics metrics = new();
-        metrics.RecordFaithfulnessChecks(["shared"], ["shared", "only thorough"]);
+        metrics.RecordFaithfulnessChecks(["shared"], ["shared", "only thorough"], thoroughEvaluated: true);
         metrics.RecordLlmCall(LlmOperation.Rephrase, 1_500, 300);
         metrics.RecordLlmCall(LlmOperation.FaithfulnessCheck, 2_000, 40);
         return metrics.Snapshot();
@@ -37,7 +37,7 @@ public sealed class RunReportFormatterTests
     private static RunReport ReportWithAnUnreportedCall()
     {
         RunMetrics metrics = new();
-        metrics.RecordFaithfulnessChecks(["shared"], ["shared", "only thorough"]);
+        metrics.RecordFaithfulnessChecks(["shared"], ["shared", "only thorough"], thoroughEvaluated: true);
         metrics.RecordLlmCall(LlmOperation.Rephrase, 1_500, 300);
         metrics.RecordLlmCall(LlmOperation.FaithfulnessCheck, null, null);
         return metrics.Snapshot();

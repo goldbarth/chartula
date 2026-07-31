@@ -85,14 +85,31 @@ public sealed class RunMetricsTests
     {
         RunMetrics metrics = new();
 
-        metrics.RecordFaithfulnessChecks(ruleBasedFlags: ["a"], thoroughFlags: []);
-        metrics.RecordFaithfulnessChecks(ruleBasedFlags: [], thoroughFlags: ["b", "c"]);
-        metrics.RecordFaithfulnessChecks(ruleBasedFlags: [], thoroughFlags: []);
+        metrics.RecordFaithfulnessChecks(ruleBasedFlags: ["a"], thoroughFlags: [], thoroughEvaluated: true);
+        metrics.RecordFaithfulnessChecks(ruleBasedFlags: [], thoroughFlags: ["b", "c"], thoroughEvaluated: true);
+        metrics.RecordFaithfulnessChecks(ruleBasedFlags: [], thoroughFlags: [], thoroughEvaluated: true);
 
         RunReport report = metrics.Snapshot();
 
         Assert.Equal(new CheckActivity(Runs: 3, RunsWithFindings: 1, Flags: 1), report.RuleBased);
         Assert.Equal(new CheckActivity(Runs: 3, RunsWithFindings: 1, Flags: 2), report.Thorough);
+    }
+
+    // "No findings" and "could not be read" are both an empty flag list. Only the
+    // counter tells them apart, so the run summary can too.
+    [Fact]
+    public void A_thorough_check_that_could_not_be_read_is_counted_apart_from_a_clean_one()
+    {
+        RunMetrics metrics = new();
+
+        metrics.RecordFaithfulnessChecks(ruleBasedFlags: [], thoroughFlags: [], thoroughEvaluated: true);
+        metrics.RecordFaithfulnessChecks(ruleBasedFlags: [], thoroughFlags: [], thoroughEvaluated: false);
+
+        RunReport report = metrics.Snapshot();
+
+        Assert.Equal(2, report.Thorough.Runs);
+        Assert.Equal(0, report.Thorough.RunsWithFindings);
+        Assert.Equal(1, report.ThoroughNotEvaluated);
     }
 
     [Fact]
@@ -101,7 +118,7 @@ public sealed class RunMetricsTests
         RunMetrics metrics = new();
 
         // "shared" is found by both, so the thorough check added only "extra".
-        metrics.RecordFaithfulnessChecks(ruleBasedFlags: ["shared"], thoroughFlags: ["shared", "extra"]);
+        metrics.RecordFaithfulnessChecks(ruleBasedFlags: ["shared"], thoroughFlags: ["shared", "extra"], thoroughEvaluated: true);
 
         RunReport report = metrics.Snapshot();
 
@@ -114,7 +131,7 @@ public sealed class RunMetricsTests
     {
         RunMetrics metrics = new();
 
-        metrics.RecordFaithfulnessChecks(ruleBasedFlags: ["a", "b"], thoroughFlags: ["a", "b"]);
+        metrics.RecordFaithfulnessChecks(ruleBasedFlags: ["a", "b"], thoroughFlags: ["a", "b"], thoroughEvaluated: true);
         metrics.RecordLlmCall(LlmOperation.FaithfulnessCheck, 900, 40);
 
         RunReport report = metrics.Snapshot();
@@ -147,7 +164,7 @@ public sealed class RunMetricsTests
             // Every other call reports no usage, so both counters are under contention.
             long? tokens = i % 2 == 0 ? 1 : null;
             metrics.RecordLlmCall(LlmOperation.Rephrase, tokens, tokens);
-            metrics.RecordFaithfulnessChecks(["a"], ["a", "b"]);
+            metrics.RecordFaithfulnessChecks(["a"], ["a", "b"], thoroughEvaluated: true);
         });
 
         RunReport report = metrics.Snapshot();
@@ -165,7 +182,7 @@ public sealed class RunMetricsTests
         IRunMetrics metrics = NullRunMetrics.Instance;
 
         metrics.RecordLlmCall(LlmOperation.Rephrase, 100, 100);
-        metrics.RecordFaithfulnessChecks(["a"], ["b"]);
+        metrics.RecordFaithfulnessChecks(["a"], ["b"], thoroughEvaluated: true);
 
         Assert.Equal(RunReport.Empty, metrics.Snapshot());
     }

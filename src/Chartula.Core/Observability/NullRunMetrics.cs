@@ -19,7 +19,8 @@ public sealed class NullRunMetrics : IRunMetrics
 
     public void RecordFaithfulnessChecks(
         IReadOnlyCollection<string> ruleBasedFlags,
-        IReadOnlyCollection<string> thoroughFlags)
+        IReadOnlyCollection<string> thoroughFlags,
+        bool thoroughEvaluated)
     {
     }
 
