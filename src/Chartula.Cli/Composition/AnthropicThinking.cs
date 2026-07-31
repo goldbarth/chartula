@@ -18,8 +18,19 @@ internal static class AnthropicThinking
     /// <see cref="ThinkingMode.ProviderDefault"/> - sending no thinking field at all
     /// is what leaves each model on its own default.
     /// </summary>
-    public static Func<IChatClient, object?>? FactoryFor(ThinkingMode mode)
+    /// <remarks>
+    /// The model and the output ceiling have to be passed in, because a raw fragment
+    /// is not merged with the rest of the request: the adapter appends the messages to
+    /// it and otherwise takes it as given, so <c>ChatOptions.ModelId</c> and
+    /// <c>ChatOptions.MaxOutputTokens</c> stop being applied the moment this factory
+    /// exists. Whatever the fragment says is what the provider is asked for. Verified
+    /// against a live call - an earlier version left a placeholder model here and the
+    /// API dutifully answered <c>model: placeholder</c>.
+    /// </remarks>
+    public static Func<IChatClient, object?>? FactoryFor(ThinkingMode mode, string model, int maxOutputTokens)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(model);
+
         ThinkingConfigParam? thinking = mode switch
         {
             ThinkingMode.Disabled => new ThinkingConfigDisabled(),
@@ -32,13 +43,12 @@ internal static class AnthropicThinking
             return null;
         }
 
-        // Model, messages and the output ceiling come from the request the adapter is
-        // already building; these placeholders exist only to satisfy the required
-        // members of the provider's request type and are overwritten.
+        // Messages are the one field the adapter merges, so an empty list here is
+        // correct: it appends the real conversation to it.
         return _ => new MessageCreateParams
         {
-            Model = "placeholder",
-            MaxTokens = 1,
+            Model = model,
+            MaxTokens = maxOutputTokens,
             Messages = [],
             Thinking = thinking,
         };

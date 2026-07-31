@@ -57,7 +57,7 @@ public sealed class ThinkingModeTests
     [Fact]
     public void The_provider_default_adds_nothing_to_the_request()
     {
-        Assert.Null(AnthropicThinking.FactoryFor(ThinkingMode.ProviderDefault));
+        Assert.Null(AnthropicThinking.FactoryFor(ThinkingMode.ProviderDefault, "claude-opus-4-8", 16_000));
     }
 
     [Theory]
@@ -65,10 +65,38 @@ public sealed class ThinkingModeTests
     [InlineData(ThinkingMode.Adaptive)]
     public void An_explicit_mode_becomes_a_thinking_field_on_the_request(ThinkingMode mode)
     {
-        Func<Microsoft.Extensions.AI.IChatClient, object?>? factory = AnthropicThinking.FactoryFor(mode);
-
-        MessageCreateParams request = Assert.IsType<MessageCreateParams>(factory!(null!));
+        MessageCreateParams request = Request(mode);
 
         Assert.NotNull(request.Thinking);
+    }
+
+    // The adapter merges the messages into this fragment and takes everything else as
+    // given, so a fragment that forgets the model asks the provider for whatever it
+    // does say. That failure is invisible in unit tests and obvious in an API error:
+    // an earlier version shipped a placeholder here and the API answered
+    // "model: placeholder" on every call.
+    [Fact]
+    public void The_fragment_carries_the_configured_model_and_ceiling()
+    {
+        MessageCreateParams request = Request(ThinkingMode.Disabled);
+
+        // ToString round-trips the JSON form, quotes included.
+        Assert.Contains("claude-opus-4-8", request.Model.ToString());
+        Assert.Equal(4_096, request.MaxTokens);
+    }
+
+    // Messages are the one field the adapter appends to rather than replaces.
+    [Fact]
+    public void The_fragment_leaves_the_conversation_to_the_adapter()
+    {
+        Assert.Empty(Request(ThinkingMode.Disabled).Messages);
+    }
+
+    private static MessageCreateParams Request(ThinkingMode mode)
+    {
+        Func<Microsoft.Extensions.AI.IChatClient, object?>? factory =
+            AnthropicThinking.FactoryFor(mode, "claude-opus-4-8", 4_096);
+
+        return Assert.IsType<MessageCreateParams>(factory!(null!));
     }
 }

@@ -13,10 +13,17 @@ public enum ThinkingMode
     /// </summary>
     ProviderDefault,
 
-    /// <summary>No thinking, on every model.</summary>
+    /// <summary>
+    /// No thinking. Accepted by the models Chartula documents; Claude Fable 5 rejects
+    /// an explicit off and wants the field omitted instead, so pair it with
+    /// <see cref="ProviderDefault"/> there.
+    /// </summary>
     Disabled,
 
-    /// <summary>Adaptive thinking, on every model that supports it.</summary>
+    /// <summary>
+    /// Adaptive thinking - the model decides how much to think. Claude 4.6 and newer
+    /// only. Older models, Haiku 4.5 among them, have no adaptive mode and reject it.
+    /// </summary>
     Adaptive,
 }
 

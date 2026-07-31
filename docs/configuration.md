@@ -64,6 +64,11 @@ The default, `provider-default`, sends no thinking field at all and leaves every
 
 That run cost $0.89 on Opus 4.8 and $1.34 on Opus 5 at an identical per-token price. Most of the difference is thinking.
 
+Not every value works on every model, and a rejected value fails the run rather than falling back:
+
+- `adaptive` needs Claude 4.6 or newer. Haiku 4.5 has no adaptive mode and rejects it.
+- `disabled` is fine on the models above, but Claude Fable 5 always thinks and rejects an explicit off - leave `provider-default` there.
+
 Set `disabled` or `adaptive` to make the behavior the same on every model rather than a property of the one you picked. Which is better for a changelog is an open question: nothing measured so far shows thinking finding claims the non-thinking runs missed, but that was one clean release and is weak evidence either way. Change it deliberately and read the run metrics afterwards.
 
 ### `github`
