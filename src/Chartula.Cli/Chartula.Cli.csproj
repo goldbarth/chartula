@@ -37,6 +37,9 @@
 
   <ItemGroup>
     <PackageReference Include="Anthropic" Version="12.35.1" />
+    <!-- Pinned to the Microsoft.Extensions.AI version Chartula.Core references, so
+         the shared abstractions package is not lifted from underneath the domain. -->
+    <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="10.8.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.0" />

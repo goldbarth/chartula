@@ -23,7 +23,34 @@
 # thinking is provider-default, disabled or adaptive. The default sends nothing and
 # lets each model decide, and models decide differently - thinking bills as output
 # tokens, so set it explicitly if you want the same behavior on every model.
+# It is an Anthropic setting; with openai-compatible, anything else fails the run.
 #   thinking: provider-default
+# baseUrl overrides where the provider is reached - for a proxy in front of the
+# Anthropic API, and it is how the second provider is pointed anywhere at all.
+#   baseUrl: https://api.anthropic.com
+
+# provider: openai-compatible reaches anything speaking the OpenAI chat-completions
+# dialect at the URL you give it. Neither model nor baseUrl has a default there, so
+# both are required - see docs/configuration.md, "Running against your own endpoint".
+#
+# Your own machine, where the release data never leaves it (Ollama here; LM Studio
+# is http://localhost:1234/v1). No API key is involved - local servers do not read
+# the Authorization header.
+# llm:
+#   provider: openai-compatible
+#   model: qwen3:8b
+#   baseUrl: http://localhost:11434/v1
+#
+# A hosted endpoint instead, which does need a key:
+# llm:
+#   provider: openai-compatible
+#   model: llama-3.3-70b-versatile
+#   baseUrl: https://api.groq.com/openai/v1
+#   apiKeyEnvironmentVariable: GROQ_API_KEY
+#
+# Watch the thorough faithfulness check here: an endpoint may accept the request and
+# ignore the JSON schema. An unreadable verdict is reported as not evaluated, never
+# as a clean check, so you find out rather than being told the text passed.
 
 # How the GitHub API is reached. Override the base URL for GitHub Enterprise.
 # github:
