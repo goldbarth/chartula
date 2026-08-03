@@ -14,11 +14,20 @@ The model provider and which model to use. API keys are read by environment-vari
 
 | Key | Default | Description |
 | --- | --- | --- |
-| `provider` | `anthropic` | The LLM provider. Only `anthropic` is implemented today. |
-| `model` | `claude-opus-4-8` | The model id passed to the provider. See [Choosing a model](#choosing-a-model). |
-| `apiKeyEnvironmentVariable` | `ANTHROPIC_API_KEY` | Name of the environment variable holding the API key. |
+| `provider` | `anthropic` | The LLM provider: `anthropic` or `openai-compatible`. Any other value fails the run. |
+| `model` | per provider | The model id passed to the provider. See [Choosing a model](#choosing-a-model). |
+| `baseUrl` | per provider | The endpoint the provider is reached at. See [Running against your own endpoint](#running-against-your-own-endpoint). |
+| `apiKeyEnvironmentVariable` | per provider | Name of the environment variable holding the API key. |
 | `maxOutputTokens` | `16000` | Ceiling on the tokens the model may produce per call. |
-| `thinking` | `provider-default` | Whether the model reasons before answering. One of `provider-default`, `disabled`, `adaptive`. |
+| `thinking` | `provider-default` | Whether the model reasons before answering. One of `provider-default`, `disabled`, `adaptive`. `anthropic` only. |
+
+Three of those defaults depend on the provider, because a default that is right for one is wrong for the other:
+
+| Key | `anthropic` | `openai-compatible` |
+| --- | --- | --- |
+| `model` | `claude-opus-4-8` | none - required |
+| `baseUrl` | the Anthropic API | none - required |
+| `apiKeyEnvironmentVariable` | `ANTHROPIC_API_KEY` | `OPENAI_API_KEY` |
 
 Raise `maxOutputTokens` for releases whose changelog runs long.
 A ceiling that is too low truncates the generated text mid-sentence rather than failing, so a run that ends abruptly is the signal to raise it.
@@ -85,6 +94,96 @@ Not every value works on every model, and a rejected value fails the run rather 
 - `disabled` is fine on the models above, but Claude Fable 5 always thinks and rejects an explicit off - leave `provider-default` there.
 
 Set `disabled` or `adaptive` to make the behavior the same on every model rather than a property of the one you picked. On the evidence so far, thinking costs 20-25% more and found fewer claims, not more - but that is one release, measured once, so treat it as a reason to set the value deliberately rather than as a settled answer. Read the run metrics after you change it.
+
+`thinking` is an Anthropic setting.
+It travels in a request field that has no equivalent in the OpenAI dialect, so setting anything but `provider-default` together with `provider: openai-compatible` fails the run instead of being quietly dropped.
+
+#### Running against your own endpoint
+
+`provider: openai-compatible` reaches anything that speaks the OpenAI chat-completions dialect at the URL you give it.
+That is one setting for two quite different situations: hosted endpoints that are cheaper than a first-party API, and a server on your own machine, where the release data never leaves it.
+Ollama, LM Studio, llama.cpp and vLLM all serve that dialect, so they need no adapter of their own.
+
+Neither `model` nor `baseUrl` has a default here, and both failures say so by name.
+The model cannot be guessed because the ids an endpoint serves are its own - ask it with `ollama list` or `GET /v1/models`.
+The endpoint is deliberately left without a default rather than pointed at a well-known hosted one: this provider exists so release data can stay on your machine, and a default would send it off the machine for anyone who set only the model.
+
+A local setup end to end, with nothing else configured:
+
+```yaml
+llm:
+  provider: openai-compatible
+  model: qwen3:8b
+  baseUrl: http://localhost:11434/v1
+```
+
+```console
+$ ollama serve &
+$ ollama pull qwen3:8b
+$ chartula preview --tag v1.2.0 --repo owner/name
+```
+
+No API key is involved.
+Local servers do not read the `Authorization` header, so `apiKeyEnvironmentVariable` can be left unset and the run starts without one.
+
+A hosted endpoint differs in two lines, and does need a key:
+
+```yaml
+llm:
+  provider: openai-compatible
+  model: llama-3.3-70b-versatile
+  baseUrl: https://api.groq.com/openai/v1
+  apiKeyEnvironmentVariable: GROQ_API_KEY
+```
+
+If the key is missing or wrong, the endpoint answers `401` and the run fails there.
+Chartula does not check the key itself, because whether one is needed is the endpoint's business, not Chartula's.
+
+#### The context window is the first thing to get right
+
+Chartula sends the whole fact base in one call.
+For a release of this repository's size that is around 12,000 tokens, and it grows with the release.
+
+A local server does not refuse a prompt that is too long for its context window.
+It cuts it and answers from what is left.
+Ollama's default is 4,096 tokens, so most of the prompt is discarded before the model ever sees it - and because the instruction sits at the front while the truncation keeps the end, what is lost first is the task itself.
+The model then receives material with no idea what to do with it, and writes something plausible.
+
+Raise it on the server, not in `chartula.yaml` - the OpenAI dialect has no field for it, so Chartula cannot send it:
+
+```console
+$ OLLAMA_CONTEXT_LENGTH=24576 ollama serve
+```
+
+Or pin it to a model, which survives a server restart:
+
+```console
+$ printf 'FROM qwen2.5:14b\nPARAMETER num_ctx 24576\n' > Modelfile
+$ ollama create my-changelog-model -f Modelfile
+```
+
+Whether your endpoint truncated is visible in the run metrics: an input-token count that is identical across runs, or that sits exactly on a power of two, is the context limit rather than your prompt.
+
+**What to watch: the thorough check.**
+Two different things can go wrong, and they do not look alike.
+
+The obvious one is an endpoint that ignores the JSON schema and answers in prose.
+An unreadable verdict is reported as *not evaluated*, never as a clean check, so the run says the text went unverified rather than implying it passed.
+
+The quiet one is a verdict that reads perfectly and means nothing.
+Endpoints that enforce the schema by constrained decoding - Ollama does - will produce a well-formed answer from any model, whether or not it understood the task.
+`0 claims` from such a model looks exactly like a clean check.
+Read it together with the rule-based check: if that one is finding claims and the thorough check is not, the thorough check is not earning its tokens.
+
+Measured on this repository's `v0.1.0`, on 2026-08-03, with `qwen2.5:14b` at a 24,576-token context:
+
+| Check | Claims found | Tokens |
+| --- | --- | --- |
+| Rule-based | 34 | none |
+| Thorough | 1 | 39,310 |
+
+That is one release on one model, measured once - treat it as a reason to read your own run metrics, not as a verdict on local models.
+What it does show is which way to look first: the free check was the more useful one here, and `faithfulness.thorough: false` is a reasonable starting point on a local setup until your own numbers say otherwise.
 
 ### `github`
 

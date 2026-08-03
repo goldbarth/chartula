@@ -10,14 +10,29 @@ public sealed class LlmOptions
     /// <summary>Configuration section these options bind to.</summary>
     public const string SectionName = "Chartula:Llm";
 
-    /// <summary>The provider to use. Only <c>anthropic</c> is implemented today.</summary>
+    /// <summary>
+    /// The provider to use: <c>anthropic</c> or <c>openai-compatible</c>. See
+    /// <see cref="LlmProviderParser"/>.
+    /// </summary>
     public string Provider { get; init; } = "anthropic";
 
-    /// <summary>The model id passed to the provider.</summary>
+    /// <summary>
+    /// The model id passed to the provider. The default shown here is Anthropic's;
+    /// what applies for a given provider comes from <see cref="LlmProviderDefaults"/>,
+    /// and not every provider has one.
+    /// </summary>
     public string Model { get; init; } = "claude-opus-4-8";
 
     /// <summary>Name of the environment variable holding the API key.</summary>
     public string ApiKeyEnvironmentVariable { get; init; } = "ANTHROPIC_API_KEY";
+
+    /// <summary>
+    /// The endpoint the provider is reached at, in the shape
+    /// <see cref="GitHubOptions.ApiBaseUrl"/> uses for GitHub Enterprise. Null leaves
+    /// the provider on its own default, which is what Anthropic does; for
+    /// <c>openai-compatible</c> there is no default and this has to be set.
+    /// </summary>
+    public string? BaseUrl { get; init; }
 
     /// <summary>
     /// The ceiling on tokens the model may produce per call. Raise it for releases
