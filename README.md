@@ -136,6 +136,17 @@ Full options are documented (not pre-filled) in [Configuration](docs/configurati
 
 ---
 
+## How Chartula is measured
+
+An LLM writes the text, so a prompt change moves the output in ways no unit test catches, and every run costs money.
+
+A single run reports what it did and what it cost - see [Run metrics](docs/run-metrics.md).
+Everything that compares runs against each other lives in a separate repository, [**chartula-evals**](https://github.com/goldbarth/chartula-evals): the cases Chartula is run against, what those runs cost across models, and the criterion the generated text is judged by.
+
+It is kept apart because Chartula's users need a changelog, not an evaluation harness.
+
+---
+
 ## Roadmap
 
 Development is staged so that **each phase is useful on its own**, not a fragment waiting on the next.
