@@ -14,7 +14,16 @@ public sealed record AudienceOutcome(
     bool Success,
     string? Text,
     IReadOnlyList<string> Flags,
-    string? Error);
+    string? Error)
+{
+    /// <summary>
+    /// The one-sentence summary of the release written alongside the text, or
+    /// <c>null</c> where the audience has none. It is part of what the run
+    /// produced, so a preview that shows the text has to show it too - otherwise
+    /// the one field a preview cannot vouch for is the one that opens the page.
+    /// </summary>
+    public string? Description { get; init; }
+}
 
 /// <summary>The result of a pipeline run.</summary>
 /// <param name="Tag">The release tag.</param>

@@ -85,4 +85,29 @@ public sealed class GitCliCommitReaderTests
 
         await Assert.ThrowsAsync<ArgumentException>(() => reader.ReadReleaseCommitsAsync(tag));
     }
+
+    [Fact]
+    public async Task Reads_the_date_the_tag_was_made()
+    {
+        using TempGitRepository repo = new();
+        repo.Commit("feat: add dark mode");
+        repo.Tag("v1.0.0");
+
+        CommitRange range = await new GitCliCommitReader(repo.Path).ReadReleaseCommitsAsync("v1.0.0");
+
+        // A lightweight tag creator-dates to its commit, which is today's run.
+        Assert.Equal(DateOnly.FromDateTime(DateTime.Now), range.TaggedAt);
+    }
+
+    [Fact]
+    public async Task An_annotated_tag_is_dated_by_when_it_was_made()
+    {
+        using TempGitRepository repo = new();
+        repo.Commit("feat: add dark mode");
+        repo.Run("tag", "-a", "v1.0.0", "-m", "Release 1.0.0");
+
+        CommitRange range = await new GitCliCommitReader(repo.Path).ReadReleaseCommitsAsync("v1.0.0");
+
+        Assert.Equal(DateOnly.FromDateTime(DateTime.Now), range.TaggedAt);
+    }
 }

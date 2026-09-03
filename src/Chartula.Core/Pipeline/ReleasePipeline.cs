@@ -19,9 +19,9 @@ namespace Chartula.Core.Pipeline;
 /// differ in the final write step alone: preview writes and publishes nothing,
 /// generate does both, and generate-without-publishing writes the local files and
 /// leaves the release notes alone. The technical rendering feeds CHANGELOG.md and
-/// the release notes; every audience text is stored in changelog.json. Along the
-/// way it records what each faithfulness check caught, so the run reports its own
-/// cost.
+/// the release notes, the customer rendering feeds a page of its own, and every
+/// audience text is stored in changelog.json. Along the way it records what each
+/// faithfulness check caught, so the run reports its own cost.
 /// </summary>
 public sealed class ReleasePipeline(
     IReleaseCommitReader commitReader,
@@ -33,6 +33,7 @@ public sealed class ReleasePipeline(
     IReviewCoordinator reviewCoordinator,
     IChangelogJsonWriter jsonWriter,
     IChangelogMarkdownWriter markdownWriter,
+    ICustomerPageWriter customerPageWriter,
     IReleaseNotesWriter releaseNotesWriter,
     IRunMetrics? metrics = null) : IReleasePipeline
 {
@@ -55,6 +56,7 @@ public sealed class ReleasePipeline(
 
         List<AudienceOutcome> outcomes = [];
         Dictionary<Audience, string> finalTexts = [];
+        Dictionary<Audience, string?> descriptions = [];
         foreach ((Audience audience, ChangelogGenerationResult result) in rendered.OrderBy(entry => entry.Key))
         {
             if (!result.IsSuccess)
@@ -64,20 +66,30 @@ public sealed class ReleasePipeline(
             }
 
             string text = result.Text ?? string.Empty;
-            IReadOnlyList<string> flags = await CollectFlagsAsync(text, factBase, cancellationToken);
+
+            // The description is checked with the text it belongs to, not beside it:
+            // it is a sentence the model wrote from the same facts, so a claim it
+            // makes has to be as answerable as any other.
+            IReadOnlyList<string> flags =
+                await CollectFlagsAsync(Checkable(result), factBase, cancellationToken);
 
             ReviewDecision decision =
                 await reviewCoordinator.ReviewAsync(new ReviewItem(audience, text, flags), cancellationToken);
 
             finalTexts[audience] = decision.Text;
-            outcomes.Add(new AudienceOutcome(audience, Success: true, decision.Text, flags, Error: null));
+            descriptions[audience] = result.Description;
+            outcomes.Add(new AudienceOutcome(audience, Success: true, decision.Text, flags, Error: null)
+            {
+                Description = result.Description,
+            });
         }
 
         IReadOnlyList<string> written = [];
         IReadOnlyList<string> skipped = [];
         if (mode != PipelineMode.Preview)
         {
-            (written, skipped) = await WriteOutputsAsync(request, factBase, finalTexts, mode, cancellationToken);
+            (written, skipped) = await WriteOutputsAsync(
+                request, range, factBase, finalTexts, descriptions, mode, cancellationToken);
         }
 
         return new ReleaseOutcome(request.Tag, mode, outcomes, written, _metrics.Snapshot())
@@ -111,8 +123,10 @@ public sealed class ReleasePipeline(
 
     private async Task<(IReadOnlyList<string> Written, IReadOnlyList<string> Skipped)> WriteOutputsAsync(
         ReleaseRequest request,
+        CommitRange range,
         FactBase factBase,
         IReadOnlyDictionary<Audience, string> finalTexts,
+        IReadOnlyDictionary<Audience, string?> descriptions,
         PipelineMode mode,
         CancellationToken cancellationToken)
     {
@@ -120,6 +134,27 @@ public sealed class ReleasePipeline(
         List<string> skipped = [];
 
         written.Add(await jsonWriter.WriteAsync(factBase, finalTexts, cancellationToken));
+
+        // The audience the tool exists for gets a file a person can publish, in the
+        // published serialisation, and it is written whenever anything is - writing
+        // a page publishes nothing, so --no-publish has no reason to hold it back.
+        // A release whose customer section is empty is not published at all, so an
+        // empty body produces no page rather than an empty one.
+        if (finalTexts.TryGetValue(Audience.Customer, out string? customer)
+            && !string.IsNullOrWhiteSpace(customer))
+        {
+            descriptions.TryGetValue(Audience.Customer, out string? description);
+            written.Add(await customerPageWriter.WriteAsync(
+                new CustomerPage(
+                    request.Tag,
+                    range.TaggedAt,
+                    description,
+                    // No labels reach the fact base yet (issue #98), and the format
+                    // says an absent field is the correct output, not a defect.
+                    Tags: [],
+                    customer),
+                cancellationToken));
+        }
 
         if (finalTexts.TryGetValue(Audience.Technical, out string? technical))
         {
@@ -142,4 +177,14 @@ public sealed class ReleasePipeline(
 
         return (written, skipped);
     }
+
+    /// <summary>
+    /// The text a rendering is checked against the facts as: the description and
+    /// the body together, so nothing the model wrote escapes the check by being
+    /// carried in a different field.
+    /// </summary>
+    private static string Checkable(ChangelogGenerationResult result)
+        => string.IsNullOrWhiteSpace(result.Description)
+            ? result.Text ?? string.Empty
+            : result.Description + "\n\n" + (result.Text ?? string.Empty);
 }

@@ -40,6 +40,7 @@ public sealed class ReleasePipelineMetricsTests
             new ReviewCoordinator(new AutoApproveReviewer(), new ReviewOptions(Enabled: false)),
             new SpyJsonWriter(),
             new SpyMarkdownWriter(),
+            new SpyCustomerPageWriter(),
             new SpyReleaseNotesWriter(),
             metrics);
     }
