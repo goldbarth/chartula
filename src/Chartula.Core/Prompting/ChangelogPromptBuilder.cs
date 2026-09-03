@@ -10,6 +10,12 @@ namespace Chartula.Core.Prompting;
 /// to rephrasing established facts - it may not invent, and it must treat each
 /// fact's category and breaking marker as given. Thin facts yield sparse output.
 /// The user prompt carries only the facts; nothing is added to pad them.
+/// <para>
+/// It also pins the shape of the customer rendering rather than leaving it to the
+/// model, which is what issue #96 is about. Content rules and shape rules are
+/// separate on purpose: the first five apply to every audience, the format block
+/// only to the one whose shape is specified.
+/// </para>
 /// </summary>
 /// <remarks>
 /// The prompt text lives in the <c>ChangelogPromptBuilder.Prompts.cs</c> partial;
@@ -48,10 +54,17 @@ public sealed partial class ChangelogPromptBuilder : IChangelogPromptBuilder
         return new ChangelogPrompt(FaithfulnessSystem, user);
     }
 
+    /// <remarks>
+    /// Customer is the only audience whose shape is specified, so it is the only
+    /// one that carries format rules. Technical and Product state tone alone
+    /// until a specification exists for them - guessing a shape for an audience
+    /// nobody has written one for would be the same defect as leaving it to the
+    /// model, only harder to see.
+    /// </remarks>
     private static string AudienceGuidance(Audience audience) => audience switch
     {
         Audience.Technical => AudienceTechnical,
-        Audience.Customer => AudienceCustomer,
+        Audience.Customer => AudienceCustomer + CustomerFormat,
         Audience.Product => AudienceProduct,
         _ => string.Format(CultureInfo.InvariantCulture, AudienceFallbackFormat, audience),
     };
