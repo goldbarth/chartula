@@ -15,6 +15,7 @@ public sealed class ReleasePipelineTests
 {
     private readonly SpyJsonWriter _json = new();
     private readonly SpyMarkdownWriter _markdown = new();
+    private readonly SpyCustomerPageWriter _customerPage = new();
     private readonly SpyReleaseNotesWriter _releaseNotes = new();
 
     private ReleasePipeline BuildPipeline()
@@ -35,6 +36,7 @@ public sealed class ReleasePipelineTests
             new ReviewCoordinator(new AutoApproveReviewer(), new ReviewOptions(Enabled: false)),
             _json,
             _markdown,
+            _customerPage,
             _releaseNotes);
     }
 

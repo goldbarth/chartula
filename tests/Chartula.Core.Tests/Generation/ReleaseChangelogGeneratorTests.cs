@@ -93,4 +93,48 @@ public sealed class ReleaseChangelogGeneratorTests
         await Assert.ThrowsAsync<OperationCanceledException>(
             () => generator.GenerateAsync(Sample(), Audience.Customer, cts.Token));
     }
+
+    [Fact]
+    public async Task The_customer_rendering_carries_the_description_written_in_the_same_call()
+    {
+        FakeChangelogModel model = FakeChangelogModel.Returning(
+            "Description: A release about finding things.\n\n### What's New\n\n- **Search:** You can find things.");
+        IReleaseChangelogGenerator generator = new ReleaseChangelogGenerator(model, new ChangelogFormatter());
+
+        ChangelogGenerationResult result = await generator.GenerateAsync(Sample(), Audience.Customer);
+
+        // One call, two fields: the description is a rephrasing of the same facts,
+        // so it costs nothing beyond the call the entries already needed.
+        Assert.Equal(1, model.RephraseCallCount);
+        Assert.Equal("A release about finding things.", result.Description);
+        Assert.Equal("### What's New\n\n- **Search:** You can find things.", result.Text);
+    }
+
+    [Fact]
+    public async Task A_customer_rendering_without_the_line_has_no_description_and_keeps_its_text()
+    {
+        FakeChangelogModel model = FakeChangelogModel.Returning("- **Search:** You can find things.");
+        IReleaseChangelogGenerator generator = new ReleaseChangelogGenerator(model, new ChangelogFormatter());
+
+        ChangelogGenerationResult result = await generator.GenerateAsync(Sample(), Audience.Customer);
+
+        Assert.Null(result.Description);
+        Assert.Equal("- **Search:** You can find things.", result.Text);
+    }
+
+    [Theory]
+    [InlineData(Audience.Technical)]
+    [InlineData(Audience.Product)]
+    public async Task Only_the_customer_rendering_is_read_for_a_description(Audience audience)
+    {
+        // No other audience is asked for one, so a line that happens to look like
+        // the label is that rendering's own text and must not be taken away.
+        FakeChangelogModel model = FakeChangelogModel.Returning("Description: not a field here.\n\n- Something.");
+        IReleaseChangelogGenerator generator = new ReleaseChangelogGenerator(model, new ChangelogFormatter());
+
+        ChangelogGenerationResult result = await generator.GenerateAsync(Sample(), audience);
+
+        Assert.Null(result.Description);
+        Assert.Equal("Description: not a field here.\n\n- Something.", result.Text);
+    }
 }

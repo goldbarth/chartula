@@ -1,3 +1,5 @@
+using Chartula.Core.Generation;
+
 namespace Chartula.Core.Prompting;
 
 /// <summary>
@@ -115,6 +117,34 @@ public sealed partial class ChangelogPromptBuilder
         where, leave the option out rather than announce it with no place.
         """;
 
+    /// <summary>
+    /// The opening line of a published customer page. The description is a
+    /// rephrasing of facts already in front of the model, so it is asked for in
+    /// the same call as the entries rather than paid for in a second one, and it
+    /// goes through the faithfulness check on the same footing as everything else
+    /// the model writes.
+    /// <para>
+    /// The label is <see cref="ReleaseDescription.Label"/> rather than a literal,
+    /// because the same string is read back off the front of the output: one
+    /// constant, both ends. Nothing is generated from it at runtime - a const is
+    /// inlined at compile time - so this creates no dependency on generation.
+    /// </para>
+    /// <para>
+    /// Why the line may be left out: a field with no source is omitted, never
+    /// emitted empty and never filled with a placeholder. And why it is not simply
+    /// the first entry: the description says what the release is about, an entry
+    /// says what one change is, so a description built from one entry would leave
+    /// the ordering of the entries to decide the summary.
+    /// </para>
+    /// </summary>
+    private const string CustomerDescription =
+        "\n\nBefore the entries, write one line beginning with \"" + ReleaseDescription.Label
+        + "\" followed by a single sentence on what this release is about, drawn from "
+        + "the facts of this release and from nothing else. Then a blank line, then "
+        + "the entries. This line is part of the format, not the preamble the rules "
+        + "above forbid. It is not the first entry reworded and not a list of "
+        + "everything that changed. If the facts do not support such a sentence, "
+        + "leave the line out entirely rather than writing an empty or filler one.";
 
     private const string AudienceProduct =
         "Audience: Product. Group related changes by theme.";

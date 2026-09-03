@@ -24,7 +24,7 @@ It grounds every generated line against the actual facts of your PRs, so the out
 
 ## Status
 
-**Phase 1 is complete.** The pipeline runs end to end on a real repository, from reading pull requests to writing `CHANGELOG.md`, `changelog.json` and GitHub release notes.
+**Phase 1 is complete.** The pipeline runs end to end on a real repository, from reading pull requests to writing `CHANGELOG.md`, a customer page per release, `changelog.json` and GitHub release notes.
 
 It is not published yet, so there is no `dotnet tool install` and no prebuilt binary - both land in phase 3.
 To try it today, [build it from source](#installation).
@@ -105,13 +105,16 @@ Two environment variables carry the credentials, and neither is ever read from a
 | `ANTHROPIC_API_KEY` | The model that rephrases the facts. |
 | `GITHUB_TOKEN` | Reading pull requests and writing release notes. |
 
-`generate` writes three outputs:
+`generate` writes four outputs:
 
 - **`CHANGELOG.md`** - the technical rendering, prepended to your existing file.
+- **`release-<tag>.md`** - the customer rendering as a page you can publish: YAML front matter with the release title, its date and a one-sentence description, then the entries.
 - **`changelog.json`** - every audience text plus the fact base behind them, in a [documented, stable format](docs/changelog-json.md).
 - **GitHub release notes** - the technical rendering, attached to the release for the tag.
 
-`--no-publish` writes the two files and leaves the release notes alone, for when you want the record of a run without announcing a release - measuring a prompt change, say, or generating a changelog for a tag that was never shipped.
+A field with no source is left out of the front matter rather than filled in: no description when the facts do not support one, no date when the tag has none.
+
+`--no-publish` writes the three files and leaves the release notes alone, for when you want the record of a run without announcing a release - measuring a prompt change, say, or generating a changelog for a tag that was never shipped.
 The run then lists what it skipped next to what it wrote.
 
 Every run ends with a summary of what it did and what it cost in tokens.
@@ -159,7 +162,7 @@ Development is staged so that **each phase is useful on its own**, not a fragmen
 
 ### Phase 1 - The usable core ✅
 
-The CLI running locally on a repo: PR-level collection, deterministic curation with label rules, the grounded fact base, audience-specific rendering, the faithfulness check with a lightweight review step, and stable repo outputs (`CHANGELOG.md`, `changelog.json`, GitHub release notes).
+The CLI running locally on a repo: PR-level collection, deterministic curation with label rules, the grounded fact base, audience-specific rendering, the faithfulness check with a lightweight review step, and stable repo outputs (`CHANGELOG.md`, a customer page per release, `changelog.json`, GitHub release notes).
 Configuration and observability from day one.
 
 ### Phase 2 - Distribution & reach

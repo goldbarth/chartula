@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using Chartula.Core.History;
 
 namespace Chartula.Infrastructure.History;
@@ -50,7 +51,33 @@ public sealed class GitCliCommitReader(string repositoryPath) : IReleaseCommitRe
                 $"Failed to read commits for '{range}': {log.StandardError.Trim()}");
         }
 
-        return new CommitRange(tag, fromTag, ParseCommits(log.StandardOutput));
+        DateOnly? taggedAt = await ReadTagDateAsync(tag, cancellationToken);
+        return new CommitRange(tag, fromTag, ParseCommits(log.StandardOutput), taggedAt);
+    }
+
+    /// <summary>
+    /// The date the tag was created: the tagger date for an annotated tag, the
+    /// commit date for a lightweight one, which is what <c>creatordate</c> means.
+    /// Returns <c>null</c> when git gives nothing readable, so an output built on
+    /// it can omit the field rather than invent a date.
+    /// </summary>
+    private async Task<DateOnly?> ReadTagDateAsync(string tag, CancellationToken cancellationToken)
+    {
+        GitResult date = await RunGitAsync(
+            ["for-each-ref", "--format=%(creatordate:short)", $"refs/tags/{tag}"], cancellationToken);
+        if (date.ExitCode != 0)
+        {
+            return null;
+        }
+
+        string value = date.StandardOutput.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+            .FirstOrDefault(string.Empty)
+            .Trim();
+
+        return DateOnly.TryParseExact(
+            value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly parsed)
+            ? parsed
+            : null;
     }
 
     private static List<CommitInfo> ParseCommits(string log)

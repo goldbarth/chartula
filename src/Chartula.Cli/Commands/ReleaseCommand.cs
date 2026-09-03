@@ -54,6 +54,12 @@ internal static class ReleaseCommand
             }
             else
             {
+                if (!string.IsNullOrWhiteSpace(audience.Description))
+                {
+                    builder.AppendLine($"  description: {audience.Description}");
+                    builder.AppendLine();
+                }
+
                 builder.AppendLine(audience.Text);
                 if (audience.Flags.Count > 0)
                 {

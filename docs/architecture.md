@@ -46,7 +46,12 @@ The thorough check is a second model pass and can be turned off.
 Whether it earns its tokens is a question the run itself answers - see [Run metrics](run-metrics.md).
 
 **Preview and generate are the same run.** They differ in the last step only: preview writes nothing.
-Writing and publishing are separable there too: `--no-publish` writes `changelog.json` and `CHANGELOG.md` and leaves the release notes untouched, because producing a record is not the same act as announcing a release.
+Writing and publishing are separable there too: `--no-publish` writes `changelog.json`, `CHANGELOG.md` and the customer page and leaves the release notes untouched, because producing a record is not the same act as announcing a release.
+
+**Every audience that has a written shape gets a file.** The technical rendering feeds `CHANGELOG.md` and the release notes; the customer rendering is written as a page of its own, `release-<tag>.md`, in the published serialisation - front matter, then the entries.
+Its one-sentence description is written by the model in the same call as the entries, so it is a rephrasing of the same facts and the faithfulness check covers it on the same footing.
+A field whose source has nothing to give is left out, never emitted empty: an empty field would read as a fact about the release rather than as an absent source.
+The product rendering has no template yet, so it has no file - guessing a shape for it would be the defect the customer shape exists to fix.
 
 ## Choices that constrain contributions
 

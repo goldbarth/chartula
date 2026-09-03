@@ -1,4 +1,5 @@
 using Chartula.Core.Facts;
+using Chartula.Core.Generation;
 using Chartula.Core.Llm;
 using Chartula.Core.Prompting;
 
@@ -300,5 +301,30 @@ public sealed class ChangelogPromptBuilderTests
         Assert.Contains("Rephrase only", system);
         Assert.Contains("Do not pad", system);
         Assert.Contains("one consistent voice", system);
+    }
+
+    [Fact]
+    public void Asks_the_customer_rendering_for_a_description_under_the_label_it_is_read_back_by()
+    {
+        ChangelogPrompt prompt = _builder.BuildRephrasePrompt(
+            new GroundedFacts(["Feature: dark mode"]), Audience.Customer);
+
+        // The prompt and the parser share one constant; asserting the constant is
+        // what stops a reworded prompt from silently losing the field.
+        Assert.Contains(ReleaseDescription.Label, prompt.System, StringComparison.Ordinal);
+        Assert.Contains("what this release is about", prompt.System, StringComparison.Ordinal);
+        Assert.Contains("leave the line out entirely", prompt.System, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(Audience.Technical)]
+    [InlineData(Audience.Product)]
+    public void No_other_audience_is_asked_for_a_description(Audience audience)
+    {
+        // Nothing reads one back for them, so asking would put a line in the text
+        // that no output takes out again.
+        ChangelogPrompt prompt = _builder.BuildRephrasePrompt(new GroundedFacts(["Feature: dark mode"]), audience);
+
+        Assert.DoesNotContain(ReleaseDescription.Label, prompt.System, StringComparison.Ordinal);
     }
 }

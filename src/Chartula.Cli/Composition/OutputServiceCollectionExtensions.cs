@@ -16,6 +16,8 @@ internal static class OutputServiceCollectionExtensions
             _ => new FileChangelogJsonWriter(Directory.GetCurrentDirectory()));
         services.AddSingleton<IChangelogMarkdownWriter>(
             _ => new FileChangelogMarkdownWriter(Directory.GetCurrentDirectory()));
+        services.AddSingleton<ICustomerPageWriter>(
+            _ => new FileCustomerPageWriter(Directory.GetCurrentDirectory()));
         return services;
     }
 }

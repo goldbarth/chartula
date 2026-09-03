@@ -12,6 +12,11 @@ namespace Chartula.Core.Generation;
 /// then normalizes the output for consistent formatting. An empty fact base makes
 /// no call at all. Provider failures are caught and returned as a failed result;
 /// cancellation propagates.
+/// <para>
+/// The customer rendering carries a one-sentence description of the release, asked
+/// for and returned in that same call, and lifted off the front of the text here -
+/// see <see cref="ReleaseDescription"/>.
+/// </para>
 /// </summary>
 public sealed class ReleaseChangelogGenerator(
     IChangelogModel model,
@@ -41,7 +46,17 @@ public sealed class ReleaseChangelogGenerator(
         try
         {
             string text = await _model.RephraseAsync(new RephraseRequest(facts, audience), cancellationToken);
-            return ChangelogGenerationResult.Success(_formatter.Format(text));
+            string formatted = _formatter.Format(text);
+
+            // Only the customer page has a description, so only that rendering is
+            // asked for one and only that one is read for it.
+            if (audience != Audience.Customer)
+            {
+                return ChangelogGenerationResult.Success(formatted);
+            }
+
+            (string? description, string body) = ReleaseDescription.SplitOff(formatted);
+            return ChangelogGenerationResult.Success(body, description);
         }
         catch (OperationCanceledException)
         {

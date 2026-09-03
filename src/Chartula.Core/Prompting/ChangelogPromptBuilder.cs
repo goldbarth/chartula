@@ -56,15 +56,15 @@ public sealed partial class ChangelogPromptBuilder : IChangelogPromptBuilder
 
     /// <remarks>
     /// Customer is the only audience whose shape is specified, so it is the only
-    /// one that carries format rules. Technical and Product state tone alone
-    /// until a specification exists for them - guessing a shape for an audience
-    /// nobody has written one for would be the same defect as leaving it to the
-    /// model, only harder to see.
+    /// one that carries format rules, and the only one asked for a description.
+    /// Technical and Product state tone alone until a specification exists for
+    /// them - guessing a shape for an audience nobody has written one for would be
+    /// the same defect as leaving it to the model, only harder to see.
     /// </remarks>
     private static string AudienceGuidance(Audience audience) => audience switch
     {
         Audience.Technical => AudienceTechnical,
-        Audience.Customer => AudienceCustomer + CustomerFormat,
+        Audience.Customer => AudienceCustomer + CustomerFormat + CustomerDescription,
         Audience.Product => AudienceProduct,
         _ => string.Format(CultureInfo.InvariantCulture, AudienceFallbackFormat, audience),
     };

@@ -60,4 +60,43 @@ public sealed class ReleaseCommandOutputTests
         Assert.Contains("Skipped (--no-publish):", text);
         Assert.Contains("  - Release notes for v1.0.0 in octo/repo", text);
     }
+
+    [Fact]
+    public async Task A_rendering_with_a_description_shows_it_above_the_text()
+    {
+        // The description opens the published page, so a preview that hides it
+        // vouches for everything but the first line the reader will see.
+        ReleaseOutcome outcome = new(
+            "v1.0.0",
+            PipelineMode.Preview,
+            [
+                new AudienceOutcome(Audience.Customer, Success: true, "- Search is here.", [], Error: null)
+                {
+                    Description = "A release about finding things.",
+                },
+            ],
+            []);
+
+        StringWriter output = new();
+        await ReleaseCommand.RunAsync(
+            new StubPipeline(outcome),
+            PipelineMode.Preview,
+            new ReleaseRequest("v1.0.0", new RepositoryCoordinates("octo", "repo")),
+            output,
+            CancellationToken.None);
+
+        string text = output.ToString();
+        Assert.Contains("  description: A release about finding things.", text, StringComparison.Ordinal);
+        Assert.True(
+            text.IndexOf("description:", StringComparison.Ordinal)
+            < text.IndexOf("- Search is here.", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task A_rendering_without_a_description_shows_no_empty_line_for_one()
+    {
+        string text = await RunAsync(PipelineMode.Generate, ["changelog.json"], []);
+
+        Assert.DoesNotContain("description:", text, StringComparison.Ordinal);
+    }
 }
