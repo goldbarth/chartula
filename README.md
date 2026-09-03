@@ -93,6 +93,9 @@ chartula preview --tag v1.2.0 --repo owner/name
 
 # Produce the outputs and write them
 chartula generate --tag v1.2.0 --repo owner/name
+
+# Write the files, but publish no release notes
+chartula generate --tag v1.2.0 --repo owner/name --no-publish
 ```
 
 Two environment variables carry the credentials, and neither is ever read from a config file:
@@ -107,6 +110,9 @@ Two environment variables carry the credentials, and neither is ever read from a
 - **`CHANGELOG.md`** - the technical rendering, prepended to your existing file.
 - **`changelog.json`** - every audience text plus the fact base behind them, in a [documented, stable format](docs/changelog-json.md).
 - **GitHub release notes** - the technical rendering, attached to the release for the tag.
+
+`--no-publish` writes the two files and leaves the release notes alone, for when you want the record of a run without announcing a release - measuring a prompt change, say, or generating a changelog for a tag that was never shipped.
+The run then lists what it skipped next to what it wrote.
 
 Every run ends with a summary of what it did and what it cost in tokens.
 See [Run metrics](docs/run-metrics.md) for how to read it.

@@ -10,7 +10,8 @@ namespace Chartula.Cli;
 
 /// <summary>
 /// Entry point for the Chartula CLI. Dispatches the <c>generate</c> and
-/// <c>preview</c> commands; both run the same pipeline, but preview writes nothing.
+/// <c>preview</c> commands; both run the same pipeline, but preview writes nothing
+/// and <c>--no-publish</c> keeps generate to the local files.
 /// </summary>
 internal static class Program
 {
@@ -22,12 +23,7 @@ internal static class Program
             return 0;
         }
 
-        PipelineMode? mode = args[0] switch
-        {
-            "generate" => PipelineMode.Generate,
-            "preview" => PipelineMode.Preview,
-            _ => null,
-        };
+        PipelineMode? mode = ParseMode(args[0], args);
 
         if (mode is null)
         {
@@ -99,15 +95,41 @@ internal static class Program
             .BuildServiceProvider();
     }
 
+    /// <summary>
+    /// Maps the command word and the flags onto a pipeline mode, or <c>null</c> for
+    /// an unknown command. Producing the record and announcing the release are
+    /// separable acts: <c>--no-publish</c> drops the second one and leaves
+    /// everything else as it was. Preview publishes nothing either way.
+    /// </summary>
+    internal static PipelineMode? ParseMode(string command, IReadOnlyList<string> args)
+        => command switch
+        {
+            "generate" => CommandLineArguments.HasFlag(args, "--no-publish")
+                ? PipelineMode.GenerateWithoutPublishing
+                : PipelineMode.Generate,
+            "preview" => PipelineMode.Preview,
+            _ => null,
+        };
+
     private static bool IsHelp(string arg)
         => arg is "-h" or "--help" or "help";
 
-    private static void PrintUsage()
-    {
-        Console.WriteLine("Chartula - multi-audience, grounded changelog generator.");
-        Console.WriteLine();
-        Console.WriteLine("Usage:");
-        Console.WriteLine("  chartula preview  --tag <release-tag> --repo <owner/name>   Show what would be produced (dry run).");
-        Console.WriteLine("  chartula generate --tag <release-tag> --repo <owner/name>   Produce and write the outputs.");
-    }
+    /// <summary>
+    /// The help text. It is a string rather than a series of writes so a test can
+    /// hold it to what the CLI actually accepts.
+    /// </summary>
+    internal static string Usage =>
+        """
+        Chartula - multi-audience, grounded changelog generator.
+
+        Usage:
+          chartula preview  --tag <release-tag> --repo <owner/name>   Show what would be produced (dry run).
+          chartula generate --tag <release-tag> --repo <owner/name>   Produce and write the outputs.
+
+        Options:
+          --no-publish   Write changelog.json and CHANGELOG.md, but publish no release notes.
+
+        """;
+
+    private static void PrintUsage() => Console.Out.Write(Usage);
 }

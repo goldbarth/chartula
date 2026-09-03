@@ -73,5 +73,30 @@ public sealed class ReleasePipelineTests
         Assert.Equal(1, _releaseNotes.Calls);
         Assert.Contains("changelog.json", outcome.WrittenOutputs);
         Assert.Contains("CHANGELOG.md", outcome.WrittenOutputs);
+        Assert.Empty(outcome.SkippedOutputs);
+    }
+
+    [Fact]
+    public async Task Without_publishing_it_writes_the_files_and_leaves_the_release_notes_alone()
+    {
+        ReleaseOutcome outcome =
+            await BuildPipeline().RunAsync(Request(), PipelineMode.GenerateWithoutPublishing);
+
+        Assert.Equal(1, _json.Calls);
+        Assert.Equal(1, _markdown.Calls);
+        Assert.Equal(0, _releaseNotes.Calls);
+        Assert.Contains("changelog.json", outcome.WrittenOutputs);
+        Assert.Contains("CHANGELOG.md", outcome.WrittenOutputs);
+    }
+
+    [Fact]
+    public async Task A_skipped_publication_is_named_rather_than_silent()
+    {
+        ReleaseOutcome outcome =
+            await BuildPipeline().RunAsync(Request(), PipelineMode.GenerateWithoutPublishing);
+
+        // The release the run did not touch has to be readable from the outcome,
+        // otherwise "wrote two of three outputs" looks like a complete run.
+        Assert.Equal("Release notes for v1.0.0 in octo/repo", Assert.Single(outcome.SkippedOutputs));
     }
 }

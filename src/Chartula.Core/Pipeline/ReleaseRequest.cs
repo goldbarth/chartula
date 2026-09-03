@@ -10,6 +10,14 @@ public enum PipelineMode
 
     /// <summary>Produce everything and write the outputs.</summary>
     Generate,
+
+    /// <summary>
+    /// Produce everything and write the local files, but publish nothing. A record
+    /// of a run is not the same act as announcing a release, so the two are
+    /// separable: this writes changelog.json and CHANGELOG.md and leaves the
+    /// platform's release notes untouched.
+    /// </summary>
+    GenerateWithoutPublishing,
 }
 
 /// <summary>What to generate a changelog for.</summary>
