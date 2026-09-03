@@ -1,0 +1,13 @@
+# Chartula's own configuration, used when the tool is run against this
+# repository. Kept minimal on purpose: everything not named here stays at its
+# documented default, so the file says what is a decision and nothing else.
+#
+# See docs/configuration.md for every key and its default.
+
+llm:
+  # Pinned rather than left at the default, because the renderings this project
+  # is measured against were produced with this model. Changing it changes what
+  # a figure means: a run against a different model measures the model and the
+  # prompt at once, and the two cannot be told apart afterwards. The evaluation
+  # harness records the model with every result for the same reason.
+  model: claude-sonnet-5
