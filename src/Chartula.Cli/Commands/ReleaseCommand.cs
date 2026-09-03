@@ -8,7 +8,8 @@ namespace Chartula.Cli.Commands;
 /// <summary>
 /// Runs the release pipeline for the <c>generate</c> and <c>preview</c> commands
 /// and prints a clear summary. Preview shows what would be produced and writes
-/// nothing; generate writes the outputs and reports where they went.
+/// nothing; generate writes the outputs and reports where they went, and names
+/// what it left out when a run was told not to publish.
 /// </summary>
 internal static class ReleaseCommand
 {
@@ -71,7 +72,24 @@ internal static class ReleaseCommand
         {
             builder.AppendLine("Preview only - nothing was written or published.");
         }
-        else if (outcome.WrittenOutputs.Count > 0)
+        else
+        {
+            AppendOutputs(builder, outcome);
+        }
+
+        builder.AppendLine();
+        builder.Append(RunReportFormatter.Format(outcome.Metrics));
+
+        return builder.ToString();
+    }
+
+    /// <summary>
+    /// Lists what the run produced and, below it, what it deliberately did not, so
+    /// a skipped publication is as visible as a written file.
+    /// </summary>
+    private static void AppendOutputs(StringBuilder builder, ReleaseOutcome outcome)
+    {
+        if (outcome.WrittenOutputs.Count > 0)
         {
             builder.AppendLine("Wrote:");
             foreach (string written in outcome.WrittenOutputs)
@@ -84,10 +102,17 @@ internal static class ReleaseCommand
             builder.AppendLine("Nothing to write.");
         }
 
-        builder.AppendLine();
-        builder.Append(RunReportFormatter.Format(outcome.Metrics));
+        if (outcome.SkippedOutputs.Count == 0)
+        {
+            return;
+        }
 
-        return builder.ToString();
+        string reason = outcome.Mode == PipelineMode.GenerateWithoutPublishing ? " (--no-publish)" : string.Empty;
+        builder.AppendLine($"Skipped{reason}:");
+        foreach (string skipped in outcome.SkippedOutputs)
+        {
+            builder.AppendLine($"  - {skipped}");
+        }
     }
 
     /// <summary>Parses an <c>owner/name</c> string into repository coordinates.</summary>

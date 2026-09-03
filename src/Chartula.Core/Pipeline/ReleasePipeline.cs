@@ -15,11 +15,13 @@ namespace Chartula.Core.Pipeline;
 /// <summary>
 /// Default <see cref="IReleasePipeline"/>. It reads the release history and pull
 /// requests, builds the fact base, renders every audience, runs the rule-based and
-/// thorough faithfulness checks and review, and writes the outputs. The only
-/// difference between preview and generate is the final write step: preview writes
-/// and publishes nothing. The technical rendering feeds CHANGELOG.md and the
-/// release notes; every audience text is stored in changelog.json. Along the way it
-/// records what each faithfulness check caught, so the run reports its own cost.
+/// thorough faithfulness checks and review, and writes the outputs. The modes
+/// differ in the final write step alone: preview writes and publishes nothing,
+/// generate does both, and generate-without-publishing writes the local files and
+/// leaves the release notes alone. The technical rendering feeds CHANGELOG.md and
+/// the release notes; every audience text is stored in changelog.json. Along the
+/// way it records what each faithfulness check caught, so the run reports its own
+/// cost.
 /// </summary>
 public sealed class ReleasePipeline(
     IReleaseCommitReader commitReader,
@@ -71,11 +73,17 @@ public sealed class ReleasePipeline(
             outcomes.Add(new AudienceOutcome(audience, Success: true, decision.Text, flags, Error: null));
         }
 
-        IReadOnlyList<string> written = mode == PipelineMode.Generate
-            ? await WriteOutputsAsync(request, factBase, finalTexts, cancellationToken)
-            : [];
+        IReadOnlyList<string> written = [];
+        IReadOnlyList<string> skipped = [];
+        if (mode != PipelineMode.Preview)
+        {
+            (written, skipped) = await WriteOutputsAsync(request, factBase, finalTexts, mode, cancellationToken);
+        }
 
-        return new ReleaseOutcome(request.Tag, mode, outcomes, written, _metrics.Snapshot());
+        return new ReleaseOutcome(request.Tag, mode, outcomes, written, _metrics.Snapshot())
+        {
+            SkippedOutputs = skipped,
+        };
     }
 
     private async Task<IReadOnlyList<string>> CollectFlagsAsync(
@@ -101,23 +109,37 @@ public sealed class ReleasePipeline(
         return flags;
     }
 
-    private async Task<IReadOnlyList<string>> WriteOutputsAsync(
+    private async Task<(IReadOnlyList<string> Written, IReadOnlyList<string> Skipped)> WriteOutputsAsync(
         ReleaseRequest request,
         FactBase factBase,
         IReadOnlyDictionary<Audience, string> finalTexts,
+        PipelineMode mode,
         CancellationToken cancellationToken)
     {
         List<string> written = [];
+        List<string> skipped = [];
 
         written.Add(await jsonWriter.WriteAsync(factBase, finalTexts, cancellationToken));
 
         if (finalTexts.TryGetValue(Audience.Technical, out string? technical))
         {
             written.Add(await markdownWriter.WriteAsync(request.Tag, technical, cancellationToken));
-            written.Add(await releaseNotesWriter.WriteAsync(
-                request.Repository, request.Tag, technical, cancellationToken));
+
+            // Writing the record and announcing the release are two acts. Only the
+            // second one is skipped here, and it is named rather than passed over in
+            // silence, so a run that published nothing says so.
+            if (mode == PipelineMode.Generate)
+            {
+                written.Add(await releaseNotesWriter.WriteAsync(
+                    request.Repository, request.Tag, technical, cancellationToken));
+            }
+            else
+            {
+                skipped.Add($"Release notes for {request.Tag} "
+                    + $"in {request.Repository.Owner}/{request.Repository.Name}");
+            }
         }
 
-        return written;
+        return (written, skipped);
     }
 }

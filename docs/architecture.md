@@ -46,6 +46,7 @@ The thorough check is a second model pass and can be turned off.
 Whether it earns its tokens is a question the run itself answers - see [Run metrics](run-metrics.md).
 
 **Preview and generate are the same run.** They differ in the last step only: preview writes nothing.
+Writing and publishing are separable there too: `--no-publish` writes `changelog.json` and `CHANGELOG.md` and leaves the release notes untouched, because producing a record is not the same act as announcing a release.
 
 ## Choices that constrain contributions
 

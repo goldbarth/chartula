@@ -23,14 +23,21 @@ public sealed record AudienceOutcome(
 /// <param name="WrittenOutputs">
 /// Paths and links written this run. Empty in preview mode - nothing is written.
 /// </param>
-/// <param name="Metrics">What the run did and what it cost in tokens.</param>
 public sealed record ReleaseOutcome(
     string Tag,
     PipelineMode Mode,
     IReadOnlyList<AudienceOutcome> Renderings,
     IReadOnlyList<string> WrittenOutputs)
 {
+    /// <summary>What the run did and what it cost in tokens.</summary>
     public RunReport Metrics { get; init; } = RunReport.Empty;
+
+    /// <summary>
+    /// Outputs this run deliberately did not produce, named so a skipped
+    /// publication is visible rather than silent. Empty unless a mode leaves
+    /// something out.
+    /// </summary>
+    public IReadOnlyList<string> SkippedOutputs { get; init; } = [];
 
     public ReleaseOutcome(
         string tag,
