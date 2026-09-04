@@ -46,16 +46,25 @@ internal static class Program
             return 1;
         }
 
+        IConfiguration configuration;
         ServiceProvider services;
         try
         {
-            services = BuildServices();
+            configuration = BuildConfiguration();
+            services = BuildServices(configuration);
         }
         catch (InvalidOperationException ex)
         {
             // A configuration error (e.g. an invalid value in chartula.yaml).
             Console.Error.WriteLine($"Configuration error: {ex.Message}");
             return 1;
+        }
+
+        // A warning about the run, not part of it: stderr keeps it out of the
+        // changelog when the output is redirected to a file.
+        if (GitHubTokenNotice.For(configuration) is { } notice)
+        {
+            Console.Error.WriteLine(notice);
         }
 
         using (services)
@@ -67,15 +76,18 @@ internal static class Program
         }
     }
 
-    private static ServiceProvider BuildServices()
-    {
-        // chartula.yaml refines behavior; environment variables override it. The
-        // tool runs with sensible defaults when neither is present.
-        IConfiguration configuration = new ConfigurationBuilder()
+    /// <summary>
+    /// chartula.yaml refines behavior; environment variables override it. The tool
+    /// runs with sensible defaults when neither is present.
+    /// </summary>
+    private static IConfiguration BuildConfiguration()
+        => new ConfigurationBuilder()
             .AddChartulaYaml(Directory.GetCurrentDirectory())
             .AddEnvironmentVariables()
             .Build();
 
+    private static ServiceProvider BuildServices(IConfiguration configuration)
+    {
         return new ServiceCollection()
             .AddChartulaObservability()
             .AddChartulaLlm(configuration)

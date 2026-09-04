@@ -194,6 +194,11 @@ How the GitHub API is reached. The token is read by environment-variable name, n
 | `apiBaseUrl` | `https://api.github.com/` | REST API base URL (override for GitHub Enterprise). |
 | `tokenEnvironmentVariable` | `GITHUB_TOKEN` | Name of the environment variable holding the API token. |
 
+The token is optional and the run says at startup when it is missing, naming whichever variable it looked in.
+It is worth setting all the same: unauthenticated GitHub allows 60 requests an hour per IP address, a run spends roughly one per pull request, and the budget is shared with every other unauthenticated request from that address.
+When it runs out the run fails partway through with a 403 that names a commit rather than the cause.
+A token raises the limit to 5000 an hour.
+
 ### `labels`
 
 Steer curation with GitHub labels. All optional; with no rules, labels are ignored.
