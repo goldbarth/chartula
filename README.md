@@ -35,15 +35,19 @@ See the [Roadmap](#roadmap) for what ships when.
 
 ## Why Chartula?
 
-Release communication usually forces a trade-off between three imperfect options.
+One release. Three audiences. Three completely different questions.
 
-**Developer-oriented changelogs** read cleanly for engineers, but leave customers guessing what actually changed for them.
+**Developers** want to know what changed.  
+**Customers** want to know why they should care.  
+**Product people** want the bigger picture.
 
-**Polished customer-facing release notes** look great, but tend to live outside your repository, behind hosting and subscriptions.
+Writing all three by hand is repetitive. Generating them blindly is risky.
 
-**Automated summaries** can turn thin commit messages into confident-sounding claims nobody can fully trust.
+Chartula takes the pull requests you already merged, builds one shared fact base, and turns it into release notes for each audience. Then it checks the results against those facts before they ship.
 
-Chartula aims at the gap in the middle: one pipeline, run from your own repo, that turns the same set of pull requests into several audience-specific outputs **and** checks each one against the facts before it ships.
+Same release. Different language. Still the same facts.
+
+No watermarks. No platform branding. Just your release notes.
 
 ---
 
