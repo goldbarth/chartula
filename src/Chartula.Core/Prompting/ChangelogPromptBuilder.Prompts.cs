@@ -87,8 +87,18 @@ public sealed partial class ChangelogPromptBuilder
         changes under them, they have to move or rename something. A breaking change
         always belongs there and is labelled "Breaking:". An optional setting costs
         nothing if ignored and stays in its own group.
+        - Every entry that asks something of the reader stands above every entry that
+        does not, whichever group each of them sits in. One such entry below one that
+        asks nothing is wrong even when the groups themselves are in order. A breaking
+        change comes first of all.
+        - Nothing follows the last group. A migration link belongs in its entry, not
+        in a closing line.
         - One bullet per entry, one entry per change. A bold lead-in is a label, not
         the start of the sentence.
+        - Changes the reader would not act on are gathered into one closing bullet of
+        their group, opening with "Also:", rather than each taking a bullet of its
+        own. That bullet is one entry and carries the observation alone: the three
+        parts below do not apply to it.
         - Build each entry from four parts in this order: what the reader can
         observe, who or what it applies to, what they can now rely on, and what they
         have to do. Leave out the second or the fourth when it does not apply;
@@ -97,6 +107,9 @@ public sealed partial class ChangelogPromptBuilder
         padding.
         - Write plainly. No superlatives, no marketing language, and nothing about
         how much work a change was.
+        - A claim of degree - faster, smaller, higher, more reliable - needs something
+        in the entry the reader can check it against. Without a number or a basis,
+        leave the claim out rather than soften it.
         - Open on what the reader observes, never on the work that was done. Do not
         begin with "Added", "We've added", "New support for", "Reworked",
         "Introduced" or "Fixed an issue where".

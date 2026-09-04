@@ -183,6 +183,50 @@ public sealed class ChangelogPromptBuilderTests
     }
 
     [Fact]
+    public void Puts_what_the_reader_must_act_on_above_what_they_can_ignore()
+    {
+        // Judged as B1 in the evaluation harness, and written in output-format.md
+        // rule 10. An entry saying separate marketing files are no longer written
+        // sat below entries that ask nothing, and one such entry fails the whole
+        // rendering however good the rest of it is.
+        string system = CustomerSystem();
+
+        Assert.Contains("stands above every entry that", system);
+        Assert.Contains("comes first of all", system);
+    }
+
+    [Fact]
+    public void Ends_the_document_with_its_last_group()
+    {
+        // output-format.md rule 5: a link under the last group is the one thing the
+        // reader must act on, in the one place the ordering rule cannot reach.
+        Assert.Contains("Nothing follows the last group", CustomerSystem());
+    }
+
+    [Fact]
+    public void Collapses_what_the_reader_would_not_act_on_into_one_line()
+    {
+        // output-format.md rule 11, judged as B3 rule 2. The exemption matters as
+        // much as the rule: the outcome slot is compulsory since #106, and the
+        // collapsed line is the one entry that carries none.
+        string system = CustomerSystem();
+
+        Assert.Contains("\"Also:\"", system);
+        Assert.Contains("carries the observation alone", system);
+    }
+
+    [Fact]
+    public void Keeps_out_a_claim_of_degree_the_reader_cannot_check()
+    {
+        // B3 rule 3. "defaults to a much higher value" passed the rule next to this
+        // one, which forbids superlatives and marketing language and is neither.
+        string system = CustomerSystem();
+
+        Assert.Contains("claim of degree", system);
+        Assert.Contains("check it against", system);
+    }
+
+    [Fact]
     public void Carries_the_test_that_decides_whether_a_closing_clause_is_an_outcome()
     {
         // The largest single failure, 19 of 53: "...so text completes properly"
