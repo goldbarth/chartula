@@ -18,7 +18,7 @@ The model provider and which model to use. API keys are read by environment-vari
 | `model` | per provider | The model id passed to the provider. See [Choosing a model](#choosing-a-model). |
 | `baseUrl` | per provider | The endpoint the provider is reached at. See [Running against your own endpoint](#running-against-your-own-endpoint). |
 | `apiKeyEnvironmentVariable` | per provider | Name of the environment variable holding the API key. |
-| `maxOutputTokens` | `16000` | Ceiling on the tokens the model may produce per call. |
+| `maxOutputTokens` | `32000` | Ceiling on the tokens the model may produce per call, thinking included. Thinking is produced first, so a ceiling that only fits it leaves no text. |
 | `thinking` | `provider-default` | Whether the model reasons before answering. One of `provider-default`, `disabled`, `adaptive`. `anthropic` only. |
 
 Three of those defaults depend on the provider, because a default that is right for one is wrong for the other:

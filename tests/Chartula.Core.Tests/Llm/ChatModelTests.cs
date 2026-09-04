@@ -170,4 +170,14 @@ public sealed class ChatModelTests
 
         Assert.Equal(new ChatModelOptions().MaxOutputTokens, chat.LastOptions?.MaxOutputTokens);
     }
+
+    [Fact]
+    public void Leaves_the_model_room_to_write_after_it_has_finished_thinking()
+    {
+        // Thinking comes out of this same ceiling and goes first. At 16,000 the
+        // customer call spent the whole allowance thinking and was cut off before
+        // it wrote a character: stop_reason max_tokens, a thinking block and no
+        // text block, on four of five renders of 2026-09-04.
+        Assert.True(new ChatModelOptions().MaxOutputTokens >= 32_000);
+    }
 }
