@@ -22,6 +22,11 @@ public static class ReleaseDescription
     /// the body and the description is <c>null</c> - a model that could not write
     /// one from the facts leaves the line out, and the field is then omitted rather
     /// than emitted empty.
+    /// <para>
+    /// The same holds when the line is all there is. A description is an opening
+    /// for something, so one with nothing under it is a misread rather than a
+    /// summary, and lifting it out would leave the run with no rendering at all.
+    /// </para>
     /// </summary>
     public static (string? Description, string Body) SplitOff(string text)
     {
@@ -44,7 +49,20 @@ public static class ReleaseDescription
             description = description[2..].Trim();
         }
 
+        string body = rest.TrimStart();
+
+        // A description that consumes the whole rendering is not a description. The
+        // model answered with one line and no entries, or wrote the entries onto the
+        // label line; either way the text is the only thing the run produced, and
+        // handing it over as a field of the page loses it. Keep it as the body, and
+        // let the emptiness that follows mean what the rest of the pipeline reads it
+        // as: a release with nothing to say to this audience.
+        if (body.Length == 0)
+        {
+            return (null, text);
+        }
+
         // The label line is consumed either way: an empty one is not body text.
-        return (description.Length == 0 ? null : description, rest.TrimStart());
+        return (description.Length == 0 ? null : description, body);
     }
 }

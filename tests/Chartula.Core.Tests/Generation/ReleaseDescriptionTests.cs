@@ -56,11 +56,40 @@ public sealed class ReleaseDescriptionTests
     }
 
     [Fact]
-    public void A_description_on_its_own_leaves_an_empty_body()
+    public void A_line_with_nothing_under_it_is_the_body_and_not_a_description()
     {
-        (string? description, string body) = ReleaseDescription.SplitOff("Description: All there is.");
+        // The run of 2026-09-04 wrote a customer rendering of zero characters and no
+        // page, with no error anywhere: the whole answer had been lifted out as the
+        // description. A description opens something, so one with nothing under it
+        // was read wrong, and the text is the only thing the run has.
+        const string text = "Description: All there is.";
 
-        Assert.Equal("All there is.", description);
-        Assert.Equal(string.Empty, body);
+        (string? description, string body) = ReleaseDescription.SplitOff(text);
+
+        Assert.Null(description);
+        Assert.Equal(text, body);
+    }
+
+    [Fact]
+    public void A_line_followed_only_by_blanks_is_the_body_too()
+    {
+        const string text = "Description: All there is.\n\n   \n";
+
+        (string? description, string body) = ReleaseDescription.SplitOff(text);
+
+        Assert.Null(description);
+        Assert.Equal(text, body);
+    }
+
+    [Fact]
+    public void One_entry_under_the_line_is_enough_to_split()
+    {
+        // The guard above turns on the body being empty, not on how much of one
+        // there is: a single entry still leaves a description to lift.
+        (string? description, string body) =
+            ReleaseDescription.SplitOff("Description: A release about faster runs.\n\n- Something.");
+
+        Assert.Equal("A release about faster runs.", description);
+        Assert.Equal("- Something.", body);
     }
 }
