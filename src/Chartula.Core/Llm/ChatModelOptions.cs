@@ -12,11 +12,17 @@ public sealed class ChatModelOptions
     /// <summary>
     /// The ceiling on tokens the model may produce per call. Providers require this
     /// and substitute a small default when it is absent, which silently truncates a
-    /// changelog mid-sentence, so it is always sent. The default leaves room for the
-    /// longest audience text while staying under the HTTP timeout a non-streaming
-    /// request is subject to.
+    /// changelog mid-sentence, so it is always sent.
+    /// <para>
+    /// Thinking is produced against this same ceiling, and it goes first. At 16,000
+    /// the customer call - the only audience whose shape is specified, so the only
+    /// one with a long prompt - spent the whole allowance thinking and was cut off
+    /// before it wrote a character: <c>stop_reason max_tokens</c>, a thinking block
+    /// and no text block. The value is twice that, so the text has as much room as
+    /// the thinking rather than sitting just under an edge.
+    /// </para>
     /// </summary>
-    public int MaxOutputTokens { get; init; } = 16_000;
+    public int MaxOutputTokens { get; init; } = 32_000;
 
     /// <summary>
     /// An optional hook for provider-specific request fields that have no

@@ -36,9 +36,11 @@ public sealed class LlmOptions
 
     /// <summary>
     /// The ceiling on tokens the model may produce per call. Raise it for releases
-    /// whose changelog runs long; a too-low ceiling truncates the text mid-sentence.
+    /// whose changelog runs long; a too-low ceiling truncates the text mid-sentence,
+    /// or leaves none at all when the model spends the allowance thinking - see
+    /// <see cref="Core.Llm.ChatModelOptions.MaxOutputTokens"/>.
     /// </summary>
-    public int MaxOutputTokens { get; init; } = 16_000;
+    public int MaxOutputTokens { get; init; } = 32_000;
 
     /// <summary>
     /// Whether the model thinks before answering: <c>provider-default</c>,
