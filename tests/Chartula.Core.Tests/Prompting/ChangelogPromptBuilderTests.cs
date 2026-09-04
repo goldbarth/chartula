@@ -170,6 +170,19 @@ public sealed class ChangelogPromptBuilderTests
     }
 
     [Fact]
+    public void Keeps_the_outcome_slot_out_of_the_parts_an_entry_may_drop()
+    {
+        // 7 of 20 entries on 2026-09-03 failed the outcome test, one of them
+        // with no outcome sentence at all. The format described an entry as
+        // four parts and then let any of the last three go, so an entry without
+        // an outcome was following the prompt rather than breaking it.
+        string system = CustomerSystem();
+
+        Assert.Contains("Leave out the second or the fourth", system);
+        Assert.Contains("what they can now rely on is always written", system);
+    }
+
+    [Fact]
     public void Carries_the_test_that_decides_whether_a_closing_clause_is_an_outcome()
     {
         // The largest single failure, 19 of 53: "...so text completes properly"
@@ -180,6 +193,7 @@ public sealed class ChangelogPromptBuilderTests
         Assert.Contains("strike the opening clause", system);
         Assert.Contains("restates the opening", system);
         Assert.Contains("negates it", system);
+        Assert.Contains("Striking the clause is not the way out", system);
     }
 
     [Fact]
