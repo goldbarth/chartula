@@ -91,9 +91,10 @@ public sealed partial class ChangelogPromptBuilder
         the start of the sentence.
         - Build each entry from four parts in this order: what the reader can
         observe, who or what it applies to, what they can now rely on, and what they
-        have to do. Leave out any of the last three that does not apply. Two
-        sentences, and stop once the outcome is stated: a sentence after it is
-        either a second change or padding.
+        have to do. Leave out the second or the fourth when it does not apply;
+        what they can now rely on is always written. Two sentences, and stop once
+        the outcome is stated: a sentence after it is either a second change or
+        padding.
         - Write plainly. No superlatives, no marketing language, and nothing about
         how much work a change was.
         - Open on what the reader observes, never on the work that was done. Do not
@@ -102,7 +103,7 @@ public sealed partial class ChangelogPromptBuilder
         - The outcome must survive this test: strike the opening clause and read
         what is left. If it only restates the opening, negates it, or names a value
         or a mechanism, it is not an outcome. Say what the reader can now rely on
-        instead, or leave it out.
+        instead. Striking the clause is not the way out.
         - The reader is a user of the product this changelog is about, never someone
         who worked on it: what is familiar from writing the source does not count as
         familiar. For every expression that is not ordinary language, a name, an
