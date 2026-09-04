@@ -109,6 +109,10 @@ Two environment variables carry the credentials, and neither is ever read from a
 | `ANTHROPIC_API_KEY` | The model that rephrases the facts. |
 | `GITHUB_TOKEN` | Reading pull requests and writing release notes. |
 
+A run starts without `GITHUB_TOKEN` and says so, because a small release still fits: GitHub allows 60 API requests an hour per IP address unauthenticated, and a run spends roughly one per pull request.
+Beyond that the run fails partway through with a 403, and the budget is shared with everything else reaching GitHub from that address.
+A token raises the limit to 5000 an hour - `export GITHUB_TOKEN=$(gh auth token)` is enough if you have the GitHub CLI.
+
 `generate` writes four outputs:
 
 - **`CHANGELOG.md`** - the technical rendering, prepended to your existing file.
