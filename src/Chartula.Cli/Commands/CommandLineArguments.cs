@@ -20,6 +20,28 @@ internal static class CommandLineArguments
         return null;
     }
 
+    /// <summary>
+    /// Every value given for <paramref name="name"/>, whether it was repeated or
+    /// written once with commas between the values. Both spellings appear in the
+    /// wild and neither is worth making a person remember, so both are read.
+    /// </summary>
+    public static IReadOnlyList<string> GetOptions(IReadOnlyList<string> args, string name)
+    {
+        List<string> values = [];
+        for (int i = 0; i < args.Count - 1; i++)
+        {
+            if (!string.Equals(args[i], name, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            values.AddRange(args[i + 1]
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+        }
+
+        return values;
+    }
+
     /// <summary>Whether <paramref name="name"/> is present as a flag.</summary>
     public static bool HasFlag(IReadOnlyList<string> args, string name)
     {

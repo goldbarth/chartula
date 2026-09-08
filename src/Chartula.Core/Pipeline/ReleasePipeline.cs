@@ -52,7 +52,7 @@ public sealed class ReleasePipeline(
         FactBase factBase = factBaseBuilder.Build(range, pullRequests);
 
         IReadOnlyDictionary<Audience, ChangelogGenerationResult> rendered =
-            await renderer.RenderAllAsync(factBase, cancellationToken);
+            await renderer.RenderAsync(factBase, request.Audiences, cancellationToken);
 
         List<AudienceOutcome> outcomes = [];
         Dictionary<Audience, string> finalTexts = [];

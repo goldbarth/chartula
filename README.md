@@ -100,6 +100,9 @@ chartula generate --tag v1.2.0 --repo owner/name
 
 # Write the files, but publish no release notes
 chartula generate --tag v1.2.0 --repo owner/name --no-publish
+
+# Render one audience instead of all three
+chartula generate --tag v1.2.0 --repo owner/name --audience customer
 ```
 
 Two environment variables carry the credentials, and neither is ever read from a config file:
@@ -123,6 +126,11 @@ A token raises the limit to 5000 an hour - `export GITHUB_TOKEN=$(gh auth token)
 A field with no source is left out of the front matter rather than filled in: no description when the facts do not support one, no date when the tag has none.
 
 `--no-publish` writes the three files and leaves the release notes alone, for when you want the record of a run without announcing a release - measuring a prompt change, say, or generating a changelog for a tag that was never shipped.
+
+`--audience` renders only the audiences you name - `technical`, `customer` or `product`, repeated or separated by commas - instead of all three.
+Each audience is a rephrasing call and a faithfulness check of its own while the fact base behind them is the same, so a run that asks for one pays for one.
+An output whose audience was not rendered is not written: no `CHANGELOG.md` without the technical rendering, no `release-<tag>.md` without the customer one.
+It is for measuring one audience's wording; a release wants all three, which is what you get without it.
 The run then lists what it skipped next to what it wrote.
 
 Every run ends with a summary of what it did and what it cost in tokens.

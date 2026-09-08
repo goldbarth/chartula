@@ -32,15 +32,28 @@ internal sealed class StubPullRequestReader : IReleasePullRequestReader
 
 internal sealed class StubRenderer : IReleaseRenderer
 {
-    public Task<IReadOnlyDictionary<Audience, ChangelogGenerationResult>> RenderAllAsync(
-        FactBase factBase, CancellationToken cancellationToken = default)
-        => Task.FromResult<IReadOnlyDictionary<Audience, ChangelogGenerationResult>>(
-            new Dictionary<Audience, ChangelogGenerationResult>
-            {
-                [Audience.Technical] = ChangelogGenerationResult.Success("- Added search"),
-                [Audience.Customer] = ChangelogGenerationResult.Success("- Search is here."),
-                [Audience.Product] = ChangelogGenerationResult.Success("- Search shipped."),
-            });
+    /// <summary>The audiences the pipeline asked for, or null when it asked for all.</summary>
+    public IReadOnlyCollection<Audience>? Asked { get; private set; }
+
+    public Task<IReadOnlyDictionary<Audience, ChangelogGenerationResult>> RenderAsync(
+        FactBase factBase,
+        IReadOnlyCollection<Audience>? audiences = null,
+        CancellationToken cancellationToken = default)
+    {
+        Asked = audiences;
+        Dictionary<Audience, ChangelogGenerationResult> all = new()
+        {
+            [Audience.Technical] = ChangelogGenerationResult.Success("- Added search"),
+            [Audience.Customer] = ChangelogGenerationResult.Success("- Search is here."),
+            [Audience.Product] = ChangelogGenerationResult.Success("- Search shipped."),
+        };
+
+        // The real renderer returns only what it was asked for, and outputs are
+        // written from what came back, so a stub that returned everything would
+        // hide the behaviour under test.
+        return Task.FromResult<IReadOnlyDictionary<Audience, ChangelogGenerationResult>>(
+            audiences is null ? all : all.Where(e => audiences.Contains(e.Key)).ToDictionary());
+    }
 }
 
 internal sealed class PassThroughThoroughChecker : IThoroughFaithfulnessChecker
@@ -105,8 +118,10 @@ internal sealed class SpyCustomerPageWriter : ICustomerPageWriter
 /// <summary>A renderer whose customer rendering can be steered by a test.</summary>
 internal sealed class CustomerRenderer(string text, string? description = null) : IReleaseRenderer
 {
-    public Task<IReadOnlyDictionary<Audience, ChangelogGenerationResult>> RenderAllAsync(
-        FactBase factBase, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyDictionary<Audience, ChangelogGenerationResult>> RenderAsync(
+        FactBase factBase,
+        IReadOnlyCollection<Audience>? audiences = null,
+        CancellationToken cancellationToken = default)
         => Task.FromResult<IReadOnlyDictionary<Audience, ChangelogGenerationResult>>(
             new Dictionary<Audience, ChangelogGenerationResult>
             {

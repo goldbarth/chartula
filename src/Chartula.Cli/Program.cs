@@ -1,6 +1,7 @@
 using Chartula.Cli.Commands;
 using Chartula.Cli.Composition;
 using Chartula.Cli.Configuration;
+using Chartula.Core.Llm;
 using Chartula.Core.Pipeline;
 using Chartula.Core.PullRequests;
 using Microsoft.Extensions.Configuration;
@@ -46,6 +47,12 @@ internal static class Program
             return 1;
         }
 
+        if (!AudienceSelection.TryParse(args, out IReadOnlyCollection<Audience>? audiences, out string? audienceError))
+        {
+            Console.Error.WriteLine(audienceError);
+            return 1;
+        }
+
         IConfiguration configuration;
         ServiceProvider services;
         try
@@ -72,7 +79,11 @@ internal static class Program
             IReleasePipeline pipeline = services.GetRequiredService<IReleasePipeline>();
 
             return await ReleaseCommand.RunAsync(
-                pipeline, mode.Value, new ReleaseRequest(tag, repository), Console.Out, CancellationToken.None);
+                pipeline,
+                mode.Value,
+                new ReleaseRequest(tag, repository) { Audiences = audiences },
+                Console.Out,
+                CancellationToken.None);
         }
     }
 
@@ -140,6 +151,10 @@ internal static class Program
 
         Options:
           --no-publish   Write changelog.json and CHANGELOG.md, but publish no release notes.
+          --audience <a> Render only this audience: technical, customer or product.
+                         Repeat it, or separate them with commas. All three by
+                         default. An output whose audience was not rendered is not
+                         written.
 
         """;
 
