@@ -29,7 +29,7 @@ public sealed class ReleaseRendererTests
         (ReleaseRenderer renderer, RecordingChangelogModel model) = Build();
 
         IReadOnlyDictionary<Audience, ChangelogGenerationResult> renderings =
-            await renderer.RenderAllAsync(Sample());
+            await renderer.RenderAsync(Sample());
 
         Assert.Equal(3, renderings.Count);
         Assert.True(renderings[Audience.Technical].IsSuccess);
@@ -49,7 +49,7 @@ public sealed class ReleaseRendererTests
     {
         (ReleaseRenderer renderer, RecordingChangelogModel model) = Build();
 
-        await renderer.RenderAllAsync(Sample());
+        await renderer.RenderAsync(Sample());
 
         IReadOnlyList<string> technical = model.StatementsFor(Audience.Technical);
         Assert.Equal(2, technical.Count); // includes the non-user-visible refactor
@@ -61,7 +61,7 @@ public sealed class ReleaseRendererTests
     {
         (ReleaseRenderer renderer, RecordingChangelogModel model) = Build();
 
-        await renderer.RenderAllAsync(Sample());
+        await renderer.RenderAsync(Sample());
 
         IReadOnlyList<string> customer = model.StatementsFor(Audience.Customer);
         string only = Assert.Single(customer); // the internal refactor is dropped
@@ -75,7 +75,7 @@ public sealed class ReleaseRendererTests
     {
         (ReleaseRenderer renderer, RecordingChangelogModel model) = Build();
 
-        await renderer.RenderAllAsync(Sample());
+        await renderer.RenderAsync(Sample());
 
         // Product sees the full set (grouping by theme is a prompt instruction).
         Assert.Equal(2, model.StatementsFor(Audience.Product).Count);
@@ -90,7 +90,7 @@ public sealed class ReleaseRendererTests
             new SelectiveFailingModel(failFor: Audience.Customer), new ChangelogFormatter()));
 
         IReadOnlyDictionary<Audience, ChangelogGenerationResult> renderings =
-            await renderer.RenderAllAsync(Sample());
+            await renderer.RenderAsync(Sample());
 
         Assert.True(renderings[Audience.Technical].IsSuccess);
         Assert.False(renderings[Audience.Customer].IsSuccess);
