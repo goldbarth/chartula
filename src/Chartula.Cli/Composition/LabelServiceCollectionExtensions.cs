@@ -19,7 +19,12 @@ internal static class LabelServiceCollectionExtensions
         LabelOptions options = configuration.GetSection(LabelOptions.SectionName).Get<LabelOptions>()
                                ?? new LabelOptions();
 
-        LabelRules rules = LabelRules.From(options.Exclude, options.Category, options.OnlyIncludeLabeled);
+        LabelRules rules = LabelRules.From(
+            options.Exclude,
+            options.Category,
+            options.OnlyIncludeLabeled,
+            options.Internal,
+            options.UserFacing);
 
         services.AddSingleton(rules);
         services.AddSingleton<ILabelRulePolicy, LabelRulePolicy>();

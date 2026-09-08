@@ -4,9 +4,10 @@ namespace Chartula.Core.Labeling;
 
 /// <summary>
 /// Label-driven curation rules: which labels exclude a change, which labels force
-/// a category, and whether only labeled changes are included. All optional -
-/// <see cref="None"/> means labels are ignored entirely and the tool works with
-/// no labels at all. Label matching is case-insensitive.
+/// a category, which labels answer whether a reader can meet the change, and
+/// whether only labeled changes are included. All optional - <see cref="None"/>
+/// means labels are ignored entirely and the tool works with no labels at all.
+/// Label matching is case-insensitive.
 /// </summary>
 public sealed class LabelRules
 {
@@ -16,9 +17,13 @@ public sealed class LabelRules
     public LabelRules(
         IEnumerable<string>? excludedLabels = null,
         IReadOnlyDictionary<string, ChangeCategory>? categoryByLabel = null,
-        bool onlyIncludeLabeled = false)
+        bool onlyIncludeLabeled = false,
+        IEnumerable<string>? internalLabels = null,
+        IEnumerable<string>? userFacingLabels = null)
     {
         ExcludedLabels = new HashSet<string>(excludedLabels ?? [], StringComparer.OrdinalIgnoreCase);
+        InternalLabels = new HashSet<string>(internalLabels ?? [], StringComparer.OrdinalIgnoreCase);
+        UserFacingLabels = new HashSet<string>(userFacingLabels ?? [], StringComparer.OrdinalIgnoreCase);
 
         Dictionary<string, ChangeCategory> categories = new(StringComparer.OrdinalIgnoreCase);
         if (categoryByLabel is not null)
@@ -43,6 +48,15 @@ public sealed class LabelRules
     public bool OnlyIncludeLabeled { get; }
 
     /// <summary>
+    /// Labels saying no reader can come into contact with the change, whatever kind
+    /// of change it is.
+    /// </summary>
+    public IReadOnlySet<string> InternalLabels { get; }
+
+    /// <summary>Labels saying a reader can come into contact with the change.</summary>
+    public IReadOnlySet<string> UserFacingLabels { get; }
+
+    /// <summary>
     /// Builds rules from configuration-shaped values, parsing category names into
     /// <see cref="ChangeCategory"/> (case-insensitive).
     /// </summary>
@@ -50,7 +64,9 @@ public sealed class LabelRules
     public static LabelRules From(
         IEnumerable<string>? excludedLabels,
         IReadOnlyDictionary<string, string>? categoryByLabel,
-        bool onlyIncludeLabeled)
+        bool onlyIncludeLabeled,
+        IEnumerable<string>? internalLabels = null,
+        IEnumerable<string>? userFacingLabels = null)
     {
         Dictionary<string, ChangeCategory>? parsed = null;
         if (categoryByLabel is not null)
@@ -69,6 +85,6 @@ public sealed class LabelRules
             }
         }
 
-        return new LabelRules(excludedLabels, parsed, onlyIncludeLabeled);
+        return new LabelRules(excludedLabels, parsed, onlyIncludeLabeled, internalLabels, userFacingLabels);
     }
 }

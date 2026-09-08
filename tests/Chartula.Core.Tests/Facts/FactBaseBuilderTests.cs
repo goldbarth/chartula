@@ -102,6 +102,70 @@ public sealed class FactBaseBuilderTests
     }
 
     [Fact]
+    public void An_internal_label_keeps_a_feature_out_of_what_a_reader_can_meet()
+    {
+        // The category says a feature. The label says nobody can come into contact
+        // with it, and the label is the one that was asked the question.
+        FactBaseBuilder builder = Builder(labels: new LabelRules(
+            internalLabels: ["visibility:internal"]));
+
+        FactBase facts = builder.Build(Range(), [
+            Pull(1, "feat(serialization): write the fact base to changelog.json",
+                null, "visibility:internal"),
+        ]);
+
+        ChangeFact change = Assert.Single(facts.Changes);
+        Assert.Equal(ChangeCategory.Feature, change.Category);
+        Assert.False(change.IsUserVisible);
+    }
+
+    [Fact]
+    public void A_user_facing_label_brings_a_change_its_category_would_hide()
+    {
+        FactBaseBuilder builder = Builder(labels: new LabelRules(
+            userFacingLabels: ["visibility:user-facing"]));
+
+        FactBase facts = builder.Build(Range(), [
+            Pull(1, "refactor: reshape the settings file", null, "visibility:user-facing"),
+        ]);
+
+        ChangeFact change = Assert.Single(facts.Changes);
+        Assert.Equal(ChangeCategory.Refactor, change.Category);
+        Assert.True(change.IsUserVisible);
+    }
+
+    [Fact]
+    public void A_change_with_no_visibility_label_falls_back_to_its_category()
+    {
+        FactBaseBuilder builder = Builder(labels: new LabelRules(
+            internalLabels: ["visibility:internal"],
+            userFacingLabels: ["visibility:user-facing"]));
+
+        FactBase facts = builder.Build(Range(), [
+            Pull(1, "feat: add search", null, "area:cli"),
+            Pull(2, "docs: rewrite the guide"),
+        ]);
+
+        Assert.True(facts.Changes[0].IsUserVisible);
+        Assert.False(facts.Changes[1].IsUserVisible);
+    }
+
+    [Fact]
+    public void A_breaking_change_stays_user_visible_whatever_its_labels_say()
+    {
+        FactBaseBuilder builder = Builder(labels: new LabelRules(
+            internalLabels: ["visibility:internal"]));
+
+        FactBase facts = builder.Build(Range(), [
+            Pull(1, "feat!: rename the configuration file", null, "visibility:internal"),
+        ]);
+
+        ChangeFact change = Assert.Single(facts.Changes);
+        Assert.True(change.IsBreaking);
+        Assert.True(change.IsUserVisible);
+    }
+
+    [Fact]
     public void Carries_the_labels_of_the_pull_request_verbatim()
     {
         FactBase facts = Builder().Build(Range(), [

@@ -11,3 +11,13 @@ llm:
   # prompt at once, and the two cannot be told apart afterwards. The evaluation
   # harness records the model with every result for the same reason.
   model: claude-sonnet-5
+
+labels:
+  # What a reader of a release can come into contact with. Chartula is a
+  # changelog generator, so its own serialisation format and the layout of the
+  # files it writes are product surface and internal detail at once, depending on
+  # who is reading - the category cannot tell those apart, and whoever wrote the
+  # pull request can. Unlabelled changes fall back to the category, so this
+  # raises the ceiling rather than being a condition for the tool to work.
+  internal: [visibility:internal]
+  userFacing: [visibility:user-facing]

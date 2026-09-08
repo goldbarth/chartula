@@ -32,10 +32,26 @@ public sealed class LabelRulesTests
     }
 
     [Fact]
+    public void From_carries_the_visibility_labels_matched_case_insensitively()
+    {
+        LabelRules rules = LabelRules.From(
+            excludedLabels: null,
+            categoryByLabel: null,
+            onlyIncludeLabeled: false,
+            internalLabels: ["visibility:internal"],
+            userFacingLabels: ["visibility:user-facing"]);
+
+        Assert.Contains("Visibility:Internal", rules.InternalLabels);
+        Assert.Contains("Visibility:User-Facing", rules.UserFacingLabels);
+    }
+
+    [Fact]
     public void None_has_no_rules()
     {
         Assert.Empty(LabelRules.None.ExcludedLabels);
         Assert.Empty(LabelRules.None.CategoryByLabel);
         Assert.False(LabelRules.None.OnlyIncludeLabeled);
+        Assert.Empty(LabelRules.None.InternalLabels);
+        Assert.Empty(LabelRules.None.UserFacingLabels);
     }
 }

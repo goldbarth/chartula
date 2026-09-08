@@ -22,7 +22,7 @@ The file is UTF-8, indented JSON.
 | `number` | integer or null | The pull request number, or `null` for commit-based changes. |
 | `url` | string or null | The pull request link, or `null` for commit-based changes. |
 | `category` | string | One of `Feature`, `Fix`, `Performance`, `Documentation`, `Refactor`, `Internal`, `Other`. |
-| `userVisible` | boolean | Whether the change is visible to end users. |
+| `userVisible` | boolean | Whether a reader can come into contact with the change. Decided by the visibility labels in [`configuration.md`](configuration.md), with the category as the fallback; a breaking change is always `true`. |
 | `breaking` | boolean | Whether the change is a breaking change. |
 | `linkedIssues` | array of integers | Linked issue numbers. Empty unless the fact-base depth includes issues. |
 | `labels` | array of strings | The labels on the pull request, verbatim and unfiltered. Empty when the source carries none, as a commit-based change does. |

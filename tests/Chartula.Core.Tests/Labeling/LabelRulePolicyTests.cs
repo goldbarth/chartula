@@ -53,6 +53,55 @@ public sealed class LabelRulePolicyTests
     }
 
     [Fact]
+    public void An_internal_label_says_no_reader_can_meet_the_change()
+    {
+        LabelRulePolicy policy = new(new LabelRules(internalLabels: ["visibility:internal"]));
+
+        Assert.False(policy.Evaluate(Change("Visibility:Internal")).UserVisible);
+    }
+
+    [Fact]
+    public void A_user_facing_label_says_a_reader_can_meet_the_change()
+    {
+        LabelRulePolicy policy = new(new LabelRules(userFacingLabels: ["visibility:user-facing"]));
+
+        Assert.True(policy.Evaluate(Change("Visibility:User-Facing")).UserVisible);
+    }
+
+    [Fact]
+    public void Labels_that_say_nothing_about_visibility_leave_the_answer_open()
+    {
+        LabelRulePolicy policy = new(new LabelRules(
+            internalLabels: ["visibility:internal"],
+            userFacingLabels: ["visibility:user-facing"]));
+
+        // Not false: silence is not an answer, and the caller falls back rather than
+        // treating an unlabelled change as internal.
+        Assert.Null(policy.Evaluate(Change("area:cli")).UserVisible);
+        Assert.Null(policy.Evaluate(Change()).UserVisible);
+    }
+
+    [Fact]
+    public void An_internal_label_wins_over_a_user_facing_one_on_the_same_change()
+    {
+        LabelRulePolicy policy = new(new LabelRules(
+            internalLabels: ["visibility:internal"],
+            userFacingLabels: ["visibility:user-facing"]));
+
+        // A contradiction a person wrote. The reading that cannot put an internal
+        // change in front of a reader is the one that wins.
+        Assert.False(policy.Evaluate(Change("visibility:user-facing", "visibility:internal")).UserVisible);
+    }
+
+    [Fact]
+    public void Configuring_no_visibility_labels_answers_nothing()
+    {
+        LabelRulePolicy policy = new(LabelRules.None);
+
+        Assert.Null(policy.Evaluate(Change("visibility:internal")).UserVisible);
+    }
+
+    [Fact]
     public void Exclusion_wins_over_only_labeled_and_category_mapping()
     {
         LabelRulePolicy policy = new(new LabelRules(
