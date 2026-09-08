@@ -18,4 +18,10 @@ public sealed class LabelOptions
 
     /// <summary>When true, only changes carrying at least one label are included.</summary>
     public bool OnlyIncludeLabeled { get; init; }
+
+    /// <summary>Labels marking a change no reader can come into contact with.</summary>
+    public List<string> Internal { get; init; } = [];
+
+    /// <summary>Labels marking a change a reader can come into contact with.</summary>
+    public List<string> UserFacing { get; init; } = [];
 }

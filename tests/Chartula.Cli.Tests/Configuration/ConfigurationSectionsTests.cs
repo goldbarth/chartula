@@ -29,6 +29,35 @@ public sealed class ConfigurationSectionsTests
     }
 
     [Fact]
+    public void Labels_section_carries_the_visibility_label_names()
+    {
+        // The names are this repository's convention, not the tool's: another project
+        // writes "internal", "no-changelog", "chore". So they are configuration.
+        LabelOptions labels = FromYaml(
+            """
+            labels:
+              internal: [visibility:internal]
+              userFacing: [visibility:user-facing]
+            """).GetSection(LabelOptions.SectionName).Get<LabelOptions>()!;
+
+        Assert.Equal(["visibility:internal"], labels.Internal);
+        Assert.Equal(["visibility:user-facing"], labels.UserFacing);
+    }
+
+    [Fact]
+    public void A_labels_section_without_visibility_names_leaves_them_empty()
+    {
+        LabelOptions labels = FromYaml(
+            """
+            labels:
+              exclude: [wontfix]
+            """).GetSection(LabelOptions.SectionName).Get<LabelOptions>()!;
+
+        Assert.Empty(labels.Internal);
+        Assert.Empty(labels.UserFacing);
+    }
+
+    [Fact]
     public void FactBase_depth_section_parses_independently()
     {
         FactBaseOptions factBase = FromYaml(

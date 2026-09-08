@@ -63,6 +63,12 @@
 #   category:
 #     security: Fix
 #   onlyIncludeLabeled: false
+# Which changes a reader can come into contact with. The names are your
+# convention, not the tool's. A breaking change is always user-facing, and a
+# change carrying neither label falls back to its category - so labelling
+# nothing leaves the customer changelog exactly as it is.
+#   internal: [visibility:internal]
+#   userFacing: [visibility:user-facing]
 
 # Which categories are dropped from the changelog. An explicit list replaces
 # the default.

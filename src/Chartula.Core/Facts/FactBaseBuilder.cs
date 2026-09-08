@@ -62,7 +62,7 @@ public sealed partial class FactBaseBuilder(
             Number: change.Number,
             Url: change.Url,
             Category: category,
-            IsUserVisible: IsUserVisible(category, classification.IsBreaking),
+            IsUserVisible: IsUserVisible(category, classification.IsBreaking, label.UserVisible),
             IsBreaking: classification.IsBreaking,
             LinkedIssues: linkedIssues,
             // Verbatim and unfiltered: which labels a rendering shows is decided
@@ -71,10 +71,19 @@ public sealed partial class FactBaseBuilder(
             Description: string.IsNullOrEmpty(description) ? null : description);
     }
 
-    // Breaking changes are always user-visible; otherwise only outward-facing
-    // categories are. Refactors, internal work, and docs are not.
-    private static bool IsUserVisible(ChangeCategory category, bool isBreaking)
-        => isBreaking || category is ChangeCategory.Feature
+    // Whether a reader can come into contact with the change. A breaking change
+    // always can, whatever a label says. Otherwise a label answers it, because
+    // whoever wrote the pull request knew the change; a category cannot, because it
+    // says what kind of change something is and a feature can be entirely internal.
+    // With no label the category is all there is, which is the behaviour of every
+    // repository that configures no visibility labels.
+    private static bool IsUserVisible(ChangeCategory category, bool isBreaking, bool? labelled)
+        => isBreaking || (labelled ?? IsOutwardFacingCategory(category));
+
+    // The fallback: outward-facing categories, with refactors, internal work and
+    // docs left out.
+    private static bool IsOutwardFacingCategory(ChangeCategory category)
+        => category is ChangeCategory.Feature
             or ChangeCategory.Fix
             or ChangeCategory.Performance
             or ChangeCategory.Other;

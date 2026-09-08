@@ -208,6 +208,26 @@ Steer curation with GitHub labels. All optional; with no rules, labels are ignor
 | `exclude` | (none) | Labels that exclude a pull request from the changelog. |
 | `category` | (none) | Map of label name to category, forcing that change's category. |
 | `onlyIncludeLabeled` | `false` | When true, only labeled pull requests are included. |
+| `internal` | (none) | Labels marking a change no reader can come into contact with. It is kept out of the customer rendering. |
+| `userFacing` | (none) | Labels marking a change a reader can come into contact with, whatever its category. |
+
+The label names are yours. `visibility:internal` is one convention; `internal`,
+`no-changelog` and `chore` are others, which is why the names are configured here
+rather than built into the tool.
+
+**What decides whether a reader can meet a change.** A breaking change always can,
+whatever its labels say. Otherwise a visibility label answers it, because whoever
+wrote the pull request knew the change. With no such label the category decides, as
+it always has: `Feature`, `Fix`, `Performance` and `Other` count as something a
+reader can meet, and `Documentation`, `Refactor` and `Internal` do not.
+
+That fallback is why labelling nothing costs nothing. A category says what kind of
+change something is, not whether a reader can meet it - a feature can be entirely
+internal, a serialisation format or an output file's layout - so a label raises the
+ceiling where the category cannot, without being a condition for the tool to work.
+A change carrying both an `internal` and a `userFacing` label is treated as
+internal: the two together are a contradiction, and that reading cannot put an
+internal change in front of a reader.
 
 ### `filter`
 
@@ -268,6 +288,8 @@ labels:
   category:
     security: Fix
   onlyIncludeLabeled: false
+  internal: [visibility:internal]
+  userFacing: [visibility:user-facing]
 
 filter:
   excludeCategories: [Internal, Documentation]
