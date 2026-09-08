@@ -227,6 +227,19 @@ public sealed class ChangelogPromptBuilderTests
     }
 
     [Fact]
+    public void Keeps_the_place_a_setting_is_reached_behind_the_outcome()
+    {
+        // Five of ten outcome failures on 2026-09-04 were entries about a setting
+        // that ended on where it lives. The rule asking for the place was being
+        // followed, not broken: nothing said the place is the fourth part, so it
+        // was written where the outcome belongs.
+        string system = CustomerSystem();
+
+        Assert.Contains("That place is the fourth", system);
+        Assert.Contains("never instead of it", system);
+    }
+
+    [Fact]
     public void Carries_the_test_that_decides_whether_a_closing_clause_is_an_outcome()
     {
         // The largest single failure, 19 of 53: "...so text completes properly"
