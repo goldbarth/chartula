@@ -49,9 +49,9 @@ public sealed class ChangelogJsonSerializerTests
 
     private static FactBase Sample() => new("v1.2.0", [
         new ChangeFact("feat: add dark mode", 42, "https://example/pull/42",
-            ChangeCategory.Feature, IsUserVisible: true, IsBreaking: false, [12], "Adds a dark theme."),
+            ChangeCategory.Feature, IsUserVisible: true, IsBreaking: false, [12], ["ui"], "Adds a dark theme."),
         new ChangeFact("fix: crash on start", null, null,
-            ChangeCategory.Fix, IsUserVisible: true, IsBreaking: false, [], null),
+            ChangeCategory.Fix, IsUserVisible: true, IsBreaking: false, [], [], null),
     ]);
 
     [Fact]
@@ -88,6 +88,7 @@ public sealed class ChangelogJsonSerializerTests
         Assert.True(change.GetProperty("userVisible").GetBoolean());
         Assert.False(change.GetProperty("breaking").GetBoolean());
         Assert.Equal([12], change.GetProperty("linkedIssues").EnumerateArray().Select(e => e.GetInt32()));
+        Assert.Equal(["ui"], change.GetProperty("labels").EnumerateArray().Select(e => e.GetString()));
         Assert.Equal("Adds a dark theme.", change.GetProperty("description").GetString());
     }
 
@@ -101,6 +102,11 @@ public sealed class ChangelogJsonSerializerTests
         Assert.Equal(JsonValueKind.Null, change.GetProperty("url").ValueKind);
         Assert.Equal(JsonValueKind.Null, change.GetProperty("description").ValueKind);
         Assert.Equal(0, change.GetProperty("linkedIssues").GetArrayLength());
+
+        // A change with no labels carries an empty array, never null: absent labels
+        // are a fact about the source, and a reader of the file should not have to
+        // tell "no labels" from "field missing".
+        Assert.Equal(0, change.GetProperty("labels").GetArrayLength());
     }
 
     [Fact]
@@ -112,5 +118,6 @@ public sealed class ChangelogJsonSerializerTests
         Assert.Equal("v1.2.0", document.Tag);
         Assert.Equal("Feature", document.Changes[0].Category);
         Assert.Equal([12], document.Changes[0].LinkedIssues);
+        Assert.Equal(["ui"], document.Changes[0].Labels);
     }
 }

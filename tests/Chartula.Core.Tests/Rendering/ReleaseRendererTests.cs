@@ -18,9 +18,9 @@ public sealed class ReleaseRendererTests
 
     private static FactBase Sample() => new("v1.0.0", [
         new ChangeFact("feat: dark mode", 7, "https://example/pull/7",
-            ChangeCategory.Feature, IsUserVisible: true, IsBreaking: false, [], "Adds a theme."),
+            ChangeCategory.Feature, IsUserVisible: true, IsBreaking: false, [], [], "Adds a theme."),
         new ChangeFact("refactor: reshape internals", 8, "https://example/pull/8",
-            ChangeCategory.Refactor, IsUserVisible: false, IsBreaking: false, [], null),
+            ChangeCategory.Refactor, IsUserVisible: false, IsBreaking: false, [], [], null),
     ]);
 
     [Fact]

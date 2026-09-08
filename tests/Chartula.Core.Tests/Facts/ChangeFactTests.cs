@@ -17,6 +17,7 @@ public sealed class ChangeFactTests
             IsUserVisible: true,
             IsBreaking: false,
             LinkedIssues: [12, 34],
+            Labels: ["ui", "theme"],
             Description: "Adds a dark theme.");
 
         ChangeFact roundTripped = RoundTrip(fact);
@@ -28,6 +29,7 @@ public sealed class ChangeFactTests
         Assert.Equal(fact.IsUserVisible, roundTripped.IsUserVisible);
         Assert.Equal(fact.IsBreaking, roundTripped.IsBreaking);
         Assert.Equal(fact.LinkedIssues, roundTripped.LinkedIssues);
+        Assert.Equal(fact.Labels, roundTripped.Labels);
         Assert.Equal(fact.Description, roundTripped.Description);
     }
 
@@ -42,6 +44,7 @@ public sealed class ChangeFactTests
             IsUserVisible: true,
             IsBreaking: false,
             LinkedIssues: [],
+            Labels: [],
             Description: null);
 
         ChangeFact roundTripped = RoundTrip(fact);
@@ -50,6 +53,7 @@ public sealed class ChangeFactTests
         Assert.Null(roundTripped.Url);
         Assert.Null(roundTripped.Description);
         Assert.Empty(roundTripped.LinkedIssues);
+        Assert.Empty(roundTripped.Labels);
         Assert.Equal(fact.Category, roundTripped.Category);
     }
 
@@ -58,7 +62,7 @@ public sealed class ChangeFactTests
     {
         ChangeFact fact = new(
             "feat!: drop v1", 9, "https://example/pull/9",
-            ChangeCategory.Feature, true, true, [1], "BREAKING CHANGE.");
+            ChangeCategory.Feature, true, true, [1], ["api"], "BREAKING CHANGE.");
 
         string json = JsonSerializer.Serialize(fact);
 

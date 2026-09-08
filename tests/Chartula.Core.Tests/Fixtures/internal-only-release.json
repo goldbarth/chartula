@@ -10,6 +10,9 @@
       "userVisible": false,
       "breaking": false,
       "linkedIssues": [],
+      "labels": [
+        "area:pipeline"
+      ],
       "description": "No behavior change."
     },
     {
@@ -20,6 +23,7 @@
       "userVisible": false,
       "breaking": false,
       "linkedIssues": [],
+      "labels": [],
       "description": null
     }
   ],

@@ -17,9 +17,9 @@ To add a fixture, drop the file in `Fixtures/`, name a constant for it on `FactB
 
 | Fixture | The case it represents |
 | --- | --- |
-| `typical-release` | A spread of categories, with links, linked issues and descriptions. |
+| `typical-release` | A spread of categories, with links, linked issues, labels and descriptions. |
 | `breaking-release` | Breaking changes among ordinary ones. |
-| `commits-only-release` | Built from commits: no pull request numbers, links or descriptions. |
+| `commits-only-release` | Built from commits: no pull request numbers, links, labels or descriptions. |
 | `internal-only-release` | Nothing user-visible, so the customer rendering has nothing to say. |
 | `empty-release` | No changes at all. |
 

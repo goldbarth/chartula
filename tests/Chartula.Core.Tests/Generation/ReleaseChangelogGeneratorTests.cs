@@ -11,7 +11,7 @@ public sealed class ReleaseChangelogGeneratorTests
     private static FactBase Sample(params ChangeFact[] changes)
         => new("v1.0.0", changes.Length == 0
             ? [new ChangeFact("feat: dark mode", 7, "https://example/pull/7",
-                ChangeCategory.Feature, true, false, [], "Adds a theme.")]
+                ChangeCategory.Feature, true, false, [], [], "Adds a theme.")]
             : changes);
 
     [Fact]

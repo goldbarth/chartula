@@ -9,7 +9,7 @@ public sealed class ThoroughFaithfulnessCheckerTests
 {
     private static FactBase Facts() => new("v1.0.0", [
         new ChangeFact("fix: correct an off-by-one in the parser", 7, "https://example/pull/7",
-            ChangeCategory.Fix, IsUserVisible: true, IsBreaking: false, [], "Fixes a parser bug."),
+            ChangeCategory.Fix, IsUserVisible: true, IsBreaking: false, [], [], "Fixes a parser bug."),
     ]);
 
     [Fact]

@@ -28,7 +28,7 @@ public sealed class AudienceSelectionRenderTests
     private static FactBase Sample() => new(
         "v1.0.0",
         [new ChangeFact("feat: add search", 7, "https://example/pull/7", ChangeCategory.Feature,
-            IsUserVisible: true, IsBreaking: false, [], "Adds search.")]);
+            IsUserVisible: true, IsBreaking: false, [], [], "Adds search.")]);
 
     [Fact]
     public async Task Renders_every_audience_when_none_is_named()

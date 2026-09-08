@@ -12,6 +12,9 @@
       "linkedIssues": [
         12
       ],
+      "labels": [
+        "area:ui"
+      ],
       "description": "Adds a dark theme toggle to the settings page."
     },
     {
@@ -25,6 +28,10 @@
         38,
         39
       ],
+      "labels": [
+        "area:auth",
+        "security"
+      ],
       "description": "Expired tokens were accepted for up to 5 minutes past expiry."
     },
     {
@@ -35,6 +42,7 @@
       "userVisible": true,
       "breaking": false,
       "linkedIssues": [],
+      "labels": [],
       "description": "Cuts a repeated API call on every run."
     },
     {
@@ -45,6 +53,7 @@
       "userVisible": false,
       "breaking": false,
       "linkedIssues": [],
+      "labels": [],
       "description": "Adds a table per section."
     },
     {
@@ -55,6 +64,7 @@
       "userVisible": false,
       "breaking": false,
       "linkedIssues": [],
+      "labels": [],
       "description": "No behavior change."
     }
   ],
