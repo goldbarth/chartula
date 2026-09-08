@@ -14,7 +14,7 @@ public sealed class FileChangelogJsonWriterTests : IDisposable
 
     private static FactBase Sample() => new("v1.0.0", [
         new ChangeFact("feat: add search", 7, "https://example/pull/7",
-            ChangeCategory.Feature, IsUserVisible: true, IsBreaking: false, [], "Adds search."),
+            ChangeCategory.Feature, IsUserVisible: true, IsBreaking: false, [], [], "Adds search."),
     ]);
 
     [Fact]

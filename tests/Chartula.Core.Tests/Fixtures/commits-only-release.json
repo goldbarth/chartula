@@ -10,6 +10,7 @@
       "userVisible": true,
       "breaking": false,
       "linkedIssues": [],
+      "labels": [],
       "description": null
     },
     {
@@ -20,6 +21,7 @@
       "userVisible": false,
       "breaking": false,
       "linkedIssues": [],
+      "labels": [],
       "description": null
     }
   ],

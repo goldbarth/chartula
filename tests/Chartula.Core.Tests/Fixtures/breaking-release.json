@@ -12,6 +12,7 @@
       "linkedIssues": [
         64
       ],
+      "labels": [],
       "description": "The v1 keys are no longer read. Migrate to the sectioned format."
     },
     {
@@ -22,6 +23,7 @@
       "userVisible": true,
       "breaking": true,
       "linkedIssues": [],
+      "labels": [],
       "description": "The old spelling was inconsistent with every other command."
     },
     {
@@ -32,6 +34,7 @@
       "userVisible": true,
       "breaking": false,
       "linkedIssues": [],
+      "labels": [],
       "description": "Shows what a run would produce without writing."
     }
   ],

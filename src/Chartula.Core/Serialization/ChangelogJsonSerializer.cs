@@ -39,6 +39,7 @@ public static class ChangelogJsonSerializer
                 change.IsUserVisible,
                 change.IsBreaking,
                 change.LinkedIssues,
+                change.Labels,
                 change.Description)).ToArray(),
             BuildRenderings(renderings));
 
@@ -99,6 +100,9 @@ public static class ChangelogJsonSerializer
                 change.UserVisible,
                 change.Breaking,
                 change.LinkedIssues,
+                // A document written before the field existed has no labels; that
+                // reads back as no labels, not as a null the fact base would carry.
+                change.Labels ?? [],
                 change.Description))]);
     }
 

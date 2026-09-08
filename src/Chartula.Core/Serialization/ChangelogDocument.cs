@@ -23,4 +23,5 @@ public sealed record ChangelogChange(
     [property: JsonPropertyName("userVisible")] bool UserVisible,
     [property: JsonPropertyName("breaking")] bool Breaking,
     [property: JsonPropertyName("linkedIssues")] IReadOnlyList<int> LinkedIssues,
+    [property: JsonPropertyName("labels")] IReadOnlyList<string> Labels,
     [property: JsonPropertyName("description")] string? Description);

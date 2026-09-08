@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Chartula.Core.Categorization;
 using Chartula.Core.Facts;
 using Chartula.Core.Llm;
@@ -16,10 +17,10 @@ public sealed class ChangelogJsonRoundTripTests
         [
             new ChangeFact(
                 "feat: add dark mode", 42, "https://example/pull/42",
-                ChangeCategory.Feature, true, false, [12, 13], "Adds a toggle."),
+                ChangeCategory.Feature, true, false, [12, 13], ["ui"], "Adds a toggle."),
             new ChangeFact(
                 "fix: handle a missing tag", null, null,
-                ChangeCategory.Fix, true, true, [], null),
+                ChangeCategory.Fix, true, true, [], [], null),
         ]);
 
     [Fact]
@@ -38,6 +39,24 @@ public sealed class ChangelogJsonRoundTripTests
 
         // The text an LLM produced must never re-enter the pipeline as a fact.
         Assert.Equal(Facts, ChangelogJsonSerializer.DeserializeFactBase(json));
+    }
+
+    [Fact]
+    public void A_document_written_before_labels_existed_still_reads_at_the_same_schema_version()
+    {
+        // Adding an optional field does not bump schemaVersion, so a file written by an
+        // earlier version has to keep reading - with no labels, not with a null the rest
+        // of the pipeline would have to guard against.
+        // Line endings differ per platform, so the field is cut by shape rather than
+        // by an exact string.
+        string json = Regex.Replace(
+            ChangelogJsonSerializer.Serialize(Facts), @"\s*""labels"":\s*\[[^\]]*\],", string.Empty);
+
+        Assert.DoesNotContain("labels", json);
+
+        FactBase read = ChangelogJsonSerializer.DeserializeFactBase(json);
+
+        Assert.All(read.Changes, change => Assert.Empty(change.Labels));
     }
 
     [Fact]

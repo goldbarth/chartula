@@ -9,9 +9,10 @@ namespace Chartula.Core.Tests.Facts;
 /// </summary>
 public sealed class FactEqualityTests
 {
-    private static ChangeFact Change(IReadOnlyList<int> linkedIssues)
+    private static ChangeFact Change(
+        IReadOnlyList<int>? linkedIssues = null, IReadOnlyList<string>? labels = null)
         => new("feat: add dark mode", 42, "https://example/pull/42",
-            ChangeCategory.Feature, true, false, linkedIssues, "Adds a toggle.");
+            ChangeCategory.Feature, true, false, linkedIssues ?? [], labels ?? [], "Adds a toggle.");
 
     [Fact]
     public void Facts_with_the_same_linked_issues_in_different_lists_are_equal()
@@ -34,6 +35,24 @@ public sealed class FactEqualityTests
     public void Linked_issue_order_is_part_of_the_fact()
     {
         Assert.NotEqual(Change([12, 13]), Change([13, 12]));
+    }
+
+    [Fact]
+    public void Facts_with_the_same_labels_in_different_lists_are_equal()
+    {
+        ChangeFact fromArray = Change(labels: ["ui", "theme"]);
+        ChangeFact fromList = Change(labels: new List<string> { "ui", "theme" });
+
+        Assert.Equal(fromArray, fromList);
+        Assert.Equal(fromArray.GetHashCode(), fromList.GetHashCode());
+    }
+
+    [Fact]
+    public void Facts_differing_in_their_labels_are_not_equal()
+    {
+        Assert.NotEqual(Change(labels: ["ui"]), Change(labels: ["api"]));
+        Assert.NotEqual(Change(labels: ["ui"]), Change(labels: ["ui", "api"]));
+        Assert.NotEqual(Change(labels: ["ui", "api"]), Change(labels: ["api", "ui"]));
     }
 
     [Fact]

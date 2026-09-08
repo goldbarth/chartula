@@ -65,6 +65,9 @@ public sealed partial class FactBaseBuilder(
             IsUserVisible: IsUserVisible(category, classification.IsBreaking),
             IsBreaking: classification.IsBreaking,
             LinkedIssues: linkedIssues,
+            // Verbatim and unfiltered: which labels a rendering shows is decided
+            // there, and a fact the base drops cannot be recovered downstream.
+            Labels: change.Labels,
             Description: string.IsNullOrEmpty(description) ? null : description);
     }
 

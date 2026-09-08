@@ -49,6 +49,7 @@ public sealed class FactBaseBuilderTests
         Assert.True(feature.IsUserVisible);
         Assert.False(feature.IsBreaking);
         Assert.Equal("Adds a theme. Closes #12", feature.Description);
+        Assert.Equal(["public"], feature.Labels);
         Assert.Empty(feature.LinkedIssues); // default depth excludes linked issues
 
         Assert.Equal(ChangeCategory.Fix, facts.Changes[1].Category);
@@ -101,6 +102,41 @@ public sealed class FactBaseBuilderTests
     }
 
     [Fact]
+    public void Carries_the_labels_of_the_pull_request_verbatim()
+    {
+        FactBase facts = Builder().Build(Range(), [
+            Pull(7, "feat: dark mode", null, "area:ui", "Needs Docs"),
+        ]);
+
+        ChangeFact change = Assert.Single(facts.Changes);
+        Assert.Equal(["area:ui", "Needs Docs"], change.Labels);
+    }
+
+    [Fact]
+    public void Carries_labels_the_curation_rules_acted_on_just_like_any_other()
+    {
+        // The forced category is curation's business. The label itself is a fact
+        // about the pull request, so it reaches the base unfiltered all the same.
+        FactBaseBuilder builder = Builder(labels: new LabelRules(
+            categoryByLabel: new Dictionary<string, ChangeCategory> { ["security"] = ChangeCategory.Fix }));
+
+        FactBase facts = builder.Build(Range(), [Pull(1, "chore: rotate keys", null, "security")]);
+
+        ChangeFact change = Assert.Single(facts.Changes);
+        Assert.Equal(ChangeCategory.Fix, change.Category);
+        Assert.Equal(["security"], change.Labels);
+    }
+
+    [Fact]
+    public void Gives_a_change_with_no_labels_an_empty_list_rather_than_null()
+    {
+        FactBase facts = Builder().Build(Range(), [Pull(7, "feat: dark mode")]);
+
+        ChangeFact change = Assert.Single(facts.Changes);
+        Assert.Empty(change.Labels);
+    }
+
+    [Fact]
     public void Falls_back_to_commit_data_when_there_are_no_pull_requests()
     {
         FactBase facts = Builder().Build(
@@ -112,6 +148,7 @@ public sealed class FactBaseBuilderTests
         Assert.Null(change.Number);
         Assert.Null(change.Url);
         Assert.Empty(change.LinkedIssues);
+        Assert.Empty(change.Labels); // a commit carries none
         Assert.Equal(ChangeCategory.Feature, change.Category);
     }
 }

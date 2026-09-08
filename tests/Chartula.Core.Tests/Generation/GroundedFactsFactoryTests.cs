@@ -9,7 +9,7 @@ public sealed class GroundedFactsFactoryTests
 {
     private static ChangeFact Change(
         string title, ChangeCategory category, bool userVisible = true, bool breaking = false)
-        => new(title, 1, "https://example/pull/1", category, userVisible, breaking, [], null);
+        => new(title, 1, "https://example/pull/1", category, userVisible, breaking, [], [], null);
 
     private static FactBase Facts(params ChangeFact[] changes) => new("v1.0.0", changes);
 

@@ -12,7 +12,7 @@ public sealed class RuleBasedFaithfulnessCheckerTests
     private static FactBase Facts(params ChangeFact[] changes)
         => new("v1.2.0", changes.Length == 0
             ? [new ChangeFact("feat: add dark mode", 42, "https://example/pull/42",
-                ChangeCategory.Feature, true, false, [7], "Adds a dark theme toggle.")]
+                ChangeCategory.Feature, true, false, [7], [], "Adds a dark theme toggle.")]
             : changes);
 
     [Fact]
@@ -68,7 +68,7 @@ public sealed class RuleBasedFaithfulnessCheckerTests
     public void Does_not_flag_a_quoted_name_present_in_the_facts()
     {
         FactBase facts = Facts(new ChangeFact("feat: add the search box", 5, null,
-            ChangeCategory.Feature, true, false, [], null));
+            ChangeCategory.Feature, true, false, [], [], null));
 
         FaithfulnessReport report = _checker.Check("Adds the `search box`.", facts);
 

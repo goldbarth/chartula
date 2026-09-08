@@ -198,9 +198,11 @@ public sealed class FactBaseFixtureTests
         FactBase internalOnly = FactBaseFixture.Load(FactBaseFixture.InternalOnly);
 
         Assert.Contains(typical.Changes, change => change.LinkedIssues.Count > 0);
+        Assert.Contains(typical.Changes, change => change.Labels.Count > 0);
         Assert.Contains(breaking.Changes, change => change.IsBreaking);
         Assert.All(commitsOnly.Changes, change => Assert.Null(change.Number));
         Assert.All(commitsOnly.Changes, change => Assert.Null(change.Url));
+        Assert.All(commitsOnly.Changes, change => Assert.Empty(change.Labels));
         Assert.DoesNotContain(internalOnly.Changes, change => change.IsUserVisible);
         Assert.Empty(FactBaseFixture.Load(FactBaseFixture.Empty).Changes);
     }
