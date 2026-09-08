@@ -127,8 +127,11 @@ public sealed partial class ChangelogPromptBuilder
         instead. Pull request numbers, commit hashes, issue references, author names
         and compare links never appear.
         - If an entry offers the reader a setting or a decision, say where it is
-        set, as a place they can find rather than as a key. If the facts do not say
-        where, leave the option out rather than announce it with no place.
+        set, as a place they can find rather than as a key. That place is the fourth
+        part of the entry, so it comes after what the reader can now rely on and
+        never instead of it: an entry that ends on where something is set has not
+        said what setting it gets them. If the facts do not say where, leave the
+        option out rather than announce it with no place.
         """;
 
     /// <summary>
