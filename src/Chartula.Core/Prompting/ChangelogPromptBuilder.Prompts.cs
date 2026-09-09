@@ -59,6 +59,16 @@ public sealed partial class ChangelogPromptBuilder
     /// expression the reader has already met.
     /// </para>
     /// <para>
+    /// The outcome carries a second clause that a test alone could not do the
+    /// work of. Ten of 24 entries on 2026-09-08 still stated none, with the test
+    /// already in the prompt, because a test rejects a sentence and does not
+    /// produce one: a model that has written the mechanism keeps the mechanism,
+    /// nothing having said what the sentence should have been. So the rule below
+    /// first says where the outcome is taken from - the reader's side of the
+    /// change, and for a fix what they no longer have to do about it - and the
+    /// test follows as the check on what that produced. See issue #122.
+    /// </para>
+    /// <para>
     /// No category is named here. A category reaches the model under its
     /// configured display name - <c>categories.names</c> - so a rule naming one
     /// would break for anyone who renamed it, and the groups are defined by what
@@ -113,6 +123,12 @@ public sealed partial class ChangelogPromptBuilder
         - Open on what the reader observes, never on the work that was done. Do not
         begin with "Added", "We've added", "New support for", "Reworked",
         "Introduced" or "Fixed an issue where".
+        - Write what the reader can now rely on from their side of the change,
+        not from the change: what they no longer have to do, no longer have to
+        check, no longer have to work around, or can now count on without looking.
+        For a fix it is never that the fault is gone - the fault is the opening,
+        and the outcome is what the reader no longer has to do about it. Take it
+        from the facts of this change, which usually say what it was for.
         - The outcome must survive this test: strike the opening clause and read
         what is left. If it only restates the opening, negates it, or names a value
         or a mechanism, it is not an outcome. Say what the reader can now rely on
