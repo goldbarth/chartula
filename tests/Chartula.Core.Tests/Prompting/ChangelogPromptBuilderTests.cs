@@ -240,6 +240,22 @@ public sealed class ChangelogPromptBuilderTests
     }
 
     [Fact]
+    public void Says_where_an_outcome_is_taken_from_before_testing_the_one_written()
+    {
+        // 10 of 24 entries on 2026-09-08 stated no outcome with the test below
+        // already in the prompt, nine of them failing nothing else. A test
+        // rejects a sentence and does not produce one, so the rule says where
+        // the sentence comes from first, and names the fix case, where "the
+        // fault is gone" is the opening restated - issue #122.
+        string system = CustomerSystem();
+
+        Assert.Contains("from their side of the change", system);
+        Assert.Contains("no longer have to work around", system);
+        Assert.Contains("never that the fault is gone", system);
+        Assert.Contains("Take it from the facts of this change", system);
+    }
+
+    [Fact]
     public void Carries_the_test_that_decides_whether_a_closing_clause_is_an_outcome()
     {
         // The largest single failure, 19 of 53: "...so text completes properly"
