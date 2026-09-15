@@ -256,6 +256,69 @@ public sealed class ChangelogPromptBuilderTests
     }
 
     [Fact]
+    public void Shows_a_finished_outcome_for_a_fix_and_for_a_new_capability()
+    {
+        // Every rule around the outcome says what to refuse, and entries kept
+        // failing it with those rules in the prompt - issue #122. The examples
+        // show the sentence instead, and say their subjects are invented, so
+        // nothing in them is taken for a fact of the release.
+        string system = CustomerSystem();
+
+        Assert.Contains("one for a fix and one for a new capability", system);
+        Assert.Contains("Their subjects are invented", system);
+        Assert.Contains("so you no longer have to keep a local copy open", system);
+        Assert.Contains("so you no longer have to export it", system);
+    }
+
+    [Fact]
+    public void Opens_each_change_type_on_what_the_reader_meets()
+    {
+        // C1 of rubric/customer.md: a fix opens on what went wrong as the reader
+        // ran into it, a feature on what they can now do, a breaking change on
+        // what no longer works. A prompt opening a fix on the repaired state
+        // would ask for what the rubric does not.
+        string system = CustomerSystem();
+
+        Assert.Contains("for a fix, what went wrong as they ran into it", system);
+        Assert.Contains("for a breaking change, what no longer works", system);
+        Assert.Contains("the opening is the fault as the reader ran into it", system);
+    }
+
+    [Fact]
+    public void Leaves_out_an_outcome_the_facts_do_not_give_rather_than_invent_one()
+    {
+        // An always-written outcome against rephrase-only is a contradiction
+        // whenever the facts carry none. The rubric's fact base implications
+        // settle it: an unknown slot is omitted, never filled.
+        string system = CustomerSystem();
+
+        Assert.Contains("unless nothing in the facts of the change says what it was for", system);
+        Assert.Contains("with nothing in its place", system);
+    }
+
+    [Fact]
+    public void Names_a_condition_only_when_the_facts_give_one()
+    {
+        // C2 rules 3 and 4: "in some runs" gestures at a condition nobody can
+        // place themselves in, and an unknown condition is not written as a guess.
+        string system = CustomerSystem();
+
+        Assert.Contains("a condition they can place themselves inside or outside", system);
+        Assert.Contains("If the facts do not say, leave that part out", system);
+    }
+
+    [Fact]
+    public void Gives_a_breaking_change_an_action_and_the_outcome_after_it()
+    {
+        // C4 rule 4 and C3 rule 5: a breaking change always has something to do,
+        // and its outcome is what the migration gets the reader.
+        string system = CustomerSystem();
+
+        Assert.Contains("its fourth part is never left out", system);
+        Assert.Contains("what holds once the reader has done it", system);
+    }
+
+    [Fact]
     public void Carries_the_test_that_decides_whether_a_closing_clause_is_an_outcome()
     {
         // The largest single failure, 19 of 53: "...so text completes properly"
@@ -325,7 +388,9 @@ public sealed class ChangelogPromptBuilderTests
         // sentences where two is the limit.
         string system = CustomerSystem();
 
-        Assert.Contains("stop once the outcome is stated", system);
+        // The action is the fourth part and follows the outcome, so stopping at
+        // the outcome would cut it off - B3 counts only what trails behind both.
+        Assert.Contains("stop once the outcome and, where there is one, what they have to do are stated", system);
         Assert.Contains("No superlatives, no marketing language", system);
     }
 

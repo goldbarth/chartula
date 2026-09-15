@@ -54,6 +54,13 @@ public sealed partial class ChangelogPromptBuilder
     /// entries that run on past their outcome.
     /// </para>
     /// <para>
+    /// The entry rules follow the slot table and the item axes of
+    /// <c>rubric/customer.md</c> in the same repository. A rule may be stricter
+    /// than its axis - two sentences, a fixed order - but never contrary to it:
+    /// a prompt that asks for what the rubric fails makes every measurement a
+    /// measurement of the contradiction.
+    /// </para>
+    /// <para>
     /// Two clauses are tests rather than lists, because a list of cases is
     /// never finished: what counts as an outcome, and what counts as an
     /// expression the reader has already met.
@@ -67,6 +74,16 @@ public sealed partial class ChangelogPromptBuilder
     /// first says where the outcome is taken from - the reader's side of the
     /// change, and for a fix what they no longer have to do about it - and the
     /// test follows as the check on what that produced. See issue #122.
+    /// </para>
+    /// <para>
+    /// Every other rule here says what to refuse, and a rule saying where a
+    /// sentence comes from still leaves the model to build it from a description.
+    /// So the outcome rules close on two finished entries, a fix and a new
+    /// capability, which is the shape the failures were in. The fix opens on what
+    /// went wrong, as slot 1 of the rubric has it for a fix. Their subjects are
+    /// invented and carry no number, no name and no setting, so an example breaks
+    /// none of the rules around it and has nothing a rendering could borrow as
+    /// a fact.
     /// </para>
     /// <para>
     /// No category is named here. A category reaches the model under its
@@ -107,32 +124,55 @@ public sealed partial class ChangelogPromptBuilder
         the start of the sentence.
         - Changes the reader would not act on are gathered into one closing bullet of
         their group, opening with "Also:", rather than each taking a bullet of its
-        own. That bullet is one entry and carries the observation alone: the three
-        parts below do not apply to it.
+        own. That bullet is one entry and carries the observation alone: the other
+        three parts of an entry do not apply to it.
         - Build each entry from four parts in this order: what the reader can
         observe, who or what it applies to, what they can now rely on, and what they
         have to do. Leave out the second or the fourth when it does not apply;
-        what they can now rely on is always written. Two sentences, and stop once
-        the outcome is stated: a sentence after it is either a second change or
+        what they can now rely on is always written, unless nothing in the facts of
+        the change says what it was for: then it is left out, with nothing in its
+        place.
+        Two sentences, and stop once the outcome and, where there is one, what they
+        have to do are stated: a sentence after that is either a second change or
         padding.
+        - Say who or what a change applies to when it does not apply to every
+        reader, as a condition they can place themselves inside or outside. If the
+        facts do not say, leave that part out: a hint at a condition, such as "in
+        some runs", tells the reader nothing.
+        - A breaking change always has something to do, so its fourth part is never
+        left out, and its outcome is what holds once the reader has done it, not
+        what they lose without it.
         - Write plainly. No superlatives, no marketing language, and nothing about
         how much work a change was.
         - A claim of degree - faster, smaller, higher, more reliable - needs something
         in the entry the reader can check it against. Without a number or a basis,
         leave the claim out rather than soften it.
-        - Open on what the reader observes, never on the work that was done. Do not
-        begin with "Added", "We've added", "New support for", "Reworked",
+        - Open on what the reader observes, never on the work that was done: for a
+        fix, what went wrong as they ran into it; for a new capability, what they
+        can now do or see; for a breaking change, what no longer works the way it
+        did. Do not begin with "Added", "We've added", "New support for", "Reworked",
         "Introduced" or "Fixed an issue where".
         - Write what the reader can now rely on from their side of the change,
         not from the change: what they no longer have to do, no longer have to
         check, no longer have to work around, or can now count on without looking.
-        For a fix it is never that the fault is gone - the fault is the opening,
-        and the outcome is what the reader no longer has to do about it. Take it
-        from the facts of this change, which usually say what it was for.
+        For a fix the opening is the fault as the reader ran into it, so the
+        outcome is never that the fault is gone: it is what they no longer have to
+        do about it. Take it from the facts of this change, which usually say what
+        it was for.
         - The outcome must survive this test: strike the opening clause and read
         what is left. If it only restates the opening, negates it, or names a value
         or a mechanism, it is not an outcome. Say what the reader can now rely on
         instead. Striking the clause is not the way out.
+        - Two entries in that shape follow, one for a fix and one for a new
+        capability. Their subjects are invented: take the shape from them and never
+        a word of their content.
+          **Saving over a network drive**: A document saved to a network drive could
+          lose the changes made while the connection dropped. Every change is kept
+          now, so you no longer have to keep a local copy open as a backup while you
+          work.
+          **Sharing a report**: A report can now be shared as a link. Anyone you
+          send it to can read it without an account, so you no longer have to
+          export it and attach it first.
         - The reader is a user of the product this changelog is about, never someone
         who worked on it: what is familiar from writing the source does not count as
         familiar. For every expression that is not ordinary language, a name, an
