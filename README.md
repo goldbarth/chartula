@@ -152,6 +152,7 @@ Full options are documented (not pre-filled) in [Configuration](docs/configurati
 
 | Document | What it covers |
 | --- | --- |
+| [CLI](docs/cli.md) | Every command, option and environment variable the `chartula` binary accepts. |
 | [Architecture](docs/architecture.md) | The layering, the pipeline, and the choices behind them. |
 | [Configuration](docs/configuration.md) | Every `chartula.yaml` section and its defaults. |
 | [`changelog.json` format](docs/changelog-json.md) | The stable output schema other tools build on. |
