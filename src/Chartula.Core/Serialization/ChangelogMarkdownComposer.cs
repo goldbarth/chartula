@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 
 namespace Chartula.Core.Serialization;
@@ -5,15 +6,21 @@ namespace Chartula.Core.Serialization;
 /// <summary>
 /// Composes the new <c>CHANGELOG.md</c> content from the existing file and a
 /// release. The new section is prepended at the top; existing sections are kept
-/// verbatim. Running twice for the same tag replaces that section in place rather
-/// than duplicating it, so the operation is idempotent and never reorders history.
-/// Pure and deterministic; the file I/O lives in the writer.
+/// verbatim. Running twice for the same release replaces that section in place
+/// rather than duplicating it, so the operation is idempotent and never reorders
+/// history. Pure and deterministic; the file I/O lives in the writer.
+/// <para>
+/// The section opens on <c>## VERSION - DATE</c>, Common Changelog's release
+/// heading: the version without the tag's <c>v</c>, and the tag's own date. A
+/// section is matched by that version, so one written as <c>## v1.2.0</c> before
+/// the heading changed is still the same release.
+/// </para>
 /// </summary>
 public static class ChangelogMarkdownComposer
 {
     private const string DefaultHeader = "# Changelog";
 
-    public static string Compose(string? existingContent, string tag, string body)
+    public static string Compose(string? existingContent, string tag, DateOnly? taggedAt, string body)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(tag);
         ArgumentNullException.ThrowIfNull(body);
@@ -23,8 +30,9 @@ public static class ChangelogMarkdownComposer
 
         (string header, List<Section> sections) = Parse(normalized, isNew);
 
-        Section newSection = new(tag, BuildSection(tag, Normalize(body).Trim()));
-        int existing = sections.FindIndex(section => string.Equals(section.Tag, tag, StringComparison.Ordinal));
+        string version = Version(tag.Trim());
+        Section newSection = new(version, BuildSection(version, taggedAt, Normalize(body).Trim()));
+        int existing = sections.FindIndex(section => string.Equals(section.Version, version, StringComparison.Ordinal));
         if (existing >= 0)
         {
             sections[existing] = newSection; // replace in place: no duplicate, order kept
@@ -37,7 +45,7 @@ public static class ChangelogMarkdownComposer
         return Assemble(header, sections);
     }
 
-    private sealed record Section(string Tag, string Raw);
+    private sealed record Section(string Version, string Raw);
 
     private static (string Header, List<Section> Sections) Parse(string content, bool isNew)
     {
@@ -53,7 +61,7 @@ public static class ChangelogMarkdownComposer
         List<Section> sections = [];
         while (i < lines.Length)
         {
-            IsSectionHeading(lines[i], out string tag);
+            IsSectionHeading(lines[i], out string version);
             List<string> block = [lines[i]];
             i++;
             for (; i < lines.Length && !IsSectionHeading(lines[i], out _); i++)
@@ -61,7 +69,7 @@ public static class ChangelogMarkdownComposer
                 block.Add(lines[i]);
             }
 
-            sections.Add(new Section(tag, string.Join('\n', block).Trim()));
+            sections.Add(new Section(version, string.Join('\n', block).Trim()));
         }
 
         string header = string.Join('\n', headerLines).Trim();
@@ -73,9 +81,9 @@ public static class ChangelogMarkdownComposer
         return (header, sections);
     }
 
-    private static bool IsSectionHeading(string line, out string tag)
+    private static bool IsSectionHeading(string line, out string version)
     {
-        tag = string.Empty;
+        version = string.Empty;
         if (!line.StartsWith("## ", StringComparison.Ordinal))
         {
             return false;
@@ -88,12 +96,23 @@ public static class ChangelogMarkdownComposer
         }
 
         int space = rest.IndexOfAny([' ', '\t']);
-        tag = space < 0 ? rest : rest[..space];
+        version = Version(space < 0 ? rest : rest[..space]);
         return true;
     }
 
-    private static string BuildSection(string tag, string body)
-        => body.Length == 0 ? $"## {tag}" : $"## {tag}\n\n{body}";
+    // "v1.2.0" is the tag, "1.2.0" the version. Only a "v" in front of a digit is
+    // taken off, so a tag that is not a version at all is kept as it is.
+    private static string Version(string tag)
+        => tag.Length > 1 && (tag[0] is 'v' or 'V') && char.IsAsciiDigit(tag[1]) ? tag[1..] : tag;
+
+    private static string BuildSection(string version, DateOnly? taggedAt, string body)
+    {
+        // A date with no source is left off rather than filled with today's.
+        string heading = taggedAt is { } date
+            ? $"## {version} - {date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}"
+            : $"## {version}";
+        return body.Length == 0 ? heading : $"{heading}\n\n{body}";
+    }
 
     private static string Assemble(string header, List<Section> sections)
     {

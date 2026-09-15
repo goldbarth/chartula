@@ -14,10 +14,10 @@ public sealed class FileChangelogMarkdownWriterTests : IDisposable
     {
         FileChangelogMarkdownWriter writer = new(_directory);
 
-        string path = await writer.WriteAsync("v1.0.0", "- Added search");
+        string path = await writer.WriteAsync("v1.0.0", new DateOnly(2026, 6, 14), "- Add search");
 
         Assert.Equal(Path_, path);
-        Assert.Equal("# Changelog\n\n## v1.0.0\n\n- Added search\n", await File.ReadAllTextAsync(path));
+        Assert.Equal("# Changelog\n\n## 1.0.0 - 2026-06-14\n\n- Add search\n", await File.ReadAllTextAsync(path));
     }
 
     [Fact]
@@ -25,12 +25,12 @@ public sealed class FileChangelogMarkdownWriterTests : IDisposable
     {
         FileChangelogMarkdownWriter writer = new(_directory);
 
-        await writer.WriteAsync("v1.0.0", "- Added search");
-        await writer.WriteAsync("v1.1.0", "- Fixed a crash");
+        await writer.WriteAsync("v1.0.0", null, "- Added search");
+        await writer.WriteAsync("v1.1.0", null, "- Fixed a crash");
 
         string content = await File.ReadAllTextAsync(Path_);
         Assert.Equal(
-            "# Changelog\n\n## v1.1.0\n\n- Fixed a crash\n\n## v1.0.0\n\n- Added search\n",
+            "# Changelog\n\n## 1.1.0\n\n- Fixed a crash\n\n## 1.0.0\n\n- Added search\n",
             content);
     }
 
@@ -39,11 +39,11 @@ public sealed class FileChangelogMarkdownWriterTests : IDisposable
     {
         FileChangelogMarkdownWriter writer = new(_directory);
 
-        await writer.WriteAsync("v1.0.0", "- Added search");
-        await writer.WriteAsync("v1.0.0", "- Added search");
+        await writer.WriteAsync("v1.0.0", null, "- Added search");
+        await writer.WriteAsync("v1.0.0", null, "- Added search");
 
         string content = await File.ReadAllTextAsync(Path_);
-        Assert.Equal("# Changelog\n\n## v1.0.0\n\n- Added search\n", content);
+        Assert.Equal("# Changelog\n\n## 1.0.0\n\n- Added search\n", content);
     }
 
     public void Dispose()

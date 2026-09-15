@@ -13,7 +13,8 @@ public sealed class FileChangelogMarkdownWriter(string outputDirectory) : IChang
     /// <summary>The fixed file name written into the output directory.</summary>
     public const string FileName = "CHANGELOG.md";
 
-    public async Task<string> WriteAsync(string tag, string body, CancellationToken cancellationToken = default)
+    public async Task<string> WriteAsync(
+        string tag, DateOnly? taggedAt, string body, CancellationToken cancellationToken = default)
     {
         Directory.CreateDirectory(outputDirectory);
         string path = Path.Combine(outputDirectory, FileName);
@@ -22,7 +23,7 @@ public sealed class FileChangelogMarkdownWriter(string outputDirectory) : IChang
             ? await File.ReadAllTextAsync(path, cancellationToken)
             : null;
 
-        string composed = ChangelogMarkdownComposer.Compose(existing, tag, body);
+        string composed = ChangelogMarkdownComposer.Compose(existing, tag, taggedAt, body);
         await File.WriteAllTextAsync(path, composed, cancellationToken);
         return path;
     }
