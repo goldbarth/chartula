@@ -39,7 +39,7 @@ See [Project setup](#project-setup) and [Opening a pull request](#opening-a-pull
 
 ## Before you start
 
-Phase 1 is complete, so the core architecture has settled - but the surface around it is still growing.
+Chartula is alpha in progress: the core architecture has settled, but the surface around it is still growing.
 
 If you are planning anything beyond a small fix, please **open an issue first** to talk it through.
 This saves you from duplicated effort and helps make sure a change fits where the project is heading.

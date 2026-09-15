@@ -8,7 +8,7 @@
 **Turn your merged pull requests into audience-ready release notes**
 technical, customer-facing, and product, from a single source of truth, without the hallucinations.
 
-[![Status](https://img.shields.io/badge/status-phase%201%20complete-blue?style=flat-square)](#status)
+[![Status](https://img.shields.io/badge/status-alpha%20in%20progress-blue?style=flat-square)](#status)
 ![.NET 10](https://img.shields.io/badge/.NET-10-512BD4?style=flat-square&logo=dotnet&logoColor=white)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](CONTRIBUTING.md)
@@ -24,9 +24,9 @@ It grounds every generated line against the actual facts of your PRs, so the out
 
 ## Status
 
-**Phase 1 is complete.** The pipeline runs end to end on a real repository, from reading pull requests to writing `CHANGELOG.md`, a customer page per release, `changelog.json` and GitHub release notes.
+**Alpha in progress.** The pipeline runs end to end on a real repository, from reading pull requests to writing `CHANGELOG.md`, a customer page per release, `changelog.json` and GitHub release notes.
 
-It is not published yet, so there is no `dotnet tool install` and no prebuilt binary - both land in phase 3.
+It is not published yet, so there is no `dotnet tool install` and no prebuilt binary.
 To try it today, [build it from source](#installation).
 
 See the [Roadmap](#roadmap) for what ships when.
