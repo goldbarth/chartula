@@ -81,8 +81,10 @@ public sealed partial class FactBaseBuilder(
         => isBreaking || (labelled ?? IsOutwardFacingCategory(category));
 
     // The fallback: outward-facing categories, with refactors, internal work and
-    // docs left out.
-    private static bool IsOutwardFacingCategory(ChangeCategory category)
+    // docs left out. It is also the default of the technical and product
+    // renderings, which read it directly because a visibility label may widen what
+    // reaches them but not narrow it.
+    internal static bool IsOutwardFacingCategory(ChangeCategory category)
         => category is ChangeCategory.Feature
             or ChangeCategory.Fix
             or ChangeCategory.Performance

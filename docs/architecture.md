@@ -51,7 +51,11 @@ Writing and publishing are separable there too: `--no-publish` writes `changelog
 **Every audience that has a written shape gets a file.** The technical rendering feeds `CHANGELOG.md` and the release notes; the customer rendering is written as a page of its own, `release-<tag>.md`, in the published serialisation - front matter, then the entries.
 Its one-sentence description is written by the model in the same call as the entries, so it is a rephrasing of the same facts and the faithfulness check covers it on the same footing.
 A field whose source has nothing to give is left out, never emitted empty: an empty field would read as a fact about the release rather than as an absent source.
-The product rendering has no template yet, so it has no file - guessing a shape for it would be the defect the customer shape exists to fix.
+The product rendering has a shape but no destination yet, so its text lives in `changelog.json` alone.
+
+**What a template decides is not the model's.** Each audience follows its template in [chartula-evals](https://github.com/goldbarth/chartula-evals) (`docs/output-format.md`).
+Which changes reach a rendering, the group and reference of a technical entry, and the theme of a product entry are set when the facts are handed to the model; the prompt only says to use them as given.
+The `CHANGELOG.md` release heading, `## VERSION - DATE`, is written around the technical text rather than by it.
 
 ## Choices that constrain contributions
 

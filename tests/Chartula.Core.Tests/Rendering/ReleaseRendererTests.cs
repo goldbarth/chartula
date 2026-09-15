@@ -45,15 +45,16 @@ public sealed class ReleaseRendererTests
     }
 
     [Fact]
-    public async Task Technical_keeps_links_and_the_full_change_set()
+    public async Task Technical_keeps_links_and_leaves_out_a_refactor_nothing_outside_the_repository_meets()
     {
         (ReleaseRenderer renderer, RecordingChangelogModel model) = Build();
 
         await renderer.RenderAsync(Sample());
 
-        IReadOnlyList<string> technical = model.StatementsFor(Audience.Technical);
-        Assert.Equal(2, technical.Count); // includes the non-user-visible refactor
-        Assert.Contains(technical, s => s.Contains("https://example/pull/7"));
+        // A1 of the technical rubric: a restructuring with identical behaviour does
+        // not reach this reader either, so only the feature is handed over.
+        string only = Assert.Single(model.StatementsFor(Audience.Technical));
+        Assert.Contains("https://example/pull/7", only);
     }
 
     [Fact]
@@ -77,8 +78,10 @@ public sealed class ReleaseRendererTests
 
         await renderer.RenderAsync(Sample());
 
-        // Product sees the full set (grouping by theme is a prompt instruction).
-        Assert.Equal(2, model.StatementsFor(Audience.Product).Count);
+        // Product sees what could move a decision, which an unlabelled refactor
+        // does not, and every change arrives with its theme already set.
+        string only = Assert.Single(model.StatementsFor(Audience.Product));
+        Assert.StartsWith("[Other] ", only);
     }
 
     [Fact]

@@ -158,7 +158,7 @@ public sealed class ReleasePipeline(
 
         if (finalTexts.TryGetValue(Audience.Technical, out string? technical))
         {
-            written.Add(await markdownWriter.WriteAsync(request.Tag, technical, cancellationToken));
+            written.Add(await markdownWriter.WriteAsync(request.Tag, range.TaggedAt, technical, cancellationToken));
 
             // Writing the record and announcing the release are two acts. Only the
             // second one is skipped here, and it is named rather than passed over in

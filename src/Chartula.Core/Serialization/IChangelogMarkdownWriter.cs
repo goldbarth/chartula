@@ -8,5 +8,13 @@ namespace Chartula.Core.Serialization;
 public interface IChangelogMarkdownWriter
 {
     /// <summary>Writes the section for <paramref name="tag"/> and returns the path.</summary>
-    Task<string> WriteAsync(string tag, string body, CancellationToken cancellationToken = default);
+    /// <param name="tag">The release tag; the section heading carries its version.</param>
+    /// <param name="taggedAt">
+    /// The date the tag was made, for the section heading, or <c>null</c> when it
+    /// could not be read - the heading then carries the version alone.
+    /// </param>
+    /// <param name="body">The technical rendering.</param>
+    /// <param name="cancellationToken">Cancels the write.</param>
+    Task<string> WriteAsync(
+        string tag, DateOnly? taggedAt, string body, CancellationToken cancellationToken = default);
 }

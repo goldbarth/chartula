@@ -82,7 +82,8 @@ internal sealed class SpyMarkdownWriter : IChangelogMarkdownWriter
 {
     public int Calls { get; private set; }
 
-    public Task<string> WriteAsync(string tag, string body, CancellationToken cancellationToken = default)
+    public Task<string> WriteAsync(
+        string tag, DateOnly? taggedAt, string body, CancellationToken cancellationToken = default)
     {
         Calls++;
         return Task.FromResult("CHANGELOG.md");

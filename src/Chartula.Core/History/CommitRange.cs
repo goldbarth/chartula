@@ -12,9 +12,10 @@ namespace Chartula.Core.History;
 /// <param name="Commits">The commits in the range.</param>
 /// <param name="TaggedAt">
 /// The date the release tag was created, or <c>null</c> when it could not be
-/// read. It is the source for the published page's <c>publishedAt</c>, and a
-/// field with no source is omitted rather than emitted empty - which is why this
-/// is nullable rather than defaulted to today.
+/// read. It is the source for the published page's <c>publishedAt</c> and for the
+/// date in the <c>CHANGELOG.md</c> release heading, and a field with no source is
+/// omitted rather than emitted empty - which is why this is nullable rather than
+/// defaulted to today.
 /// </param>
 public sealed record CommitRange(
     string ToTag,
