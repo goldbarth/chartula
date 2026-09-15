@@ -431,16 +431,111 @@ public sealed class ChangelogPromptBuilderTests
     [Theory]
     [InlineData(Audience.Technical)]
     [InlineData(Audience.Product)]
-    public void Leaves_the_shape_of_an_unspecified_audience_alone(Audience audience)
+    public void Keeps_the_customer_shape_out_of_the_other_audiences(Audience audience)
     {
-        // Customer is the only audience with a written specification. Inventing
-        // a shape for the other two would be the same defect as leaving it to
-        // the model, only harder to notice.
+        // Each audience has a template of its own. The customer groups are about
+        // what the reader has to do, which neither other reader is asked.
         ChangelogPrompt prompt = _builder.BuildRephrasePrompt(
             new GroundedFacts(["Feature: dark mode"]), audience);
 
         Assert.DoesNotContain("What needs action", prompt.System);
         Assert.DoesNotContain("strike the opening clause", prompt.System);
+    }
+
+    // The technical and product prompts follow the templates and rubrics of the
+    // same name in goldbarth/chartula-evals. Neither has been measured against a
+    // rendering yet, so the tests pin that each rule is present, not a count.
+    private string SystemFor(Audience audience) => string.Join(
+        ' ',
+        _builder
+            .BuildRephrasePrompt(new GroundedFacts(["[Added] Feature: dark mode"]), audience)
+            .System.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+
+    [Fact]
+    public void Takes_the_technical_group_and_reference_as_given()
+    {
+        // Both are decided when the facts are built. A prompt that asked the model
+        // to map a category onto a group would move a classification into it.
+        string system = SystemFor(Audience.Technical);
+
+        Assert.Contains("named by the group in brackets", system);
+        Assert.Contains("exactly as given", system);
+        Assert.Contains("never write a reference of your own", system);
+    }
+
+    [Fact]
+    public void Leaves_the_release_heading_to_the_changelog_file()
+    {
+        // The composer writes "## VERSION - DATE". A second one from the model
+        // would be a heading the format does not define - B1 of the rubric.
+        Assert.Contains("no release heading", SystemFor(Audience.Technical));
+    }
+
+    [Fact]
+    public void Asks_for_one_imperative_line_per_change()
+    {
+        // C1 and C5 of rubric/technical.md: "Adds" is the shape every entry of
+        // sonnet-5-out opens on, and several changes in one line is opus-5-out.
+        string system = SystemFor(Audience.Technical);
+
+        Assert.Contains("One line per entry, one entry per change", system);
+        Assert.Contains("verb in the imperative", system);
+        Assert.Contains("Never \"Adds\", \"Added\" or \"Adding\"", system);
+    }
+
+    [Fact]
+    public void Keeps_the_title_and_the_verification_block_out_of_a_technical_entry()
+    {
+        // C3 and B2: a carried-over title with its prefix, and the build and test
+        // report sonnet-5-out put into 28 of its entries.
+        string system = SystemFor(Audience.Technical);
+
+        Assert.Contains("never carry a title over word for word", system);
+        Assert.Contains("how the work was verified", system);
+    }
+
+    [Fact]
+    public void Asks_a_technical_entry_to_say_what_differs_and_marks_a_breaking_one()
+    {
+        string system = SystemFor(Audience.Technical);
+
+        Assert.Contains("reads correctly with its heading covered", system);
+        Assert.Contains("\"**Breaking:**\"", system);
+        Assert.Contains("stands first in its group", system);
+    }
+
+    [Fact]
+    public void Takes_the_product_theme_as_given()
+    {
+        // A theme is a lookup of labels. A model asked to find one would put a word
+        // in the document that no fact gave it.
+        string system = SystemFor(Audience.Product);
+
+        Assert.Contains("named by the theme in brackets", system);
+        Assert.DoesNotContain("Group related changes by theme", system);
+    }
+
+    [Fact]
+    public void Builds_a_product_entry_from_what_changed_and_why_it_matters()
+    {
+        // The two slots of rubric/product.md, C1 and C2, with C2's strike test.
+        string system = SystemFor(Audience.Product);
+
+        Assert.Contains("what changed, and why it matters", system);
+        Assert.Contains("never about the work that produced it", system);
+        Assert.Contains("strike the first sentence", system);
+        Assert.Contains("leave it out only when nothing in them does", system);
+    }
+
+    [Fact]
+    public void Keeps_checkable_claims_and_reader_vocabulary_in_the_product_rendering()
+    {
+        // B3 and C3: a claim of impact needs a basis, and this reader never meets
+        // the source.
+        string system = SystemFor(Audience.Product);
+
+        Assert.Contains("needs something in the entry the reader can check it against", system);
+        Assert.Contains("configuration keys, file paths", system);
     }
 
     [Fact]

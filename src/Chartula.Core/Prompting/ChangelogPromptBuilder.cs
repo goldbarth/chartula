@@ -11,10 +11,10 @@ namespace Chartula.Core.Prompting;
 /// fact's category and breaking marker as given. Thin facts yield sparse output.
 /// The user prompt carries only the facts; nothing is added to pad them.
 /// <para>
-/// It also pins the shape of the customer rendering rather than leaving it to the
-/// model, which is what issue #96 is about. Content rules and shape rules are
-/// separate on purpose: the first five apply to every audience, the format block
-/// only to the one whose shape is specified.
+/// It also pins the shape of each rendering rather than leaving it to the model,
+/// which is what issue #96 is about. Content rules and shape rules are separate on
+/// purpose: the first five apply to every audience, each format block only to its
+/// own.
 /// </para>
 /// </summary>
 /// <remarks>
@@ -55,17 +55,15 @@ public sealed partial class ChangelogPromptBuilder : IChangelogPromptBuilder
     }
 
     /// <remarks>
-    /// Customer is the only audience whose shape is specified, so it is the only
-    /// one that carries format rules, and the only one asked for a description.
-    /// Technical and Product state tone alone until a specification exists for
-    /// them - guessing a shape for an audience nobody has written one for would be
-    /// the same defect as leaving it to the model, only harder to see.
+    /// Each audience carries the shape its template specifies. Only the customer
+    /// rendering is asked for a description, because only the customer page has a
+    /// field to put one in.
     /// </remarks>
     private static string AudienceGuidance(Audience audience) => audience switch
     {
-        Audience.Technical => AudienceTechnical,
+        Audience.Technical => AudienceTechnical + TechnicalFormat,
         Audience.Customer => AudienceCustomer + CustomerFormat + CustomerDescription,
-        Audience.Product => AudienceProduct,
+        Audience.Product => AudienceProduct + ProductFormat,
         _ => string.Format(CultureInfo.InvariantCulture, AudienceFallbackFormat, audience),
     };
 

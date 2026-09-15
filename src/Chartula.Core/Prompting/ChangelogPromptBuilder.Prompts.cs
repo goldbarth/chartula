@@ -36,6 +36,54 @@ public sealed partial class ChangelogPromptBuilder
         "Audience: Technical. Keep precise terminology and any links, " +
         "and call out breaking changes explicitly.";
 
+    /// <summary>
+    /// The shape of a technical rendering: Common Changelog, as adopted in
+    /// <c>docs/output-format.md</c> of goldbarth/chartula-evals and judged by
+    /// <c>rubric/technical.md</c> there.
+    /// <para>
+    /// What is decided rather than worded reaches the model as a fact: the group in
+    /// brackets before each statement and the reference at its end are set by
+    /// <see cref="Generation.GroundedFactsFactory"/>, so the rules below only say to
+    /// use them as given. The release heading is not the model's either - the
+    /// <c>CHANGELOG.md</c> composer writes it around this text.
+    /// </para>
+    /// <para>
+    /// The format wants an author on every entry of a release with more than one
+    /// contributor. The fact base carries no author, so nothing here asks for one
+    /// rather than have the model guess.
+    /// </para>
+    /// </summary>
+    private const string TechnicalFormat =
+        """
+
+        Write the technical section in this shape:
+        - Group entries under third-level headings named by the group in brackets
+        before each fact, in the order the facts give them, and only those that have
+        entries. The group is established like the category: use it as given. There
+        are no other headings: no release heading, which is written around this text,
+        and never a heading for a single change.
+        - One line per entry, one entry per change, and nothing nested under it. A
+        line carrying several changes, or running to a paragraph about one, is wrong.
+        - End each line with the reference given at the end of its fact, exactly as
+        given. A fact that carries none gets none: never write a reference of your
+        own.
+        - Open the description on a verb in the imperative that completes "This
+        release will": Add, Fix, Send, Remove. Never "Adds", "Added" or "Adding",
+        and never the subject first.
+        - Write the description rather than copy it: never carry a title over word
+        for word, and never keep a commit-message prefix such as "feat:" or
+        "fix(config):".
+        - Say what is different, so the line reads correctly with its heading
+        covered. A subject alone, such as "Configuration", is not a change.
+        - A breaking change is prefixed with "**Breaking:**" and stands first in its
+        group.
+        - Nothing but entries stands under a heading: no paragraph on how the work
+        was verified, such as build status or test counts, no nested list, no
+        separator, no introduction, and nothing after the last group.
+        - Class, method, file and configuration names stay, and so do links: this
+        reader reads the source.
+        """;
+
     private const string AudienceCustomer =
         "Audience: Customer. Focus on what changed for the user in plain language.";
 
@@ -219,8 +267,60 @@ public sealed partial class ChangelogPromptBuilder
         + "everything that changed. If the facts do not support such a sentence, "
         + "leave the line out entirely rather than writing an empty or filler one.";
 
+    // The theme is not the model's to find - it arrives with each fact - so the
+    // audience line no longer asks for grouping of its own.
     private const string AudienceProduct =
-        "Audience: Product. Group related changes by theme.";
+        "Audience: Product. The reader tracks what shipped and what it means for the product.";
+
+    /// <summary>
+    /// The shape of a product rendering: <c>product/thematic</c> in
+    /// <c>docs/output-format.md</c> of goldbarth/chartula-evals, judged by
+    /// <c>rubric/product.md</c> there. That rubric has no labelled corpus yet, so
+    /// unlike the customer rules nothing here answers a counted failure.
+    /// <para>
+    /// The theme is established before the prompt, like the technical group: it is
+    /// a lookup of allow-listed labels, not a judgement, and a model asked to
+    /// classify would put a word in the document no fact gave it. See
+    /// <see cref="Generation.GroundedFactsFactory"/>.
+    /// </para>
+    /// <para>
+    /// Why a change matters is left out when nothing in its facts says, the same way
+    /// the customer outcome is. The rubric fails such an entry, and that is the
+    /// honest result: the alternative is a benefit no fact stated.
+    /// </para>
+    /// </summary>
+    private const string ProductFormat =
+        """
+
+        Write the product section in this shape:
+        - Group entries under third-level headings named by the theme in brackets
+        before each fact, in the order the facts give them, and only those that have
+        entries. The theme is established like the category: use it as given. There
+        are no other headings, nothing but entries stands under a heading, and
+        nothing follows the last one.
+        - One bullet per entry, one entry per change.
+        - Build each entry from two sentences in this order: what changed, and why it
+        matters. Stop after the second.
+        - What changed is a fact about the product as it now stands, never about the
+        work that produced it. Do not write "Refactored", "Reworked" or "Introduced
+        an abstraction for".
+        - Why it matters is what the change means for the people the product serves,
+        or for a decision the reader is tracking: what they can now plan, promise or
+        stop spending. Take it from the facts of this change, which usually say what
+        it was for, and leave it out only when nothing in them does, with nothing in
+        its place.
+        - Why it matters must survive this test: strike the first sentence and read
+        what is left. If it only repeats the change, its mechanism or its negation,
+        it does not say why the change matters.
+        - A claim of impact or degree - cheaper, faster, more reliable, a fraction -
+        needs something in the entry the reader can check it against: a number, a
+        group affected, what held before. Without one, leave the claim out.
+        - The reader tracks the product from outside its repository and never worked
+        on it. Pull request numbers, commit hashes, issue references, author names,
+        compare links, configuration keys, file paths, class or method names and
+        concrete default values never appear. A setting is named in prose, by what it
+        decides.
+        """;
 
     private const string AudienceFallbackFormat = "Audience: {0}.";
 
