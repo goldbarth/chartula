@@ -253,9 +253,9 @@ How categories are presented in the output.
 
 | Key | Default | Description |
 | --- | --- | --- |
-| `order` | `[Feature, Fix, Performance, Documentation, Refactor, Other, Internal]` | The order categories appear in. Unlisted categories sort last. |
+| `order` | `[Feature, Fix, Performance, Documentation, Refactor, Other, Internal]` | The order categories appear in. Unlisted categories sort last. In the technical rendering the group comes first - Changed, Added, Fixed - and this order applies within a group. |
 | `names` | (enum names) | Map of category name to display name (e.g. `Fix: Bug Fixes`). |
-| `breakingProminent` | `true` | Whether breaking changes float to the top, shown near the top. |
+| `breakingProminent` | `true` | Whether breaking changes float to the top, shown near the top. The technical rendering always puts a breaking change first in its group, whatever this says. |
 
 Valid category names: `Feature`, `Fix`, `Performance`, `Documentation`, `Refactor`, `Internal`, `Other`.
 
