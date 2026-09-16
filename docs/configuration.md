@@ -170,10 +170,10 @@ Two different things can go wrong, and they do not look alike.
 The obvious one is an endpoint that ignores the JSON schema and answers in prose.
 An unreadable verdict is reported as *not evaluated*, never as a clean check, so the run says the text went unverified rather than implying it passed.
 
-The quiet one is a verdict that reads perfectly and means nothing.
-Endpoints that enforce the schema by constrained decoding - Ollama does - will produce a well-formed answer from any model, whether or not it understood the task.
-`0 claims` from such a model looks exactly like a clean check.
-Read it together with the rule-based check: if that one is finding claims and the thorough check is not, the thorough check is not earning its tokens.
+The quiet one used to be a verdict that read perfectly and meant nothing: endpoints that enforce the schema by constrained decoding - Ollama does - produce a well-formed answer from any model, whether or not it understood the task, and `0 claims` from such a model looked exactly like a clean check.
+Chartula now catches this when the endpoint reports usage: the prompt's character count bounds the token count from below, so a reported `prompt_tokens` far under that bound fails the run outright rather than returning a verdict.
+See [When the prompt never arrived](run-metrics.md#when-the-prompt-never-arrived).
+An endpoint that reports the untruncated length regardless of what it actually processed still gives nothing to detect this way.
 
 Measured on this repository's `v0.1.0`, on 2026-08-03, with `qwen2.5:14b` at a 24,576-token context:
 
