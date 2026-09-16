@@ -14,7 +14,7 @@ The model provider and which model to use. API keys are read by environment-vari
 
 | Key | Default | Description |
 | --- | --- | --- |
-| `provider` | `anthropic` | The LLM provider: `anthropic` or `openai-compatible`. Any other value fails the run. |
+| `provider` | `anthropic` | The LLM provider: `anthropic` or `openai-compatible` (**experimental**, see below). Any other value fails the run. |
 | `model` | per provider | The model id passed to the provider. See [Choosing a model](#choosing-a-model). |
 | `baseUrl` | per provider | The endpoint the provider is reached at. See [Running against your own endpoint](#running-against-your-own-endpoint). |
 | `apiKeyEnvironmentVariable` | per provider | Name of the environment variable holding the API key. |
@@ -99,6 +99,8 @@ Set `disabled` or `adaptive` to make the behavior the same on every model rather
 It travels in a request field that has no equivalent in the OpenAI dialect, so setting anything but `provider-default` together with `provider: openai-compatible` fails the run instead of being quietly dropped.
 
 #### Running against your own endpoint
+
+**Experimental.** This provider is exercised end to end far less than `anthropic` and its interaction with the faithfulness checks is the newest part of Chartula - read [The context window is the first thing to get right](#the-context-window-is-the-first-thing-to-get-right) before relying on it for a real release.
 
 `provider: openai-compatible` reaches anything that speaks the OpenAI chat-completions dialect at the URL you give it.
 That is one setting for two quite different situations: hosted endpoints that are cheaper than a first-party API, and a server on your own machine, where the release data never leaves it.

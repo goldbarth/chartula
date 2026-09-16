@@ -30,8 +30,9 @@
 #   baseUrl: https://api.anthropic.com
 
 # provider: openai-compatible reaches anything speaking the OpenAI chat-completions
-# dialect at the URL you give it. Neither model nor baseUrl has a default there, so
-# both are required - see docs/configuration.md, "Running against your own endpoint".
+# dialect at the URL you give it. Experimental - see docs/configuration.md,
+# "Running against your own endpoint". Neither model nor baseUrl has a default
+# there, so both are required.
 #
 # Your own machine, where the release data never leaves it (Ollama here; LM Studio
 # is http://localhost:1234/v1). No API key is involved - local servers do not read
