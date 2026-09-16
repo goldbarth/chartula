@@ -25,6 +25,13 @@ public sealed class ChatModel(
     private readonly ChatModelOptions _options = options ?? new ChatModelOptions();
     private readonly IRunMetrics _metrics = metrics ?? NullRunMetrics.Instance;
 
+    // No real tokenizer packs prose, code and JSON into fewer than roughly 4
+    // characters per token; dividing by double that leaves wide margin and still
+    // turns "characters Chartula sent" into a token count no tokenizer can
+    // undercut. A reported count below it is proof an endpoint truncated the
+    // prompt, not a guess (#85).
+    private const int MaxCharsPerToken = 8;
+
     // Fresh per call: the typed-response path clones and augments these, so a shared
     // instance would leak one call's response format into the next.
     private ChatOptions RequestOptions()
@@ -79,6 +86,7 @@ public sealed class ChatModel(
             await _chat.GetResponseAsync<FaithfulnessVerdict>(
                 messages, RequestOptions(), cancellationToken: cancellationToken);
         Record(LlmOperation.FaithfulnessCheck, response.Usage);
+        EnsurePromptReachedTheModel(prompt, response.Usage);
 
         // A check we cannot read is not a check that passed. Both failures below leave
         // the output unverified, and saying so is the only honest result - an empty
@@ -95,6 +103,31 @@ public sealed class ChatModel(
         }
 
         return FaithfulnessReport.Checked(claims);
+    }
+
+    // A verdict is only worth reading if the whole prompt reached the model (#94).
+    // An endpoint that silently truncates to fit its context window still answers,
+    // and a schema-enforcing one still answers cleanly (#86) - so this runs before
+    // the verdict is even inspected. An endpoint that reports the untruncated
+    // length regardless of what it actually saw cannot be caught this way; that
+    // gap is real; it is not closed here.
+    private static void EnsurePromptReachedTheModel(ChangelogPrompt prompt, UsageDetails? usage)
+    {
+        if (usage?.InputTokenCount is not { } reported)
+        {
+            return;
+        }
+
+        long characters = prompt.System.Length + prompt.User.Length;
+        long minimumTokens = characters / MaxCharsPerToken;
+        if (reported < minimumTokens)
+        {
+            throw new InvalidOperationException(
+                $"the endpoint reported {reported} input tokens for a prompt of {characters} characters, "
+                + $"which no tokenizer produces fewer than {minimumTokens} tokens for - the endpoint's "
+                + "context window is too small for what Chartula sends. See \"The context window is the "
+                + "first thing to get right\" in docs/configuration.md.");
+        }
     }
 
     // Providers are not obliged to report usage; an unreported call is still a call.

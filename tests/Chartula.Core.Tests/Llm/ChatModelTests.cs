@@ -1,6 +1,7 @@
 using Chartula.Core.Facts;
 using Chartula.Core.Llm;
 using Chartula.Core.Prompting;
+using Microsoft.Extensions.AI;
 
 namespace Chartula.Core.Tests.Llm;
 
@@ -130,6 +131,43 @@ public sealed class ChatModelTests
             new FaithfulnessRequest("Fixed a parser bug.", new GroundedFacts(["Fixed a bug in the parser"])));
 
         Assert.Equal(FaithfulnessCheckStatus.NotEvaluated, report.Status);
+    }
+
+    // A well-formed, even a clean, verdict is worthless if the endpoint cut the prompt
+    // to fit its context window before the model ever saw the facts (#85, #86). The
+    // characters Chartula sent bound the token count from below; a reported count under
+    // that bound is proof of truncation, not a guess, so the run fails outright rather
+    // than reporting a check that never happened.
+    [Fact]
+    public async Task CheckFaithfulnessAsync_fails_when_reported_tokens_cannot_fit_the_prompt_sent()
+    {
+        string longOutput = new('a', 5_000);
+        StubChatClient chat = new(
+            """{"isFaithful":true,"unsupportedClaims":[]}""",
+            new UsageDetails { InputTokenCount = 50, OutputTokenCount = 12 });
+        IChangelogModel model = Model(chat);
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => model.CheckFaithfulnessAsync(
+                new FaithfulnessRequest(longOutput, new GroundedFacts(["Fixed a bug in the parser"]))));
+
+        Assert.Contains("50 input tokens", exception.Message);
+        Assert.Contains("context window", exception.Message);
+    }
+
+    // A provider that reports no usage at all gives nothing to check this way - that
+    // gap is real, and the check backs off rather than guessing.
+    [Fact]
+    public async Task CheckFaithfulnessAsync_cannot_detect_truncation_without_reported_usage()
+    {
+        string longOutput = new('a', 5_000);
+        StubChatClient chat = new("""{"isFaithful":true,"unsupportedClaims":[]}""");
+        IChangelogModel model = Model(chat);
+
+        FaithfulnessReport report = await model.CheckFaithfulnessAsync(
+            new FaithfulnessRequest(longOutput, new GroundedFacts(["Fixed a bug in the parser"])));
+
+        Assert.Equal(FaithfulnessCheckStatus.Checked, report.Status);
     }
 
     // Thinking has no provider-agnostic field in ChatOptions, so it rides the

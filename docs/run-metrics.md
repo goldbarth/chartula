@@ -42,6 +42,18 @@ The same runs are flagged on each affected audience text, so review mode shows t
 The likeliest cause is a model that does not hold to the requested response format, which is worth knowing before trusting a provider or a smaller model with the check.
 Without this line the run would report `0 with findings`, which is what a genuinely clean check looks like.
 
+## When the prompt never arrived
+
+A different failure does not produce a line here at all: it fails the run.
+An endpoint can silently cut a prompt to fit its context window and answer from what is left, and a provider that enforces its response schema by constrained decoding still returns a well-formed, often clean, verdict from a model that never saw the facts.
+That verdict is not a check that passed - it is a check that never happened, and it looks exactly like a clean one.
+
+Chartula catches the cases where usage is reported: the characters sent bound the token count from below, so a reported `prompt_tokens` far under that bound is proof the prompt was cut, not suspicion.
+The run stops there with an error naming the endpoint's context window as the cause.
+See ["The context window is the first thing to get right"](configuration.md#the-context-window-is-the-first-thing-to-get-right) for the fix.
+
+An endpoint that reports the untruncated length regardless of what it actually processed gives nothing to detect this way - that gap is real, not closed by this check.
+
 ## Judging whether the thorough check earns its cost
 
 The indented line under the thorough check is the whole point of this summary.
