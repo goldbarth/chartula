@@ -92,6 +92,50 @@ public sealed class ThinkingModeTests
         Assert.Empty(Request(ThinkingMode.Disabled).Messages);
     }
 
+    // The API rejects these combinations on the first request. Refused here instead,
+    // so the run fails before it fetches anything rather than after.
+    [Theory]
+    [InlineData(ThinkingMode.Adaptive, "claude-haiku-4-5")]
+    [InlineData(ThinkingMode.Adaptive, "claude-haiku-4-5-20251001")]
+    [InlineData(ThinkingMode.Adaptive, "claude-opus-4-20250514")]
+    [InlineData(ThinkingMode.Adaptive, "claude-3-5-haiku-20241022")]
+    [InlineData(ThinkingMode.Adaptive, "us.anthropic.claude-sonnet-4-5-20250929-v1:0")]
+    [InlineData(ThinkingMode.Disabled, "claude-fable-5")]
+    [InlineData(ThinkingMode.Disabled, "claude-fable-5-1")]
+    public void A_mode_the_model_rejects_fails_at_config_load(ThinkingMode mode, string model)
+    {
+        InvalidOperationException error =
+            Assert.Throws<InvalidOperationException>(() => AnthropicThinking.FactoryFor(mode, model, 4_096));
+
+        Assert.Contains("llm.thinking", error.Message);
+        Assert.Contains(model, error.Message);
+    }
+
+    // An id this cannot read is left to the API: refusing it would block gateway
+    // aliases and models released after this list.
+    [Theory]
+    [InlineData(ThinkingMode.Adaptive, "claude-opus-4-6")]
+    [InlineData(ThinkingMode.Adaptive, "claude-opus-4-8")]
+    [InlineData(ThinkingMode.Adaptive, "claude-sonnet-5")]
+    [InlineData(ThinkingMode.Adaptive, "claude-fable-5-1")]
+    [InlineData(ThinkingMode.Disabled, "claude-haiku-4-5")]
+    [InlineData(ThinkingMode.Disabled, "claude-opus-5")]
+    [InlineData(ThinkingMode.Adaptive, "my-gateway-alias")]
+    [InlineData(ThinkingMode.Disabled, "my-gateway-alias")]
+    public void A_mode_the_model_accepts_or_an_unknown_model_builds_a_fragment(ThinkingMode mode, string model)
+    {
+        Assert.NotNull(AnthropicThinking.FactoryFor(mode, model, 4_096));
+    }
+
+    // Provider default sends nothing, so there is nothing for any model to reject.
+    [Theory]
+    [InlineData("claude-haiku-4-5")]
+    [InlineData("claude-fable-5")]
+    public void The_provider_default_is_accepted_by_every_model(string model)
+    {
+        Assert.Null(AnthropicThinking.FactoryFor(ThinkingMode.ProviderDefault, model, 4_096));
+    }
+
     private static MessageCreateParams Request(ThinkingMode mode)
     {
         Func<Microsoft.Extensions.AI.IChatClient, object?>? factory =

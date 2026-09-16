@@ -93,6 +93,9 @@ Not every value works on every model, and a rejected value fails the run rather 
 - `adaptive` needs Claude 4.6 or newer. Haiku 4.5 has no adaptive mode and rejects it.
 - `disabled` is fine on the models above, but Claude Fable 5 always thinks and rejects an explicit off - leave `provider-default` there.
 
+Both combinations are refused when the configuration is read, before anything is fetched.
+A model id Chartula cannot read, such as a gateway alias, is passed through, and the API rejects a bad combination on the first request instead.
+
 Set `disabled` or `adaptive` to make the behavior the same on every model rather than a property of the one you picked. On the evidence so far, thinking costs 20-25% more and found fewer claims, not more - but that is one release, measured once, so treat it as a reason to set the value deliberately rather than as a settled answer. Read the run metrics after you change it.
 
 `thinking` is an Anthropic setting.
