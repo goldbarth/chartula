@@ -105,12 +105,15 @@ chartula generate --tag v1.2.0 --repo owner/name --no-publish
 chartula generate --tag v1.2.0 --repo owner/name --audience customer
 ```
 
-Two environment variables carry the credentials, and neither is ever read from a config file:
+Credentials are read from environment variables, never from a config file - which ones depends on the provider:
 
 | Variable | Used for |
 | --- | --- |
-| `ANTHROPIC_API_KEY` | The model that rephrases the facts. |
+| `ANTHROPIC_API_KEY` | The default provider, Anthropic's API. |
 | `GITHUB_TOKEN` | Reading pull requests and writing release notes. |
+
+`llm.provider: openai-compatible` reaches any endpoint speaking the OpenAI chat-completions dialect instead - Ollama, LM Studio, llama.cpp, vLLM, or a hosted alternative - under a different variable name, or none at all against a local server, since release data never has to leave your machine.
+This provider is **experimental** - see [Running against your own endpoint](docs/configuration.md#running-against-your-own-endpoint) for setup and its current limits.
 
 A run starts without `GITHUB_TOKEN` and says so, because a small release still fits: GitHub allows 60 API requests an hour per IP address unauthenticated, and a run spends roughly one per pull request.
 Beyond that the run fails partway through with a 403, and the budget is shared with everything else reaching GitHub from that address.
