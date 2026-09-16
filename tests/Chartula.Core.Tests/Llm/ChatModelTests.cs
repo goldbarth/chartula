@@ -6,6 +6,8 @@ namespace Chartula.Core.Tests.Llm;
 
 public sealed class ChatModelTests
 {
+    private const string NoEntries = """{"entries":[]}""";
+
     private static ChatModel Model(StubChatClient chat) => new(chat, new ChangelogPromptBuilder());
 
     [Fact]
@@ -21,25 +23,42 @@ public sealed class ChatModelTests
     }
 
     [Fact]
-    public async Task RephraseAsync_routes_through_the_chat_client_and_returns_its_text()
+    public async Task RephraseAsync_routes_through_the_chat_client_and_returns_its_entries()
     {
-        StubChatClient chat = new("Signing in with an expired token now fails cleanly.");
+        StubChatClient chat = new(
+            """{"entries":[{"id":1,"text":"Signing in with an expired token now fails cleanly.","label":"Expired tokens"}],"description":"A security release."}""");
         // The pipeline only ever sees the interface, never ChatModel or a provider.
         IChangelogModel model = Model(chat);
 
-        string result = await model.RephraseAsync(
+        RenderedEntries result = await model.RephraseAsync(
             new RephraseRequest(
-                new GroundedFacts(["Fixed a bug where expired tokens were accepted"]),
+                new GroundedFacts(["[1] Fixed a bug where expired tokens were accepted"]),
                 Audience.Customer));
 
-        Assert.Equal("Signing in with an expired token now fails cleanly.", result);
+        RenderedEntry entry = Assert.Single(result.Entries);
+        Assert.Equal(1, entry.Id);
+        Assert.Equal("Signing in with an expired token now fails cleanly.", entry.Text);
+        Assert.Equal("Expired tokens", entry.Label);
+        Assert.Equal("A security release.", result.Description);
         Assert.Equal(1, chat.CallCount);
+    }
+
+    // There is no partial rendering to fall back on, so an answer that is not entries
+    // has to fail loudly - the generator reports it as a failed audience.
+    [Fact]
+    public async Task RephraseAsync_throws_when_the_answer_is_not_entries()
+    {
+        StubChatClient chat = new("- Here is your changelog, as Markdown.");
+        IChangelogModel model = Model(chat);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => model.RephraseAsync(
+            new RephraseRequest(new GroundedFacts(["[1] Added dark mode"]), Audience.Technical)));
     }
 
     [Fact]
     public async Task RephraseAsync_feeds_the_facts_and_audience_into_the_prompt()
     {
-        StubChatClient chat = new("...");
+        StubChatClient chat = new(NoEntries);
         IChangelogModel model = Model(chat);
 
         await model.RephraseAsync(
@@ -120,7 +139,7 @@ public sealed class ChatModelTests
     public async Task RephraseAsync_passes_the_raw_representation_factory_through()
     {
         object marker = new();
-        StubChatClient chat = new("- Added search");
+        StubChatClient chat = new(NoEntries);
         ChatModel model = new(
             chat,
             new ChangelogPromptBuilder(),
@@ -136,7 +155,7 @@ public sealed class ChatModelTests
     [Fact]
     public async Task RephraseAsync_sends_the_configured_output_ceiling()
     {
-        StubChatClient chat = new("...");
+        StubChatClient chat = new(NoEntries);
         IChangelogModel model = new ChatModel(
             chat, new ChangelogPromptBuilder(), new ChatModelOptions { MaxOutputTokens = 12_345 });
 
@@ -162,7 +181,7 @@ public sealed class ChatModelTests
     [Fact]
     public async Task RephraseAsync_sends_an_output_ceiling_even_with_no_options_given()
     {
-        StubChatClient chat = new("...");
+        StubChatClient chat = new(NoEntries);
         IChangelogModel model = Model(chat);
 
         await model.RephraseAsync(

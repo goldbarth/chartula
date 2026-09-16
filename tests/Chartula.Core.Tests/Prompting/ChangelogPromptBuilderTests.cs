@@ -1,5 +1,4 @@
 using Chartula.Core.Facts;
-using Chartula.Core.Generation;
 using Chartula.Core.Llm;
 using Chartula.Core.Prompting;
 
@@ -13,10 +12,10 @@ public sealed class ChangelogPromptBuilderTests
     public void Feeds_every_fact_into_the_user_prompt()
     {
         ChangelogPrompt prompt = _builder.BuildRephrasePrompt(
-            new GroundedFacts(["Feature: dark mode", "Fix: crash on start"]), Audience.Customer);
+            new GroundedFacts(["[1] Feature: dark mode", "[2] Fix: crash on start"]), Audience.Customer);
 
-        Assert.Contains("Feature: dark mode", prompt.User);
-        Assert.Contains("Fix: crash on start", prompt.User);
+        Assert.Contains("[1] Feature: dark mode", prompt.User);
+        Assert.Contains("[2] Fix: crash on start", prompt.User);
     }
 
     [Fact]
@@ -25,37 +24,38 @@ public sealed class ChangelogPromptBuilderTests
         // The generator embeds category and the breaking marker into each fact;
         // the prompt carries them verbatim rather than deciding them.
         ChangelogPrompt prompt = _builder.BuildRephrasePrompt(
-            new GroundedFacts(["Feature (breaking): remove the v1 endpoint"]), Audience.Technical);
+            new GroundedFacts(["[1] Feature (breaking): remove the v1 endpoint"]), Audience.Technical);
 
-        Assert.Contains("Feature (breaking): remove the v1 endpoint", prompt.User);
+        Assert.Contains("[1] Feature (breaking): remove the v1 endpoint", prompt.User);
     }
 
     [Fact]
     public void Instructs_the_model_to_rephrase_only_and_never_invent()
     {
         ChangelogPrompt prompt = _builder.BuildRephrasePrompt(
-            new GroundedFacts(["Feature: dark mode"]), Audience.Customer);
+            new GroundedFacts(["[1] Feature: dark mode"]), Audience.Customer);
 
         Assert.Contains("Rephrase only", prompt.System);
         Assert.Contains("Never introduce a fact", prompt.System);
     }
 
     [Fact]
-    public void Instructs_the_model_to_treat_category_and_breaking_as_established()
+    public void Instructs_the_model_to_treat_category_and_markers_as_established()
     {
         ChangelogPrompt prompt = _builder.BuildRephrasePrompt(
-            new GroundedFacts(["Fix: a bug"]), Audience.Technical);
+            new GroundedFacts(["[1] Fix: a bug"]), Audience.Technical);
 
         Assert.Contains("category", prompt.System);
         Assert.Contains("breaking", prompt.System);
+        Assert.Contains("(action required)", prompt.System);
         Assert.Contains("established", prompt.System);
     }
 
     [Fact]
-    public void Instructs_the_model_to_write_in_one_consistent_voice_and_format()
+    public void Instructs_the_model_to_write_in_one_consistent_voice()
     {
         ChangelogPrompt prompt = _builder.BuildRephrasePrompt(
-            new GroundedFacts(["Feature: dark mode"]), Audience.Customer);
+            new GroundedFacts(["[1] Feature: dark mode"]), Audience.Customer);
 
         Assert.Contains("one consistent voice", prompt.System);
         Assert.Contains("author", prompt.System); // do not carry over an author's tone
@@ -65,7 +65,7 @@ public sealed class ChangelogPromptBuilderTests
     public void Instructs_the_model_to_stay_sparse_on_thin_facts()
     {
         ChangelogPrompt prompt = _builder.BuildRephrasePrompt(
-            new GroundedFacts(["Fix: a bug"]), Audience.Customer);
+            new GroundedFacts(["[1] Fix: a bug"]), Audience.Customer);
 
         Assert.Contains("thin", prompt.System);
         Assert.Contains("Do not pad", prompt.System);
@@ -77,9 +77,9 @@ public sealed class ChangelogPromptBuilderTests
         // A single, terse fact: the user prompt must carry that one line and
         // nothing our code invented around it.
         ChangelogPrompt prompt = _builder.BuildRephrasePrompt(
-            new GroundedFacts(["Fix: a bug"]), Audience.Customer);
+            new GroundedFacts(["[1] Fix: a bug"]), Audience.Customer);
 
-        Assert.Equal("- Fix: a bug", prompt.User);
+        Assert.Equal("- [1] Fix: a bug", prompt.User);
     }
 
     [Fact]
@@ -109,40 +109,68 @@ public sealed class ChangelogPromptBuilderTests
     public void Tailors_the_system_prompt_to_the_audience(Audience audience)
     {
         ChangelogPrompt prompt = _builder.BuildRephrasePrompt(
-            new GroundedFacts(["Feature: dark mode"]), audience);
+            new GroundedFacts(["[1] Feature: dark mode"]), audience);
 
         Assert.Contains(audience.ToString(), prompt.System);
     }
 
-    // The tests below assert the shape the customer prompt asks for, not the
-    // content it produces. Issue #96: the structure of the product's main
-    // artefact was decided by whichever model was configured, and the tests as
-    // they stood would not have caught any of the three variants recorded there.
-    // Each rule is measured in goldbarth/chartula-evals; the counts in the
-    // comments are what the rule's absence cost over 53 labelled entries.
-
     // Whitespace is collapsed so that a rule can be re-wrapped without breaking
     // a test. What is asserted below is that the rule is in the prompt, never
     // where its line breaks fall.
-    private string CustomerSystem() => string.Join(
+    private string SystemFor(Audience audience) => string.Join(
         ' ',
         _builder
-            .BuildRephrasePrompt(new GroundedFacts(["Feature: dark mode"]), Audience.Customer)
+            .BuildRephrasePrompt(new GroundedFacts(["[1] Feature: dark mode"]), audience)
             .System.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
 
-    [Fact]
-    public void Names_the_customer_groups_and_their_order()
+    private string CustomerSystem() => SystemFor(Audience.Customer);
+
+    // Issue #96: five renderings of one release on four models came back in five
+    // structures while the prompt carried format rules. The structure is now put
+    // together in code, so the prompt asks for one text per fact and nothing else.
+
+    [Theory]
+    [InlineData(Audience.Technical)]
+    [InlineData(Audience.Customer)]
+    [InlineData(Audience.Product)]
+    public void Asks_for_one_entry_per_fact_id_and_nothing_around_it(Audience audience)
     {
+        string system = SystemFor(audience);
+
+        Assert.Contains("Write exactly one entry for every fact, under that fact's id", system);
+        Assert.Contains("are put around your entries: never write them", system);
+    }
+
+    [Theory]
+    [InlineData(Audience.Technical)]
+    [InlineData(Audience.Customer)]
+    [InlineData(Audience.Product)]
+    public void Describes_no_structure_the_code_puts_around_the_entries(Audience audience)
+    {
+        // A format rule left in the prompt would ask the model for something that
+        // code then overwrites, or worse, that code and model both write.
+        string system = SystemFor(audience);
+
+        Assert.DoesNotContain("What needs action", system);
+        Assert.DoesNotContain("third-level heading", system);
+        Assert.DoesNotContain("\"Also:\"", system);
+        Assert.DoesNotContain("Nothing follows the last group", system);
+        Assert.DoesNotContain("named by the group", system);
+        Assert.DoesNotContain("named by the theme", system);
+    }
+
+    // The customer rules below are measured in goldbarth/chartula-evals; the counts
+    // in the comments are what the rule's absence cost over 53 labelled entries.
+
+    [Fact]
+    public void Asks_a_customer_entry_for_a_label_that_is_not_the_start_of_the_sentence()
+    {
+        // The template's bold lead-in is a label. Code puts it in bold in front of
+        // the text, so the model supplies it as a field of its own.
         string system = CustomerSystem();
 
-        Assert.Contains("What needs action", system);
-        Assert.Contains("What's New", system);
-        Assert.Contains("What's Changed", system);
-        Assert.Contains("Bug Fixes", system);
-        Assert.True(
-            system.IndexOf("What needs action", StringComparison.Ordinal)
-            < system.IndexOf("What's New", StringComparison.Ordinal),
-            "the group a reader has to act on has to be named before the rest");
+        Assert.Contains("Give it a label", system);
+        Assert.Contains("not the start of the sentence", system);
     }
 
     [Fact]
@@ -180,39 +208,6 @@ public sealed class ChangelogPromptBuilderTests
 
         Assert.Contains("Leave out the second or the fourth", system);
         Assert.Contains("what they can now rely on is always written", system);
-    }
-
-    [Fact]
-    public void Puts_what_the_reader_must_act_on_above_what_they_can_ignore()
-    {
-        // Judged as B1 in the evaluation harness, and written in output-format.md
-        // rule 10. An entry saying separate marketing files are no longer written
-        // sat below entries that ask nothing, and one such entry fails the whole
-        // rendering however good the rest of it is.
-        string system = CustomerSystem();
-
-        Assert.Contains("stands above every entry that", system);
-        Assert.Contains("comes first of all", system);
-    }
-
-    [Fact]
-    public void Ends_the_document_with_its_last_group()
-    {
-        // output-format.md rule 5: a link under the last group is the one thing the
-        // reader must act on, in the one place the ordering rule cannot reach.
-        Assert.Contains("Nothing follows the last group", CustomerSystem());
-    }
-
-    [Fact]
-    public void Collapses_what_the_reader_would_not_act_on_into_one_line()
-    {
-        // output-format.md rule 11, judged as B3 rule 2. The exemption matters as
-        // much as the rule: the outcome slot is compulsory since #106, and the
-        // collapsed line is the one entry that carries none.
-        string system = CustomerSystem();
-
-        Assert.Contains("\"Also:\"", system);
-        Assert.Contains("carries the observation alone", system);
     }
 
     [Fact]
@@ -275,8 +270,7 @@ public sealed class ChangelogPromptBuilderTests
     {
         // C1 of rubric/customer.md: a fix opens on what went wrong as the reader
         // ran into it, a feature on what they can now do, a breaking change on
-        // what no longer works. A prompt opening a fix on the repaired state
-        // would ask for what the rubric does not.
+        // what no longer works.
         string system = CustomerSystem();
 
         Assert.Contains("for a fix, what went wrong as they ran into it", system);
@@ -308,12 +302,14 @@ public sealed class ChangelogPromptBuilderTests
     }
 
     [Fact]
-    public void Gives_a_breaking_change_an_action_and_the_outcome_after_it()
+    public void Gives_a_change_that_asks_something_an_action_and_the_outcome_after_it()
     {
         // C4 rule 4 and C3 rule 5: a breaking change always has something to do,
-        // and its outcome is what the migration gets the reader.
+        // and its outcome is what the migration gets the reader. A change labelled
+        // as asking something arrives marked, so it gets the same fourth part.
         string system = CustomerSystem();
 
+        Assert.Contains("\"(breaking)\" or \"(action required)\" always has something to do", system);
         Assert.Contains("its fourth part is never left out", system);
         Assert.Contains("what holds once the reader has done it", system);
     }
@@ -352,44 +348,17 @@ public sealed class ChangelogPromptBuilderTests
     {
         // Without this the test above has no anchor: what is familiar to
         // whoever wrote the code is not familiar to whoever uses it.
-        string system = CustomerSystem();
-
-        Assert.Contains("never someone who worked on it", system);
-    }
-
-    [Fact]
-    public void Requires_every_noticeable_fact_to_be_carried()
-    {
-        // The most expensive failure and the one every rendering made: a change
-        // the reader could meet, with no entry at all. One rendering dropped
-        // every feature of the release.
-        string system = CustomerSystem();
-
-        Assert.Contains("Carry every fact the reader could come into contact with", system);
-        Assert.Contains("cannot ask about what they were never told", system);
-    }
-
-    [Fact]
-    public void Routes_anything_the_reader_must_act_on_into_the_first_group()
-    {
-        // Two renderings buried an entry that asks something below entries that
-        // ask nothing. Mapping by category alone does not catch it: the entry
-        // was a feature by category and still cost the reader their setup.
-        string system = CustomerSystem();
-
-        Assert.Contains("whatever its category", system);
-        Assert.Contains("their setup stops working", system);
+        Assert.Contains("never someone who worked on it", CustomerSystem());
     }
 
     [Fact]
     public void Stops_an_entry_once_its_outcome_is_stated()
     {
         // Every rendering ran entries on past their outcome, at three to five
-        // sentences where two is the limit.
+        // sentences where two is the limit. The action is the fourth part and
+        // follows the outcome, so stopping at the outcome would cut it off.
         string system = CustomerSystem();
 
-        // The action is the fourth part and follows the outcome, so stopping at
-        // the outcome would cut it off - B3 counts only what trails behind both.
         Assert.Contains("stop once the outcome and, where there is one, what they have to do are stated", system);
         Assert.Contains("No superlatives, no marketing language", system);
     }
@@ -407,21 +376,11 @@ public sealed class ChangelogPromptBuilderTests
     }
 
     [Fact]
-    public void Says_where_a_breaking_change_goes_and_how_it_is_labelled()
-    {
-        string system = CustomerSystem();
-
-        Assert.Contains("Breaking:", system);
-        Assert.Contains("always belongs there", system);
-    }
-
-    [Fact]
     public void Names_no_category_because_a_category_reaches_the_model_renamed()
     {
         // categories.names lets a user rename any category, and the fact
         // statements carry the configured display name. A rule naming one would
-        // break for whoever renamed it, so the groups are defined by what a
-        // change is rather than by what it is called.
+        // break for whoever renamed it.
         string system = CustomerSystem();
 
         Assert.DoesNotContain("a feature to", system);
@@ -431,54 +390,26 @@ public sealed class ChangelogPromptBuilderTests
     [Theory]
     [InlineData(Audience.Technical)]
     [InlineData(Audience.Product)]
-    public void Keeps_the_customer_shape_out_of_the_other_audiences(Audience audience)
+    public void Keeps_the_customer_rules_out_of_the_other_audiences(Audience audience)
     {
-        // Each audience has a template of its own. The customer groups are about
-        // what the reader has to do, which neither other reader is asked.
-        ChangelogPrompt prompt = _builder.BuildRephrasePrompt(
-            new GroundedFacts(["Feature: dark mode"]), audience);
+        string system = SystemFor(audience);
 
-        Assert.DoesNotContain("What needs action", prompt.System);
-        Assert.DoesNotContain("strike the opening clause", prompt.System);
+        Assert.DoesNotContain("strike the opening clause", system);
+        Assert.DoesNotContain("Give it a label", system);
     }
 
-    // The technical and product prompts follow the templates and rubrics of the
-    // same name in goldbarth/chartula-evals. Neither has been measured against a
+    // The technical and product rules follow the templates and rubrics of the same
+    // name in goldbarth/chartula-evals. Neither has been measured against a
     // rendering yet, so the tests pin that each rule is present, not a count.
-    private string SystemFor(Audience audience) => string.Join(
-        ' ',
-        _builder
-            .BuildRephrasePrompt(new GroundedFacts(["[Added] Feature: dark mode"]), audience)
-            .System.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
 
     [Fact]
-    public void Takes_the_technical_group_and_reference_as_given()
-    {
-        // Both are decided when the facts are built. A prompt that asked the model
-        // to map a category onto a group would move a classification into it.
-        string system = SystemFor(Audience.Technical);
-
-        Assert.Contains("named by the group in brackets", system);
-        Assert.Contains("exactly as given", system);
-        Assert.Contains("never write a reference of your own", system);
-    }
-
-    [Fact]
-    public void Leaves_the_release_heading_to_the_changelog_file()
-    {
-        // The composer writes "## VERSION - DATE". A second one from the model
-        // would be a heading the format does not define - B1 of the rubric.
-        Assert.Contains("no release heading", SystemFor(Audience.Technical));
-    }
-
-    [Fact]
-    public void Asks_for_one_imperative_line_per_change()
+    public void Asks_for_one_imperative_statement_per_change()
     {
         // C1 and C5 of rubric/technical.md: "Adds" is the shape every entry of
         // sonnet-5-out opens on, and several changes in one line is opus-5-out.
         string system = SystemFor(Audience.Technical);
 
-        Assert.Contains("One line per entry, one entry per change", system);
+        Assert.Contains("One statement about one change", system);
         Assert.Contains("verb in the imperative", system);
         Assert.Contains("Never \"Adds\", \"Added\" or \"Adding\"", system);
     }
@@ -495,24 +426,18 @@ public sealed class ChangelogPromptBuilderTests
     }
 
     [Fact]
-    public void Asks_a_technical_entry_to_say_what_differs_and_marks_a_breaking_one()
+    public void Leaves_the_reference_of_a_technical_entry_to_the_rendering()
     {
         string system = SystemFor(Audience.Technical);
 
-        Assert.Contains("reads correctly with its heading covered", system);
-        Assert.Contains("\"**Breaking:**\"", system);
-        Assert.Contains("stands first in its group", system);
+        Assert.Contains("Never write a pull request number or a link to one", system);
+        Assert.Contains("the reference is added after your text", system);
     }
 
     [Fact]
-    public void Takes_the_product_theme_as_given()
+    public void Asks_a_technical_entry_to_say_what_differs()
     {
-        // A theme is a lookup of labels. A model asked to find one would put a word
-        // in the document that no fact gave it.
-        string system = SystemFor(Audience.Product);
-
-        Assert.Contains("named by the theme in brackets", system);
-        Assert.DoesNotContain("Group related changes by theme", system);
+        Assert.Contains("reads correctly without its heading", SystemFor(Audience.Technical));
     }
 
     [Fact]
@@ -551,16 +476,13 @@ public sealed class ChangelogPromptBuilderTests
     }
 
     [Fact]
-    public void Asks_the_customer_rendering_for_a_description_under_the_label_it_is_read_back_by()
+    public void Asks_the_customer_rendering_for_a_description()
     {
-        ChangelogPrompt prompt = _builder.BuildRephrasePrompt(
-            new GroundedFacts(["Feature: dark mode"]), Audience.Customer);
+        string system = CustomerSystem();
 
-        // The prompt and the parser share one constant; asserting the constant is
-        // what stops a reworded prompt from silently losing the field.
-        Assert.Contains(ReleaseDescription.Label, prompt.System, StringComparison.Ordinal);
-        Assert.Contains("what this release is about", prompt.System, StringComparison.Ordinal);
-        Assert.Contains("leave the line out entirely", prompt.System, StringComparison.Ordinal);
+        Assert.Contains("Also write the description", system);
+        Assert.Contains("what this release is about", system);
+        Assert.Contains("leave the description empty", system);
     }
 
     [Theory]
@@ -568,10 +490,8 @@ public sealed class ChangelogPromptBuilderTests
     [InlineData(Audience.Product)]
     public void No_other_audience_is_asked_for_a_description(Audience audience)
     {
-        // Nothing reads one back for them, so asking would put a line in the text
-        // that no output takes out again.
-        ChangelogPrompt prompt = _builder.BuildRephrasePrompt(new GroundedFacts(["Feature: dark mode"]), audience);
-
-        Assert.DoesNotContain(ReleaseDescription.Label, prompt.System, StringComparison.Ordinal);
+        // Nothing reads one back for them, so asking would spend tokens on a field
+        // no output uses.
+        Assert.DoesNotContain("write the description", SystemFor(audience));
     }
 }

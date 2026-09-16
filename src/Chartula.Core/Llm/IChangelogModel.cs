@@ -15,10 +15,15 @@ namespace Chartula.Core.Llm;
 public interface IChangelogModel
 {
     /// <summary>
-    /// Rephrases the grounded facts into prose tailored for the requested
-    /// audience. The model rephrases only; it never introduces facts.
+    /// Rephrases each grounded fact into the text of one entry for the requested
+    /// audience. The model rephrases only; it never introduces facts, and it never
+    /// decides where an entry stands - that is put around its text in code.
     /// </summary>
-    Task<string> RephraseAsync(
+    /// <exception cref="InvalidOperationException">
+    /// The answer could not be read as entries. There is no partial rendering to
+    /// return in that case, so it is not reported as one.
+    /// </exception>
+    Task<RenderedEntries> RephraseAsync(
         RephraseRequest request,
         CancellationToken cancellationToken = default);
 

@@ -11,10 +11,10 @@ namespace Chartula.Core.Prompting;
 /// fact's category and breaking marker as given. Thin facts yield sparse output.
 /// The user prompt carries only the facts; nothing is added to pad them.
 /// <para>
-/// It also pins the shape of each rendering rather than leaving it to the model,
-/// which is what issue #96 is about. Content rules and shape rules are separate on
-/// purpose: the first five apply to every audience, each format block only to its
-/// own.
+/// The structure of a rendering is not the prompt's: headings, groups, order,
+/// markers and references are put around the entries in code, which is what issue
+/// #96 is about. The rules here are about the words of an entry. The first five
+/// apply to every audience, each format block only to its own.
 /// </para>
 /// </summary>
 /// <remarks>
@@ -39,7 +39,7 @@ public sealed partial class ChangelogPromptBuilder : IChangelogPromptBuilder
         system.AppendLine(RuleRephraseOnly);
         system.AppendLine(RuleCategoryEstablished);
         system.AppendLine(RuleStaySparse);
-        system.AppendLine(RuleNoPreamble);
+        system.AppendLine(RuleOneEntryPerFact);
         system.AppendLine(RuleConsistentVoice);
         system.Append(AudienceGuidance(audience));
         return system.ToString();

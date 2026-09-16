@@ -12,7 +12,7 @@ internal sealed class StubFaithfulnessModel(FaithfulnessReport report) : IChange
 
     public FaithfulnessRequest? LastRequest { get; private set; }
 
-    public Task<string> RephraseAsync(RephraseRequest request, CancellationToken cancellationToken = default)
+    public Task<RenderedEntries> RephraseAsync(RephraseRequest request, CancellationToken cancellationToken = default)
         => throw new NotSupportedException("Not exercised by faithfulness tests.");
 
     public Task<FaithfulnessReport> CheckFaithfulnessAsync(
