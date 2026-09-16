@@ -153,6 +153,20 @@ public sealed class LlmWiringTests
         Assert.Contains(thinking, error.Message);
     }
 
+    // The model check runs while the section is read, not on the first request.
+    [Fact]
+    public void A_thinking_mode_the_anthropic_model_rejects_is_refused_at_config_load()
+    {
+        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() => Build(
+            """
+            llm:
+              model: claude-haiku-4-5
+              thinking: adaptive
+            """));
+
+        Assert.Contains("claude-haiku-4-5", error.Message);
+    }
+
     [Fact]
     public void The_provider_default_is_the_one_thinking_value_that_needs_no_provider_support()
     {
