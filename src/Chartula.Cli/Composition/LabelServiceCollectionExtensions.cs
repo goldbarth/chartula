@@ -24,7 +24,8 @@ internal static class LabelServiceCollectionExtensions
             options.Category,
             options.OnlyIncludeLabeled,
             options.Internal,
-            options.UserFacing);
+            options.UserFacing,
+            options.ActionRequired);
 
         services.AddSingleton(rules);
         services.AddSingleton<ILabelRulePolicy, LabelRulePolicy>();

@@ -1,32 +1,34 @@
 using Chartula.Core.Categorization;
 using Chartula.Core.Facts;
 using Chartula.Core.Formatting;
+using Chartula.Core.Labeling;
 using Chartula.Core.Llm;
 
 namespace Chartula.Core.Generation;
 
 /// <summary>
-/// Default <see cref="IReleaseChangelogGenerator"/>. It turns the fact base into
-/// grounded fact statements (selected, ordered, and named per the category
-/// settings) and makes exactly one <see cref="IChangelogModel"/> call per release,
-/// then normalizes the output for consistent formatting. An empty fact base makes
-/// no call at all. Provider failures are caught and returned as a failed result;
+/// Default <see cref="IReleaseChangelogGenerator"/>. It plans the rendering from the
+/// fact base - which changes, in which order, under which heading - makes exactly
+/// one <see cref="IChangelogModel"/> call per release for the words of the entries,
+/// and puts the two together. An empty plan makes no call at all. Provider failures
+/// and answers that do not match the plan are returned as a failed result;
 /// cancellation propagates.
 /// <para>
 /// The customer rendering carries a one-sentence description of the release, asked
-/// for and returned in that same call, and lifted off the front of the text here -
-/// see <see cref="ReleaseDescription"/>.
+/// for and returned in that same call as a field of its own.
 /// </para>
 /// </summary>
 public sealed class ReleaseChangelogGenerator(
     IChangelogModel model,
     IChangelogFormatter formatter,
-    CategorySettings? categorySettings = null) : IReleaseChangelogGenerator
+    CategorySettings? categorySettings = null,
+    LabelRules? labelRules = null) : IReleaseChangelogGenerator
 {
     private readonly IChangelogModel _model = model ?? throw new ArgumentNullException(nameof(model));
     private readonly IChangelogFormatter _formatter =
         formatter ?? throw new ArgumentNullException(nameof(formatter));
     private readonly CategorySettings _categorySettings = categorySettings ?? CategorySettings.Default;
+    private readonly LabelRules _labelRules = labelRules ?? LabelRules.None;
 
     public async Task<ChangelogGenerationResult> GenerateAsync(
         FactBase factBase,
@@ -35,28 +37,35 @@ public sealed class ReleaseChangelogGenerator(
     {
         ArgumentNullException.ThrowIfNull(factBase);
 
-        GroundedFacts facts = GroundedFactsFactory.Build(factBase, audience, _categorySettings);
+        RenderPlan plan = GroundedFactsFactory.Build(
+            factBase, audience, _categorySettings, _labelRules.ActionRequiredLabels);
 
         // Nothing to generate - skip the call entirely (keeps calls minimal).
-        if (facts.Statements.Count == 0)
+        if (plan.Entries.Count == 0)
         {
             return ChangelogGenerationResult.Success(string.Empty);
         }
 
         try
         {
-            string text = await _model.RephraseAsync(new RephraseRequest(facts, audience), cancellationToken);
-            string formatted = _formatter.Format(text);
+            RenderedEntries rendered = await _model.RephraseAsync(
+                new RephraseRequest(plan.Facts, audience), cancellationToken);
+
+            if (RenderingComposer.FindMismatch(plan, rendered) is { } mismatch)
+            {
+                return ChangelogGenerationResult.Failure(
+                    $"Changelog generation for '{factBase.Tag}' failed: {mismatch}.");
+            }
+
+            string text = _formatter.Format(RenderingComposer.Compose(plan, rendered, audience));
 
             // Only the customer page has a description, so only that rendering is
             // asked for one and only that one is read for it.
-            if (audience != Audience.Customer)
-            {
-                return ChangelogGenerationResult.Success(formatted);
-            }
+            string? description = audience == Audience.Customer
+                ? RenderingComposer.SingleLine(rendered.Description)
+                : null;
 
-            (string? description, string body) = ReleaseDescription.SplitOff(formatted);
-            return ChangelogGenerationResult.Success(body, description);
+            return ChangelogGenerationResult.Success(text, description);
         }
         catch (OperationCanceledException)
         {

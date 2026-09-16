@@ -8,10 +8,30 @@ namespace Chartula.Core.Tests.Generation;
 public sealed class GroundedFactsFactoryTests
 {
     private static ChangeFact Change(
-        string title, ChangeCategory category, bool userVisible = true, bool breaking = false)
-        => new(title, 1, "https://example/pull/1", category, userVisible, breaking, [], [], null);
+        string title,
+        ChangeCategory category,
+        bool userVisible = true,
+        bool breaking = false,
+        IReadOnlyList<string>? labels = null)
+        => new(title, 1, "https://example/pull/1", category, userVisible, breaking, [], labels ?? [], null);
 
     private static FactBase Facts(params ChangeFact[] changes) => new("v1.0.0", changes);
+
+    private static IReadOnlyList<string> Groups(RenderPlan plan) => [.. plan.Entries.Select(entry => entry.Group)];
+
+    [Fact]
+    public void Sends_every_fact_with_the_id_its_entry_comes_back_under()
+    {
+        FactBase facts = Facts(
+            Change("feat: a feature", ChangeCategory.Feature),
+            Change("fix: a bug", ChangeCategory.Fix));
+
+        RenderPlan plan = GroundedFactsFactory.Build(facts, Audience.Product, CategorySettings.Default);
+
+        Assert.StartsWith("[1] ", plan.Facts.Statements[0]);
+        Assert.StartsWith("[2] ", plan.Facts.Statements[1]);
+        Assert.Equal([1, 2], plan.Entries.Select(entry => entry.Id));
+    }
 
     [Fact]
     public void Orders_changes_by_the_configured_category_order()
@@ -20,11 +40,11 @@ public sealed class GroundedFactsFactoryTests
             Change("fix: a bug", ChangeCategory.Fix),
             Change("feat: a feature", ChangeCategory.Feature));
 
-        GroundedFacts grounded = GroundedFactsFactory.Build(facts, Audience.Customer, CategorySettings.Default);
+        RenderPlan plan = GroundedFactsFactory.Build(facts, Audience.Product, CategorySettings.Default);
 
         // Default order puts Feature before Fix, regardless of input order.
-        Assert.StartsWith("Feature", grounded.Statements[0]);
-        Assert.StartsWith("Fix", grounded.Statements[1]);
+        Assert.StartsWith("[1] Feature", plan.Facts.Statements[0]);
+        Assert.StartsWith("[2] Fix", plan.Facts.Statements[1]);
     }
 
     [Fact]
@@ -34,9 +54,9 @@ public sealed class GroundedFactsFactoryTests
             Change("feat: a feature", ChangeCategory.Feature),
             Change("fix!: a breaking fix", ChangeCategory.Fix, breaking: true));
 
-        GroundedFacts grounded = GroundedFactsFactory.Build(facts, Audience.Customer, CategorySettings.Default);
+        RenderPlan plan = GroundedFactsFactory.Build(facts, Audience.Product, CategorySettings.Default);
 
-        Assert.Contains("(breaking)", grounded.Statements[0]); // breaking first
+        Assert.Contains("(breaking)", plan.Facts.Statements[0]);
     }
 
     [Fact]
@@ -47,9 +67,9 @@ public sealed class GroundedFactsFactoryTests
             Change("feat: a feature", ChangeCategory.Feature),
             Change("fix!: a breaking fix", ChangeCategory.Fix, breaking: true));
 
-        GroundedFacts grounded = GroundedFactsFactory.Build(facts, Audience.Customer, settings);
+        RenderPlan plan = GroundedFactsFactory.Build(facts, Audience.Product, settings);
 
-        Assert.StartsWith("Feature", grounded.Statements[0]); // feature first by category order
+        Assert.StartsWith("[1] Feature", plan.Facts.Statements[0]);
     }
 
     [Fact]
@@ -61,9 +81,9 @@ public sealed class GroundedFactsFactoryTests
             breakingProminent: true);
         FactBase facts = Facts(Change("feat: dark mode", ChangeCategory.Feature));
 
-        GroundedFacts grounded = GroundedFactsFactory.Build(facts, Audience.Customer, settings);
+        RenderPlan plan = GroundedFactsFactory.Build(facts, Audience.Customer, settings);
 
-        Assert.StartsWith("Features:", Assert.Single(grounded.Statements));
+        Assert.StartsWith("[1] Features:", Assert.Single(plan.Facts.Statements));
     }
 
     [Fact]
@@ -73,10 +93,56 @@ public sealed class GroundedFactsFactoryTests
             Change("feat: visible", ChangeCategory.Feature),
             Change("refactor: internal", ChangeCategory.Refactor, userVisible: false));
 
-        GroundedFacts grounded = GroundedFactsFactory.Build(facts, Audience.Customer, CategorySettings.Default);
+        RenderPlan plan = GroundedFactsFactory.Build(facts, Audience.Customer, CategorySettings.Default);
 
-        Assert.Single(grounded.Statements);
-        Assert.Contains("feat: visible", grounded.Statements[0]);
+        Assert.Contains("feat: visible", Assert.Single(plan.Facts.Statements));
+    }
+
+    [Fact]
+    public void Customer_view_puts_what_the_reader_has_to_act_on_first_then_groups_by_kind()
+    {
+        FactBase facts = Facts(
+            Change("fix: a bug", ChangeCategory.Fix),
+            Change("feat: a feature", ChangeCategory.Feature),
+            Change("perf: faster", ChangeCategory.Performance),
+            Change("feat!: a breaking feature", ChangeCategory.Feature, breaking: true));
+
+        RenderPlan plan = GroundedFactsFactory.Build(facts, Audience.Customer, CategorySettings.Default);
+
+        // The customer template's groups and order: no entry that asks something
+        // stands below one that does not - B1 of the customer rubric.
+        Assert.Equal(["What needs action", "What's New", "What's Changed", "Bug Fixes"], Groups(plan));
+        Assert.True(plan.Entries[0].IsBreaking);
+    }
+
+    [Fact]
+    public void Customer_view_moves_a_change_labelled_as_asking_something_to_the_top_and_says_so()
+    {
+        FactBase facts = Facts(
+            Change("feat: a feature", ChangeCategory.Feature),
+            Change("feat: move the label rules", ChangeCategory.Feature, labels: ["Needs-Migration"]));
+        HashSet<string> actionLabels = new(["needs-migration"], StringComparer.OrdinalIgnoreCase);
+
+        RenderPlan plan = GroundedFactsFactory.Build(facts, Audience.Customer, CategorySettings.Default, actionLabels);
+
+        // Not breaking, and still costs the reader their setup: a category cannot tell,
+        // whoever wrote the change can. The marker is how the model learns there is
+        // something to do, so the entry's fourth part gets written.
+        Assert.Equal(["What needs action", "What's New"], Groups(plan));
+        Assert.False(plan.Entries[0].IsBreaking);
+        Assert.Contains("(action required)", plan.Facts.Statements[0]);
+    }
+
+    [Fact]
+    public void An_action_label_changes_nothing_outside_the_customer_view()
+    {
+        FactBase facts = Facts(Change("feat: move the label rules", ChangeCategory.Feature, labels: ["needs-migration"]));
+        HashSet<string> actionLabels = new(["needs-migration"], StringComparer.OrdinalIgnoreCase);
+
+        RenderPlan plan = GroundedFactsFactory.Build(facts, Audience.Technical, CategorySettings.Default, actionLabels);
+
+        Assert.Equal("Added", Assert.Single(plan.Entries).Group);
+        Assert.DoesNotContain("(action required)", Assert.Single(plan.Facts.Statements));
     }
 
     [Fact]
@@ -87,12 +153,11 @@ public sealed class GroundedFactsFactoryTests
             Change("feat: a feature", ChangeCategory.Feature),
             Change("perf: faster", ChangeCategory.Performance));
 
-        GroundedFacts grounded = GroundedFactsFactory.Build(facts, Audience.Technical, CategorySettings.Default);
+        RenderPlan plan = GroundedFactsFactory.Build(facts, Audience.Technical, CategorySettings.Default);
 
         // Changed, Added, Fixed: what a reader depends on before what is new to them.
-        Assert.StartsWith("[Changed] Performance", grounded.Statements[0]);
-        Assert.StartsWith("[Added] Feature", grounded.Statements[1]);
-        Assert.StartsWith("[Fixed] Fix", grounded.Statements[2]);
+        Assert.Equal(["Changed", "Added", "Fixed"], Groups(plan));
+        Assert.StartsWith("[1] Performance", plan.Facts.Statements[0]);
     }
 
     [Fact]
@@ -103,21 +168,23 @@ public sealed class GroundedFactsFactoryTests
             Change("feat: a feature", ChangeCategory.Feature),
             Change("fix!: a breaking fix", ChangeCategory.Fix, breaking: true));
 
-        GroundedFacts grounded = GroundedFactsFactory.Build(facts, Audience.Technical, CategorySettings.Default);
+        RenderPlan plan = GroundedFactsFactory.Build(facts, Audience.Technical, CategorySettings.Default);
 
-        Assert.StartsWith("[Added]", grounded.Statements[0]);
-        Assert.StartsWith("[Fixed] Fix (breaking)", grounded.Statements[1]);
-        Assert.StartsWith("[Fixed] Fix:", grounded.Statements[2]);
+        Assert.Equal(["Added", "Fixed", "Fixed"], Groups(plan));
+        Assert.True(plan.Entries[1].IsBreaking);
+        Assert.False(plan.Entries[2].IsBreaking);
     }
 
     [Fact]
-    public void Technical_view_ends_each_fact_on_the_reference_the_entry_carries()
+    public void Technical_view_plans_the_reference_the_entry_ends_on_and_does_not_send_it()
     {
         FactBase facts = Facts(Change("feat: visible", ChangeCategory.Feature));
 
-        GroundedFacts grounded = GroundedFactsFactory.Build(facts, Audience.Technical, CategorySettings.Default);
+        RenderPlan plan = GroundedFactsFactory.Build(facts, Audience.Technical, CategorySettings.Default);
 
-        Assert.EndsWith("([#1](https://example/pull/1))", Assert.Single(grounded.Statements));
+        // Written whole by code, so the model has nothing to copy or to get wrong.
+        Assert.Equal("([#1](https://example/pull/1))", Assert.Single(plan.Entries).Reference);
+        Assert.DoesNotContain("https://", Assert.Single(plan.Facts.Statements));
     }
 
     [Fact]
@@ -126,9 +193,9 @@ public sealed class GroundedFactsFactoryTests
         FactBase facts = Facts(
             new ChangeFact("feat: from a commit", null, null, ChangeCategory.Feature, true, false, [], [], null));
 
-        GroundedFacts grounded = GroundedFactsFactory.Build(facts, Audience.Technical, CategorySettings.Default);
+        RenderPlan plan = GroundedFactsFactory.Build(facts, Audience.Technical, CategorySettings.Default);
 
-        Assert.Equal("[Added] Feature: feat: from a commit", Assert.Single(grounded.Statements));
+        Assert.Null(Assert.Single(plan.Entries).Reference);
     }
 
     [Theory]
@@ -141,12 +208,12 @@ public sealed class GroundedFactsFactoryTests
             Change("refactor: labelled user-facing", ChangeCategory.Refactor, userVisible: true),
             Change("feat: labelled internal", ChangeCategory.Feature, userVisible: false));
 
-        GroundedFacts grounded = GroundedFactsFactory.Build(facts, audience, CategorySettings.Default);
+        RenderPlan plan = GroundedFactsFactory.Build(facts, audience, CategorySettings.Default);
 
         // A label widens the categorical default and never narrows it: an internal
         // label says a user cannot meet the change, not that this reader cannot.
-        Assert.Equal(2, grounded.Statements.Count);
-        Assert.DoesNotContain(grounded.Statements, s => s.Contains("bump the build"));
+        Assert.Equal(2, plan.Entries.Count);
+        Assert.DoesNotContain(plan.Facts.Statements, s => s.Contains("bump the build"));
     }
 
     [Fact]
@@ -156,9 +223,9 @@ public sealed class GroundedFactsFactoryTests
             Change("feat: a feature", ChangeCategory.Feature),
             Change("fix: a bug", ChangeCategory.Fix));
 
-        GroundedFacts grounded = GroundedFactsFactory.Build(facts, Audience.Product, CategorySettings.Default);
+        RenderPlan plan = GroundedFactsFactory.Build(facts, Audience.Product, CategorySettings.Default);
 
-        Assert.All(grounded.Statements, statement => Assert.StartsWith("[Other] ", statement));
-        Assert.DoesNotContain(grounded.Statements, s => s.Contains("https://example/pull/1"));
+        Assert.All(plan.Entries, entry => Assert.Equal("Other", entry.Group));
+        Assert.All(plan.Entries, entry => Assert.Null(entry.Reference));
     }
 }

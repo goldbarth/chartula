@@ -4,8 +4,8 @@ namespace Chartula.Core.Labeling;
 
 /// <summary>
 /// Label-driven curation rules: which labels exclude a change, which labels force
-/// a category, which labels answer whether a reader can meet the change, and
-/// whether only labeled changes are included. All optional - <see cref="None"/>
+/// a category, which labels answer whether a reader can meet the change, which say
+/// the reader has to act on it, and whether only labeled changes are included. All optional - <see cref="None"/>
 /// means labels are ignored entirely and the tool works with no labels at all.
 /// Label matching is case-insensitive.
 /// </summary>
@@ -19,11 +19,13 @@ public sealed class LabelRules
         IReadOnlyDictionary<string, ChangeCategory>? categoryByLabel = null,
         bool onlyIncludeLabeled = false,
         IEnumerable<string>? internalLabels = null,
-        IEnumerable<string>? userFacingLabels = null)
+        IEnumerable<string>? userFacingLabels = null,
+        IEnumerable<string>? actionRequiredLabels = null)
     {
         ExcludedLabels = new HashSet<string>(excludedLabels ?? [], StringComparer.OrdinalIgnoreCase);
         InternalLabels = new HashSet<string>(internalLabels ?? [], StringComparer.OrdinalIgnoreCase);
         UserFacingLabels = new HashSet<string>(userFacingLabels ?? [], StringComparer.OrdinalIgnoreCase);
+        ActionRequiredLabels = new HashSet<string>(actionRequiredLabels ?? [], StringComparer.OrdinalIgnoreCase);
 
         Dictionary<string, ChangeCategory> categories = new(StringComparer.OrdinalIgnoreCase);
         if (categoryByLabel is not null)
@@ -57,6 +59,12 @@ public sealed class LabelRules
     public IReadOnlySet<string> UserFacingLabels { get; }
 
     /// <summary>
+    /// Labels saying the reader has to do something about the change although it is
+    /// not breaking. A breaking change needs none: it always asks something.
+    /// </summary>
+    public IReadOnlySet<string> ActionRequiredLabels { get; }
+
+    /// <summary>
     /// Builds rules from configuration-shaped values, parsing category names into
     /// <see cref="ChangeCategory"/> (case-insensitive).
     /// </summary>
@@ -66,7 +74,8 @@ public sealed class LabelRules
         IReadOnlyDictionary<string, string>? categoryByLabel,
         bool onlyIncludeLabeled,
         IEnumerable<string>? internalLabels = null,
-        IEnumerable<string>? userFacingLabels = null)
+        IEnumerable<string>? userFacingLabels = null,
+        IEnumerable<string>? actionRequiredLabels = null)
     {
         Dictionary<string, ChangeCategory>? parsed = null;
         if (categoryByLabel is not null)
@@ -85,6 +94,7 @@ public sealed class LabelRules
             }
         }
 
-        return new LabelRules(excludedLabels, parsed, onlyIncludeLabeled, internalLabels, userFacingLabels);
+        return new LabelRules(
+            excludedLabels, parsed, onlyIncludeLabeled, internalLabels, userFacingLabels, actionRequiredLabels);
     }
 }

@@ -6,15 +6,15 @@ using Chartula.Core.Llm;
 namespace Chartula.Core.Generation;
 
 /// <summary>
-/// Turns a fact base into the grounded fact statements fed to generation, selected
-/// and ordered for the audience and category settings. Pure and deterministic; the
-/// same base feeds every audience, so the renderings cannot contradict each other.
+/// Turns a fact base into the plan of one audience's rendering: which changes it
+/// carries, in which order, under which heading, and the fact statements the model
+/// rephrases. Pure and deterministic; the same base feeds every audience, so the
+/// renderings cannot contradict each other.
 /// <para>
 /// Whatever an audience's template decides rather than words is decided here and
-/// handed to the model as a fact, never left to the prompt: which changes reach the
-/// rendering, the group of a technical entry and its reference, the theme of a
-/// product entry. The templates are in <c>docs/output-format.md</c> of
-/// goldbarth/chartula-evals.
+/// never left to a model: which changes reach the rendering, the group of every
+/// entry and its order, a technical entry's reference, a product entry's theme. The
+/// templates are in <c>docs/output-format.md</c> of goldbarth/chartula-evals.
 /// </para>
 /// </summary>
 public static class GroundedFactsFactory
@@ -24,42 +24,64 @@ public static class GroundedFactsFactory
     // a change as a removal, and a group with no source is never assigned.
     private static readonly string[] TechnicalGroupOrder = ["Changed", "Added", "Fixed"];
 
+    // The customer template's order: whatever the reader has to act on first, so no
+    // entry that asks something stands below one that does not.
+    private const string NeedsAction = "What needs action";
+    private static readonly string[] CustomerGroupOrder = [NeedsAction, "What's New", "What's Changed", "Bug Fixes"];
+
     // A theme comes from an allow-listed label. No allowlist exists yet, and the
     // format says that with none every entry stands under this one theme rather
     // than under an invented taxonomy.
     private const string ProductFallbackTheme = "Other";
 
-    public static GroundedFacts Build(FactBase factBase, Audience audience, CategorySettings settings)
+    private static readonly IReadOnlySet<string> NoLabels = new HashSet<string>();
+
+    public static RenderPlan Build(
+        FactBase factBase,
+        Audience audience,
+        CategorySettings settings,
+        IReadOnlySet<string>? actionRequiredLabels = null)
     {
         ArgumentNullException.ThrowIfNull(factBase);
         ArgumentNullException.ThrowIfNull(settings);
 
+        IReadOnlySet<string> actionLabels = actionRequiredLabels ?? NoLabels;
         IEnumerable<ChangeFact> selected = factBase.Changes.Where(change => Reaches(change, audience));
 
-        // Technical: by group, breaking first within it, as the format fixes both.
-        // Every other audience: breaking first (when prominent), then category order.
-        IEnumerable<ChangeFact> ordered = audience == Audience.Technical
-            ? selected
+        // Technical and customer: by group, breaking first within it, as both
+        // templates fix. Product has one theme, so the configured order decides.
+        IEnumerable<ChangeFact> ordered = audience switch
+        {
+            Audience.Technical => selected
                 .OrderBy(change => Array.IndexOf(TechnicalGroupOrder, TechnicalGroup(change.Category)))
                 .ThenBy(change => change.IsBreaking ? 0 : 1)
-                .ThenBy(change => settings.RankOf(change.Category))
-            : selected
+                .ThenBy(change => settings.RankOf(change.Category)),
+            Audience.Customer => selected
+                .OrderBy(change => Array.IndexOf(CustomerGroupOrder, CustomerGroup(change, actionLabels)))
+                .ThenBy(change => change.IsBreaking ? 0 : 1)
+                .ThenBy(change => settings.RankOf(change.Category)),
+            _ => selected
                 .OrderBy(change => settings.BreakingProminent && change.IsBreaking ? 0 : 1)
-                .ThenBy(change => settings.RankOf(change.Category));
+                .ThenBy(change => settings.RankOf(change.Category)),
+        };
 
         List<string> statements = [];
+        List<PlannedEntry> entries = [];
         foreach (ChangeFact change in ordered)
         {
-            StringBuilder statement = new();
-            if (Group(change, audience) is { } group)
-            {
-                statement.Append('[').Append(group).Append("] ");
-            }
+            int id = entries.Count + 1;
 
-            statement.Append(settings.DisplayName(change.Category));
+            StringBuilder statement = new();
+            statement.Append('[').Append(id).Append("] ").Append(settings.DisplayName(change.Category));
             if (change.IsBreaking)
             {
                 statement.Append(" (breaking)");
+            }
+            else if (audience == Audience.Customer && RequiresAction(change, actionLabels))
+            {
+                // The customer entry's fourth part is what the reader has to do, so
+                // the model has to know there is something, not only where it stands.
+                statement.Append(" (action required)");
             }
 
             statement.Append(": ").Append(change.Title);
@@ -68,15 +90,15 @@ public static class GroundedFactsFactory
                 statement.Append(" - ").Append(change.Description);
             }
 
-            if (audience == Audience.Technical && Reference(change) is { } reference)
-            {
-                statement.Append(' ').Append(reference);
-            }
-
             statements.Add(statement.ToString());
+            entries.Add(new PlannedEntry(
+                id,
+                Group(change, audience, actionLabels),
+                change.IsBreaking,
+                audience == Audience.Technical ? Reference(change) : null));
         }
 
-        return new GroundedFacts(statements);
+        return new RenderPlan(new GroundedFacts(statements), entries);
     }
 
     // The customer rendering follows visibility, labels included. The technical and
@@ -91,12 +113,13 @@ public static class GroundedFactsFactory
         _ => true,
     };
 
-    private static string? Group(ChangeFact change, Audience audience) => audience switch
-    {
-        Audience.Technical => TechnicalGroup(change.Category),
-        Audience.Product => ProductFallbackTheme,
-        _ => null,
-    };
+    private static string Group(ChangeFact change, Audience audience, IReadOnlySet<string> actionLabels)
+        => audience switch
+        {
+            Audience.Technical => TechnicalGroup(change.Category),
+            Audience.Customer => CustomerGroup(change, actionLabels),
+            _ => ProductFallbackTheme,
+        };
 
     // New functionality is Added and a repair is Fixed. Everything else that reaches
     // this reader changed what already existed.
@@ -107,8 +130,23 @@ public static class GroundedFactsFactory
         _ => "Changed",
     };
 
-    // The reference is written here, whole, so the model copies a link rather than
-    // builds one. A commit-based change has no pull request and gets no reference.
+    // A breaking change always asks something of the reader. Anything else asks only
+    // when a label says so: whether a change costs the reader their setup is known to
+    // whoever wrote it, and a category cannot tell.
+    private static string CustomerGroup(ChangeFact change, IReadOnlySet<string> actionLabels)
+        => RequiresAction(change, actionLabels)
+            ? NeedsAction
+            : change.Category switch
+            {
+                ChangeCategory.Feature => "What's New",
+                ChangeCategory.Fix => "Bug Fixes",
+                _ => "What's Changed",
+            };
+
+    private static bool RequiresAction(ChangeFact change, IReadOnlySet<string> actionLabels)
+        => change.IsBreaking || change.Labels.Any(actionLabels.Contains);
+
+    // A commit-based change has no pull request and gets no reference.
     private static string? Reference(ChangeFact change)
         => change.Url is null
             ? null

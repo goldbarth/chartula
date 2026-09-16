@@ -12,12 +12,14 @@ namespace Chartula.Core.Tests.Llm;
 /// </summary>
 public sealed class ChatModelMetricsTests
 {
-    private static readonly GroundedFacts Facts = new(["Fixed a bug where expired tokens were accepted"]);
+    private const string NoEntries = """{"entries":[]}""";
+
+    private static readonly GroundedFacts Facts = new(["[1] Fixed a bug where expired tokens were accepted"]);
 
     [Fact]
     public async Task Rephrasing_records_its_call_and_tokens_under_the_rephrase_operation()
     {
-        StubChatClient chat = new("Text.", new UsageDetails { InputTokenCount = 120, OutputTokenCount = 34 });
+        StubChatClient chat = new(NoEntries, new UsageDetails { InputTokenCount = 120, OutputTokenCount = 34 });
         RunMetrics metrics = new();
 
         await new ChatModel(chat, new ChangelogPromptBuilder(), metrics: metrics)
@@ -49,7 +51,7 @@ public sealed class ChatModelMetricsTests
     [Fact]
     public async Task A_provider_that_reports_no_usage_still_records_the_call()
     {
-        StubChatClient chat = new("Text.");
+        StubChatClient chat = new(NoEntries);
         RunMetrics metrics = new();
 
         await new ChatModel(chat, new ChangelogPromptBuilder(), metrics: metrics)
@@ -65,11 +67,11 @@ public sealed class ChatModelMetricsTests
     [Fact]
     public async Task Without_a_metrics_sink_the_model_still_works()
     {
-        StubChatClient chat = new("Text.");
+        StubChatClient chat = new(NoEntries);
 
-        string result = await new ChatModel(chat, new ChangelogPromptBuilder())
+        RenderedEntries result = await new ChatModel(chat, new ChangelogPromptBuilder())
             .RephraseAsync(new RephraseRequest(Facts, Audience.Customer));
 
-        Assert.Equal("Text.", result);
+        Assert.Empty(result.Entries);
     }
 }

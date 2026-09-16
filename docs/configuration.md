@@ -210,6 +210,7 @@ Steer curation with GitHub labels. All optional; with no rules, labels are ignor
 | `onlyIncludeLabeled` | `false` | When true, only labeled pull requests are included. |
 | `internal` | (none) | Labels marking a change no reader can come into contact with. It is kept out of the customer rendering. |
 | `userFacing` | (none) | Labels marking a change a reader can come into contact with, whatever its category. |
+| `actionRequired` | (none) | Labels marking a change the reader has to act on although it is not breaking. It stands under "What needs action" in the customer rendering. A breaking change always does and needs no label. |
 
 The label names are yours. `visibility:internal` is one convention; `internal`,
 `no-changelog` and `chore` are others, which is why the names are configured here
@@ -290,6 +291,7 @@ labels:
   onlyIncludeLabeled: false
   internal: [visibility:internal]
   userFacing: [visibility:user-facing]
+  actionRequired: [needs-migration]
 
 filter:
   excludeCategories: [Internal, Documentation]

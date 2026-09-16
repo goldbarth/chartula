@@ -149,7 +149,8 @@ public sealed class FixturePipelineTests
             .RunAsync(Request(factBase), PipelineMode.Preview);
 
         string technical = outcome.Renderings.Single(r => r.Audience == Audience.Technical).Text!;
-        Assert.Contains("(breaking)", technical.Split('\n')[0]);
+        string firstEntry = technical.Split('\n').First(line => line.StartsWith("- ", StringComparison.Ordinal));
+        Assert.StartsWith("- **Breaking:**", firstEntry);
     }
 }
 

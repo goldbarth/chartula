@@ -39,6 +39,18 @@ public sealed class LabelWiringTests
     }
 
     [Fact]
+    public void The_action_required_label_names_reach_the_rules_from_the_configuration_file()
+    {
+        LabelRules rules = Rules(
+            """
+            labels:
+              actionRequired: [needs-migration]
+            """);
+
+        Assert.Contains("needs-migration", rules.ActionRequiredLabels);
+    }
+
+    [Fact]
     public void A_run_that_configures_no_visibility_labels_carries_none()
     {
         LabelRules rules = Rules(

@@ -4,16 +4,16 @@ namespace Chartula.Core.Tests.Generation;
 
 /// <summary>
 /// A fake <see cref="IChangelogModel"/> for driving the generator without a live
-/// provider: records calls, returns a canned rephrase, or throws on demand.
+/// provider: records calls, answers from the request it was sent, or throws on demand.
 /// </summary>
 internal sealed class FakeChangelogModel : IChangelogModel
 {
-    private readonly string _response;
+    private readonly Func<RephraseRequest, RenderedEntries> _answer;
     private readonly Exception? _throw;
 
-    private FakeChangelogModel(string response, Exception? toThrow)
+    private FakeChangelogModel(Func<RephraseRequest, RenderedEntries> answer, Exception? toThrow)
     {
-        _response = response;
+        _answer = answer;
         _throw = toThrow;
     }
 
@@ -21,16 +21,21 @@ internal sealed class FakeChangelogModel : IChangelogModel
 
     public RephraseRequest? LastRequest { get; private set; }
 
-    public static FakeChangelogModel Returning(string response) => new(response, null);
+    /// <summary>Answers every fact with its own statement.</summary>
+    public static FakeChangelogModel Echoing(string? description = null)
+        => new(request => Entries.Echo(request.Facts, description), null);
 
-    public static FakeChangelogModel Throwing(Exception toThrow) => new(string.Empty, toThrow);
+    /// <summary>Answers with whatever <paramref name="answer"/> builds from the request.</summary>
+    public static FakeChangelogModel Answering(Func<RephraseRequest, RenderedEntries> answer) => new(answer, null);
 
-    public Task<string> RephraseAsync(RephraseRequest request, CancellationToken cancellationToken = default)
+    public static FakeChangelogModel Throwing(Exception toThrow) => new(_ => new RenderedEntries([]), toThrow);
+
+    public Task<RenderedEntries> RephraseAsync(RephraseRequest request, CancellationToken cancellationToken = default)
     {
         RephraseCallCount++;
         LastRequest = request;
         cancellationToken.ThrowIfCancellationRequested();
-        return _throw is not null ? throw _throw : Task.FromResult(_response);
+        return _throw is not null ? throw _throw : Task.FromResult(_answer(request));
     }
 
     public Task<FaithfulnessReport> CheckFaithfulnessAsync(

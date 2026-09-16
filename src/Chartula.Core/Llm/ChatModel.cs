@@ -34,7 +34,7 @@ public sealed class ChatModel(
             RawRepresentationFactory = _options.RawRepresentationFactory,
         };
 
-    public async Task<string> RephraseAsync(
+    public async Task<RenderedEntries> RephraseAsync(
         RephraseRequest request,
         CancellationToken cancellationToken = default)
     {
@@ -47,10 +47,19 @@ public sealed class ChatModel(
             new(ChatRole.User, prompt.User),
         ];
 
-        ChatResponse response = await _chat.GetResponseAsync(
-            messages, RequestOptions(), cancellationToken);
+        ChatResponse<RenderedEntries> response = await _chat.GetResponseAsync<RenderedEntries>(
+            messages, RequestOptions(), cancellationToken: cancellationToken);
         Record(LlmOperation.Rephrase, response.Usage);
-        return response.Text;
+
+        // Unlike the thorough check, an unreadable answer has no honest partial form:
+        // without the entries there is no rendering. The generator turns this into a
+        // failed audience that says why.
+        if (!response.TryGetResult(out RenderedEntries? entries) || entries.Entries is null)
+        {
+            throw new InvalidOperationException("the model's answer did not match the expected entry format");
+        }
+
+        return entries;
     }
 
     public async Task<FaithfulnessReport> CheckFaithfulnessAsync(

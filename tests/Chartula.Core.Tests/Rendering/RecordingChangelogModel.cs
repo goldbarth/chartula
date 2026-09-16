@@ -1,4 +1,5 @@
 using Chartula.Core.Llm;
+using Chartula.Core.Tests.Generation;
 
 namespace Chartula.Core.Tests.Rendering;
 
@@ -13,11 +14,11 @@ internal sealed class RecordingChangelogModel : IChangelogModel
 
     public int RephraseCallCount { get; private set; }
 
-    public Task<string> RephraseAsync(RephraseRequest request, CancellationToken cancellationToken = default)
+    public Task<RenderedEntries> RephraseAsync(RephraseRequest request, CancellationToken cancellationToken = default)
     {
         RephraseCallCount++;
         RequestsByAudience[request.Audience] = request;
-        return Task.FromResult($"[{request.Audience}] rendering");
+        return Task.FromResult(Entries.Each(request.Facts, (_, _) => $"[{request.Audience}] entry"));
     }
 
     public IReadOnlyList<string> StatementsFor(Audience audience)

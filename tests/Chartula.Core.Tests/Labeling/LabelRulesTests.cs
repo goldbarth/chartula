@@ -46,6 +46,18 @@ public sealed class LabelRulesTests
     }
 
     [Fact]
+    public void From_carries_the_action_required_labels_matched_case_insensitively()
+    {
+        LabelRules rules = LabelRules.From(
+            excludedLabels: null,
+            categoryByLabel: null,
+            onlyIncludeLabeled: false,
+            actionRequiredLabels: ["needs-migration"]);
+
+        Assert.Contains("Needs-Migration", rules.ActionRequiredLabels);
+    }
+
+    [Fact]
     public void None_has_no_rules()
     {
         Assert.Empty(LabelRules.None.ExcludedLabels);
@@ -53,5 +65,6 @@ public sealed class LabelRulesTests
         Assert.False(LabelRules.None.OnlyIncludeLabeled);
         Assert.Empty(LabelRules.None.InternalLabels);
         Assert.Empty(LabelRules.None.UserFacingLabels);
+        Assert.Empty(LabelRules.None.ActionRequiredLabels);
     }
 }

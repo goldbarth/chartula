@@ -4,6 +4,7 @@ using Chartula.Core.Formatting;
 using Chartula.Core.Generation;
 using Chartula.Core.Llm;
 using Chartula.Core.Rendering;
+using Chartula.Core.Tests.Generation;
 
 namespace Chartula.Core.Tests.Rendering;
 
@@ -49,12 +50,13 @@ public sealed class ReleaseRendererTests
     {
         (ReleaseRenderer renderer, RecordingChangelogModel model) = Build();
 
-        await renderer.RenderAsync(Sample());
+        IReadOnlyDictionary<Audience, ChangelogGenerationResult> renderings = await renderer.RenderAsync(Sample());
 
         // A1 of the technical rubric: a restructuring with identical behaviour does
-        // not reach this reader either, so only the feature is handed over.
-        string only = Assert.Single(model.StatementsFor(Audience.Technical));
-        Assert.Contains("https://example/pull/7", only);
+        // not reach this reader either, so only the feature is handed over. Its link
+        // is put on the entry by code rather than sent to the model.
+        Assert.Single(model.StatementsFor(Audience.Technical));
+        Assert.Contains("([#7](https://example/pull/7))", renderings[Audience.Technical].Text);
     }
 
     [Fact]
@@ -76,12 +78,12 @@ public sealed class ReleaseRendererTests
     {
         (ReleaseRenderer renderer, RecordingChangelogModel model) = Build();
 
-        await renderer.RenderAsync(Sample());
+        IReadOnlyDictionary<Audience, ChangelogGenerationResult> renderings = await renderer.RenderAsync(Sample());
 
         // Product sees what could move a decision, which an unlabelled refactor
-        // does not, and every change arrives with its theme already set.
-        string only = Assert.Single(model.StatementsFor(Audience.Product));
-        Assert.StartsWith("[Other] ", only);
+        // does not, and every entry stands under the theme code gave it.
+        Assert.Single(model.StatementsFor(Audience.Product));
+        Assert.StartsWith("### Other", renderings[Audience.Product].Text);
     }
 
     [Fact]
@@ -102,10 +104,10 @@ public sealed class ReleaseRendererTests
 
     private sealed class SelectiveFailingModel(Audience failFor) : IChangelogModel
     {
-        public Task<string> RephraseAsync(RephraseRequest request, CancellationToken cancellationToken = default)
+        public Task<RenderedEntries> RephraseAsync(RephraseRequest request, CancellationToken cancellationToken = default)
             => request.Audience == failFor
                 ? throw new InvalidOperationException("boom")
-                : Task.FromResult("ok");
+                : Task.FromResult(Entries.Echo(request.Facts));
 
         public Task<FaithfulnessReport> CheckFaithfulnessAsync(
             FaithfulnessRequest request, CancellationToken cancellationToken = default)

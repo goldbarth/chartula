@@ -2,6 +2,7 @@ using Chartula.Core.Facts;
 using Chartula.Core.History;
 using Chartula.Core.Llm;
 using Chartula.Core.PullRequests;
+using Chartula.Core.Tests.Generation;
 
 namespace Chartula.Core.Tests.Fixtures;
 
@@ -12,8 +13,8 @@ internal sealed class FixtureFactBaseBuilder(FactBase factBase) : IFactBaseBuild
 }
 
 /// <summary>
-/// A stand-in <see cref="IChangelogModel"/> that rephrases by echoing the grounded facts
-/// back as a list. It invents nothing, so a faithful run over a fixture is faithful by
+/// A stand-in <see cref="IChangelogModel"/> that rephrases by echoing each grounded fact
+/// back as the text of its entry. It invents nothing, so a faithful run over a fixture is faithful by
 /// construction - and any flag a test sees is the checker's doing, not the model's.
 /// </summary>
 internal sealed class EchoingChangelogModel : IChangelogModel
@@ -22,10 +23,10 @@ internal sealed class EchoingChangelogModel : IChangelogModel
 
     public int CheckCalls { get; private set; }
 
-    public Task<string> RephraseAsync(RephraseRequest request, CancellationToken cancellationToken = default)
+    public Task<RenderedEntries> RephraseAsync(RephraseRequest request, CancellationToken cancellationToken = default)
     {
         RephraseCalls++;
-        return Task.FromResult(string.Join('\n', request.Facts.Statements.Select(static s => $"- {s}")));
+        return Task.FromResult(Entries.Echo(request.Facts));
     }
 
     public Task<FaithfulnessReport> CheckFaithfulnessAsync(
@@ -42,8 +43,8 @@ internal sealed class EchoingChangelogModel : IChangelogModel
 /// </summary>
 internal sealed class InventingChangelogModel : IChangelogModel
 {
-    public Task<string> RephraseAsync(RephraseRequest request, CancellationToken cancellationToken = default)
-        => Task.FromResult("- Rewrote the `QuantumScheduler` across 9,001 modules.");
+    public Task<RenderedEntries> RephraseAsync(RephraseRequest request, CancellationToken cancellationToken = default)
+        => Task.FromResult(Entries.Each(request.Facts, (_, _) => "Rewrote the `QuantumScheduler` across 9,001 modules."));
 
     public Task<FaithfulnessReport> CheckFaithfulnessAsync(
         FaithfulnessRequest request, CancellationToken cancellationToken = default)
@@ -56,7 +57,7 @@ internal sealed class InventingChangelogModel : IChangelogModel
 /// </summary>
 internal sealed class UnreachableChangelogModel : IChangelogModel
 {
-    public Task<string> RephraseAsync(RephraseRequest request, CancellationToken cancellationToken = default)
+    public Task<RenderedEntries> RephraseAsync(RephraseRequest request, CancellationToken cancellationToken = default)
         => throw new InvalidOperationException("The model was called on a path that must not call it.");
 
     public Task<FaithfulnessReport> CheckFaithfulnessAsync(
