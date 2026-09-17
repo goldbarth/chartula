@@ -9,6 +9,7 @@
 technical, customer-facing, and product, from a single source of truth, without the hallucinations.
 
 [![Status](https://img.shields.io/badge/status-alpha%20in%20progress-blue?style=flat-square)](#status)
+[![CI](https://img.shields.io/github/actions/workflow/status/goldbarth/chartula/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/goldbarth/chartula/actions/workflows/ci.yml)
 ![.NET 10](https://img.shields.io/badge/.NET-10-512BD4?style=flat-square&logo=dotnet&logoColor=white)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](CONTRIBUTING.md)
