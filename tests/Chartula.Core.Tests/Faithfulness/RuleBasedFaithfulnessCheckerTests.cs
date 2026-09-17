@@ -1,6 +1,6 @@
 using Chartula.Core.Categorization;
-using Chartula.Core.Faithfulness;
 using Chartula.Core.Facts;
+using Chartula.Core.Faithfulness;
 using Chartula.Core.Llm;
 
 namespace Chartula.Core.Tests.Faithfulness;

@@ -1,10 +1,10 @@
 using Chartula.Core.Categorization;
 using Chartula.Core.Curation;
+using Chartula.Core.Facts;
 using Chartula.Core.Faithfulness;
 using Chartula.Core.Filtering;
 using Chartula.Core.Labeling;
 using Chartula.Core.Llm;
-using Chartula.Core.Facts;
 using Chartula.Core.Observability;
 using Chartula.Core.Pipeline;
 using Chartula.Core.Prompting;
