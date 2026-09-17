@@ -117,6 +117,21 @@ internal sealed class SpyCustomerPageWriter : ICustomerPageWriter
 }
 
 /// <summary>A renderer whose customer rendering can be steered by a test.</summary>
+/// <summary>Renders all three audiences, failing the ones named.</summary>
+internal sealed class FailingRenderer(params Audience[] failing) : IReleaseRenderer
+{
+    public Task<IReadOnlyDictionary<Audience, ChangelogGenerationResult>> RenderAsync(
+        FactBase factBase,
+        IReadOnlyCollection<Audience>? audiences = null,
+        CancellationToken cancellationToken = default)
+        => Task.FromResult<IReadOnlyDictionary<Audience, ChangelogGenerationResult>>(
+            new[] { Audience.Technical, Audience.Customer, Audience.Product }.ToDictionary(
+                audience => audience,
+                audience => failing.Contains(audience)
+                    ? ChangelogGenerationResult.Failure("Status Code: Unauthorized")
+                    : ChangelogGenerationResult.Success($"- {audience} text")));
+}
+
 internal sealed class CustomerRenderer(string text, string? description = null) : IReleaseRenderer
 {
     public Task<IReadOnlyDictionary<Audience, ChangelogGenerationResult>> RenderAsync(

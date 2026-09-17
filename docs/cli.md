@@ -152,7 +152,11 @@ See [Configuration](configuration.md) for every key and its default.
 
 ## Exit status
 
-`0` on a completed run, `1` on a usage error (missing option, unknown command, unknown audience) or a run-time failure (bad configuration, a pipeline error).
+`0` when every audience the run asked for rendered.
+`1` on a usage error (missing option, unknown command, unknown audience), a run-time failure (bad configuration, a pipeline error), or a run in which any requested audience failed.
+
+An audience that failed does not hold back the ones that rendered: `generate` still writes their outputs and says `<n> of <m> audiences failed.`
+When no audience rendered, nothing is written at all, so an earlier run's `changelog.json` is not replaced by one without renderings.
 Errors are written to stderr when they are about the invocation itself, and to stdout as `Error: <message>` when the pipeline started running and then failed.
 
 ## After a run

@@ -34,6 +34,69 @@ public sealed class ReleaseCommandOutputTests
         return output.ToString();
     }
 
+    private static async Task<(int ExitCode, string Output)> RunAsync(PipelineMode mode, params bool[] rendered)
+    {
+        Audience[] audiences = [Audience.Technical, Audience.Customer, Audience.Product];
+        ReleaseOutcome outcome = new(
+            "v1.0.0",
+            mode,
+            [.. rendered.Select((success, i) => success
+                ? new AudienceOutcome(audiences[i], Success: true, "- Added search", [], Error: null)
+                : new AudienceOutcome(audiences[i], Success: false, Text: null, [], Error: "Status Code: Unauthorized"))],
+            rendered.Any(success => success) && mode != PipelineMode.Preview ? ["changelog.json"] : []);
+
+        StringWriter output = new();
+        int exitCode = await ReleaseCommand.RunAsync(
+            new StubPipeline(outcome),
+            mode,
+            new ReleaseRequest("v1.0.0", new RepositoryCoordinates("octo", "repo")),
+            output,
+            CancellationToken.None);
+
+        return (exitCode, output.ToString());
+    }
+
+    [Theory]
+    [InlineData(PipelineMode.Preview)]
+    [InlineData(PipelineMode.Generate)]
+    public async Task A_run_in_which_every_audience_rendered_exits_zero(PipelineMode mode)
+    {
+        (int exitCode, _) = await RunAsync(mode, true, true, true);
+
+        Assert.Equal(0, exitCode);
+    }
+
+    [Theory]
+    [InlineData(PipelineMode.Preview)]
+    [InlineData(PipelineMode.GenerateWithoutPublishing)]
+    public async Task A_run_in_which_one_audience_failed_exits_non_zero_and_counts_it(PipelineMode mode)
+    {
+        (int exitCode, string text) = await RunAsync(mode, false, true, true);
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("1 of 3 audiences failed.", text);
+    }
+
+    [Fact]
+    public async Task A_generate_run_in_which_no_audience_rendered_does_not_claim_it_generated_anything()
+    {
+        (int exitCode, string text) = await RunAsync(PipelineMode.Generate, false, false, false);
+
+        Assert.Equal(1, exitCode);
+        Assert.StartsWith("No changelog generated for v1.0.0: no audience rendered.", text);
+        Assert.DoesNotContain("Generated changelog", text);
+        Assert.Contains("Nothing to write.", text);
+    }
+
+    [Fact]
+    public async Task A_preview_in_which_no_audience_rendered_says_so()
+    {
+        (int exitCode, string text) = await RunAsync(PipelineMode.Preview, false, false, false);
+
+        Assert.Equal(1, exitCode);
+        Assert.StartsWith("No preview for v1.0.0: no audience rendered.", text);
+    }
+
     [Fact]
     public async Task A_generate_run_lists_what_it_wrote()
     {

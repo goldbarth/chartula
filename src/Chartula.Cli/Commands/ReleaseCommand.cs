@@ -24,7 +24,11 @@ internal static class ReleaseCommand
         {
             ReleaseOutcome outcome = await pipeline.RunAsync(request, mode, cancellationToken);
             output.Write(Format(outcome));
-            return 0;
+
+            // Every audience the run asked for is part of the result. A script or a CI
+            // job reads the exit code, not the output, so a missing one has to show there;
+            // whatever did render is still written.
+            return outcome.Renderings.All(audience => audience.Success) ? 0 : 1;
         }
         catch (InvalidOperationException ex)
         {
@@ -41,8 +45,15 @@ internal static class ReleaseCommand
     private static string Format(ReleaseOutcome outcome)
     {
         StringBuilder builder = new();
-        string verb = outcome.Mode == PipelineMode.Preview ? "Preview" : "Generated";
-        builder.AppendLine($"{verb} changelog for {outcome.Tag}");
+        int failed = outcome.Renderings.Count(audience => !audience.Success);
+        bool nothingRendered = failed > 0 && failed == outcome.Renderings.Count;
+        builder.AppendLine((outcome.Mode, nothingRendered) switch
+        {
+            (PipelineMode.Preview, false) => $"Preview changelog for {outcome.Tag}",
+            (PipelineMode.Preview, true) => $"No preview for {outcome.Tag}: no audience rendered.",
+            (_, false) => $"Generated changelog for {outcome.Tag}",
+            (_, true) => $"No changelog generated for {outcome.Tag}: no audience rendered.",
+        });
         builder.AppendLine();
 
         foreach (AudienceOutcome audience in outcome.Renderings)
@@ -81,6 +92,11 @@ internal static class ReleaseCommand
         else
         {
             AppendOutputs(builder, outcome);
+        }
+
+        if (failed > 0 && !nothingRendered)
+        {
+            builder.AppendLine($"{failed} of {outcome.Renderings.Count} audiences failed.");
         }
 
         builder.AppendLine();
