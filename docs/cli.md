@@ -56,7 +56,7 @@ Runs the same pipeline as `preview` and then writes the outputs:
 - **`CHANGELOG.md`** - the technical rendering, prepended to whatever is already there.
 - **`release-<tag>.md`** - the customer rendering as a standalone page, with YAML front matter (title, date, one-sentence description) ahead of the entries.
 - **`changelog.json`** - every audience's text plus the fact base behind it, in the [documented, stable format](changelog-json.md).
-- **GitHub release notes** - the technical rendering, published to the release for `<release-tag>`.
+- **GitHub release notes** - the technical rendering, as a **draft** release for `<release-tag>` that you publish on GitHub after reading it. A release that already exists for the tag keeps its state: a draft stays a draft, a published release stays published, and only its notes are replaced. The output marks a draft with `(draft)` after its link.
 
 A field with no source behind it is left out rather than filled in - no description when the facts do not support one, no date when the tag has none.
 

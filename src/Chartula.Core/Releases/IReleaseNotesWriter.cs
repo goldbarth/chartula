@@ -13,7 +13,7 @@ public interface IReleaseNotesWriter
     /// <summary>
     /// Writes <paramref name="body"/> as the notes for the release tagged
     /// <paramref name="tag"/> in <paramref name="repository"/>, and returns a link
-    /// to the release.
+    /// to the release, marked when the release is a draft.
     /// </summary>
     /// <exception cref="System.InvalidOperationException">
     /// The platform API could not be reached or returned an error.
