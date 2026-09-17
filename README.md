@@ -28,6 +28,7 @@ It grounds every generated line against the actual facts of your PRs, so the out
 **Alpha in progress.** The pipeline runs end to end on a real repository, from reading pull requests to writing `CHANGELOG.md`, a customer page per release, `changelog.json` and GitHub release notes.
 
 It is not published yet, so there is no `dotnet tool install` and no prebuilt binary.
+What has been built so far is in the [changelog](CHANGELOG.md), which Chartula generated for itself.
 To try it today, [build it from source](#installation).
 
 See the [Roadmap](#roadmap) for what ships when.
