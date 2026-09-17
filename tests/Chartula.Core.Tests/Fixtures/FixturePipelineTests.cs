@@ -126,6 +126,24 @@ public sealed partial class FixturePipelineTests
     }
 
     [Fact]
+    public async Task A_placeholder_in_angle_brackets_survives_into_every_rendering()
+    {
+        FactBase factBase = FactBaseFixture.Load(FactBaseFixture.Typical);
+        WritingChangelogModel model = new("Write a release-<tag>.md page, named `release-<tag>.md` on disk.");
+
+        ReleaseOutcome outcome = await BuildPipeline(factBase, model, new RunMetrics())
+            .RunAsync(Request(factBase), PipelineMode.Preview);
+
+        // GitHub drops an unknown HTML tag, so an unescaped <tag> renders as "release-.md".
+        // Inside a code span the brackets are literal already and must stay untouched.
+        Assert.All(outcome.Renderings, rendering =>
+        {
+            Assert.True(rendering.Success, rendering.Error);
+            Assert.Contains(@"Write a release-\<tag>.md page, named `release-<tag>.md` on disk.", rendering.Text);
+        });
+    }
+
+    [Fact]
     public async Task The_thorough_check_toggled_off_never_reaches_the_model()
     {
         FactBase factBase = FactBaseFixture.Load(FactBaseFixture.Typical);
