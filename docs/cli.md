@@ -126,6 +126,14 @@ Two environment variables carry credentials, and neither is ever read from `char
 | `ANTHROPIC_API_KEY` | The model that rephrases the facts. |
 | `GITHUB_TOKEN` | Reading pull requests and writing release notes. |
 
+A run without `ANTHROPIC_API_KEY` is refused before it reads anything, naming the variable, because every audience would fail on it.
+The `openai-compatible` provider is exempt: a local server needs no key.
+
+```console
+$ chartula preview
+Configuration error: No Anthropic API key found in ANTHROPIC_API_KEY. Set one with: export ANTHROPIC_API_KEY=<your key> (create one at https://console.anthropic.com/settings/keys). For an endpoint that needs no key, set llm.provider to openai-compatible.
+```
+
 A run starts without `GITHUB_TOKEN` and prints a warning to stderr rather than refusing - a small release fits inside GitHub's unauthenticated budget of 60 requests an hour per IP address, and a run spends roughly one request per pull request.
 Beyond that the run fails partway through with a 403 that names a commit rather than the cause.
 A token raises the limit to 5000 an hour:

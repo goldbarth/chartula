@@ -15,15 +15,55 @@ namespace Chartula.Cli.Tests.Composition;
 /// </summary>
 public sealed class LlmWiringTests
 {
-    private static ServiceProvider Build(string yaml)
+    private static ServiceProvider Build(string yaml, bool withAnthropicKey = true)
         => new ServiceCollection()
-            .AddChartulaLlm(Configure(yaml))
+            .AddChartulaLlm(Configure(yaml, withAnthropicKey))
             .BuildServiceProvider();
 
-    private static IConfiguration Configure(string yaml)
+    private static IConfiguration Configure(string yaml, bool withAnthropicKey = true)
         => new ConfigurationBuilder()
             .AddInMemoryCollection(ChartulaYamlConfiguration.Flatten(yaml))
+            .AddInMemoryCollection(withAnthropicKey
+                ? [new KeyValuePair<string, string?>("ANTHROPIC_API_KEY", "test-key")]
+                : [])
             .Build();
+
+    [Fact]
+    public void An_anthropic_run_without_a_key_is_refused_naming_the_variable()
+    {
+        InvalidOperationException error = Assert.Throws<InvalidOperationException>(
+            () => Build("faithfulness:\n  thorough: true", withAnthropicKey: false));
+
+        Assert.Contains("ANTHROPIC_API_KEY", error.Message);
+        Assert.Contains("export ANTHROPIC_API_KEY=", error.Message);
+    }
+
+    [Fact]
+    public void A_renamed_key_variable_is_the_one_named_when_it_is_missing()
+    {
+        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() => Build(
+            """
+            llm:
+              apiKeyEnvironmentVariable: CLAUDE_KEY
+            """,
+            withAnthropicKey: false));
+
+        Assert.Contains("CLAUDE_KEY", error.Message);
+        Assert.DoesNotContain("ANTHROPIC_API_KEY", error.Message);
+    }
+
+    [Fact]
+    public void An_openai_compatible_run_starts_without_a_key()
+    {
+        Assert.NotNull(Build(
+            """
+            llm:
+              provider: openai-compatible
+              model: qwen3:8b
+              baseUrl: http://localhost:11434/v1
+            """,
+            withAnthropicKey: false).GetRequiredService<IChatClient>());
+    }
 
     [Fact]
     public void With_no_llm_section_the_anthropic_defaults_apply()

@@ -39,19 +39,6 @@ internal static class Program
             return 1;
         }
 
-        string directory = Directory.GetCurrentDirectory();
-        GitCliRepositoryReader checkout = new(directory);
-        ReleaseTarget? target = await ReleaseTarget.ResolveAsync(
-            args,
-            directory,
-            () => checkout.ReadNearestTagAsync(),
-            () => checkout.ReadRemoteUrlAsync(ReleaseTarget.Remote),
-            Console.Error);
-        if (target is null)
-        {
-            return 1;
-        }
-
         IConfiguration configuration;
         ServiceProvider services;
         try
@@ -66,15 +53,28 @@ internal static class Program
             return 1;
         }
 
-        // A warning about the run, not part of it: stderr keeps it out of the
-        // changelog when the output is redirected to a file.
-        if (GitHubTokenNotice.For(configuration) is { } notice)
-        {
-            Console.Error.WriteLine(notice);
-        }
-
         using (services)
         {
+            string directory = Directory.GetCurrentDirectory();
+            GitCliRepositoryReader checkout = new(directory);
+            ReleaseTarget? target = await ReleaseTarget.ResolveAsync(
+                args,
+                directory,
+                () => checkout.ReadNearestTagAsync(),
+                () => checkout.ReadRemoteUrlAsync(ReleaseTarget.Remote),
+                Console.Error);
+            if (target is null)
+            {
+                return 1;
+            }
+
+            // A warning about the run, not part of it: stderr keeps it out of the
+            // changelog when the output is redirected to a file.
+            if (GitHubTokenNotice.For(configuration) is { } notice)
+            {
+                Console.Error.WriteLine(notice);
+            }
+
             IReleasePipeline pipeline = services.GetRequiredService<IReleasePipeline>();
 
             return await ReleaseCommand.RunAsync(
