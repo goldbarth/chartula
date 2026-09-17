@@ -31,6 +31,10 @@ internal static class LlmServiceCollectionExtensions
             MaxOutputTokens = options.MaxOutputTokens,
             RawRepresentationFactory = ThinkingFactory(provider, options),
         });
+
+        // Last among the refusals: a setting that is wrong in chartula.yaml is named
+        // before the key, which may be missing only because the file was not fixed yet.
+        RequireApiKey(provider, options, configuration);
         services.AddSingleton(sp => CreateChatClient(provider, options, configuration));
         services.AddSingleton<IChangelogPromptBuilder, ChangelogPromptBuilder>();
         services.AddSingleton<IChangelogModel, ChatModel>();
@@ -61,6 +65,28 @@ internal static class LlmServiceCollectionExtensions
             MaxOutputTokens = ReadMaxOutputTokens(configuration),
             Thinking = configuration[$"{LlmOptions.SectionName}:Thinking"],
         };
+    }
+
+    /// <summary>
+    /// Refuses an Anthropic run without a key before any work starts. Without this the
+    /// run reads the history and spends a GitHub request per pull request, and only
+    /// then fails every audience on the provider's raw 401, which never names the
+    /// variable. An OpenAI-compatible endpoint is left alone: a local server needs no
+    /// key, and whether a hosted one does is the endpoint's to say.
+    /// </summary>
+    private static void RequireApiKey(LlmProvider provider, LlmOptions options, IConfiguration configuration)
+    {
+        if (provider != LlmProvider.Anthropic
+            || !string.IsNullOrWhiteSpace(configuration[options.ApiKeyEnvironmentVariable]))
+        {
+            return;
+        }
+
+        string variable = options.ApiKeyEnvironmentVariable;
+        throw new InvalidOperationException(
+            $"No Anthropic API key found in {variable}. " +
+            $"Set one with: export {variable}=<your key> (create one at https://console.anthropic.com/settings/keys). " +
+            "For an endpoint that needs no key, set llm.provider to openai-compatible.");
     }
 
     // An unparsable or non-positive value would otherwise fall through to the
@@ -117,9 +143,8 @@ internal static class LlmServiceCollectionExtensions
         LlmOptions options,
         IConfiguration configuration)
     {
-        // Read the key by name; never hardcode it. Absence is tolerated here so the
-        // CLI still starts - the provider surfaces a clear auth error on first use,
-        // and the endpoints that need no key at all answer normally.
+        // Read the key by name; never hardcode it. An Anthropic run without one was
+        // refused at registration; an OpenAI-compatible endpoint may need none.
         string? apiKey = configuration[options.ApiKeyEnvironmentVariable];
 
         return provider switch
