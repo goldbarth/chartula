@@ -10,8 +10,9 @@ namespace Chartula.Infrastructure.Releases;
 /// An <see cref="IReleaseNotesWriter"/> backed by the GitHub REST API over a plain
 /// <see cref="HttpClient"/> (no SDK, so it stays AOT-friendly). It looks up the
 /// release by tag: an existing release is updated in place (PATCH), a missing one
-/// is created (POST). Because GitHub keys a release by its tag, re-running for the
-/// same tag updates the same release rather than duplicating it.
+/// is created as a draft (POST). Generated notes are a draft a person reads before
+/// publishing, so nothing goes public on its own - and an update touches only the
+/// body, so a release someone already published stays published.
 /// </summary>
 public sealed class GitHubReleaseNotesWriter(HttpClient httpClient) : IReleaseNotesWriter
 {
@@ -27,10 +28,47 @@ public sealed class GitHubReleaseNotesWriter(HttpClient httpClient) : IReleaseNo
 
         string basePath = $"repos/{repository.Owner}/{repository.Name}/releases";
 
-        GitHubReleaseDto? existing = await GetByTagAsync(basePath, tag, cancellationToken);
-        return existing is not null
+        GitHubReleaseDto? existing = await GetByTagAsync(basePath, tag, cancellationToken)
+                                     ?? await FindDraftByTagAsync(basePath, tag, cancellationToken);
+        GitHubReleaseDto release = existing is not null
             ? await UpdateAsync($"{basePath}/{existing.Id}", body, cancellationToken)
             : await CreateAsync(basePath, tag, body, cancellationToken);
+
+        // A draft's link does not say it is one, and a reader who follows it expecting
+        // a public release would otherwise not know there is a step left.
+        string link = release.HtmlUrl ?? string.Empty;
+        return release.Draft ? $"{link} (draft)" : link;
+    }
+
+    /// <summary>
+    /// A draft for the tag from an earlier run. GitHub's lookup by tag answers only
+    /// published releases, so without this every re-run would add another draft.
+    /// The list includes drafts for a token with push access, which writing needs anyway.
+    /// </summary>
+    private async Task<GitHubReleaseDto?> FindDraftByTagAsync(string basePath, string tag, CancellationToken ct)
+    {
+        const int PageSize = 100;
+        for (int page = 1; ; page++)
+        {
+            string path = $"{basePath}?per_page={PageSize}&page={page}";
+            HttpResponseMessage response = await SendAsync(() => httpClient.GetAsync(path, ct), tag);
+            List<GitHubReleaseDto> releases;
+            using (response)
+            {
+                await EnsureSuccessAsync(response, tag, ct);
+                releases = await ReadAsync(response, GitHubReleaseJsonContext.Default.ListGitHubReleaseDto, tag, ct);
+            }
+
+            if (releases.Find(release => release.Draft && release.TagName == tag) is { } draft)
+            {
+                return draft;
+            }
+
+            if (releases.Count < PageSize)
+            {
+                return null;
+            }
+        }
     }
 
     private async Task<GitHubReleaseDto?> GetByTagAsync(string basePath, string tag, CancellationToken ct)
@@ -50,7 +88,7 @@ public sealed class GitHubReleaseNotesWriter(HttpClient httpClient) : IReleaseNo
         }
     }
 
-    private async Task<string> UpdateAsync(string releasePath, string body, CancellationToken ct)
+    private async Task<GitHubReleaseDto> UpdateAsync(string releasePath, string body, CancellationToken ct)
     {
         using StringContent content = JsonContent(GitHubReleaseJsonContext.Default.UpdateReleaseRequest,
             new UpdateReleaseRequest(body));
@@ -58,12 +96,11 @@ public sealed class GitHubReleaseNotesWriter(HttpClient httpClient) : IReleaseNo
         using (response)
         {
             await EnsureSuccessAsync(response, releasePath, ct);
-            GitHubReleaseDto release = await ReadReleaseAsync(response, releasePath, ct);
-            return release.HtmlUrl ?? string.Empty;
+            return await ReadReleaseAsync(response, releasePath, ct);
         }
     }
 
-    private async Task<string> CreateAsync(string basePath, string tag, string body, CancellationToken ct)
+    private async Task<GitHubReleaseDto> CreateAsync(string basePath, string tag, string body, CancellationToken ct)
     {
         using StringContent content = JsonContent(GitHubReleaseJsonContext.Default.CreateReleaseRequest,
             new CreateReleaseRequest(tag, body));
@@ -71,8 +108,7 @@ public sealed class GitHubReleaseNotesWriter(HttpClient httpClient) : IReleaseNo
         using (response)
         {
             await EnsureSuccessAsync(response, tag, ct);
-            GitHubReleaseDto release = await ReadReleaseAsync(response, tag, ct);
-            return release.HtmlUrl ?? string.Empty;
+            return await ReadReleaseAsync(response, tag, ct);
         }
     }
 
@@ -101,14 +137,22 @@ public sealed class GitHubReleaseNotesWriter(HttpClient httpClient) : IReleaseNo
             $"GitHub API returned {(int)response.StatusCode} {response.ReasonPhrase} for release '{what}'. {Truncate(body)}");
     }
 
-    private static async Task<GitHubReleaseDto> ReadReleaseAsync(
+    private static Task<GitHubReleaseDto> ReadReleaseAsync(
         HttpResponseMessage response, string what, CancellationToken ct)
+        => ReadAsync(response, GitHubReleaseJsonContext.Default.GitHubReleaseDto, what, ct);
+
+    private static async Task<T> ReadAsync<T>(
+        HttpResponseMessage response,
+        System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> typeInfo,
+        string what,
+        CancellationToken ct)
+        where T : class
     {
         try
         {
             string json = await response.Content.ReadAsStringAsync(ct);
-            return JsonSerializer.Deserialize(json, GitHubReleaseJsonContext.Default.GitHubReleaseDto)
-                   ?? throw new InvalidOperationException($"GitHub API returned an empty release for '{what}'.");
+            return JsonSerializer.Deserialize(json, typeInfo)
+                   ?? throw new InvalidOperationException($"GitHub API returned an empty response for release '{what}'.");
         }
         catch (JsonException ex)
         {

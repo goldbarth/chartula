@@ -132,7 +132,7 @@ A token raises the limit to 5000 an hour - `export GITHUB_TOKEN=$(gh auth token)
 - **`CHANGELOG.md`** - the technical rendering, prepended to your existing file.
 - **`release-<tag>.md`** - the customer rendering as a page you can publish: YAML front matter with the release title, its date and a one-sentence description, then the entries.
 - **`changelog.json`** - every audience text plus the fact base behind them, in a [documented, stable format](docs/changelog-json.md).
-- **GitHub release notes** - the technical rendering, attached to the release for the tag.
+- **GitHub release notes** - the technical rendering, as a draft release for the tag. Nothing goes public until you publish it on GitHub.
 
 A field with no source is left out of the front matter rather than filled in: no description when the facts do not support one, no date when the tag has none.
 

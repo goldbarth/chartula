@@ -35,7 +35,9 @@ public sealed class GitHubReleaseNotesWriterTests
     public async Task Creates_a_release_when_none_exists_for_the_tag()
     {
         RoutingHandler handler = new(request => request.Method == HttpMethod.Get
-            ? new HttpResponseMessage(HttpStatusCode.NotFound) { Content = new StringContent("{}") }
+            ? request.RequestUri!.AbsolutePath.EndsWith("/releases")
+                ? Json(HttpStatusCode.OK, "[]")
+                : new HttpResponseMessage(HttpStatusCode.NotFound) { Content = new StringContent("{}") }
             : Json(HttpStatusCode.Created, """{"id":1,"html_url":"https://github.com/octo/repo/releases/tag/v1.0.0"}"""));
         GitHubReleaseNotesWriter writer = new(Client(handler));
 
@@ -63,6 +65,55 @@ public sealed class GitHubReleaseNotesWriterTests
         Assert.Contains(handler.Requests, r => r.Method == HttpMethod.Patch && r.Path.EndsWith("/releases/42"));
         Assert.DoesNotContain(handler.Requests, r => r.Method == HttpMethod.Post);
         Assert.Contains("- Added search", handler.LastBodyByMethod[HttpMethod.Patch]);
+    }
+
+    [Fact]
+    public async Task Creates_a_new_release_as_a_draft()
+    {
+        RoutingHandler handler = new(request => request.Method == HttpMethod.Post
+            ? Json(HttpStatusCode.Created, """{"id":1,"html_url":"https://github.com/octo/repo/releases/tag/untagged-1","draft":true}""")
+            : request.RequestUri!.AbsolutePath.EndsWith("/releases")
+                ? Json(HttpStatusCode.OK, "[]")
+                : new HttpResponseMessage(HttpStatusCode.NotFound) { Content = new StringContent("{}") });
+        GitHubReleaseNotesWriter writer = new(Client(handler));
+
+        string written = await writer.WriteAsync(Repo, "v1.0.0", "- Added search");
+
+        // Generated text is a draft a person reads before it goes public.
+        Assert.Contains("\"draft\":true", handler.LastBodyByMethod[HttpMethod.Post]);
+        Assert.Equal("https://github.com/octo/repo/releases/tag/untagged-1 (draft)", written);
+    }
+
+    [Fact]
+    public async Task Updates_an_existing_draft_rather_than_creating_another()
+    {
+        // GitHub's lookup by tag answers only published releases, so a draft from an
+        // earlier run has to be found in the release list.
+        RoutingHandler handler = new(request => request.Method == HttpMethod.Get
+            ? request.RequestUri!.AbsolutePath.EndsWith("/releases")
+                ? Json(HttpStatusCode.OK, """[{"id":5,"tag_name":"v0.9.0","draft":false},{"id":7,"tag_name":"v1.0.0","draft":true,"html_url":"https://github.com/octo/repo/releases/tag/untagged-7"}]""")
+                : new HttpResponseMessage(HttpStatusCode.NotFound) { Content = new StringContent("{}") }
+            : Json(HttpStatusCode.OK, """{"id":7,"html_url":"https://github.com/octo/repo/releases/tag/untagged-7","draft":true}"""));
+        GitHubReleaseNotesWriter writer = new(Client(handler));
+
+        string written = await writer.WriteAsync(Repo, "v1.0.0", "- Added search");
+
+        Assert.Contains(handler.Requests, r => r.Method == HttpMethod.Patch && r.Path.EndsWith("/releases/7"));
+        Assert.DoesNotContain(handler.Requests, r => r.Method == HttpMethod.Post);
+        Assert.Equal("https://github.com/octo/repo/releases/tag/untagged-7 (draft)", written);
+    }
+
+    [Fact]
+    public async Task Updating_a_published_release_leaves_it_published()
+    {
+        RoutingHandler handler = new(_ =>
+            Json(HttpStatusCode.OK, """{"id":42,"html_url":"https://github.com/octo/repo/releases/tag/v1.0.0","draft":false}"""));
+        GitHubReleaseNotesWriter writer = new(Client(handler));
+
+        string written = await writer.WriteAsync(Repo, "v1.0.0", "- Added search");
+
+        Assert.DoesNotContain("draft", handler.LastBodyByMethod[HttpMethod.Patch]);
+        Assert.Equal("https://github.com/octo/repo/releases/tag/v1.0.0", written);
     }
 
     [Fact]
