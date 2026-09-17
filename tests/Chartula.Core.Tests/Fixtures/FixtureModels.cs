@@ -57,6 +57,20 @@ internal sealed class InventingChangelogModel : IChangelogModel
 }
 
 /// <summary>
+/// A stand-in model that answers every fact with the same text, and finds nothing to flag.
+/// It exists to push a given piece of model output through the real composer and writers.
+/// </summary>
+internal sealed class WritingChangelogModel(string text) : IChangelogModel
+{
+    public Task<RenderedEntries> RephraseAsync(RephraseRequest request, CancellationToken cancellationToken = default)
+        => Task.FromResult(Entries.Each(request.Facts, (_, _) => text));
+
+    public Task<FaithfulnessReport> CheckFaithfulnessAsync(
+        FaithfulnessRequest request, CancellationToken cancellationToken = default)
+        => Task.FromResult(FaithfulnessReport.Checked([]));
+}
+
+/// <summary>
 /// A model that fails the test if it is ever reached. It turns "this path costs no
 /// tokens" from a claim into something the suite enforces.
 /// </summary>

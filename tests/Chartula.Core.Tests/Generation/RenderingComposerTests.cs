@@ -107,4 +107,30 @@ public sealed class RenderingComposerTests
 
         Assert.Contains("an entry for fact 9, which it was not sent", mismatch);
     }
+
+    [Theory]
+    [InlineData("Write release-<tag>.md", @"Write release-\<tag>.md")]
+    [InlineData("Write `release-<tag>.md`", "Write `release-<tag>.md`")]
+    [InlineData("Write ``a ` <b>`` and <c>", @"Write ``a ` <b>`` and \<c>")]
+    [InlineData("An odd ` then <tag>", @"An odd ` then \<tag>")]
+    [InlineData(@"Already \<tag>", @"Already \<tag>")]
+    [InlineData("1 < 2 and <a> <b>", @"1 \< 2 and \<a> \<b>")]
+    [InlineData("No brackets at all", "No brackets at all")]
+    public void Escapes_an_angle_bracket_only_where_it_would_be_read_as_html(string written, string expected)
+    {
+        Assert.Equal(expected, RenderingComposer.EscapeAngleBrackets(written));
+    }
+
+    [Fact]
+    public void Escapes_what_the_model_wrote_but_not_the_reference_the_plan_adds()
+    {
+        RenderPlan plan = Plan(new PlannedEntry(1, "Added", false, "([#5](https://example/pull/5))"));
+
+        string text = RenderingComposer.Compose(
+            plan, Answer(new RenderedEntry(1, "Write a release-<tag>.md page")), Audience.Technical);
+
+        Assert.Equal(@"### Added
+
+- Write a release-\<tag>.md page ([#5](https://example/pull/5))".ReplaceLineEndings("\n"), text);
+    }
 }

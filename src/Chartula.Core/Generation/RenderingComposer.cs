@@ -106,9 +106,96 @@ public static partial class RenderingComposer
             : line;
     }
 
+    /// <summary>
+    /// Escapes every <c>&lt;</c> outside a code span, so a placeholder such as
+    /// <c>release-&lt;tag&gt;.md</c> is shown rather than read as HTML. GitHub drops
+    /// an unknown tag without a trace, and the words the model wrote go with it. A
+    /// code span shows its brackets literally already, and an escaped bracket is left
+    /// as it is.
+    /// </summary>
+    public static string EscapeAngleBrackets(string value)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+
+        StringBuilder escaped = new(value.Length);
+        int i = 0;
+        while (i < value.Length)
+        {
+            char current = value[i];
+            if (current == '`')
+            {
+                int run = CountRun(value, i, '`');
+                int close = FindClosingRun(value, i + run, run);
+                if (close < 0)
+                {
+                    // An unmatched backtick run is literal text, not the start of a span.
+                    escaped.Append(value, i, run);
+                    i += run;
+                    continue;
+                }
+
+                escaped.Append(value, i, close + run - i);
+                i = close + run;
+                continue;
+            }
+
+            if (current == '\\' && i + 1 < value.Length)
+            {
+                escaped.Append(value, i, 2);
+                i += 2;
+                continue;
+            }
+
+            if (current == '<')
+            {
+                escaped.Append('\\');
+            }
+
+            escaped.Append(current);
+            i++;
+        }
+
+        return escaped.ToString();
+    }
+
+    private static int CountRun(string value, int start, char c)
+    {
+        int end = start;
+        while (end < value.Length && value[end] == c)
+        {
+            end++;
+        }
+
+        return end - start;
+    }
+
+    // A code span closes on a backtick run of exactly the length that opened it.
+    private static int FindClosingRun(string value, int start, int length)
+    {
+        int i = start;
+        while (i < value.Length)
+        {
+            if (value[i] != '`')
+            {
+                i++;
+                continue;
+            }
+
+            int run = CountRun(value, i, '`');
+            if (run == length)
+            {
+                return i;
+            }
+
+            i += run;
+        }
+
+        return -1;
+    }
+
     private static string Line(PlannedEntry planned, RenderedEntry entry, Audience audience)
     {
-        string body = SingleLine(entry.Text)!;
+        string body = EscapeAngleBrackets(SingleLine(entry.Text)!);
         const string Breaking = "**Breaking:** ";
 
         switch (audience)
@@ -125,7 +212,7 @@ public static partial class RenderingComposer
                 }
 
                 string? label = SingleLine(entry.Label)?.Trim('*', ' ').TrimEnd(':').Trim();
-                return string.IsNullOrEmpty(label) ? body : $"**{label}:** {body}";
+                return string.IsNullOrEmpty(label) ? body : $"**{EscapeAngleBrackets(label)}:** {body}";
 
             default:
                 return body;
