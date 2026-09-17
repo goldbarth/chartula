@@ -52,6 +52,21 @@ public sealed class ThoroughFaithfulnessChecker(
             }
 
             statement.Append(": ").Append(change.Title);
+
+            // The technical rendering carries a pull request reference the composer
+            // adds after the model has written. A reference the check cannot find here
+            // reads to it as an invented one, and it flags every entry.
+            if (change.Url is not null)
+            {
+                statement.Append(" (");
+                if (change.Number is { } number)
+                {
+                    statement.Append("pull request #").Append(number).Append(", ");
+                }
+
+                statement.Append(change.Url).Append(')');
+            }
+
             if (!string.IsNullOrEmpty(change.Description))
             {
                 statement.Append(" - ").Append(change.Description);

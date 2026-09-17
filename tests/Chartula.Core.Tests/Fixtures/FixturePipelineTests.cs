@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Chartula.Core.Facts;
 using Chartula.Core.Faithfulness;
 using Chartula.Core.Formatting;
@@ -19,8 +20,11 @@ namespace Chartula.Core.Tests.Fixtures;
 /// the writers. Only the model is a stand-in, so these tests exercise the pipeline end to
 /// end at no token cost and can be run as often as wanted.
 /// </summary>
-public sealed class FixturePipelineTests
+public sealed partial class FixturePipelineTests
 {
+    [GeneratedRegex(@"\[#(?<number>\d+)\]\((?<url>[^)]+)\)")]
+    private static partial Regex ReferenceLink();
+
     private static ReleasePipeline BuildPipeline(
         FactBase factBase,
         IChangelogModel model,
@@ -96,6 +100,29 @@ public sealed class FixturePipelineTests
         // Proves the fixtures exercise the checks for real, not just clean input.
         Assert.All(outcome.Renderings, rendering => Assert.Contains(
             rendering.Flags, flag => flag.Contains("9,001") || flag.Contains("QuantumScheduler")));
+    }
+
+    [Theory]
+    [InlineData(FactBaseFixture.Typical)]
+    [InlineData(FactBaseFixture.Breaking)]
+    public async Task Every_reference_in_a_checked_rendering_is_backed_by_the_facts_the_check_sees(string fixture)
+    {
+        FactBase factBase = FactBaseFixture.Load(fixture);
+        EchoingChangelogModel model = new();
+
+        await BuildPipeline(factBase, model, new RunMetrics())
+            .RunAsync(Request(factBase), PipelineMode.Preview);
+
+        // The composer adds references after the model has written. A reference the
+        // check cannot find in its facts reads to it as an invented one, on every entry.
+        FaithfulnessRequest technical = Assert.Single(
+            model.CheckRequests, request => ReferenceLink().IsMatch(request.Output));
+        string facts = string.Join('\n', technical.Facts.Statements);
+        Assert.All(ReferenceLink().Matches(technical.Output), link =>
+        {
+            Assert.Contains($"#{link.Groups["number"].Value}", facts, StringComparison.Ordinal);
+            Assert.Contains(link.Groups["url"].Value, facts, StringComparison.Ordinal);
+        });
     }
 
     [Fact]

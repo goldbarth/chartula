@@ -21,7 +21,12 @@ internal sealed class EchoingChangelogModel : IChangelogModel
 {
     public int RephraseCalls { get; private set; }
 
-    public int CheckCalls { get; private set; }
+    public int CheckCalls => _checkRequests.Count;
+
+    /// <summary>What the thorough check was handed, one request per checked rendering.</summary>
+    public IReadOnlyList<FaithfulnessRequest> CheckRequests => _checkRequests;
+
+    private readonly List<FaithfulnessRequest> _checkRequests = [];
 
     public Task<RenderedEntries> RephraseAsync(RephraseRequest request, CancellationToken cancellationToken = default)
     {
@@ -32,7 +37,7 @@ internal sealed class EchoingChangelogModel : IChangelogModel
     public Task<FaithfulnessReport> CheckFaithfulnessAsync(
         FaithfulnessRequest request, CancellationToken cancellationToken = default)
     {
-        CheckCalls++;
+        _checkRequests.Add(request);
         return Task.FromResult(FaithfulnessReport.Checked([]));
     }
 }
