@@ -26,10 +26,17 @@ Each segment resets the ones to its right: a MINOR bump resets PATCH to 0, a MAJ
 
 ## 3. Pre-release phase (current)
 
-Chartula starts at `1.0.0-preview.1`, not `0.1.0`.
-The target shape of the 1.0 API and CLI surface is already known; what is still being validated is whether the implementation holds up, not what the product is.
+Chartula starts at `0.1.0-preview.1`, not `1.0.0-preview.1`.
+SemVer reserves `0.y.z` for initial development, where anything may change, and that is where Chartula is: the CLI flags, the shape of each rendering and what `generate` publishes are still moving, and the alpha exists to collect feedback that may move them further.
+A `1.0.0` pre-release would promise that the shape of 1.0 is already known, and every correction the feedback asks for would then cost a `2.0.0`.
 
-- **Label:** `preview` only. No `alpha` or `beta` labels are used, to keep the signal to users simple: "not yet stable" is the only distinction that matters before 1.0.
+- **Version core:** fixed at `0.1.0` for the whole pre-release phase.
+  The core carries no meaning yet, so bumping it would suggest a distinction that is not there.
+- **Label:** `preview` only.
+  No `alpha` or `beta` labels are used in version numbers, to keep the signal to users simple: "not yet stable" is the only distinction that matters before 1.0.
+  The project calls this phase "alpha" in prose; the version number does not repeat it.
+- **Why a suffix on a `0.y.z` version:** NuGet lists and installs a version without a suffix as stable.
+  The `-preview.N` suffix keeps the package out of default listings, so installing it takes `--prerelease` and is a deliberate choice.
 - **Incrementing:** each new pre-release build increments `N` by one (`preview.1` -> `preview.2` -> `preview.3`, …). `N` never resets while still pre-1.0.0, and no meaning is attached to the number itself beyond ordering.
 - **What triggers a new preview:** any change worth shipping, feature or fix, ships as the next `preview.N`. There is no separate PATCH/MINOR tracking underneath the preview label.
 - **Exit criteria - when preview ends and `1.0.0` ships:**
@@ -75,16 +82,16 @@ It is announced ahead of time, and a migration note ships with the release (see 
 **Version string formatting**
 
 - Always write the full three-part version, even when the patch is zero (`1.0.0`, not `1.0`).
-- Pre-release versions are always written with the label and number separated by a dot (`1.0.0-preview.1`), matching NuGet's own sort order for pre-release identifiers.
-- Git tags mirror the package version exactly, prefixed with `v` (`v1.0.0-preview.1`, `v1.0.0`).
+- Pre-release versions are always written with the label and number separated by a dot (`0.1.0-preview.1`), matching NuGet's own sort order for pre-release identifiers.
+- Git tags mirror the package version exactly, prefixed with `v` (`v0.1.0-preview.1`, `v1.0.0`).
 
 ## Quick reference
 
 - Format: `MAJOR.MINOR.PATCH[-preview.N]`
-- Pre-release label: `preview` only, no `alpha`/`beta`
+- Pre-release phase: `0.1.0-preview.N`, label `preview` only, no `alpha`/`beta`
 - Pre-1.0: every shippable change bumps `preview.N` by one; `N` never resets
 - `1.0.0` ships when known bugs are fixed, the surface has held stable for one preview cycle, and the tool has run against external repos
 - After `1.0.0`: PATCH = fix, MINOR = compatible feature, MAJOR = breaking change
 - Breaking changes always get their own heading in the release notes; after `1.0.0` they always require a MAJOR bump
 - Stable packages never depend on pre-release packages
-- Git tags mirror the package version: `v1.0.0-preview.1`, `v1.0.0`
+- Git tags mirror the package version: `v0.1.0-preview.1`, `v1.0.0`
