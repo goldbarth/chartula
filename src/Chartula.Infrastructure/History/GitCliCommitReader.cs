@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Globalization;
 using Chartula.Core.History;
 
@@ -92,40 +91,8 @@ public sealed class GitCliCommitReader(string repositoryPath) : IReleaseCommitRe
         return commits;
     }
 
-    private async Task<GitResult> RunGitAsync(
+    private Task<GitResult> RunGitAsync(
         IReadOnlyList<string> arguments,
         CancellationToken cancellationToken)
-    {
-        ProcessStartInfo startInfo = new()
-        {
-            FileName = "git",
-            WorkingDirectory = repositoryPath,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-        };
-        foreach (string argument in arguments)
-        {
-            startInfo.ArgumentList.Add(argument);
-        }
-
-        using Process process = new() { StartInfo = startInfo };
-        try
-        {
-            process.Start();
-        }
-        catch (Exception ex)
-        {
-            throw new InvalidOperationException(
-                "Could not start 'git'. Is Git installed and on the PATH?", ex);
-        }
-
-        Task<string> standardOutput = process.StandardOutput.ReadToEndAsync(cancellationToken);
-        Task<string> standardError = process.StandardError.ReadToEndAsync(cancellationToken);
-        await process.WaitForExitAsync(cancellationToken);
-
-        return new GitResult(process.ExitCode, await standardOutput, await standardError);
-    }
-
-    private readonly record struct GitResult(int ExitCode, string StandardOutput, string StandardError);
+        => GitCli.RunAsync(repositoryPath, arguments, cancellationToken);
 }

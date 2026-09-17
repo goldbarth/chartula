@@ -13,10 +13,15 @@ $ chartula --help
 Chartula - multi-audience, grounded changelog generator.
 
 Usage:
-  chartula preview  --tag <release-tag> --repo <owner/name>   Show what would be produced (dry run).
-  chartula generate --tag <release-tag> --repo <owner/name>   Produce and write the outputs.
+  chartula preview  [options]   Show what would be produced (dry run).
+  chartula generate [options]   Produce and write the outputs.
+
+Run it from a checkout of the repository the release belongs to.
 
 Options:
+  --tag <tag>    The release tag. Default: the nearest tag reachable from HEAD.
+  --repo <o/n>   The GitHub repository, as owner/name. Default: read from
+                 the 'origin' remote.
   --no-publish   Write changelog.json and CHANGELOG.md, but publish no release notes.
   --audience <a> Render only this audience: technical, customer or product.
                  Repeat it, or separate them with commas. All three by
@@ -33,7 +38,7 @@ Both run the identical pipeline against the same facts; they differ only in what
 ## `chartula preview`
 
 ```console
-$ chartula preview --tag <release-tag> --repo <owner/name>
+$ chartula preview [--tag <release-tag>] [--repo <owner/name>]
 ```
 
 Runs the full pipeline - curation, filtering, labeling, categorization, then one rephrasing and one faithfulness check per audience - and prints the result to stdout.
@@ -43,7 +48,7 @@ Use it to see what a release would look like, to check token cost before committ
 ## `chartula generate`
 
 ```console
-$ chartula generate --tag <release-tag> --repo <owner/name>
+$ chartula generate [--tag <release-tag>] [--repo <owner/name>]
 ```
 
 Runs the same pipeline as `preview` and then writes the outputs:
@@ -83,23 +88,33 @@ The run's summary lists the skipped outputs next to the written ones.
 
 With no `--audience` given, all three render - that is what a real release wants.
 
-## Required options
+## Release and repository
 
-Both commands need the same two options; neither has a default.
+A run starts from a checkout of the repository the release belongs to, because the commit range is read with `git` from the current directory.
+That checkout already knows the release and the repository, so both options default from it and only need to be passed to choose something else.
 
-| Option | Value | Description |
+| Option | Value | Default |
 | --- | --- | --- |
-| `--tag` | `<release-tag>` | The release tag to read pull requests behind. Must already exist in the repository. |
-| `--repo` | `<owner/name>` | The GitHub repository to read from, e.g. `goldbarth/chartula`. |
+| `--tag` | `<release-tag>` | The nearest tag reachable from `HEAD` (`git describe --tags --abbrev=0`). |
+| `--repo` | `<owner/name>` | Owner and name from the `origin` remote, in the `https://`, `ssh://` or `git@host:` form. |
 
-Missing or malformed, each fails before any network call is made:
+A value that was not passed is announced on stderr before the run starts, so `generate` never publishes to a release you did not see:
 
 ```console
-$ chartula generate --repo owner/name
-Missing required option --tag <release-tag>.
+$ cd my-repo
+$ chartula preview
+Using tag v1.3.0, the nearest tag reachable from HEAD. Pass --tag to choose another.
+Using repository owner/name, from the 'origin' remote. Pass --repo to choose another.
+```
 
-$ chartula generate --tag v1.2.0
-Missing or invalid option --repo <owner/name>.
+When a default cannot be read, the run fails before any network call and names the option to pass:
+
+```console
+$ chartula preview
+No --tag given, and no tag is reachable from HEAD in '/work/my-repo'. Pass --tag <release-tag>, or run from a checkout of the repository with its tags fetched (git fetch --tags).
+
+$ chartula preview --repo name-only
+Invalid option --repo 'name-only'. Expected <owner/name>.
 ```
 
 ## Environment

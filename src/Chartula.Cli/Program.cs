@@ -3,7 +3,7 @@ using Chartula.Cli.Composition;
 using Chartula.Cli.Configuration;
 using Chartula.Core.Llm;
 using Chartula.Core.Pipeline;
-using Chartula.Core.PullRequests;
+using Chartula.Infrastructure.History;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -33,23 +33,22 @@ internal static class Program
             return 1;
         }
 
-        string? tag = CommandLineArguments.GetOption(args, "--tag");
-        if (string.IsNullOrWhiteSpace(tag))
-        {
-            Console.Error.WriteLine("Missing required option --tag <release-tag>.");
-            return 1;
-        }
-
-        if (!ReleaseCommand.TryParseRepository(
-                CommandLineArguments.GetOption(args, "--repo"), out RepositoryCoordinates repository))
-        {
-            Console.Error.WriteLine("Missing or invalid option --repo <owner/name>.");
-            return 1;
-        }
-
         if (!AudienceSelection.TryParse(args, out IReadOnlyCollection<Audience>? audiences, out string? audienceError))
         {
             Console.Error.WriteLine(audienceError);
+            return 1;
+        }
+
+        string directory = Directory.GetCurrentDirectory();
+        GitCliRepositoryReader checkout = new(directory);
+        ReleaseTarget? target = await ReleaseTarget.ResolveAsync(
+            args,
+            directory,
+            () => checkout.ReadNearestTagAsync(),
+            () => checkout.ReadRemoteUrlAsync(ReleaseTarget.Remote),
+            Console.Error);
+        if (target is null)
+        {
             return 1;
         }
 
@@ -81,7 +80,7 @@ internal static class Program
             return await ReleaseCommand.RunAsync(
                 pipeline,
                 mode.Value,
-                new ReleaseRequest(tag, repository) { Audiences = audiences },
+                new ReleaseRequest(target.Tag, target.Repository) { Audiences = audiences },
                 Console.Out,
                 CancellationToken.None);
         }
@@ -146,10 +145,15 @@ internal static class Program
         Chartula - multi-audience, grounded changelog generator.
 
         Usage:
-          chartula preview  --tag <release-tag> --repo <owner/name>   Show what would be produced (dry run).
-          chartula generate --tag <release-tag> --repo <owner/name>   Produce and write the outputs.
+          chartula preview  [options]   Show what would be produced (dry run).
+          chartula generate [options]   Produce and write the outputs.
+
+        Run it from a checkout of the repository the release belongs to.
 
         Options:
+          --tag <tag>    The release tag. Default: the nearest tag reachable from HEAD.
+          --repo <o/n>   The GitHub repository, as owner/name. Default: read from
+                         the 'origin' remote.
           --no-publish   Write changelog.json and CHANGELOG.md, but publish no release notes.
           --audience <a> Render only this audience: technical, customer or product.
                          Repeat it, or separate them with commas. All three by
