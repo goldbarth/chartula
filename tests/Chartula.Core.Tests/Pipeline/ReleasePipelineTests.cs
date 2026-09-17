@@ -7,6 +7,7 @@ using Chartula.Core.Labeling;
 using Chartula.Core.Llm;
 using Chartula.Core.Pipeline;
 using Chartula.Core.PullRequests;
+using Chartula.Core.Rendering;
 using Chartula.Core.Review;
 
 namespace Chartula.Core.Tests.Pipeline;
@@ -18,7 +19,7 @@ public sealed class ReleasePipelineTests
     private readonly SpyCustomerPageWriter _customerPage = new();
     private readonly SpyReleaseNotesWriter _releaseNotes = new();
 
-    private ReleasePipeline BuildPipeline()
+    private ReleasePipeline BuildPipeline(IReleaseRenderer? renderer = null)
     {
         ConventionalCommitCategorizer categorizer = new();
         LabelRulePolicy labelPolicy = new(LabelRules.None);
@@ -30,7 +31,7 @@ public sealed class ReleasePipelineTests
             new StubCommitReader(),
             new StubPullRequestReader(),
             factBaseBuilder,
-            new StubRenderer(),
+            renderer ?? new StubRenderer(),
             new RuleBasedFaithfulnessChecker(),
             new PassThroughThoroughChecker(),
             new ReviewCoordinator(new AutoApproveReviewer(), new ReviewOptions(Enabled: false)),
@@ -41,6 +42,33 @@ public sealed class ReleasePipelineTests
     }
 
     private static ReleaseRequest Request() => new("v1.0.0", new RepositoryCoordinates("octo", "repo"));
+
+    [Fact]
+    public async Task A_run_in_which_no_audience_rendered_writes_and_publishes_nothing()
+    {
+        ReleaseOutcome outcome = await BuildPipeline(
+                new FailingRenderer(Audience.Technical, Audience.Customer, Audience.Product))
+            .RunAsync(Request(), PipelineMode.Generate);
+
+        // An earlier run's changelog.json must not be replaced by one with no renderings.
+        Assert.Empty(outcome.WrittenOutputs);
+        Assert.Equal(0, _json.Calls);
+        Assert.Equal(0, _markdown.Calls);
+        Assert.Equal(0, _customerPage.Calls);
+        Assert.Equal(0, _releaseNotes.Calls);
+    }
+
+    [Fact]
+    public async Task A_run_in_which_some_audiences_failed_writes_what_rendered()
+    {
+        ReleaseOutcome outcome = await BuildPipeline(new FailingRenderer(Audience.Technical))
+            .RunAsync(Request(), PipelineMode.Generate);
+
+        Assert.Equal(1, _json.Calls);
+        Assert.Equal(1, _customerPage.Calls);
+        Assert.Equal(0, _markdown.Calls);
+        Assert.Equal(0, _releaseNotes.Calls);
+    }
 
     [Fact]
     public async Task Preview_writes_and_publishes_nothing()

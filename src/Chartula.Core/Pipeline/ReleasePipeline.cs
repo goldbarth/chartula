@@ -86,7 +86,10 @@ public sealed class ReleasePipeline(
 
         IReadOnlyList<string> written = [];
         IReadOnlyList<string> skipped = [];
-        if (mode != PipelineMode.Preview)
+        // A run in which no audience rendered has nothing to record. Writing the fact
+        // base alone would replace the renderings of an earlier, good run with none,
+        // and read as a run that produced something.
+        if (mode != PipelineMode.Preview && finalTexts.Count > 0)
         {
             (written, skipped) = await WriteOutputsAsync(
                 request, range, factBase, finalTexts, descriptions, mode, cancellationToken);
