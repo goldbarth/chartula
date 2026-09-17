@@ -41,6 +41,35 @@ public sealed class ThoroughFaithfulnessCheckerTests
     }
 
     [Fact]
+    public async Task Grounds_the_pull_request_reference_a_rendering_carries()
+    {
+        StubFaithfulnessModel model = new(FaithfulnessReport.Checked([]));
+        IThoroughFaithfulnessChecker checker = new ThoroughFaithfulnessChecker(
+            model, new ThoroughFaithfulnessOptions(Enabled: true));
+
+        await checker.CheckAsync("Fixed a parser bug. ([#7](https://example/pull/7))", Facts());
+
+        string statement = Assert.Single(model.LastRequest!.Facts.Statements);
+        Assert.Contains("pull request #7, https://example/pull/7", statement, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Grounds_no_reference_for_a_change_without_a_pull_request()
+    {
+        StubFaithfulnessModel model = new(FaithfulnessReport.Checked([]));
+        IThoroughFaithfulnessChecker checker = new ThoroughFaithfulnessChecker(
+            model, new ThoroughFaithfulnessOptions(Enabled: true));
+        FactBase commitOnly = new("v1.0.0", [
+            new ChangeFact("fix: correct an off-by-one in the parser", null, null,
+                ChangeCategory.Fix, IsUserVisible: true, IsBreaking: false, [], [], null),
+        ]);
+
+        await checker.CheckAsync("Fixed a parser bug.", commitOnly);
+
+        Assert.Equal("Fix: fix: correct an off-by-one in the parser", Assert.Single(model.LastRequest!.Facts.Statements));
+    }
+
+    [Fact]
     public async Task Makes_no_call_and_reports_faithful_when_disabled()
     {
         StubFaithfulnessModel model = new(FaithfulnessReport.Checked(["should not be used"]));
