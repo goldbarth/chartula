@@ -125,7 +125,7 @@ llm:
 ```console
 $ ollama serve &
 $ ollama pull qwen3:8b
-$ chartula preview --tag v1.2.0 --repo owner/name
+$ chartula preview
 ```
 
 No API key is involved.

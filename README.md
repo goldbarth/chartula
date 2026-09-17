@@ -91,20 +91,26 @@ The CLI is then at `src/Chartula.Cli/bin/Release/net10.0/chartula`.
 
 ## Usage
 
-Chartula needs a release tag that exists in your repository and the repository to read pull requests from.
+Run Chartula from a checkout of your repository.
+It takes the nearest tag as the release and the `origin` remote as the GitHub repository, says which it picked, and `--tag` and `--repo` choose others.
 
 ```bash
+cd my-repo
+
 # Show what would be produced, without writing anything
-chartula preview --tag v1.2.0 --repo owner/name
+chartula preview
 
 # Produce the outputs and write them
-chartula generate --tag v1.2.0 --repo owner/name
+chartula generate
 
 # Write the files, but publish no release notes
-chartula generate --tag v1.2.0 --repo owner/name --no-publish
+chartula generate --no-publish
 
 # Render one audience instead of all three
-chartula generate --tag v1.2.0 --repo owner/name --audience customer
+chartula generate --audience customer
+
+# An earlier release
+chartula preview --tag v1.2.0
 ```
 
 Credentials are read from environment variables, never from a config file - which ones depends on the provider:
