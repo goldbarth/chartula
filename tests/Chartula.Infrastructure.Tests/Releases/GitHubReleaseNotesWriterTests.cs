@@ -100,6 +100,9 @@ public sealed class GitHubReleaseNotesWriterTests
 
         Assert.Contains(handler.Requests, r => r.Method == HttpMethod.Patch && r.Path.EndsWith("/releases/7"));
         Assert.DoesNotContain(handler.Requests, r => r.Method == HttpMethod.Post);
+
+        // Without the tag GitHub detaches the draft from it, and the next run cannot find it.
+        Assert.Contains("\"tag_name\":\"v1.0.0\"", handler.LastBodyByMethod[HttpMethod.Patch]);
         Assert.Equal("https://github.com/octo/repo/releases/tag/untagged-7 (draft)", written);
     }
 

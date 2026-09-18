@@ -31,7 +31,7 @@ public sealed class GitHubReleaseNotesWriter(HttpClient httpClient) : IReleaseNo
         GitHubReleaseDto? existing = await GetByTagAsync(basePath, tag, cancellationToken)
                                      ?? await FindDraftByTagAsync(basePath, tag, cancellationToken);
         GitHubReleaseDto release = existing is not null
-            ? await UpdateAsync($"{basePath}/{existing.Id}", body, cancellationToken)
+            ? await UpdateAsync($"{basePath}/{existing.Id}", tag, body, cancellationToken)
             : await CreateAsync(basePath, tag, body, cancellationToken);
 
         // A draft's link does not say it is one, and a reader who follows it expecting
@@ -44,6 +44,8 @@ public sealed class GitHubReleaseNotesWriter(HttpClient httpClient) : IReleaseNo
     /// A draft for the tag from an earlier run. GitHub's lookup by tag answers only
     /// published releases, so without this every re-run would add another draft.
     /// The list includes drafts for a token with push access, which writing needs anyway.
+    /// It lags a new release by a moment, so two runs for the same tag started within
+    /// seconds of each other can still leave two drafts; a run takes longer than that.
     /// </summary>
     private async Task<GitHubReleaseDto?> FindDraftByTagAsync(string basePath, string tag, CancellationToken ct)
     {
@@ -88,10 +90,10 @@ public sealed class GitHubReleaseNotesWriter(HttpClient httpClient) : IReleaseNo
         }
     }
 
-    private async Task<GitHubReleaseDto> UpdateAsync(string releasePath, string body, CancellationToken ct)
+    private async Task<GitHubReleaseDto> UpdateAsync(string releasePath, string tag, string body, CancellationToken ct)
     {
         using StringContent content = JsonContent(GitHubReleaseJsonContext.Default.UpdateReleaseRequest,
-            new UpdateReleaseRequest(body));
+            new UpdateReleaseRequest(tag, body));
         HttpResponseMessage response = await SendAsync(() => httpClient.PatchAsync(releasePath, content, ct), releasePath);
         using (response)
         {

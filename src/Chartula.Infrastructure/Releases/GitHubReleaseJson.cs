@@ -16,8 +16,13 @@ internal sealed class GitHubReleaseDto
     public bool Draft { get; init; }
 }
 
-/// <summary>Body for updating a release (PATCH).</summary>
+/// <summary>
+/// Body for updating a release (PATCH). The tag goes in although it does not change:
+/// GitHub detaches a draft from its tag when a PATCH leaves the tag out, and the
+/// next run could no longer find it.
+/// </summary>
 internal sealed record UpdateReleaseRequest(
+    [property: JsonPropertyName("tag_name")] string TagName,
     [property: JsonPropertyName("body")] string Body);
 
 /// <summary>
