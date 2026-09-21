@@ -142,7 +142,7 @@ A token raises the limit to 5000 an hour:
 $ export GITHUB_TOKEN=$(gh auth token)
 ```
 
-The variable names above are the defaults; both can be renamed in `chartula.yaml` - see [Configuration](configuration.md).
+The variable names above are the defaults; both can be renamed, in the environment only - see [Environment-only settings](configuration.md#environment-only-settings).
 
 ## Configuration file
 

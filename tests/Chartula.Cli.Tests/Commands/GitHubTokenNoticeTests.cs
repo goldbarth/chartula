@@ -1,3 +1,4 @@
+using System.Collections;
 using Chartula.Cli.Commands;
 using Chartula.Cli.Configuration;
 using Microsoft.Extensions.Configuration;
@@ -11,17 +12,17 @@ namespace Chartula.Cli.Tests.Commands;
 /// </summary>
 public sealed class GitHubTokenNoticeTests
 {
-    private static IConfiguration Configuration(string? yaml = null, params (string Key, string? Value)[] environment)
+    private const string RenamedToken = "Chartula__GitHub__TokenEnvironmentVariable";
+
+    private static IConfiguration Configuration(params (string Name, string Value)[] environment)
     {
-        ConfigurationBuilder builder = new();
-        if (yaml is not null)
+        Hashtable variables = [];
+        foreach ((string name, string value) in environment)
         {
-            builder.AddInMemoryCollection(ChartulaYamlConfiguration.Flatten(yaml));
+            variables[name] = value;
         }
 
-        return builder
-            .AddInMemoryCollection(environment.Select(e => new KeyValuePair<string, string?>(e.Key, e.Value)))
-            .Build();
+        return ChartulaConfiguration.Build(new ConfigurationBuilder(), variables);
     }
 
     [Fact]
@@ -38,20 +39,16 @@ public sealed class GitHubTokenNoticeTests
 
     [Fact]
     public void A_run_with_a_token_is_not_warned()
-        => Assert.Null(GitHubTokenNotice.For(Configuration(environment: ("GITHUB_TOKEN", "gho_secret"))));
+        => Assert.Null(GitHubTokenNotice.For(Configuration(("GITHUB_TOKEN", "gho_secret"))));
 
     [Fact]
     public void A_blank_token_counts_as_none()
-        => Assert.NotNull(GitHubTokenNotice.For(Configuration(environment: ("GITHUB_TOKEN", "   "))));
+        => Assert.NotNull(GitHubTokenNotice.For(Configuration(("GITHUB_TOKEN", "   "))));
 
     [Fact]
     public void The_notice_names_the_configured_variable_rather_than_the_default()
     {
-        string? notice = GitHubTokenNotice.For(Configuration(
-            """
-            github:
-              tokenEnvironmentVariable: CHARTULA_GH_TOKEN
-            """));
+        string? notice = GitHubTokenNotice.For(Configuration((RenamedToken, "CHARTULA_GH_TOKEN")));
 
         Assert.NotNull(notice);
         Assert.Contains("CHARTULA_GH_TOKEN", notice);
@@ -61,9 +58,6 @@ public sealed class GitHubTokenNoticeTests
     [Fact]
     public void A_token_under_the_configured_variable_silences_the_notice()
         => Assert.Null(GitHubTokenNotice.For(Configuration(
-            """
-            github:
-              tokenEnvironmentVariable: CHARTULA_GH_TOKEN
-            """,
+            (RenamedToken, "CHARTULA_GH_TOKEN"),
             ("CHARTULA_GH_TOKEN", "gho_secret"))));
 }

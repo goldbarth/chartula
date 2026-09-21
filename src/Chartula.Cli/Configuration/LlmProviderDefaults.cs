@@ -21,7 +21,7 @@ internal sealed record LlmProviderDefaults(
             ApiKeyEnvironmentVariable: "ANTHROPIC_API_KEY",
             // Null, not the literal URL: the Anthropic client already knows where its
             // own API lives, and repeating it here would pin a value the SDK is free
-            // to change. Setting llm.baseUrl overrides it, for a proxy or a gateway.
+            // to change. Setting Chartula__Llm__BaseUrl overrides it, for a proxy or a gateway.
             BaseUrl: null),
 
         // Neither the model nor the endpoint can be guessed. An endpoint default

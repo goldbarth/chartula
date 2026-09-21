@@ -11,9 +11,27 @@ namespace Chartula.Cli.Configuration;
 /// <c>a:b</c>, sequences become <c>a:0</c>); config keys are case-insensitive, so
 /// the YAML's own casing is preserved.
 /// </summary>
+/// <remarks>
+/// The file is repository content, written by anyone whose pull request is merged,
+/// so it may not set where data and credentials are sent: the endpoints, and the
+/// names of the environment variables whose values go to them. One YAML value
+/// could otherwise send any variable of the operator's environment to any host, or
+/// point the reader at an API that fabricates the fact base. Those keys come from
+/// the environment only, and a file that sets one is refused rather than ignored,
+/// so nobody believes a setting is in force that is not.
+/// </remarks>
 internal static class ChartulaYamlConfiguration
 {
     private const string RootKey = "Chartula";
+
+    /// <summary>The keys the file may not set, each with the variable that sets it instead.</summary>
+    private static readonly Dictionary<string, string> EnvironmentOnlyKeys = new(StringComparer.OrdinalIgnoreCase)
+    {
+        [$"{LlmOptions.SectionName}:BaseUrl"] = "Chartula__Llm__BaseUrl",
+        [$"{LlmOptions.SectionName}:ApiKeyEnvironmentVariable"] = "Chartula__Llm__ApiKeyEnvironmentVariable",
+        [$"{GitHubOptions.SectionName}:ApiBaseUrl"] = "Chartula__GitHub__ApiBaseUrl",
+        [$"{GitHubOptions.SectionName}:TokenEnvironmentVariable"] = "Chartula__GitHub__TokenEnvironmentVariable",
+    };
 
     /// <summary>
     /// Adds <c>chartula.yaml</c> (or <c>chartula.yml</c>) from
@@ -30,14 +48,34 @@ internal static class ChartulaYamlConfiguration
         return builder.AddInMemoryCollection(Flatten(File.ReadAllText(path)));
     }
 
-    /// <summary>Flattens a YAML document into prefixed configuration key/value pairs.</summary>
+    /// <summary>
+    /// Flattens a YAML document into prefixed configuration key/value pairs. Throws
+    /// when the document sets a key that only the environment may set.
+    /// </summary>
     public static IReadOnlyList<KeyValuePair<string, string?>> Flatten(string yaml)
     {
         object? root = new Deserializer().Deserialize<object?>(yaml);
 
         List<KeyValuePair<string, string?>> pairs = [];
         Flatten(RootKey, root, pairs);
+        RefuseEnvironmentOnlyKeys(pairs);
         return pairs;
+    }
+
+    private static void RefuseEnvironmentOnlyKeys(IEnumerable<KeyValuePair<string, string?>> pairs)
+    {
+        List<string> refused = [.. pairs
+            .Where(pair => EnvironmentOnlyKeys.ContainsKey(pair.Key))
+            .Select(pair => $"{pair.Key[(RootKey.Length + 1)..].Replace(':', '.')} (set {EnvironmentOnlyKeys[pair.Key]} instead)")];
+        if (refused.Count == 0)
+        {
+            return;
+        }
+
+        throw new InvalidOperationException(
+            $"chartula.yaml sets {string.Join(", ", refused)}. " +
+            "Endpoints and the names of credential variables are read from the environment only: " +
+            "the file is repository content, and these decide where release data and credentials are sent.");
     }
 
     private static void Flatten(string prefix, object? node, List<KeyValuePair<string, string?>> pairs)

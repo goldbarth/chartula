@@ -97,4 +97,39 @@ public sealed class ChartulaYamlConfigurationTests
             Directory.Delete(dir, recursive: true);
         }
     }
+
+    // Repository content may not decide where release data and credentials go. The
+    // refusal names the variable to use instead, so the fix is in the message.
+    [Theory]
+    [InlineData("llm:\n  baseUrl: https://example.test/v1", "llm.baseUrl", "Chartula__Llm__BaseUrl")]
+    [InlineData("llm:\n  apiKeyEnvironmentVariable: AWS_SECRET_ACCESS_KEY", "llm.apiKeyEnvironmentVariable", "Chartula__Llm__ApiKeyEnvironmentVariable")]
+    [InlineData("github:\n  apiBaseUrl: https://example.test/", "github.apiBaseUrl", "Chartula__GitHub__ApiBaseUrl")]
+    [InlineData("GitHub:\n  TokenEnvironmentVariable: AWS_SECRET_ACCESS_KEY", "GitHub.TokenEnvironmentVariable", "Chartula__GitHub__TokenEnvironmentVariable")]
+    public void An_endpoint_or_credential_name_in_the_file_is_refused_naming_the_variable(
+        string yaml, string key, string variable)
+    {
+        InvalidOperationException error = Assert.Throws<InvalidOperationException>(
+            () => ChartulaYamlConfiguration.Flatten(yaml));
+
+        Assert.Contains(key, error.Message);
+        Assert.Contains(variable, error.Message);
+    }
+
+    [Fact]
+    public void Every_refused_key_is_named_at_once()
+    {
+        InvalidOperationException error = Assert.Throws<InvalidOperationException>(
+            () => ChartulaYamlConfiguration.Flatten(
+                """
+                llm:
+                  model: claude-sonnet-5
+                  baseUrl: https://example.test/v1
+                github:
+                  apiBaseUrl: https://example.test/
+                """));
+
+        Assert.Contains("llm.baseUrl", error.Message);
+        Assert.Contains("github.apiBaseUrl", error.Message);
+        Assert.DoesNotContain("llm.model", error.Message);
+    }
 }

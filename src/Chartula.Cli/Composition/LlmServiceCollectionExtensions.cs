@@ -41,6 +41,10 @@ internal static class LlmServiceCollectionExtensions
         return services;
     }
 
+    /// <summary>The options a run's configuration resolves to, provider defaults applied.</summary>
+    public static LlmOptions ReadOptions(IConfiguration configuration)
+        => ReadOptions(configuration, LlmProviderParser.Parse(configuration[$"{LlmOptions.SectionName}:Provider"]));
+
     private static LlmOptions ReadOptions(IConfiguration configuration, LlmProvider provider)
     {
         LlmProviderDefaults defaults = LlmProviderDefaults.For(provider);

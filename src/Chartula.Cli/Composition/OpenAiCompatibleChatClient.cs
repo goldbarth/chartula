@@ -41,7 +41,7 @@ internal static class OpenAiCompatibleChatClient
         if (string.IsNullOrWhiteSpace(options.BaseUrl))
         {
             throw new InvalidOperationException(
-                "llm.baseUrl is required when llm.provider is 'openai-compatible'. " +
+                "Chartula__Llm__BaseUrl is required when llm.provider is 'openai-compatible'. " +
                 "There is no default, because an endpoint that is not named cannot be guessed - " +
                 "for example http://localhost:11434/v1 for Ollama, http://localhost:1234/v1 for LM Studio.");
         }
@@ -54,7 +54,7 @@ internal static class OpenAiCompatibleChatClient
             || (endpoint.Scheme != Uri.UriSchemeHttp && endpoint.Scheme != Uri.UriSchemeHttps))
         {
             throw new InvalidOperationException(
-                $"Invalid llm.baseUrl '{options.BaseUrl}'. Expected an absolute http or https URL, " +
+                $"Invalid Chartula__Llm__BaseUrl '{options.BaseUrl}'. Expected an absolute http or https URL, " +
                 "for example http://localhost:11434/v1.");
         }
 
