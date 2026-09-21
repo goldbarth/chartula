@@ -1,0 +1,12 @@
+#!/bin/sh
+# Runs the same formatting check as the CI format job, before the commit exists.
+# It only checks: fixing is left to you, so nothing lands in a commit unseen.
+# Opt in once with: git config core.hooksPath .githooks
+# Skip once with:   git commit --no-verify
+
+if ! dotnet format Chartula.slnx --verify-no-changes; then
+    echo >&2
+    echo "Formatting differs from .editorconfig. Run 'dotnet format Chartula.slnx', review and stage the result." >&2
+    echo "To commit anyway: git commit --no-verify" >&2
+    exit 1
+fi

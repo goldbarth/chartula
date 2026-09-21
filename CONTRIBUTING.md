@@ -82,6 +82,16 @@ dotnet test Chartula.slnx -c Release
 
 Please make sure the project builds and the tests pass before opening a pull request.
 Formatting rules live in `.editorconfig` and are applied automatically by most IDEs.
+CI checks them with `dotnet format Chartula.slnx --verify-no-changes`; `dotnet format Chartula.slnx` applies them.
+
+To get that check before a commit instead of after a push, turn on the pre-commit hook once:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+It only checks and never changes or stages a file, and it adds about ten seconds to a commit, because the check loads the whole solution.
+To commit once without it, use `git commit --no-verify`.
 
 The suite needs no API key, no network and no tokens: the pipeline is tested by replaying stored fact bases, so you can run it as often as you like.
 [Test fixtures](docs/test-fixtures.md) explains how that works and how to add a case.
