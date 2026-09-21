@@ -1,0 +1,4 @@
+# Every change is reviewed by the maintainer. The main ruleset does not require a
+# code-owner approval: a solo maintainer cannot approve their own pull request, so
+# this file routes review requests, and the required CI checks gate the merge.
+* @goldbarth
