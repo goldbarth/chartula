@@ -1,0 +1,68 @@
+name: Install
+
+# Runs the install scripts the way a user does, on every platform a binary is
+# built for, against the published release: when a script changes, and whenever
+# a release is published, so a release that cannot be installed shows up at once.
+on:
+  pull_request:
+    paths:
+      - install.sh
+      - install.ps1
+      - .github/workflows/install.yml
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unix:
+    name: install.sh (${{ matrix.runner }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-latest, ubuntu-24.04-arm, macos-15-intel, macos-latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install
+        env:
+          # A published release is tested by its own tag; otherwise the latest one.
+          CHARTULA_VERSION: ${{ github.event.release.tag_name }}
+        run: sh install.sh
+      - name: Run the installed binary
+        run: |
+          "$HOME/.local/bin/chartula" --help | head -n 1
+          file "$HOME/.local/bin/chartula"
+
+  windows:
+    name: install.ps1 (${{ matrix.runner }}, ${{ matrix.shell }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [windows-latest, windows-11-arm]
+        # Windows PowerShell 5.1 is what a fresh Windows opens; pwsh is PowerShell 7.
+        shell: [powershell, pwsh]
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install
+        env:
+          CHARTULA_VERSION: ${{ github.event.release.tag_name }}
+        # The script never exits (under `irm | iex` that would close the user's window),
+        # so success is read from what it leaves behind.
+        run: |
+          Get-Content install.ps1 -Raw | Invoke-Expression
+          if (-not (Test-Path "$env:LOCALAPPDATA\Programs\chartula\chartula.exe")) { exit 1 }
+      - name: Run chartula from the user PATH in a new process
+        run: |
+          $env:Path = [Environment]::GetEnvironmentVariable('Path', 'User') + ';' + [Environment]::GetEnvironmentVariable('Path', 'Machine')
+          # Read all of it first: cutting the pipe after one line stops the process,
+          # and its exit code then reports the cut rather than the binary.
+          $usage = chartula --help
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          $usage | Select-Object -First 1

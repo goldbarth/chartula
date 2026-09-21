@@ -95,8 +95,50 @@ If you try it, [tell us how it went](https://github.com/goldbarth/chartula/issue
 
 ## Install
 
-> Prebuilt binaries for `linux-x64`, `linux-arm64`, `osx-x64`, `osx-arm64`, `win-x64` and `win-arm64` come with the first preview release.
-> Installation instructions follow here.
+One command installs the latest release.
+It picks the binary for your machine, checks it against the release's checksums, and puts it where your terminal finds it.
+No .NET is needed.
+
+**Linux and macOS**, in a terminal:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/goldbarth/chartula/main/install.sh | sh
+```
+
+It installs to `~/.local/bin/chartula`.
+If that folder is not on your `PATH` yet, the script prints the one line to add, and changes no file of yours on its own.
+
+**Windows**, in PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/goldbarth/chartula/main/install.ps1 | iex
+```
+
+It installs to `%LOCALAPPDATA%\Programs\chartula` and adds that folder to your user `PATH`.
+
+Then check that it runs:
+
+```bash
+chartula --help
+```
+
+Running the same command again updates to the latest release.
+To read a script before running it, open its link in a browser: [install.sh](install.sh), [install.ps1](install.ps1).
+
+### Download by hand
+
+Every [release](https://github.com/goldbarth/chartula/releases/latest) carries one file per platform (`chartula-linux-x64`, `chartula-linux-arm64`, `chartula-osx-x64`, `chartula-osx-arm64`, `chartula-win-x64.exe`, `chartula-win-arm64.exe`), a `SHA256SUMS` file, and a build provenance attestation per binary.
+On Linux and macOS, make the file executable, rename it to `chartula` and move it to a folder on your `PATH`:
+
+```bash
+sha256sum -c SHA256SUMS --ignore-missing   # macOS: grep chartula-osx-arm64 SHA256SUMS | shasum -a 256 -c
+chmod +x chartula-linux-x64
+mv chartula-linux-x64 ~/.local/bin/chartula
+gh attestation verify ~/.local/bin/chartula --repo goldbarth/chartula   # optional
+```
+
+A file downloaded through a browser is not code-signed, so macOS Gatekeeper blocks its first start (`xattr -d com.apple.quarantine chartula` clears it) and Windows SmartScreen warns ("More info", then "Run anyway").
+The install scripts do not trigger either.
 
 ### Build from source
 
@@ -110,6 +152,11 @@ dotnet build Chartula.slnx -c Release
 ```
 
 The CLI is then at `src/Chartula.Cli/bin/Release/net10.0/chartula`.
+To call it as `chartula` from anywhere, link it into a folder on your `PATH`:
+
+```bash
+ln -sf "$PWD/src/Chartula.Cli/bin/Release/net10.0/chartula" ~/.local/bin/chartula
+```
 
 ---
 
@@ -205,8 +252,8 @@ These are known and left for after the alpha, because its output is a draft a pe
 - **Two pull requests with the same change become two entries.**
 - **Anthropic is the only supported provider.** `openai-compatible` works, but is experimental.
 - **No GitHub Action yet.**
-- **The binaries are not code-signed.** macOS Gatekeeper and Windows SmartScreen warn on first start.
-- **No package manager.** No Homebrew, Scoop or winget; download only.
+- **The binaries are not code-signed.** Downloaded through a browser, macOS Gatekeeper and Windows SmartScreen warn on first start; the install scripts avoid that.
+- **No package manager.** No Homebrew, Scoop or winget; the install scripts or a download.
 
 ---
 
@@ -223,7 +270,7 @@ These are known and left for after the alpha, because its output is a draft a pe
 5. `render` from a stored `changelog.json`, and a demo that needs no key.
 6. Telling what an author claims apart from what is established, then an author-supplied outcome as a fact source.
 7. `openai-compatible` out of experimental.
-8. An install script, a Homebrew tap and Scoop; code signing for macOS and Windows.
+8. A Homebrew tap and Scoop; code signing for macOS and Windows.
 9. A native-AOT build.
 
 ---
