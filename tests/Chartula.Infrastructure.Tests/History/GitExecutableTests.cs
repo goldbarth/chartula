@@ -25,13 +25,25 @@ public sealed class GitExecutableTests : IDisposable
     {
         // "." and an empty entry both mean the current directory, which is the
         // checkout a run reads - the one place a git must never come from.
-        string planted = DirectoryWithGit("planted");
-        string real = DirectoryWithGit("real");
-        string relative = Path.GetRelativePath(System.IO.Directory.GetCurrentDirectory(), planted);
+        // The plant sits under the current directory and is named relative to it: a
+        // relative path to the temp root is not possible on Windows when the two are
+        // on different drives.
+        string relative = "chartula-planted-" + Guid.NewGuid().ToString("N");
+        string planted = System.IO.Path.GetFullPath(relative);
+        System.IO.Directory.CreateDirectory(planted);
+        try
+        {
+            WriteGit(planted);
+            string real = DirectoryWithGit("real");
 
-        GitExecutable git = GitExecutable.Resolve(PathOf(".", "", relative, real));
+            GitExecutable git = GitExecutable.Resolve(PathOf(".", "", relative, real));
 
-        Assert.Equal(Path.Combine(real, FileName), git.Path);
+            Assert.Equal(Path.Combine(real, FileName), git.Path);
+        }
+        finally
+        {
+            System.IO.Directory.Delete(planted, recursive: true);
+        }
     }
 
     [Fact]
@@ -90,13 +102,17 @@ public sealed class GitExecutableTests : IDisposable
     private string DirectoryWithGit(string name)
     {
         string directory = Directory(name);
+        WriteGit(directory);
+        return directory;
+    }
+
+    private static void WriteGit(string directory)
+    {
         string git = Path.Combine(directory, FileName);
         File.WriteAllText(git, string.Empty);
         if (!OperatingSystem.IsWindows())
         {
             File.SetUnixFileMode(git, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
         }
-
-        return directory;
     }
 }
