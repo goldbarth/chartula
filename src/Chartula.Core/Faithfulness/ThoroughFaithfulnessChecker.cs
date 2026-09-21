@@ -39,7 +39,7 @@ public sealed class ThoroughFaithfulnessChecker(
 
     // The full fact base as grounded statements, so the check compares the output
     // against every established fact.
-    internal static GroundedFacts ToGroundedFacts(FactBase factBase)
+    private static GroundedFacts ToGroundedFacts(FactBase factBase)
     {
         List<string> statements = [];
         foreach (ChangeFact change in factBase.Changes)
