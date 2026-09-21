@@ -24,6 +24,7 @@ There is more than one way to make Chartula better:
 
 🐛 **Report a bug.**
 Open an issue with what happened, what you expected, and how to reproduce it.
+A security vulnerability is the exception: please report it privately, as described in [SECURITY.md](SECURITY.md).
 
 💡 **Suggest a feature.**
 Open an issue describing the problem you are trying to solve.
