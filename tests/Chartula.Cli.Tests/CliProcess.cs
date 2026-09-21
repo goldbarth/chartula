@@ -8,7 +8,7 @@ namespace Chartula.Cli.Tests;
 /// </summary>
 internal static class CliProcess
 {
-    public static Task<(int ExitCode, string Error)> RunChartulaAsync(
+    public static Task<CliResult> RunChartulaAsync(
         string directory, IReadOnlyDictionary<string, string?> environment, params string[] arguments)
     {
         string chartula = Path.Combine(AppContext.BaseDirectory, OperatingSystem.IsWindows() ? "chartula.exe" : "chartula");
@@ -28,7 +28,7 @@ internal static class CliProcess
         return RunAsync(startInfo);
     }
 
-    public static Task<(int ExitCode, string Error)> RunAsync(string fileName, string directory, params string[] arguments)
+    public static Task<CliResult> RunAsync(string fileName, string directory, params string[] arguments)
         => RunAsync(Start(fileName, directory, arguments));
 
     private static ProcessStartInfo Start(string fileName, string directory, string[] arguments)
@@ -49,14 +49,16 @@ internal static class CliProcess
         return startInfo;
     }
 
-    private static async Task<(int ExitCode, string Error)> RunAsync(ProcessStartInfo startInfo)
+    private static async Task<CliResult> RunAsync(ProcessStartInfo startInfo)
     {
         using Process process = Process.Start(startInfo)
             ?? throw new InvalidOperationException($"Could not start {startInfo.FileName}.");
         Task<string> output = process.StandardOutput.ReadToEndAsync();
         Task<string> error = process.StandardError.ReadToEndAsync();
         await process.WaitForExitAsync();
-        await output;
-        return (process.ExitCode, await error);
+        return new CliResult(process.ExitCode, await output, await error);
     }
 }
+
+/// <summary>What a process left behind: its exit code, stdout and stderr.</summary>
+internal sealed record CliResult(int ExitCode, string Output, string Error);

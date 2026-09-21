@@ -30,6 +30,11 @@ internal static class ReleaseCommand
             // whatever did render is still written.
             return outcome.Renderings.All(audience => audience.Success) ? 0 : 1;
         }
+        catch (WholeHistoryException ex)
+        {
+            output.WriteLine($"Error: {ReleaseStart.Refusal(ex.Tag, ex.CommitCount)}");
+            return 1;
+        }
         catch (InvalidOperationException ex)
         {
             output.WriteLine($"Error: {ex.Message}");

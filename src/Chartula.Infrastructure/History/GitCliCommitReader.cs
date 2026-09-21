@@ -17,6 +17,7 @@ public sealed class GitCliCommitReader(GitExecutable git, string repositoryPath)
 
     public async Task<CommitRange> ReadReleaseCommitsAsync(
         string tag,
+        string? since = null,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(tag))
@@ -33,15 +34,11 @@ public sealed class GitCliCommitReader(GitExecutable git, string repositoryPath)
                 $"Tag '{tag}' does not resolve to a commit in the repository.");
         }
 
-        // The nearest tag reachable from the parent of the release tag, if any.
-        // Fails (and yields no previous tag) on the first release or a root tag.
-        GitResult previous = await RunGitAsync(
-            ["describe", "--tags", "--abbrev=0", $"{tag}^"], cancellationToken);
-        string? fromTag = previous.ExitCode == 0 && previous.StandardOutput.Trim() is { Length: > 0 } prev
-            ? prev
-            : null;
+        string? from = string.IsNullOrWhiteSpace(since)
+            ? await ReadPreviousTagAsync(tag, cancellationToken)
+            : await VerifyStartAsync(since.Trim(), tag, cancellationToken);
 
-        string range = fromTag is null ? tag : $"{fromTag}..{tag}";
+        string range = from is null ? tag : $"{from}..{tag}";
         GitResult log = await RunGitAsync(
             ["log", "--no-color", "--pretty=format:%H%x1f%s", range], cancellationToken);
         if (log.ExitCode != 0)
@@ -51,7 +48,40 @@ public sealed class GitCliCommitReader(GitExecutable git, string repositoryPath)
         }
 
         DateOnly? taggedAt = await ReadTagDateAsync(tag, cancellationToken);
-        return new CommitRange(tag, fromTag, ParseCommits(log.StandardOutput), taggedAt);
+        return new CommitRange(tag, from, ParseCommits(log.StandardOutput), taggedAt);
+    }
+
+    // The nearest tag reachable from the parent of the release tag, if any. Fails
+    // (and yields no previous tag) on a first tag or a root commit.
+    private async Task<string?> ReadPreviousTagAsync(string tag, CancellationToken cancellationToken)
+    {
+        GitResult previous = await RunGitAsync(
+            ["describe", "--tags", "--abbrev=0", $"{tag}^"], cancellationToken);
+        return previous.ExitCode == 0 && previous.StandardOutput.Trim() is { Length: > 0 } prev
+            ? prev
+            : null;
+    }
+
+    // A start that is not behind the tag would give a range of commits that are not
+    // in the release at all, or none, so it is refused rather than read.
+    private async Task<string> VerifyStartAsync(string since, string tag, CancellationToken cancellationToken)
+    {
+        GitResult verify = await RunGitAsync(
+            ["rev-parse", "--verify", "--quiet", $"{since}^{{commit}}"], cancellationToken);
+        if (verify.ExitCode != 0)
+        {
+            throw new InvalidOperationException(
+                $"The release start '{since}' does not resolve to a commit in the repository.");
+        }
+
+        GitResult ancestor = await RunGitAsync(["merge-base", "--is-ancestor", since, tag], cancellationToken);
+        if (ancestor.ExitCode != 0)
+        {
+            throw new InvalidOperationException(
+                $"The release start '{since}' is not an ancestor of '{tag}', so it cannot be where '{tag}' starts.");
+        }
+
+        return since;
     }
 
     /// <summary>

@@ -20,7 +20,7 @@ public sealed class RepositoryConfigurationTests : IDisposable
               tokenEnvironmentVariable: SOME_OTHER_SECRET
             """);
 
-        (int exitCode, string error) = await CliProcess.RunChartulaAsync(
+        (int exitCode, _, string error) = await CliProcess.RunChartulaAsync(
             _checkout,
             new Dictionary<string, string?>
             {

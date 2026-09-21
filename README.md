@@ -111,6 +111,10 @@ chartula generate --audience customer
 
 # An earlier release
 chartula preview --tag v1.2.0
+
+# A first tag: say where the release starts, or render the whole history on purpose
+chartula preview --since <last-shipped-commit>
+chartula preview --whole-history
 ```
 
 Credentials are read from environment variables, never from a config file - which ones depends on the provider:

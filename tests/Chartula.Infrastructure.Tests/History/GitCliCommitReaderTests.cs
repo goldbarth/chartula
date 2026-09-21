@@ -20,8 +20,8 @@ public sealed class GitCliCommitReaderTests
             .ReadReleaseCommitsAsync("v2.0.0");
 
         Assert.Equal("v2.0.0", range.ToTag);
-        Assert.Equal("v1.0.0", range.FromTag);
-        Assert.False(range.IsFirstRelease);
+        Assert.Equal("v1.0.0", range.From);
+        Assert.False(range.IsWholeHistory);
 
         string[] subjects = range.Commits.Select(c => c.Subject).ToArray();
         Assert.Equal(["D", "C"], subjects); // git log is newest-first
@@ -40,8 +40,8 @@ public sealed class GitCliCommitReaderTests
         CommitRange range = await new GitCliCommitReader(GitExecutable.FromPath(), repo.Path)
             .ReadReleaseCommitsAsync("v1.0.0");
 
-        Assert.Null(range.FromTag);
-        Assert.True(range.IsFirstRelease);
+        Assert.Null(range.From);
+        Assert.True(range.IsWholeHistory);
         Assert.Equal(["B", "A"], range.Commits.Select(c => c.Subject).ToArray());
     }
 
@@ -109,5 +109,70 @@ public sealed class GitCliCommitReaderTests
         CommitRange range = await new GitCliCommitReader(GitExecutable.FromPath(), repo.Path).ReadReleaseCommitsAsync("v1.0.0");
 
         Assert.Equal(DateOnly.FromDateTime(DateTime.Now), range.TaggedAt);
+    }
+
+    [Fact]
+    public async Task A_named_start_bounds_a_first_tag()
+    {
+        using TempGitRepository repo = new();
+        repo.Commit("feat: A");
+        repo.Commit("feat: B");
+        repo.Commit("feat: C");
+        repo.Tag("v1.0.0");
+
+        GitCliCommitReader reader = new(GitExecutable.FromPath(), repo.Path);
+        Assert.True((await reader.ReadReleaseCommitsAsync("v1.0.0")).IsWholeHistory);
+
+        repo.Run("tag", "baseline", "v1.0.0~2");
+        CommitRange range = await reader.ReadReleaseCommitsAsync("v1.0.0", since: "baseline");
+
+        Assert.Equal("baseline", range.From);
+        Assert.False(range.IsWholeHistory);
+        Assert.Equal(["feat: C", "feat: B"], range.Commits.Select(c => c.Subject));
+    }
+
+    [Fact]
+    public async Task A_named_start_overrides_the_previous_tag_and_accepts_a_commit()
+    {
+        using TempGitRepository repo = new();
+        repo.Commit("feat: A");
+        repo.Tag("v1.0.0");
+        repo.Commit("feat: B");
+        repo.Commit("feat: C");
+        repo.Tag("v2.0.0");
+
+        CommitRange range = await new GitCliCommitReader(GitExecutable.FromPath(), repo.Path)
+            .ReadReleaseCommitsAsync("v2.0.0", since: "v2.0.0~1");
+
+        Assert.Equal("v2.0.0~1", range.From);
+        Assert.Equal(["feat: C"], range.Commits.Select(c => c.Subject));
+    }
+
+    [Fact]
+    public async Task A_start_that_does_not_resolve_is_refused_by_name()
+    {
+        using TempGitRepository repo = new();
+        repo.Commit("feat: A");
+        repo.Tag("v1.0.0");
+
+        InvalidOperationException error = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => new GitCliCommitReader(GitExecutable.FromPath(), repo.Path).ReadReleaseCommitsAsync("v1.0.0", since: "nope"));
+
+        Assert.Contains("'nope' does not resolve", error.Message);
+    }
+
+    [Fact]
+    public async Task A_start_that_is_not_behind_the_tag_is_refused()
+    {
+        using TempGitRepository repo = new();
+        repo.Commit("feat: A");
+        repo.Tag("v1.0.0");
+        repo.Commit("feat: B");
+        repo.Tag("later");
+
+        InvalidOperationException error = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => new GitCliCommitReader(GitExecutable.FromPath(), repo.Path).ReadReleaseCommitsAsync("v1.0.0", since: "later"));
+
+        Assert.Contains("not an ancestor of 'v1.0.0'", error.Message);
     }
 }

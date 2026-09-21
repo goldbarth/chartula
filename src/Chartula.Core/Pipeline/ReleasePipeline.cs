@@ -46,7 +46,15 @@ public sealed class ReleasePipeline(
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        CommitRange range = await commitReader.ReadReleaseCommitsAsync(request.Tag, cancellationToken);
+        CommitRange range = await commitReader.ReadReleaseCommitsAsync(request.Tag, request.Since, cancellationToken);
+
+        // Refused before the first request: asking where a release starts costs
+        // neither API budget nor tokens, and a guess at it would be a fact decision.
+        if (range.IsWholeHistory && !request.WholeHistory)
+        {
+            throw new WholeHistoryException(range.ToTag, range.Commits.Count);
+        }
+
         IReadOnlyList<PullRequestInfo> pullRequests =
             await pullRequestReader.GetMergedPullRequestsAsync(request.Repository, range, cancellationToken);
         FactBase factBase = factBaseBuilder.Build(range, pullRequests);

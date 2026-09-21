@@ -22,6 +22,11 @@ Options:
   --tag <tag>    The release tag. Default: the nearest tag reachable from HEAD.
   --repo <o/n>   The GitHub repository, as owner/name. Default: read from
                  the 'origin' remote.
+  --since <ref>  Start the release after this tag or commit instead of the
+                 previous tag. A first tag needs this or --whole-history.
+  --whole-history
+                 Render a first tag's whole history, e.g. for a project
+                 whose history is the release.
   --no-publish   Write changelog.json and CHANGELOG.md, but publish no release notes.
   --audience <a> Render only this audience: technical, customer or product.
                  Repeat it, or separate them with commas. All three by
@@ -116,6 +121,32 @@ No --tag given, and no tag is reachable from HEAD in '/work/my-repo'. Pass --tag
 $ chartula preview --repo name-only
 Invalid option --repo 'name-only'. Expected <owner/name>.
 ```
+
+### Where a release starts
+
+A release is everything after the previous tag up to the release tag.
+A first tag has no previous tag, so its range is the whole history - and rendered as it is, that reads as a development log: intermediate states stand next to the changes that replaced them.
+Where a release starts is a decision about facts, so Chartula does not guess it.
+A first tag stops the run before any GitHub request or model call, and asks:
+
+```console
+$ chartula preview --tag v0.1.0
+Error: v0.1.0 is the first tag, so its range is the whole history (69 commits).
+  Rendered as it is, that reads as a development log rather than a release.
+  --since <ref>     start the release after a tag or commit (e.g. the last state you shipped)
+  --whole-history   render all of it, e.g. for a project whose history is the release
+```
+
+| Option | Value | Effect |
+| --- | --- | --- |
+| `--since` | `<tag-or-commit>` | The release starts after this ref instead of the previous tag. It has to be an ancestor of the release tag. Works on any tag, not only the first. |
+| `--whole-history` | - | Render a range that spans all history. For a project whose history is its first release. |
+
+Passing both is refused, since they answer the same question two ways.
+Adopting Chartula on a project with a long history usually means `--since` on the first run, pointing at the last state that was already shipped; every later tag starts after its predecessor on its own.
+
+Within any range, a change that a later change in the same range reverted or replaced is still rendered as an entry of its own.
+Chartula cannot tell that one pull request undoes another without reading their meaning, which would put a fact decision into the model.
 
 ## Environment
 
