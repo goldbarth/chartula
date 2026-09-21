@@ -56,7 +56,7 @@ internal static class Program
         using (services)
         {
             string directory = Directory.GetCurrentDirectory();
-            GitCliRepositoryReader checkout = new(directory);
+            GitCliRepositoryReader checkout = services.GetRequiredService<GitCliRepositoryReader>();
             ReleaseTarget? target = await ReleaseTarget.ResolveAsync(
                 args,
                 directory,

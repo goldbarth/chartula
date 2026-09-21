@@ -6,7 +6,7 @@ namespace Chartula.Infrastructure.History;
 /// than throw when git has nothing to give: whether that is an error depends on
 /// whether the flag it stands in for was passed.
 /// </summary>
-public sealed class GitCliRepositoryReader(string repositoryPath)
+public sealed class GitCliRepositoryReader(GitExecutable git, string repositoryPath)
 {
     /// <summary>
     /// The nearest tag reachable from <c>HEAD</c> - the release the checkout is at
@@ -14,11 +14,11 @@ public sealed class GitCliRepositoryReader(string repositoryPath)
     /// </summary>
     public async Task<string?> ReadNearestTagAsync(CancellationToken cancellationToken = default)
         => Output(await GitCli.RunAsync(
-            repositoryPath, ["describe", "--tags", "--abbrev=0", "HEAD"], cancellationToken));
+            git, repositoryPath, ["describe", "--tags", "--abbrev=0", "HEAD"], cancellationToken));
 
     /// <summary>The URL of the named remote.</summary>
     public async Task<string?> ReadRemoteUrlAsync(string remote, CancellationToken cancellationToken = default)
-        => Output(await GitCli.RunAsync(repositoryPath, ["remote", "get-url", remote], cancellationToken));
+        => Output(await GitCli.RunAsync(git, repositoryPath, ["remote", "get-url", remote], cancellationToken));
 
     private static string? Output(GitResult result)
         => result.ExitCode == 0 && result.StandardOutput.Trim() is { Length: > 0 } value ? value : null;

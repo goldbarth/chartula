@@ -16,7 +16,7 @@ public sealed class GitCliCommitReaderTests
         repo.Commit("D");
         repo.Tag("v2.0.0");
 
-        CommitRange range = await new GitCliCommitReader(repo.Path)
+        CommitRange range = await new GitCliCommitReader(GitExecutable.FromPath(), repo.Path)
             .ReadReleaseCommitsAsync("v2.0.0");
 
         Assert.Equal("v2.0.0", range.ToTag);
@@ -37,7 +37,7 @@ public sealed class GitCliCommitReaderTests
         repo.Commit("B");
         repo.Tag("v1.0.0");
 
-        CommitRange range = await new GitCliCommitReader(repo.Path)
+        CommitRange range = await new GitCliCommitReader(GitExecutable.FromPath(), repo.Path)
             .ReadReleaseCommitsAsync("v1.0.0");
 
         Assert.Null(range.FromTag);
@@ -52,7 +52,7 @@ public sealed class GitCliCommitReaderTests
         repo.Commit("feat: add dark mode");
         repo.Tag("v1.0.0");
 
-        CommitRange range = await new GitCliCommitReader(repo.Path)
+        CommitRange range = await new GitCliCommitReader(GitExecutable.FromPath(), repo.Path)
             .ReadReleaseCommitsAsync("v1.0.0");
 
         CommitInfo commit = Assert.Single(range.Commits);
@@ -68,7 +68,7 @@ public sealed class GitCliCommitReaderTests
         repo.Commit("A");
         repo.Tag("v1.0.0");
 
-        GitCliCommitReader reader = new(repo.Path);
+        GitCliCommitReader reader = new(GitExecutable.FromPath(), repo.Path);
 
         InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(
             () => reader.ReadReleaseCommitsAsync("v9.9.9"));
@@ -81,7 +81,7 @@ public sealed class GitCliCommitReaderTests
     public async Task Rejects_a_blank_tag(string tag)
     {
         using TempGitRepository repo = new();
-        GitCliCommitReader reader = new(repo.Path);
+        GitCliCommitReader reader = new(GitExecutable.FromPath(), repo.Path);
 
         await Assert.ThrowsAsync<ArgumentException>(() => reader.ReadReleaseCommitsAsync(tag));
     }
@@ -93,7 +93,7 @@ public sealed class GitCliCommitReaderTests
         repo.Commit("feat: add dark mode");
         repo.Tag("v1.0.0");
 
-        CommitRange range = await new GitCliCommitReader(repo.Path).ReadReleaseCommitsAsync("v1.0.0");
+        CommitRange range = await new GitCliCommitReader(GitExecutable.FromPath(), repo.Path).ReadReleaseCommitsAsync("v1.0.0");
 
         // A lightweight tag creator-dates to its commit, which is today's run.
         Assert.Equal(DateOnly.FromDateTime(DateTime.Now), range.TaggedAt);
@@ -106,7 +106,7 @@ public sealed class GitCliCommitReaderTests
         repo.Commit("feat: add dark mode");
         repo.Run("tag", "-a", "v1.0.0", "-m", "Release 1.0.0");
 
-        CommitRange range = await new GitCliCommitReader(repo.Path).ReadReleaseCommitsAsync("v1.0.0");
+        CommitRange range = await new GitCliCommitReader(GitExecutable.FromPath(), repo.Path).ReadReleaseCommitsAsync("v1.0.0");
 
         Assert.Equal(DateOnly.FromDateTime(DateTime.Now), range.TaggedAt);
     }
