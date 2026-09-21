@@ -136,11 +136,28 @@ Configuration error: No Anthropic API key found in ANTHROPIC_API_KEY. Set one wi
 
 A run starts without `GITHUB_TOKEN` and prints a warning to stderr rather than refusing - a small release fits inside GitHub's unauthenticated budget of 60 requests an hour per IP address, and a run spends roughly one request per pull request.
 Beyond that the run fails partway through with a 403 that names a commit rather than the cause.
-A token raises the limit to 5000 an hour:
+A token raises the limit to 5000 an hour.
+
+### A GitHub token
+
+Use a [fine-grained personal access token](https://github.com/settings/personal-access-tokens/new) scoped to the one repository you generate changelogs for.
+Chartula makes two kinds of request, and the token needs exactly the permissions they take:
+
+| Permission | Access | Used for |
+| --- | --- | --- |
+| Contents | Read-only | `preview` and `generate --no-publish`: finding the pull requests behind each commit. |
+| Contents | Read and write | `generate`: creating and updating the draft release. |
+| Pull requests | Read-only | Reading the pull requests themselves. |
+| Metadata | Read-only | Required by GitHub for every fine-grained token; selected automatically. |
+
+A token for `preview` only never needs write access, so a read-only token is the safer default until you publish.
 
 ```console
-$ export GITHUB_TOKEN=$(gh auth token)
+$ export GITHUB_TOKEN=<your fine-grained token>
 ```
+
+`export GITHUB_TOKEN=$(gh auth token)` works too, but hands Chartula the GitHub CLI's own OAuth token: typically `repo` scope, which is read and write access to every repository you can reach.
+It is a shortcut for a quick local try, not for a machine that runs Chartula regularly.
 
 The variable names above are the defaults; both can be renamed, in the environment only - see [Environment-only settings](configuration.md#environment-only-settings).
 
