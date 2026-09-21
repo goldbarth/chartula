@@ -64,7 +64,7 @@ These are the ones Chartula is built for.
 | --- | --- | --- | --- | --- |
 | `claude-opus-5` | $5 / $25 | 1M | 128K | The current top tier. |
 | `claude-opus-4-8` | $5 / $25 | 1M | 128K | |
-| `claude-sonnet-5` | $3 / $15 | 1M | 128K | The default. $2 / $10 introductory through 2026-08-31. |
+| `claude-sonnet-5` | $2 / $10 | 1M | 128K | The default. |
 | `claude-haiku-4-5` | $1 / $5 | 200K | 64K | The cheapest. Keep `maxOutputTokens` at or below 64000. |
 
 Prices are Anthropic's first-party rates as of 2026-07-31 and change over time; treat the table as a starting point, not a quote.
