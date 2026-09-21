@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Security.Cryptography;
 using System.Text;
 using Chartula.Core.Facts;
 using Chartula.Core.Llm;
@@ -23,6 +24,29 @@ namespace Chartula.Core.Prompting;
 /// </remarks>
 public sealed partial class ChangelogPromptBuilder : IChangelogPromptBuilder
 {
+    /// <summary>
+    /// A SHA-256 hash of every instruction Chartula sends: the system prompt of each
+    /// audience and of the thorough check, and the check's user template - the text
+    /// Chartula controls, without the facts it wraps. It changes exactly when a
+    /// prompt changes, so a run's output can be traced to the instructions behind it.
+    /// </summary>
+    public static string PromptHash { get; } = ComputePromptHash();
+
+    private static string ComputePromptHash()
+    {
+        StringBuilder text = new();
+        foreach (Audience audience in (Audience[])[Audience.Technical, Audience.Customer, Audience.Product])
+        {
+            // A separator no prompt contains, so moving text between two prompts
+            // changes the hash too.
+            text.Append(BuildSystemPrompt(audience)).Append('\0');
+        }
+
+        text.Append(FaithfulnessSystem).Append('\0').Append(FaithfulnessUserFormat);
+        byte[] hash = SHA256.HashData(Encoding.UTF8.GetBytes(text.ToString()));
+        return "sha256:" + Convert.ToHexStringLower(hash);
+    }
+
     public ChangelogPrompt BuildRephrasePrompt(GroundedFacts facts, Audience audience)
     {
         ArgumentNullException.ThrowIfNull(facts);

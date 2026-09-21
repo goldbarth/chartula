@@ -24,7 +24,8 @@ public static class ChangelogJsonSerializer
 
     public static string Serialize(
         FactBase factBase,
-        IReadOnlyDictionary<Audience, string>? renderings = null)
+        IReadOnlyDictionary<Audience, string>? renderings = null,
+        RunProvenance? provenance = null)
     {
         ArgumentNullException.ThrowIfNull(factBase);
 
@@ -41,10 +42,20 @@ public static class ChangelogJsonSerializer
                 change.LinkedIssues,
                 change.Labels,
                 change.Description)).ToArray(),
-            BuildRenderings(renderings));
+            BuildRenderings(renderings),
+            provenance is null
+                ? null
+                : new ChangelogProvenance(
+                    Present(provenance.ToolVersion),
+                    Present(provenance.Provider),
+                    Present(provenance.Model),
+                    Present(provenance.PromptHash)));
 
         return JsonSerializer.Serialize(document, ChangelogJsonContext.Default.ChangelogDocument);
     }
+
+    // Blank is not a value: it is left out like null, so the file never says "".
+    private static string? Present(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
 
     private static Dictionary<string, string> BuildRenderings(IReadOnlyDictionary<Audience, string>? renderings)
     {
