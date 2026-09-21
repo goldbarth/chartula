@@ -68,6 +68,19 @@ public sealed class GitHubPullRequestReaderTests
         Assert.Equal(7, Assert.Single(pulls).Number); // still a single, de-duplicated PR
     }
 
+    // A revert that names commits is paired with pull requests through these (#206).
+    [Fact]
+    public async Task Records_every_commit_of_the_range_that_belongs_to_a_pull_request()
+    {
+        StubHttpMessageHandler handler = StubHttpMessageHandler.ReturningJson(TwoPullsJson);
+        GitHubPullRequestReader reader = new(StubHttpMessageHandler.ClientFor(handler));
+
+        IReadOnlyList<PullRequestInfo> pulls = await reader.GetMergedPullRequestsAsync(
+            Repo, RangeWith("sha1", "sha2"));
+
+        Assert.Equal(["sha1", "sha2"], Assert.Single(pulls).CommitShas);
+    }
+
     [Fact]
     public async Task Makes_no_request_and_returns_empty_for_a_range_with_no_commits()
     {

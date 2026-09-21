@@ -47,7 +47,13 @@ public sealed partial class ConventionalCommitCategorizer : IChangeCategorizer
         "perf" => ChangeCategory.Performance,
         "docs" or "doc" => ChangeCategory.Documentation,
         "refactor" => ChangeCategory.Refactor,
-        "build" or "ci" or "chore" or "test" or "tests" or "style" or "revert" => ChangeCategory.Internal,
+        "build" or "ci" or "chore" or "test" or "tests" or "style" => ChangeCategory.Internal,
+
+        // Not internal: a revert that survives pairing takes back something a reader
+        // may have met, and filtered away it would leave that change in the facts as
+        // shipped (#206). Other rather than a category of its own, which would change
+        // the documented values of changelog.json.
+        "revert" => ChangeCategory.Other,
         _ => ChangeCategory.Other,
     };
 
