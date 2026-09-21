@@ -71,6 +71,9 @@ public sealed partial class ChangelogPromptBuilder
         after your text.
         - Nothing about how the work was verified, such as build status or test counts.
         - Class, method, file and configuration names stay: this reader reads the source.
+        Write each such name - a command, an option, a configuration key, a file, a type
+        or a method - as a code span in backticks, spelled exactly as the facts spell it.
+        Never put a word in backticks that the facts do not contain.
         """;
 
     private const string AudienceCustomer =
