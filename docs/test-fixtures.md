@@ -8,7 +8,7 @@ The suite can run as often as you like at no token cost, so tests are never some
 A fixture is exactly what a run writes - the format in [`changelog-json.md`](changelog-json.md), nothing else.
 That means a real release can be frozen into a fixture by copying the `changelog.json` a run produced into the fixtures folder.
 
-`FixturePipelineTests` re-serializes every fixture and compares it to the file on disk.
+`FactBaseFixtureTests` re-serializes every fixture and compares it to the file on disk.
 If the writer's output ever drifts from these files, that test fails: a fixture that no longer matches what a real run writes has stopped representing one.
 
 To add a fixture, drop the file in `Fixtures/`, name a constant for it on `FactBaseFixture`, and add it to `FactBaseFixture.All`.
@@ -24,7 +24,7 @@ To add a fixture, drop the file in `Fixtures/`, name a constant for it on `FactB
 | `empty-release` | No changes at all. |
 
 They are picked to differ along the axes the pipeline actually branches on.
-`FixturePipelineTests` asserts that they still do, so the set cannot quietly collapse into five variations of the same release.
+`FactBaseFixtureTests` asserts that they still do, so the set cannot quietly collapse into five variations of the same release.
 
 ## Why no live call can happen
 

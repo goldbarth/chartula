@@ -52,7 +52,7 @@ Leaving the model out is a valid answer: `Labels` are never sent as text; they o
 
 ## 5. Regenerate the fixtures
 
-`Every_fixture_is_exactly_what_a_real_run_would_write` in `FixturePipelineTests` re-serializes each file in `tests/Chartula.Core.Tests/Fixtures/` and compares it to disk.
+`Every_fixture_is_exactly_what_a_real_run_would_write` in `FactBaseFixtureTests` re-serializes each file in `tests/Chartula.Core.Tests/Fixtures/` and compares it to disk.
 After step 3 it fails for every fixture, which is the point: the files no longer match what a run writes.
 
 There is no update switch.
