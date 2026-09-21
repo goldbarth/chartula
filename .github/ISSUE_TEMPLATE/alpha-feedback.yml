@@ -1,0 +1,77 @@
+name: Alpha feedback
+description: Tell us how a run on your repository went - what you had to fix, what it cost, what misled you
+title: "[Alpha feedback] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for trying the alpha.
+        A report like "it didn't work well" cannot be acted on; the answers below are what explains it.
+        Leave a field empty rather than guess.
+
+        Do not paste API keys or tokens, and nothing from a private repository you are not free to share.
+        Describing an entry in your own words is enough.
+
+  - type: input
+    id: version
+    attributes:
+      label: Chartula version
+      description: The release you downloaded, or the commit you built from.
+      placeholder: 0.1.0-preview.1
+    validations:
+      required: true
+
+  - type: input
+    id: repository
+    attributes:
+      label: Repository size and language
+      description: Roughly how many pull requests the release had, and the main language. A link if it is public.
+      placeholder: "~40 pull requests, TypeScript"
+    validations:
+      required: true
+
+  - type: input
+    id: model
+    attributes:
+      label: Provider and model
+      description: The `llm.provider` and `llm.model` the run used, or "defaults".
+      placeholder: anthropic, claude-sonnet-5
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: audiences
+    attributes:
+      label: Audiences rendered
+      options:
+        - label: technical
+        - label: customer
+        - label: product
+
+  - type: textarea
+    id: edits
+    attributes:
+      label: What you had to edit, and how long it took
+      description: Which entries you changed before publishing, what was wrong with them, and the time it took.
+      placeholder: |
+        Rewrote 3 of 12 customer entries: two were too vague, one mixed up two pull requests. About 10 minutes.
+    validations:
+      required: true
+
+  - type: textarea
+    id: cost
+    attributes:
+      label: Cost of the run
+      description: Paste the "Run metrics" block from the end of the run.
+      render: text
+
+  - type: textarea
+    id: misleading
+    attributes:
+      label: Anything misleading
+      description: Output that read as true but was not, a flag that was wrong or missing, or docs that set the wrong expectation.
+
+  - type: textarea
+    id: other
+    attributes:
+      label: Anything else
