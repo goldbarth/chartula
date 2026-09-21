@@ -1,13 +1,15 @@
 # Versioning Policy
 
-Chartula follows [Semantic Versioning 2.0.0](https://semver.org/) for the NuGet package, with NuGet's own pre-release conventions layered on top.
+Chartula follows [Semantic Versioning 2.0.0](https://semver.org/) for its releases.
+A release is a GitHub release with one self-contained binary per platform, so using Chartula needs no .NET.
 This document is the binding rule for every version number Chartula publishes, from the current pre-release phase through 1.0.0 and beyond.
 
 ## 1. Basis
 
 - **SemVer 2.0** governs the three-part version number and what each part means.
-- **NuGet pre-release conventions** govern the suffix: a hyphen followed by a label and number (`-preview.N`), which NuGet treats as a pre-release identifier and excludes from default package listings.
-- SemVer build metadata (`+build`) is not used. It carries no meaning for how the package is resolved or installed, and NuGet does not surface it.
+- **The pre-release suffix** is a hyphen followed by a label and number (`-preview.N`), a SemVer pre-release identifier.
+- SemVer build metadata (`+build`) is never part of a published version.
+  The SDK appends the commit a binary was built from (`0.1.0-preview.1+<sha>`), and `changelog.json` records that form in `toolVersion`, so a file names the build that wrote it; the tag, the release and the User-Agent carry the version without it.
 
 ## 2. Version scheme
 
@@ -35,8 +37,8 @@ A `1.0.0` pre-release would promise that the shape of 1.0 is already known, and 
 - **Label:** `preview` only.
   No `alpha` or `beta` labels are used in version numbers, to keep the signal to users simple: "not yet stable" is the only distinction that matters before 1.0.
   The project calls this phase "alpha" in prose; the version number does not repeat it.
-- **Why a suffix on a `0.y.z` version:** NuGet lists and installs a version without a suffix as stable.
-  The `-preview.N` suffix keeps the package out of default listings, so installing it takes `--prerelease` and is a deliberate choice.
+- **Why a suffix on a `0.y.z` version:** the suffix says "not yet stable" in the version itself, wherever the version appears.
+  The GitHub release is marked as a pre-release to match, so it is never shown as the latest release.
 - **Incrementing:** each new pre-release build increments `N` by one (`preview.1` -> `preview.2` -> `preview.3`, …). `N` never resets while still pre-1.0.0, and no meaning is attached to the number itself beyond ordering.
 - **What triggers a new preview:** any change worth shipping, feature or fix, ships as the next `preview.N`. There is no separate PATCH/MINOR tracking underneath the preview label.
 - **Exit criteria - when preview ends and `1.0.0` ships:**
@@ -73,17 +75,25 @@ It is announced ahead of time, and a migration note ships with the release (see 
 - Before `1.0.0`: a breaking change is allowed between preview builds, but a preview that breaks something working in the previous preview should say so plainly in its release notes.
 - After `1.0.0`: a breaking change requires a `MAJOR` bump, a documented migration path, and, where feasible, a deprecation warning in the release before it.
 
-**NuGet specifics**
+**Release assets**
 
-- Pre-release packages (any version with a `-preview.N` suffix) are excluded from `dotnet add package` and the NuGet.org listing by default; installing one requires `--prerelease` or an explicit version.
-- A stable package must never depend on a pre-release package. A pre-release package may depend on either.
-- Once `1.0.0` ships, dependency ranges published in downstream tooling or documentation should follow SemVer-compatible ranges (e.g. `[1.0.0, 2.0.0)`), so a `MAJOR` bump cannot silently reach consumers.
+- Every release carries one self-contained single-file binary per platform: `chartula-linux-x64`, `chartula-linux-arm64`, `chartula-osx-x64`, `chartula-osx-arm64`, `chartula-win-x64.exe`, `chartula-win-arm64.exe`.
+- `SHA256SUMS` lists the checksum of every binary, and every binary has a GitHub build provenance attestation (`gh attestation verify <file> --repo goldbarth/chartula`).
+- The `Version` in `src/Chartula.Cli/Chartula.Cli.csproj` is the only place the version is written.
+  The binary, the User-Agent it sends and `changelog.json` all read it from there.
+
+**How a release is made**
+
+1. Set `Version` in the csproj to the next version, in a pull request like any other change.
+2. After it is merged, tag the merge commit on `main` and push the tag (`v0.1.0-preview.2`).
+3. `.github/workflows/release.yml` refuses a tag that does not match the csproj or is not on `main`, runs CI on the tagged commit, builds and smoke-tests each binary on a runner of its own platform, and creates a draft pre-release with the binaries, `SHA256SUMS` and the attestations.
+4. `chartula generate` for the tag writes the notes into that draft; a person reads them and publishes the release.
 
 **Version string formatting**
 
 - Always write the full three-part version, even when the patch is zero (`1.0.0`, not `1.0`).
-- Pre-release versions are always written with the label and number separated by a dot (`0.1.0-preview.1`), matching NuGet's own sort order for pre-release identifiers.
-- Git tags mirror the package version exactly, prefixed with `v` (`v0.1.0-preview.1`, `v1.0.0`).
+- Pre-release versions are always written with the label and number separated by a dot (`0.1.0-preview.1`), so SemVer compares the number numerically and `preview.10` sorts after `preview.9`.
+- Git tags mirror the version exactly, prefixed with `v` (`v0.1.0-preview.1`, `v1.0.0`).
 
 ## Quick reference
 
@@ -93,5 +103,5 @@ It is announced ahead of time, and a migration note ships with the release (see 
 - `1.0.0` ships when known bugs are fixed, the surface has held stable for one preview cycle, and the tool has run against external repos
 - After `1.0.0`: PATCH = fix, MINOR = compatible feature, MAJOR = breaking change
 - Breaking changes always get their own heading in the release notes; after `1.0.0` they always require a MAJOR bump
-- Stable packages never depend on pre-release packages
-- Git tags mirror the package version: `v0.1.0-preview.1`, `v1.0.0`
+- The csproj `Version` is the single source; a tag must match it
+- Git tags mirror the version: `v0.1.0-preview.1`, `v1.0.0`

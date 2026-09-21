@@ -1,0 +1,151 @@
+name: Release
+
+# A pushed preview tag becomes a draft GitHub release with one self-contained
+# binary per platform, SHA256SUMS and a build provenance attestation per binary.
+# It stays a draft so `chartula generate` can write its notes before a person
+# publishes it: the tool that writes changelogs writes its own.
+#
+# A pull request that changes what the binaries are built from runs the binary
+# jobs too, without releasing, so a broken platform shows up before a tag does.
+on:
+  push:
+    tags: ['v*-preview*']
+  pull_request:
+    paths:
+      - .github/workflows/release.yml
+      - global.json
+      - Directory.Build.props
+      - src/Chartula.Cli/Chartula.Cli.csproj
+      - '**/packages.lock.json'
+
+permissions:
+  contents: read
+
+# Two runs for the same tag would race to create the same release.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Check the tag against the csproj and main
+        id: check
+        run: |
+          declared=$(sed -n 's|.*<Version>\(.*\)</Version>.*|\1|p' src/Chartula.Cli/Chartula.Cli.csproj)
+          echo "version=$declared" >> "$GITHUB_OUTPUT"
+          if [ "$GITHUB_REF_TYPE" != tag ]; then
+            exit 0
+          fi
+
+          # The csproj is the one place the version is written; a tag that says
+          # otherwise would ship binaries that report a different version.
+          if [ "${GITHUB_REF_NAME#v}" != "$declared" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match <Version>$declared</Version> in src/Chartula.Cli/Chartula.Cli.csproj."
+            exit 1
+          fi
+          # Only code that went through a pull request and its required checks ships.
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::Tag $GITHUB_REF_NAME points at a commit that is not on main."
+            exit 1
+          fi
+
+  # On a pull request the CI workflow already runs these checks.
+  ci:
+    if: github.event_name == 'push'
+    uses: ./.github/workflows/ci.yml
+
+  binary:
+    name: binary (${{ matrix.rid }})
+    needs: [version, ci]
+    # Runs after CI passed, or after CI was skipped on a pull request.
+    if: ${{ !failure() && !cancelled() }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      # Let every platform finish, so one failure does not hide another.
+      fail-fast: false
+      matrix:
+        include:
+          - { rid: linux-x64, runner: ubuntu-latest, ext: '' }
+          - { rid: linux-arm64, runner: ubuntu-24.04-arm, ext: '' }
+          - { rid: osx-x64, runner: macos-15-intel, ext: '' }
+          - { rid: osx-arm64, runner: macos-latest, ext: '' }
+          - { rid: win-x64, runner: windows-latest, ext: .exe }
+          - { rid: win-arm64, runner: windows-11-arm, ext: .exe }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+      - name: Publish
+        shell: bash
+        run: |
+          dotnet publish src/Chartula.Cli -c Release -r ${{ matrix.rid }} --self-contained \
+            -p:RestoreLockedMode=true -warnaserror -o "$RUNNER_TEMP/publish"
+          mkdir -p "$RUNNER_TEMP/dist"
+          cp "$RUNNER_TEMP/publish/chartula${{ matrix.ext }}" "$RUNNER_TEMP/dist/chartula-${{ matrix.rid }}${{ matrix.ext }}"
+      # Each binary runs on a runner of its own platform, outside the checkout, with
+      # no key: it must start, print its usage, and end a run with the hint that
+      # names the missing key. A crash here is one a user would otherwise hit first.
+      - name: Smoke test
+        shell: bash
+        working-directory: ${{ runner.temp }}
+        run: |
+          binary="./dist/chartula-${{ matrix.rid }}${{ matrix.ext }}"
+
+          "$binary" --help > help.txt
+          grep -q "chartula generate" help.txt || { cat help.txt; echo "::error::--help did not print the usage."; exit 1; }
+
+          set +e
+          env -u ANTHROPIC_API_KEY -u GITHUB_TOKEN "$binary" preview --tag v0.0.0 --repo owner/name 2> stderr.txt
+          code=$?
+          set -e
+          cat stderr.txt
+          if [ "$code" -ne 1 ] || ! grep -q "ANTHROPIC_API_KEY" stderr.txt; then
+            echo "::error::A run without a key exited with $code instead of ending with the hint."
+            exit 1
+          fi
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: binary-${{ matrix.rid }}
+          path: ${{ runner.temp }}/dist/*
+          if-no-files-found: error
+
+  release:
+    needs: [version, binary]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: binary-*
+          merge-multiple: true
+          path: dist
+      - name: Write SHA256SUMS
+        working-directory: dist
+        run: sha256sum chartula-* > SHA256SUMS && cat SHA256SUMS
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: dist/chartula-*
+      - name: Create the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --repo "$GITHUB_REPOSITORY" --verify-tag --draft --prerelease \
+            --title "Chartula ${{ needs.version.outputs.version }}" \
+            --notes "Release notes follow from chartula generate."
