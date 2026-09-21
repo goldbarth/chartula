@@ -1,0 +1,20 @@
+# Keeps the pinned inputs moving: packages.lock.json for NuGet, commit SHAs for
+# actions. Minor and patch updates arrive as one pull request per ecosystem, so
+# the weekly batch is one CI run to read rather than a dozen.
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      nuget-minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions-minor-and-patch:
+        update-types: [minor, patch]
