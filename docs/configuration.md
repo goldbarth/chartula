@@ -51,8 +51,18 @@ All four support the structured output the thorough faithfulness check needs, so
 What it can cost you is changelog quality, which is the whole product - so read the output of a cheaper run before adopting it, rather than assuming the saving is free.
 
 The reason to care: a run pays per token twice over, once to rephrase and once for the thorough check, and prompt iteration means running it repeatedly.
-Generating the v0.1.0 changelog of this repository cost $1.78 on Opus 4.8.
-The same run on Haiku 4.5 costs a fifth of that at list prices, which is the difference between iterating freely and rationing runs.
+Haiku 4.5's list prices are a fifth of Opus's, which is the difference between iterating freely and rationing runs.
+
+Measured on this repository's `0.1.0-preview.1`, on 2026-09-17, with `claude-sonnet-5`, all three audiences, the thorough check on, and 48 changes:
+
+| `llm.thinking` | Rephrasing | Thorough check | Total tokens | Cost |
+| --- | --- | --- | --- | --- |
+| `disabled` | 41,959 in / 3,611 out | 50,325 in / 2,790 out | 98,685 | $0.25 |
+| `provider-default` (thinks) | 41,959 in / 6,476 out | 49,003 in / 4,149 out | 101,587 | $0.29 |
+
+These are single runs taken during development, not settled figures, and work with cheaper models has barely started.
+Rephrasing and the thorough check each ran once per audience, so every figure is the sum of three calls, and a run for a single audience costs roughly a third.
+An earlier figure of $1.78 for the `v0.1.0` changelog on Opus 4.8 is under review and should not be relied on.
 
 Haiku 4.5's 200K context is the one hard limit in the table.
 A release with many changes at `factBase.depth: title-and-description` produces a long fact list, and that list is sent once per audience plus once per thorough check.
