@@ -1,6 +1,11 @@
 # Keeps the pinned inputs moving: packages.lock.json for NuGet, commit SHAs for
 # actions. Minor and patch updates arrive as one pull request per ecosystem, so
 # the weekly batch is one CI run to read rather than a dozen.
+#
+# Test tooling is grouped across all update types, majors included: it never
+# ships to users, the three test projects pin it separately, and ungrouped each
+# major arrived as one pull request per project. Majors of runtime packages stay
+# ungrouped, so each one is read on its own.
 version: 2
 updates:
   - package-ecosystem: nuget
@@ -8,6 +13,11 @@ updates:
     schedule:
       interval: weekly
     groups:
+      test-tooling:
+        patterns:
+          - "xunit*"
+          - "Microsoft.NET.Test.Sdk"
+          - "coverlet*"
       nuget-minor-and-patch:
         update-types: [minor, patch]
 
