@@ -90,6 +90,7 @@ You pay your model provider for the tokens a run uses - see [What a run costs](#
 Its output is a draft for a person to read before it is published, not something to publish unread.
 
 If you try it, [tell us how it went](https://github.com/goldbarth/chartula/issues/new?template=alpha-feedback.yml): what you had to edit, what it cost, and what misled you.
+What comes next, and in which order, is in the [Roadmap](ROADMAP.md).
 
 ---
 
@@ -257,24 +258,6 @@ These are known and left for after the alpha, because its output is a draft a pe
 
 ---
 
-## Roadmap
-
-**Now: the alpha.** Installable binaries for six platforms, the fact base, technical, customer and product renderings, both checks, and the four outputs above.
-
-**After the alpha, in this order:**
-
-1. Pull request text as data: delimited and size-limited, with the source of a breaking status marked, edits after the merge detected, and links flagged.
-2. Flags in the release-notes draft, and protection against a dirty working tree and an already published release.
-3. A GitHub Action that downloads the release binary and verifies its checksum, writing draft release notes only; then the Marketplace.
-4. Reading `.github/release.yml`.
-5. `render` from a stored `changelog.json`, and a demo that needs no key.
-6. Telling what an author claims apart from what is established, then an author-supplied outcome as a fact source.
-7. `openai-compatible` out of experimental.
-8. A Homebrew tap and Scoop; code signing for macOS and Windows.
-9. A native-AOT build.
-
----
-
 ## Configuration
 
 Chartula runs without a configuration file.
@@ -299,17 +282,6 @@ Every option is documented in [Configuration](docs/configuration.md).
 
 A prompt change moves the output in ways no unit test catches.
 Everything that compares runs against each other lives in a separate repository, [chartula-evals](https://github.com/goldbarth/chartula-evals).
-
----
-
-## Out of scope (for now)
-
-These have been considered deliberately and set aside - not forgotten.
-
-- **Webhooks, a JavaScript widget, an RSS feed.** Parked until the alpha shows they are wanted.
-- **Email / SMS / WhatsApp broadcast.** Requires a subscriber list and a delivery service, which Chartula would have to host.
-- **Read analytics & feedback buttons.** These need a server to collect events - hosted infrastructure Chartula avoids.
-- **Scripting-based configuration** (e.g. Lua). Chartula's config is declarative; a scripting runtime would add weight for little gain.
 
 ---
 
