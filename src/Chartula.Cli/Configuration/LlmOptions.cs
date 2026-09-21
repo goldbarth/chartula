@@ -24,7 +24,7 @@ public sealed class LlmOptions
     /// what applies for a given provider comes from <see cref="LlmProviderDefaults"/>,
     /// and not every provider has one.
     /// </summary>
-    public string Model { get; init; } = "claude-opus-4-8";
+    public string Model { get; init; } = LlmProviderDefaults.AnthropicModel;
 
     /// <summary>Name of the environment variable holding the API key.</summary>
     public string ApiKeyEnvironmentVariable { get; init; } = "ANTHROPIC_API_KEY";

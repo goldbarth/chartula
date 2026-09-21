@@ -13,11 +13,17 @@ public sealed class AudienceSelectionTests
     }
 
     [Fact]
-    public void No_option_means_every_audience()
+    public void No_option_renders_technical_and_customer_but_not_product()
     {
-        // Null rather than all three: a release wants all of them, and saying so
-        // by listing them would make a later addition a change in two places.
-        Assert.Null(Parse("generate", "--tag", "v1.0.0"));
+        Assert.Equal([Audience.Technical, Audience.Customer], Parse("generate", "--tag", "v1.0.0"));
+    }
+
+    [Fact]
+    public void All_three_are_one_option_away()
+    {
+        Assert.Equal(
+            [Audience.Technical, Audience.Customer, Audience.Product],
+            Parse("generate", "--audience", "technical,customer,product"));
     }
 
     [Fact]

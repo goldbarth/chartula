@@ -170,9 +170,9 @@ internal static class Program
                          whose history is the release.
           --no-publish   Write changelog.json and CHANGELOG.md, but publish no release notes.
           --audience <a> Render only this audience: technical, customer or product.
-                         Repeat it, or separate them with commas. All three by
-                         default. An output whose audience was not rendered is not
-                         written.
+                         Repeat it, or separate them with commas. Default:
+                         technical and customer; product renders only when named.
+                         An output whose audience was not rendered is not written.
 
         """;
 

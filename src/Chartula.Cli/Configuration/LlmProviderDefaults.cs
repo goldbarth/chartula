@@ -13,11 +13,19 @@ internal sealed record LlmProviderDefaults(
     string ApiKeyEnvironmentVariable,
     string? BaseUrl)
 {
+    /// <summary>
+    /// The model a run uses when none is configured, and the one place it is named.
+    /// Sonnet 5 rather than an Opus tier: this repository's own runs cost $0.25-0.29
+    /// on it, and every adopter's first run is the default run. A full id rather
+    /// than an alias, so the model cannot move under a run without a change here.
+    /// </summary>
+    public const string AnthropicModel = "claude-sonnet-5";
+
     /// <summary>The defaults for the given provider.</summary>
     public static LlmProviderDefaults For(LlmProvider provider) => provider switch
     {
         LlmProvider.Anthropic => new LlmProviderDefaults(
-            Model: "claude-opus-4-8",
+            Model: AnthropicModel,
             ApiKeyEnvironmentVariable: "ANTHROPIC_API_KEY",
             // Null, not the literal URL: the Anthropic client already knows where its
             // own API lives, and repeating it here would pin a value the SDK is free

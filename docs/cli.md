@@ -29,9 +29,9 @@ Options:
                  whose history is the release.
   --no-publish   Write changelog.json and CHANGELOG.md, but publish no release notes.
   --audience <a> Render only this audience: technical, customer or product.
-                 Repeat it, or separate them with commas. All three by
-                 default. An output whose audience was not rendered is not
-                 written.
+                 Repeat it, or separate them with commas. Default:
+                 technical and customer; product renders only when named.
+                 An output whose audience was not rendered is not written.
 ```
 
 `-h`, `--help` and `help` all print this text, and so does running `chartula` with no arguments at all.
@@ -83,7 +83,7 @@ $ chartula generate --tag v1.2.0 --repo owner/name --audience technical,product
 $ chartula generate --tag v1.2.0 --repo owner/name --audience technical --audience customer
 ```
 
-Renders only the named audiences instead of all three.
+Renders only the named audiences instead of the default two.
 Valid values are `technical`, `customer` and `product`, case-insensitive; a misspelled name fails the run with `Unknown audience '<name>'.` rather than quietly producing nothing.
 Repeat the flag or separate values with a comma - both forms are accepted and can be mixed.
 
@@ -91,7 +91,9 @@ Each audience is its own rephrasing call and its own faithfulness check, so a ru
 An output whose audience was not rendered is not written: no `CHANGELOG.md` without `technical`, no `release-<tag>.md` without `customer`.
 The run's summary lists the skipped outputs next to the written ones.
 
-With no `--audience` given, all three render - that is what a real release wants.
+With no `--audience` given, `technical` and `customer` render: the two with somewhere to go, `CHANGELOG.md` and the release notes, and `release-<tag>.md`.
+`product` renders only when named, since it has no output file of its own and no evaluation yet, and would otherwise cost a third of every run.
+All three are `--audience technical,customer,product`.
 
 ## Release and repository
 
