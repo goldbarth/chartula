@@ -1,3 +1,4 @@
+using Chartula.Core.Budget;
 using Chartula.Core.Facts;
 using Chartula.Core.Faithfulness;
 using Chartula.Core.Generation;
@@ -35,7 +36,9 @@ public sealed class ReleasePipeline(
     IChangelogMarkdownWriter markdownWriter,
     ICustomerPageWriter customerPageWriter,
     IReleaseNotesWriter releaseNotesWriter,
-    IRunMetrics? metrics = null) : IReleasePipeline
+    IRunMetrics? metrics = null,
+    RunEstimator? estimator = null,
+    IRunBudget? budget = null) : IReleasePipeline
 {
     private readonly IRunMetrics _metrics = metrics ?? NullRunMetrics.Instance;
 
@@ -58,6 +61,13 @@ public sealed class ReleasePipeline(
         IReadOnlyList<PullRequestInfo> pullRequests =
             await pullRequestReader.GetMergedPullRequestsAsync(request.Repository, range, cancellationToken);
         FactBase factBase = factBaseBuilder.Build(range, pullRequests);
+
+        // The last step before the first model call: the facts fix the prompts, so
+        // the most the run can spend is known here, and a refusal costs no tokens.
+        if (estimator is not null && budget is not null)
+        {
+            budget.Approve(estimator.Estimate(factBase, request.Audiences));
+        }
 
         IReadOnlyDictionary<Audience, ChangelogGenerationResult> rendered =
             await renderer.RenderAsync(factBase, request.Audiences, cancellationToken);

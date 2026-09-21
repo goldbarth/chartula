@@ -213,3 +213,5 @@ Errors are written to stderr when they are about the invocation itself, and to s
 
 Every run - `preview` or `generate` - ends with a report of what it did and what it cost in tokens.
 See [Run metrics](run-metrics.md) for how to read it.
+
+Before its first model call, a run prints an upper bound of what it can cost, and `cost.ceiling` refuses one above it without spending a token - see [`cost`](configuration.md#cost).

@@ -17,7 +17,7 @@ namespace Chartula.Core.Rendering;
 /// </summary>
 public sealed class ReleaseRenderer(IReleaseChangelogGenerator generator) : IReleaseRenderer
 {
-    private static readonly Audience[] AllAudiences =
+    internal static readonly Audience[] AllAudiences =
         [Audience.Technical, Audience.Customer, Audience.Product];
 
     private readonly IReleaseChangelogGenerator _generator =
