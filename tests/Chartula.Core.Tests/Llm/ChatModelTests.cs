@@ -155,6 +155,37 @@ public sealed class ChatModelTests
         Assert.Contains("context window", exception.Message);
     }
 
+    // The same proof applies to rephrasing (#85): an endpoint that cut the facts to fit
+    // its context window still answers, with entries for the facts it kept, and a
+    // changelog written from a third of the release reads as if it were all of it.
+    [Fact]
+    public async Task RephraseAsync_fails_when_reported_tokens_cannot_fit_the_prompt_sent()
+    {
+        GroundedFacts facts = new([.. Enumerable.Range(1, 600).Select(i => $"[{i}] Feature: change number {i} with a description long enough to count")]);
+        StubChatClient chat = new(
+            """{"entries":[{"id":1,"text":"Change one."}]}""",
+            new UsageDetails { InputTokenCount = 4_096, OutputTokenCount = 12 });
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => Model(chat).RephraseAsync(new RephraseRequest(facts, Audience.Technical)));
+
+        Assert.Contains("4096 input tokens", exception.Message);
+        Assert.Contains("context window", exception.Message);
+    }
+
+    [Fact]
+    public async Task RephraseAsync_accepts_a_reported_count_the_prompt_can_have()
+    {
+        StubChatClient chat = new(
+            """{"entries":[{"id":1,"text":"Dark mode."}]}""",
+            new UsageDetails { InputTokenCount = 900, OutputTokenCount = 12 });
+
+        RenderedEntries entries = await Model(chat).RephraseAsync(
+            new RephraseRequest(new GroundedFacts(["[1] Feature: dark mode"]), Audience.Technical));
+
+        Assert.Single(entries.Entries);
+    }
+
     // A provider that reports no usage at all gives nothing to check this way - that
     // gap is real, and the check backs off rather than guessing.
     [Fact]

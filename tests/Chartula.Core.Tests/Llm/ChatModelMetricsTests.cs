@@ -19,7 +19,8 @@ public sealed class ChatModelMetricsTests
     [Fact]
     public async Task Rephrasing_records_its_call_and_tokens_under_the_rephrase_operation()
     {
-        StubChatClient chat = new(NoEntries, new UsageDetails { InputTokenCount = 120, OutputTokenCount = 34 });
+        // A count the prompt can have: below its characters / 8 would read as truncation.
+        StubChatClient chat = new(NoEntries, new UsageDetails { InputTokenCount = 1_200, OutputTokenCount = 34 });
         RunMetrics metrics = new();
 
         await new ChatModel(chat, new ChangelogPromptBuilder(), metrics: metrics)
@@ -27,7 +28,7 @@ public sealed class ChatModelMetricsTests
 
         LlmUsage usage = metrics.Snapshot().UsageOf(LlmOperation.Rephrase);
         Assert.Equal(1, usage.TotalCalls);
-        Assert.Equal(new TokenUsage(120, 34), usage.Tokens);
+        Assert.Equal(new TokenUsage(1_200, 34), usage.Tokens);
     }
 
     [Fact]
@@ -73,5 +74,19 @@ public sealed class ChatModelMetricsTests
             .RephraseAsync(new RephraseRequest(Facts, Audience.Customer));
 
         Assert.Empty(result.Entries);
+    }
+
+    // A call that does not count was still paid for, so a truncated one is recorded
+    // before it fails.
+    [Fact]
+    public async Task A_truncated_rephrase_call_is_recorded_before_it_fails()
+    {
+        StubChatClient chat = new(NoEntries, new UsageDetails { InputTokenCount = 10, OutputTokenCount = 3 });
+        RunMetrics metrics = new();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => new ChatModel(chat, new ChangelogPromptBuilder(), metrics: metrics)
+            .RephraseAsync(new RephraseRequest(Facts, Audience.Customer)));
+
+        Assert.Equal(new TokenUsage(10, 3), metrics.Snapshot().UsageOf(LlmOperation.Rephrase).Tokens);
     }
 }
