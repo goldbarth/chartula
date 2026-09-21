@@ -48,11 +48,14 @@ A different failure does not produce a line here at all: it fails the run.
 An endpoint can silently cut a prompt to fit its context window and answer from what is left, and a provider that enforces its response schema by constrained decoding still returns a well-formed, often clean, verdict from a model that never saw the facts.
 That verdict is not a check that passed - it is a check that never happened, and it looks exactly like a clean one.
 
-Chartula catches the cases where usage is reported: the characters sent bound the token count from below, so a reported `prompt_tokens` far under that bound is proof the prompt was cut, not suspicion.
-The run stops there with an error naming the endpoint's context window as the cause.
+Rendering is exposed to it the same way: a cut prompt still yields entries, written from the facts and rules the model kept, and a changelog built from a third of a release reads as if it were all of it.
+
+Chartula catches the cases where usage is reported, for every model call - rendering and thorough check alike: the characters sent bound the token count from below, so a reported `prompt_tokens` far under that bound is proof the prompt was cut, not suspicion.
+A cut rendering fails its audience, and a cut check fails the run, each with an error naming the endpoint's context window as the cause.
 See ["The context window is the first thing to get right"](configuration.md#the-context-window-is-the-first-thing-to-get-right) for the fix.
 
-An endpoint that reports the untruncated length regardless of what it actually processed gives nothing to detect this way - that gap is real, not closed by this check.
+An endpoint that reports the untruncated length regardless of what it actually processed, or reports no usage at all, gives nothing to detect this way - that gap is real, not closed by this check.
+Neither is a model that saw every fact and judged badly: no property of the call shows that, which is why the rule-based check always runs.
 
 ## Judging whether the thorough check earns its cost
 
