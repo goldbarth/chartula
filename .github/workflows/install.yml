@@ -61,5 +61,8 @@ jobs:
       - name: Run chartula from the user PATH in a new process
         run: |
           $env:Path = [Environment]::GetEnvironmentVariable('Path', 'User') + ';' + [Environment]::GetEnvironmentVariable('Path', 'Machine')
-          chartula --help | Select-Object -First 1
+          # Read all of it first: cutting the pipe after one line stops the process,
+          # and its exit code then reports the cut rather than the binary.
+          $usage = chartula --help
           if ($LASTEXITCODE -ne 0) { exit 1 }
+          $usage | Select-Object -First 1
