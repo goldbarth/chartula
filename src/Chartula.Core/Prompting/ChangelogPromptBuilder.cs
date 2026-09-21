@@ -66,7 +66,12 @@ public sealed partial class ChangelogPromptBuilder : IChangelogPromptBuilder
         system.AppendLine(RuleOneEntryPerFact);
         system.AppendLine(RuleConsistentVoice);
         system.Append(AudienceGuidance(audience));
-        return system.ToString();
+
+        // One line ending on every platform: AppendLine writes "\r\n" on Windows, and
+        // the format blocks are raw literals that take the line endings of the source
+        // file as it was checked out. Without this the same build would send - and
+        // hash - a different prompt per platform.
+        return system.ToString().ReplaceLineEndings("\n");
     }
 
     public ChangelogPrompt BuildFaithfulnessPrompt(string output, GroundedFacts facts)

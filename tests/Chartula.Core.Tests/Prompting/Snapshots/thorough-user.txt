@@ -1,0 +1,5 @@
+Facts:
+- {fact}
+
+Output:
+{output}
