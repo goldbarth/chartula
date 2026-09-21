@@ -11,12 +11,18 @@ namespace Chartula.Cli.Composition;
 /// </summary>
 internal static class GitHubHttpClientFactory
 {
-    public static GitHubOptions ReadOptions(IConfiguration configuration) => new()
+    public static GitHubOptions ReadOptions(IConfiguration configuration)
     {
-        ApiBaseUrl = configuration[$"{GitHubOptions.SectionName}:ApiBaseUrl"] ?? "https://api.github.com/",
-        TokenEnvironmentVariable =
-            configuration[$"{GitHubOptions.SectionName}:TokenEnvironmentVariable"] ?? "GITHUB_TOKEN",
-    };
+        string apiBaseUrl = configuration[$"{GitHubOptions.SectionName}:ApiBaseUrl"] ?? "https://api.github.com/";
+        EndpointUrl.Require(GitHubOptions.ApiBaseUrlVariable, apiBaseUrl);
+
+        return new GitHubOptions
+        {
+            ApiBaseUrl = apiBaseUrl,
+            TokenEnvironmentVariable =
+                configuration[$"{GitHubOptions.SectionName}:TokenEnvironmentVariable"] ?? "GITHUB_TOKEN",
+        };
+    }
 
     public static HttpClient Create(GitHubOptions options, IConfiguration configuration)
     {

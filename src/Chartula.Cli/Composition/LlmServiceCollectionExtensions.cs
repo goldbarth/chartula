@@ -65,10 +65,23 @@ internal static class LlmServiceCollectionExtensions
             ApiKeyEnvironmentVariable =
                 configuration[$"{LlmOptions.SectionName}:ApiKeyEnvironmentVariable"]
                 ?? defaults.ApiKeyEnvironmentVariable,
-            BaseUrl = configuration[$"{LlmOptions.SectionName}:BaseUrl"] ?? defaults.BaseUrl,
+            BaseUrl = ReadBaseUrl(configuration) ?? defaults.BaseUrl,
             MaxOutputTokens = ReadMaxOutputTokens(configuration),
             Thinking = configuration[$"{LlmOptions.SectionName}:Thinking"],
         };
+    }
+
+    // Checked for both providers: a proxy in front of the Anthropic API receives the
+    // key just the same.
+    private static string? ReadBaseUrl(IConfiguration configuration)
+    {
+        string? value = configuration[$"{LlmOptions.SectionName}:BaseUrl"];
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            EndpointUrl.Require(LlmOptions.BaseUrlVariable, value);
+        }
+
+        return value;
     }
 
     /// <summary>

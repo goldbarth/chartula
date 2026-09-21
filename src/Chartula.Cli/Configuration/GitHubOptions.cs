@@ -10,6 +10,9 @@ public sealed class GitHubOptions
     /// <summary>Configuration section these options bind to.</summary>
     public const string SectionName = "Chartula:GitHub";
 
+    /// <summary>The environment variable that sets <see cref="ApiBaseUrl"/>, the only place it can be set.</summary>
+    public const string ApiBaseUrlVariable = "Chartula__GitHub__ApiBaseUrl";
+
     /// <summary>The GitHub REST API base URL (override for GitHub Enterprise).</summary>
     public string ApiBaseUrl { get; init; } = "https://api.github.com/";
 

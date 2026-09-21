@@ -17,6 +17,10 @@ The file is repository content that anyone whose pull request is merged can chan
 | `Chartula__GitHub__ApiBaseUrl` | `https://api.github.com/` | REST API base URL (override for GitHub Enterprise). |
 | `Chartula__GitHub__TokenEnvironmentVariable` | `GITHUB_TOKEN` | Name of the environment variable holding the API token. |
 
+Both endpoints must use `https`.
+Plain `http` is accepted only for this machine (`localhost`, `127.0.0.1`, `::1`), which is where local model servers run; anywhere else it would send the key or token in cleartext, so the run is refused before its first request.
+A model server elsewhere on your network needs `https` too.
+
 Chartula does not load the rest of your environment: besides `Chartula__` settings it reads only `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GITHUB_TOKEN` and the variables named by the two settings above.
 Every run starts by printing the endpoints and credential variable names in force, never their values:
 
