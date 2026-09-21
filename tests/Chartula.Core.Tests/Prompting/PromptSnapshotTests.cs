@@ -47,6 +47,14 @@ public sealed class PromptSnapshotTests
             + $"If the change is intended, run the tests with {UpdateVariable}=1 and commit the updated snapshot with it.");
     }
 
+    // The prompt a build sends must not depend on the platform it runs on: a "\r"
+    // would change what the model reads and the hash a run records. Only meaningful
+    // where Git checks sources out with CRLF, which is Windows.
+    [Theory]
+    [MemberData(nameof(Prompts))]
+    public void The_prompt_has_the_same_line_endings_on_every_platform(string name)
+        => Assert.DoesNotContain('\r', Build(name));
+
     private static string Build(string name) => name switch
     {
         "technical" => Builder.BuildRephrasePrompt(Facts, Audience.Technical).System,
