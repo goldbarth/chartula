@@ -84,7 +84,7 @@ public sealed class LlmWiringTests
         LlmOptions options = Build("faithfulness:\n  thorough: true").GetRequiredService<LlmOptions>();
 
         Assert.Equal("anthropic", options.Provider);
-        Assert.Equal("claude-opus-4-8", options.Model);
+        Assert.Equal("claude-sonnet-5", options.Model);
         Assert.Equal("ANTHROPIC_API_KEY", options.ApiKeyEnvironmentVariable);
 
         // Null, not a URL: the Anthropic client knows its own API, and repeating the

@@ -48,7 +48,7 @@ Three of those defaults depend on the provider, because a default that is right 
 
 | Key | `anthropic` | `openai-compatible` |
 | --- | --- | --- |
-| `model` | `claude-opus-4-8` | none - required |
+| `model` | `claude-sonnet-5` | none - required |
 | `Chartula__Llm__BaseUrl` | the Anthropic API | none - required |
 | `Chartula__Llm__ApiKeyEnvironmentVariable` | `ANTHROPIC_API_KEY` | `OPENAI_API_KEY` |
 
@@ -63,8 +63,8 @@ These are the ones Chartula is built for.
 | Model id | Input / output per MTok | Context | Max output | Notes |
 | --- | --- | --- | --- | --- |
 | `claude-opus-5` | $5 / $25 | 1M | 128K | The current top tier. |
-| `claude-opus-4-8` | $5 / $25 | 1M | 128K | The default. |
-| `claude-sonnet-5` | $3 / $15 | 1M | 128K | $2 / $10 introductory through 2026-08-31. |
+| `claude-opus-4-8` | $5 / $25 | 1M | 128K | |
+| `claude-sonnet-5` | $3 / $15 | 1M | 128K | The default. $2 / $10 introductory through 2026-08-31. |
 | `claude-haiku-4-5` | $1 / $5 | 200K | 64K | The cheapest. Keep `maxOutputTokens` at or below 64000. |
 
 Prices are Anthropic's first-party rates as of 2026-07-31 and change over time; treat the table as a starting point, not a quote.
