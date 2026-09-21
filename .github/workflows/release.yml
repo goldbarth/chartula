@@ -141,11 +141,14 @@ jobs:
       - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-path: dist/chartula-*
+      # Not marked as a pre-release: the -preview.N in the version says that already,
+      # and only a release GitHub counts as latest is reachable through
+      # /releases/latest/download, the link install.sh uses without the rate-limited API.
       - name: Create the draft release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$GITHUB_REF_NAME" dist/* \
-            --repo "$GITHUB_REPOSITORY" --verify-tag --draft --prerelease \
+            --repo "$GITHUB_REPOSITORY" --verify-tag --draft \
             --title "Chartula ${{ needs.version.outputs.version }}" \
             --notes "Release notes follow from chartula generate."
