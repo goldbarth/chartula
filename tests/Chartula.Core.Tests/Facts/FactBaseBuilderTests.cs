@@ -215,4 +215,20 @@ public sealed class FactBaseBuilderTests
         Assert.Empty(change.Labels); // a commit carries none
         Assert.Equal(ChangeCategory.Feature, change.Category);
     }
+
+    // The template's comments are where "Closes #123" and a breaking-change hint sit
+    // as examples. Read as facts they would link an issue nobody named and flag a
+    // change nobody called breaking.
+    [Fact]
+    public void A_template_comment_links_no_issue_and_flags_nothing_as_breaking()
+    {
+        string body = "Adds a theme.\n<!-- Link any related issue: Closes #123 -->\n<!-- BREAKING CHANGE: describe the migration -->";
+
+        ChangeFact fact = Assert.Single(Builder(depth: FactBaseDepth.TitleDescriptionAndIssues)
+            .Build(Range(), [Pull(7, "feat: theme", body)]).Changes);
+
+        Assert.Empty(fact.LinkedIssues);
+        Assert.False(fact.IsBreaking);
+        Assert.Equal("Adds a theme.", fact.Description);
+    }
 }

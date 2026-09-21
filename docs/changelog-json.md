@@ -26,7 +26,7 @@ The file is UTF-8, indented JSON.
 | `breaking` | boolean | Whether the change is a breaking change. |
 | `linkedIssues` | array of integers | Linked issue numbers. Empty unless the fact-base depth includes issues. |
 | `labels` | array of strings | The labels on the pull request, verbatim and unfiltered. Empty when the source carries none, as a commit-based change does. |
-| `description` | string or null | The source description, or `null` when the depth excludes it. |
+| `description` | string or null | The source description with HTML comments removed, since GitHub does not show them to a reader. `null` when the depth excludes it, or when the body is empty or an unfilled template (nothing but headings and checklist items). |
 
 Every field of a change entry is an established fact derived deterministically from the pull request or commit.
 The `renderings` object holds the audience texts the LLM produced by rephrasing those facts; the facts themselves are never LLM-generated.
