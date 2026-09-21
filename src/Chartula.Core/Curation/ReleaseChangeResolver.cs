@@ -36,14 +36,20 @@ public sealed class ReleaseChangeResolver : IReleaseChangeResolver
         return range.Commits.Select(FromCommit).ToArray();
     }
 
-    private static ReleaseChange FromPullRequest(PullRequestInfo pull) => new(
-        Title: ResolveTitle(pull),
-        Description: string.IsNullOrWhiteSpace(pull.Description) ? null : pull.Description,
-        Number: pull.Number,
-        Url: string.IsNullOrEmpty(pull.Url) ? null : pull.Url,
-        Labels: pull.Labels,
-        Source: ChangeSource.PullRequest,
-        CommitSha: null);
+    private static ReleaseChange FromPullRequest(PullRequestInfo pull)
+    {
+        // Read once, here: everything downstream - the title fallback, breaking
+        // status, linked issues, the prompt - sees the same description.
+        string? description = PullRequestBody.Description(pull.Description);
+        return new ReleaseChange(
+            Title: ResolveTitle(pull, description),
+            Description: description,
+            Number: pull.Number,
+            Url: string.IsNullOrEmpty(pull.Url) ? null : pull.Url,
+            Labels: pull.Labels,
+            Source: ChangeSource.PullRequest,
+            CommitSha: null);
+    }
 
     private static ReleaseChange FromCommit(CommitInfo commit) => new(
         Title: commit.Subject,
@@ -54,14 +60,14 @@ public sealed class ReleaseChangeResolver : IReleaseChangeResolver
         Source: ChangeSource.Commit,
         CommitSha: commit.Sha);
 
-    private static string ResolveTitle(PullRequestInfo pull)
+    private static string ResolveTitle(PullRequestInfo pull, string? description)
     {
         if (IsInformative(pull.Title))
         {
             return pull.Title.Trim();
         }
 
-        string? firstBodyLine = FirstInformativeLine(pull.Description);
+        string? firstBodyLine = FirstInformativeLine(description);
         return firstBodyLine ?? $"PR #{pull.Number}";
     }
 

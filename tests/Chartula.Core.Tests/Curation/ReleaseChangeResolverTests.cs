@@ -85,4 +85,77 @@ public sealed class ReleaseChangeResolverTests
 
         Assert.Empty(changes);
     }
+
+    // #73's body, verbatim: this repository's pull request template, untouched.
+    internal const string UnfilledTemplate =
+        """
+        ## What does this PR do?
+
+        <!-- A clear, changelog-style summary of the change. -->
+
+        ## Why?
+
+        <!-- The motivation. Link any related issue: Closes #123 -->
+
+        ## Type of change
+
+        - [x] Bug fix
+        - [x] New feature
+        - [x] Documentation
+        - [x] Refactor / internal
+        - [x] Breaking change
+
+        ## Checklist
+
+        - [x] The project builds and tests pass
+        - [x] Code follows the formatting in `.editorconfig`
+        - [x] I've added or updated tests where it makes sense
+        - [x] I've updated documentation where relevant
+        - [x] No secrets or API keys are included in this change
+        """;
+
+    [Fact]
+    public void An_unfilled_template_is_no_description()
+        => Assert.Null(Assert.Single(_resolver.Resolve(Range(), [Pull(73, "feat: config", UnfilledTemplate)])).Description);
+
+    [Fact]
+    public void An_unfilled_template_does_not_stand_in_for_an_uninformative_title()
+        => Assert.Equal("PR #73", Assert.Single(_resolver.Resolve(Range(), [Pull(73, "WIP", UnfilledTemplate)])).Title);
+
+    [Fact]
+    public void A_filled_template_keeps_what_was_written_without_the_placeholders()
+    {
+        string body = UnfilledTemplate.Replace(
+            "<!-- A clear, changelog-style summary of the change. -->",
+            "<!-- A clear, changelog-style summary of the change. -->\nAdds a dark theme.");
+
+        string? description = Assert.Single(_resolver.Resolve(Range(), [Pull(7, "feat: dark mode", body)])).Description;
+
+        Assert.NotNull(description);
+        Assert.Contains("Adds a dark theme.", description);
+        Assert.Contains("## Type of change", description);
+        Assert.DoesNotContain("<!--", description);
+        Assert.DoesNotContain("Closes #123", description);
+    }
+
+    // A comment is invisible on GitHub: nobody reading the pull request sees it, so
+    // it is not something the author told a reader.
+    [Theory]
+    [InlineData("Adds a theme.\n<!-- BREAKING CHANGE: not really -->", "Adds a theme.")]
+    [InlineData("Adds a theme. <!-- inline --> Done.", "Adds a theme.  Done.")]
+    [InlineData("Adds a theme.\n<!-- never closed\nBREAKING CHANGE: hidden", "Adds a theme.")]
+    [InlineData("<!-- only a comment -->", null)]
+    [InlineData("## Summary\n\n- [ ] Tests", null)]
+    public void Hidden_comments_are_stripped_from_every_body(string body, string? expected)
+        => Assert.Equal(expected, Assert.Single(_resolver.Resolve(Range(), [Pull(7, "feat: theme", body)])).Description);
+
+    [Fact]
+    public void Headings_and_checklists_stay_when_the_body_says_something_besides()
+    {
+        // Only a body with nothing else in it is a template; otherwise the headings
+        // and boxes are part of what the author wrote, and curation does not edit it.
+        string body = "## Summary\n\nAdds a theme.\n\n- [x] Tests";
+
+        Assert.Equal(body, Assert.Single(_resolver.Resolve(Range(), [Pull(7, "feat: theme", body)])).Description);
+    }
 }
