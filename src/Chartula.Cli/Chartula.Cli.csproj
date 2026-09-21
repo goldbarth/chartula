@@ -11,20 +11,19 @@
     <AssemblyName>chartula</AssemblyName>
     <RootNamespace>Chartula.Cli</RootNamespace>
 
-    <!-- Packaging as a dotnet tool (used from Phase 3; harmless now) -->
-    <PackAsTool>true</PackAsTool>
-    <ToolCommandName>chartula</ToolCommandName>
-    <PackageId>Chartula</PackageId>
-    <Version>0.1.0-alpha</Version>
+    <Version>0.1.0-preview.1</Version>
+
+    <!-- Released as one self-contained file per platform, so a user needs no .NET.
+         Set here rather than on the publish command line: the single-file analyzer
+         brings in Microsoft.NET.ILLink.Tasks, and only a property the project always
+         carries keeps that reference in packages.lock.json for a locked restore. -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <!-- Halves the download (88 to 44 MB) for about 60 ms more at startup, next to
+         a run that waits seconds on a model. -->
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <Authors>Felix Wahl</Authors>
     <Description>Multi-audience, grounded changelog generator for your repository.</Description>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Include="../../README.md" Pack="true" PackagePath="\" />
-  </ItemGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="Chartula.Cli.Tests" />

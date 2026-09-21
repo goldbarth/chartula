@@ -27,7 +27,7 @@ internal static class GitHubHttpClientFactory
     public static HttpClient Create(GitHubOptions options, IConfiguration configuration)
     {
         HttpClient client = new() { BaseAddress = new Uri(options.ApiBaseUrl) };
-        client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Chartula", "0.1.0"));
+        client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Chartula", ToolVersion.Release));
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
         client.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
 
