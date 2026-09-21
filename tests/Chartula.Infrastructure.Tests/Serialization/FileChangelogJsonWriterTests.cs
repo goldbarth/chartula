@@ -43,6 +43,18 @@ public sealed class FileChangelogJsonWriterTests : IDisposable
     }
 
     [Fact]
+    public async Task The_written_file_carries_the_provenance_it_was_given()
+    {
+        string path = await new FileChangelogJsonWriter(
+                _directory, new RunProvenance("0.1.0", "anthropic", "claude-sonnet-5", "sha256:ff"))
+            .WriteAsync(Sample());
+
+        Assert.Equal(
+            new ChangelogProvenance("0.1.0", "anthropic", "claude-sonnet-5", "sha256:ff"),
+            ChangelogJsonSerializer.Deserialize(await File.ReadAllTextAsync(path)).Provenance);
+    }
+
+    [Fact]
     public async Task The_written_file_round_trips_through_the_serializer()
     {
         string path = await new FileChangelogJsonWriter(_directory).WriteAsync(Sample());

@@ -13,6 +13,7 @@ The file is UTF-8, indented JSON.
 | `tag` | string | The release tag the facts belong to. |
 | `changes` | array | One entry per included change (see below). |
 | `renderings` | object | The rendered audience texts, keyed by audience (`technical`, `customer`, `product`). Empty when no texts were generated. |
+| `provenance` | object, optional | How the file was made (see below). Absent in a file written without it, including every file from before it existed. |
 
 ### Change entry
 
@@ -31,10 +32,24 @@ The file is UTF-8, indented JSON.
 Every field of a change entry is an established fact derived deterministically from the pull request or commit.
 The `renderings` object holds the audience texts the LLM produced by rephrasing those facts; the facts themselves are never LLM-generated.
 
+### Provenance
+
+What a run was made with, so a release can be explained from the file after the run's terminal output is gone.
+Each field is left out when the run does not have a value for it, never written empty.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `toolVersion` | string | The Chartula version that wrote the file, with the commit it was built from after a `+`. |
+| `provider` | string | The model provider as configured: `anthropic` or `openai-compatible`. |
+| `model` | string | The model id the renderings were written with. |
+| `promptHash` | string | `sha256:` and a hex digest of every instruction Chartula sends - each audience's system prompt and the thorough check's - without the facts. Two files with the same hash were rendered from the same instructions. |
+
+Endpoint hosts, flags and check verdicts are deliberately not recorded: the file is meant to be published, and a host can name an internal gateway.
+
 ## Stability
 
 - `schemaVersion` is the contract. Consumers should read it and reject versions they do not understand.
-- Fields are always present, including when their value is `null`.
+- The fields of a change entry and the top-level fields other than `provenance` are always present, including when their value is `null`.
 - New optional fields may be added without bumping `schemaVersion`; removing or renaming a field, or
   changing a field's meaning, bumps it.
 
@@ -61,6 +76,12 @@ The `renderings` object holds the audience texts the LLM produced by rephrasing 
     "technical": "- feat: add dark mode (#42) - adds a dark theme toggle",
     "customer": "- Dark mode is here.",
     "product": "- Dark mode toggle added."
+  },
+  "provenance": {
+    "toolVersion": "0.1.0-alpha+2c43772833e4ed32790e5549848f7f42bc0e4eee",
+    "provider": "anthropic",
+    "model": "claude-sonnet-5",
+    "promptHash": "sha256:3f1c...e9a0"
   }
 }
 ```

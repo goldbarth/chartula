@@ -11,7 +11,7 @@ namespace Chartula.Infrastructure.Serialization;
 /// It writes a single file - the audience texts go inside it, never as separate
 /// marketing files.
 /// </summary>
-public sealed class FileChangelogJsonWriter(string outputDirectory) : IChangelogJsonWriter
+public sealed class FileChangelogJsonWriter(string outputDirectory, RunProvenance? provenance = null) : IChangelogJsonWriter
 {
     /// <summary>The fixed file name written into the output directory.</summary>
     public const string FileName = "changelog.json";
@@ -25,7 +25,7 @@ public sealed class FileChangelogJsonWriter(string outputDirectory) : IChangelog
 
         Directory.CreateDirectory(outputDirectory);
         string path = Path.Combine(outputDirectory, FileName);
-        string json = ChangelogJsonSerializer.Serialize(factBase, renderings);
+        string json = ChangelogJsonSerializer.Serialize(factBase, renderings, provenance);
 
         await File.WriteAllTextAsync(path, json, cancellationToken);
         return path;
