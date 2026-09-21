@@ -53,8 +53,8 @@ It explains the layering, why facts are established before an LLM ever sees them
 
 ## Project setup
 
-You will need the [.NET 10 SDK](https://dotnet.microsoft.com/download) installed.
-Chartula targets `net10.0`, so an older SDK will not build it.
+You will need the [.NET 10 SDK](https://dotnet.microsoft.com/download) installed, in exactly the version `global.json` names.
+The pin is exact because the SDK decides the version of a package the release build needs (`Microsoft.NET.ILLink.Tasks`), and a locked restore fails when that drifts from `packages.lock.json`.
 
 ```bash
 # Clone your fork
