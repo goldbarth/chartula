@@ -68,8 +68,9 @@ internal static class Program
                 return 1;
             }
 
-            // A warning about the run, not part of it: stderr keeps it out of the
+            // Notices about the run, not part of it: stderr keeps them out of the
             // changelog when the output is redirected to a file.
+            Console.Error.WriteLine(EndpointNotice.For(configuration));
             if (GitHubTokenNotice.For(configuration) is { } notice)
             {
                 Console.Error.WriteLine(notice);
@@ -91,10 +92,7 @@ internal static class Program
     /// runs with sensible defaults when neither is present.
     /// </summary>
     private static IConfiguration BuildConfiguration()
-        => new ConfigurationBuilder()
-            .AddChartulaYaml(Directory.GetCurrentDirectory())
-            .AddEnvironmentVariables()
-            .Build();
+        => ChartulaConfiguration.Build(Directory.GetCurrentDirectory());
 
     private static ServiceProvider BuildServices(IConfiguration configuration)
     {

@@ -4,20 +4,39 @@ Chartula runs with sensible defaults and needs no configuration to work.
 A `chartula.yaml` in the repository root refines that default behavior; it is never required.
 Environment variables override the file, so anything here can be set with `Chartula__Section__Key` too.
 
+## Environment-only settings
+
+Four settings decide where release data and credentials are sent: the two endpoints, and the names of the variables whose values go to them.
+They are read from the environment only, and a `chartula.yaml` that sets one is refused, naming the variable to use instead.
+The file is repository content that anyone whose pull request is merged can change, and one value in it could otherwise send any variable of your environment to any host.
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `Chartula__Llm__BaseUrl` | per provider | The endpoint the model provider is reached at. See [Running against your own endpoint](#running-against-your-own-endpoint). |
+| `Chartula__Llm__ApiKeyEnvironmentVariable` | per provider | Name of the environment variable holding the API key. |
+| `Chartula__GitHub__ApiBaseUrl` | `https://api.github.com/` | REST API base URL (override for GitHub Enterprise). |
+| `Chartula__GitHub__TokenEnvironmentVariable` | `GITHUB_TOKEN` | Name of the environment variable holding the API token. |
+
+Chartula does not load the rest of your environment: besides `Chartula__` settings it reads only `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GITHUB_TOKEN` and the variables named by the two settings above.
+Every run starts by printing the endpoints and credential variable names in force, never their values:
+
+```console
+Model:  anthropic at its default endpoint, key from ANTHROPIC_API_KEY
+GitHub: https://api.github.com/, token from GITHUB_TOKEN
+```
+
 A minimal starting point is shipped as [`chartula.example.yaml`](../chartula.example.yaml) - copy it to `chartula.yaml` and uncomment only what you need.
 
 ## Sections
 
 ### `llm`
 
-The model provider and which model to use. API keys are read by environment-variable name, never from this file.
+The model provider and which model to use. The endpoint and the name of the key variable are [environment-only](#environment-only-settings).
 
 | Key | Default | Description |
 | --- | --- | --- |
 | `provider` | `anthropic` | The LLM provider: `anthropic` or `openai-compatible` (**experimental**, see below). Any other value fails the run. |
 | `model` | per provider | The model id passed to the provider. See [Choosing a model](#choosing-a-model). |
-| `baseUrl` | per provider | The endpoint the provider is reached at. See [Running against your own endpoint](#running-against-your-own-endpoint). |
-| `apiKeyEnvironmentVariable` | per provider | Name of the environment variable holding the API key. |
 | `maxOutputTokens` | `32000` | Ceiling on the tokens the model may produce per call, thinking included. Thinking is produced first, so a ceiling that only fits it leaves no text. |
 | `thinking` | `provider-default` | Whether the model reasons before answering. One of `provider-default`, `disabled`, `adaptive`. `anthropic` only. |
 
@@ -26,8 +45,8 @@ Three of those defaults depend on the provider, because a default that is right 
 | Key | `anthropic` | `openai-compatible` |
 | --- | --- | --- |
 | `model` | `claude-opus-4-8` | none - required |
-| `baseUrl` | the Anthropic API | none - required |
-| `apiKeyEnvironmentVariable` | `ANTHROPIC_API_KEY` | `OPENAI_API_KEY` |
+| `Chartula__Llm__BaseUrl` | the Anthropic API | none - required |
+| `Chartula__Llm__ApiKeyEnvironmentVariable` | `ANTHROPIC_API_KEY` | `OPENAI_API_KEY` |
 
 Raise `maxOutputTokens` for releases whose changelog runs long.
 A ceiling that is too low truncates the generated text mid-sentence rather than failing, so a run that ends abruptly is the signal to raise it.
@@ -119,7 +138,7 @@ It travels in a request field that has no equivalent in the OpenAI dialect, so s
 That is one setting for two quite different situations: hosted endpoints that are cheaper than a first-party API, and a server on your own machine, where the release data never leaves it.
 Ollama, LM Studio, llama.cpp and vLLM all serve that dialect, so they need no adapter of their own.
 
-Neither `model` nor `baseUrl` has a default here, and both failures say so by name.
+Neither `model` nor the endpoint has a default here, and both failures say so by name.
 The model cannot be guessed because the ids an endpoint serves are its own - ask it with `ollama list` or `GET /v1/models`.
 The endpoint is deliberately left without a default rather than pointed at a well-known hosted one: this provider exists so release data can stay on your machine, and a default would send it off the machine for anyone who set only the model.
 
@@ -129,26 +148,30 @@ A local setup end to end, with nothing else configured:
 llm:
   provider: openai-compatible
   model: qwen3:8b
-  baseUrl: http://localhost:11434/v1
 ```
 
 ```console
+$ export Chartula__Llm__BaseUrl=http://localhost:11434/v1
 $ ollama serve &
 $ ollama pull qwen3:8b
 $ chartula preview
 ```
 
 No API key is involved.
-Local servers do not read the `Authorization` header, so `apiKeyEnvironmentVariable` can be left unset and the run starts without one.
+Local servers do not read the `Authorization` header, so `Chartula__Llm__ApiKeyEnvironmentVariable` can be left unset and the run starts without one.
 
-A hosted endpoint differs in two lines, and does need a key:
+A hosted endpoint differs in the model and two variables, and does need a key:
 
 ```yaml
 llm:
   provider: openai-compatible
   model: llama-3.3-70b-versatile
-  baseUrl: https://api.groq.com/openai/v1
-  apiKeyEnvironmentVariable: GROQ_API_KEY
+```
+
+```console
+$ export Chartula__Llm__BaseUrl=https://api.groq.com/openai/v1
+$ export Chartula__Llm__ApiKeyEnvironmentVariable=GROQ_API_KEY
+$ export GROQ_API_KEY=<your key>
 ```
 
 If the key is missing or wrong, the endpoint answers `401` and the run fails there.
@@ -202,12 +225,7 @@ What it does show is which way to look first: the free check was the more useful
 
 ### `github`
 
-How the GitHub API is reached. The token is read by environment-variable name, never from this file.
-
-| Key | Default | Description |
-| --- | --- | --- |
-| `apiBaseUrl` | `https://api.github.com/` | REST API base URL (override for GitHub Enterprise). |
-| `tokenEnvironmentVariable` | `GITHUB_TOKEN` | Name of the environment variable holding the API token. |
+How the GitHub API is reached. Both of its settings, the API base URL and the name of the token variable, are [environment-only](#environment-only-settings), so the section has no keys of its own in `chartula.yaml`.
 
 The token is optional and the run says at startup when it is missing, naming whichever variable it looked in.
 It is worth setting all the same: unauthenticated GitHub allows 60 requests an hour per IP address, a run spends roughly one per pull request, and the budget is shared with every other unauthenticated request from that address.

@@ -1,5 +1,3 @@
-using System.Diagnostics;
-
 namespace Chartula.Cli.Tests.Commands;
 
 /// <summary>
@@ -58,51 +56,22 @@ public sealed class PlantedGitTests : IDisposable
         return marker;
     }
 
-    private async Task<(int ExitCode, string Error)> RunChartulaAsync(params string[] arguments)
-    {
-        string chartula = Path.Combine(AppContext.BaseDirectory, OperatingSystem.IsWindows() ? "chartula.exe" : "chartula");
-        ProcessStartInfo startInfo = Start(chartula, arguments);
-
-        // Past the refusal of a run without a key, which comes before git is reached.
-        startInfo.Environment["ANTHROPIC_API_KEY"] = "sk-test-not-used";
-        startInfo.Environment.Remove("GITHUB_TOKEN");
-        return await RunAsync(startInfo);
-    }
+    private Task<(int ExitCode, string Error)> RunChartulaAsync(params string[] arguments)
+        => CliProcess.RunChartulaAsync(
+            _checkout,
+            new Dictionary<string, string?>
+            {
+                // Past the refusal of a run without a key, which comes before git is reached.
+                ["ANTHROPIC_API_KEY"] = "sk-test-not-used",
+                ["GITHUB_TOKEN"] = null,
+            },
+            arguments);
 
     // The test's own git by bare name is fine: it runs from the test's directory,
     // before the plant exists.
     private async Task GitAsync(params string[] arguments)
     {
-        (int exitCode, string error) = await RunAsync(Start("git", arguments));
+        (int exitCode, string error) = await CliProcess.RunAsync("git", _checkout, arguments);
         Assert.True(exitCode == 0, $"git {string.Join(' ', arguments)} failed: {error}");
-    }
-
-    private ProcessStartInfo Start(string fileName, string[] arguments)
-    {
-        ProcessStartInfo startInfo = new()
-        {
-            FileName = fileName,
-            WorkingDirectory = _checkout,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-        };
-        foreach (string argument in arguments)
-        {
-            startInfo.ArgumentList.Add(argument);
-        }
-
-        return startInfo;
-    }
-
-    private static async Task<(int ExitCode, string Error)> RunAsync(ProcessStartInfo startInfo)
-    {
-        using Process process = Process.Start(startInfo)
-            ?? throw new InvalidOperationException($"Could not start {startInfo.FileName}.");
-        Task<string> output = process.StandardOutput.ReadToEndAsync();
-        Task<string> error = process.StandardError.ReadToEndAsync();
-        await process.WaitForExitAsync();
-        await output;
-        return (process.ExitCode, await error);
     }
 }

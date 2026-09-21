@@ -8,8 +8,13 @@
 # Every setting can also be given as an environment variable, which overrides
 # this file: Chartula__Section__Key, for example Chartula__Faithfulness__Thorough.
 #
-# API keys and tokens are never read from this file. Only the *name* of the
-# environment variable holding them is configured here.
+# API keys and tokens are never read from this file, and neither are the
+# endpoints or the names of the variables holding the keys: those decide where
+# release data and credentials go, so they come from the environment only
+# (Chartula__Llm__BaseUrl, Chartula__Llm__ApiKeyEnvironmentVariable,
+# Chartula__GitHub__ApiBaseUrl, Chartula__GitHub__TokenEnvironmentVariable).
+# A file that sets one is refused. See docs/configuration.md,
+# "Environment-only settings".
 
 # The model provider and which model to use. maxOutputTokens caps what the model
 # may produce per call; raise it for releases whose changelog runs long.
@@ -18,21 +23,17 @@
 # llm:
 #   provider: anthropic
 #   model: claude-opus-4-8
-#   apiKeyEnvironmentVariable: ANTHROPIC_API_KEY
 #   maxOutputTokens: 16000
 # thinking is provider-default, disabled or adaptive. The default sends nothing and
 # lets each model decide, and models decide differently - thinking bills as output
 # tokens, so set it explicitly if you want the same behavior on every model.
 # It is an Anthropic setting; with openai-compatible, anything else fails the run.
 #   thinking: provider-default
-# baseUrl overrides where the provider is reached - for a proxy in front of the
-# Anthropic API, and it is how the second provider is pointed anywhere at all.
-#   baseUrl: https://api.anthropic.com
 
 # provider: openai-compatible reaches anything speaking the OpenAI chat-completions
-# dialect at the URL you give it. Experimental - see docs/configuration.md,
-# "Running against your own endpoint". Neither model nor baseUrl has a default
-# there, so both are required.
+# dialect at the URL in Chartula__Llm__BaseUrl. Experimental - see
+# docs/configuration.md, "Running against your own endpoint". Neither the model
+# nor the endpoint has a default there, so both are required.
 #
 # Your own machine, where the release data never leaves it (Ollama here; LM Studio
 # is http://localhost:1234/v1). No API key is involved - local servers do not read
@@ -40,23 +41,21 @@
 # llm:
 #   provider: openai-compatible
 #   model: qwen3:8b
-#   baseUrl: http://localhost:11434/v1
+# with: export Chartula__Llm__BaseUrl=http://localhost:11434/v1
 #
 # A hosted endpoint instead, which does need a key:
 # llm:
 #   provider: openai-compatible
 #   model: llama-3.3-70b-versatile
-#   baseUrl: https://api.groq.com/openai/v1
-#   apiKeyEnvironmentVariable: GROQ_API_KEY
+# with: export Chartula__Llm__BaseUrl=https://api.groq.com/openai/v1
+#       export Chartula__Llm__ApiKeyEnvironmentVariable=GROQ_API_KEY
 #
 # Watch the thorough faithfulness check here: an endpoint may accept the request and
 # ignore the JSON schema. An unreadable verdict is reported as not evaluated, never
 # as a clean check, so you find out rather than being told the text passed.
 
-# How the GitHub API is reached. Override the base URL for GitHub Enterprise.
-# github:
-#   apiBaseUrl: https://api.github.com/
-#   tokenEnvironmentVariable: GITHUB_TOKEN
+# The GitHub API is reached at https://api.github.com/ with the token in
+# GITHUB_TOKEN. For GitHub Enterprise, set Chartula__GitHub__ApiBaseUrl.
 
 # Steer curation with GitHub labels. With no rules, labels are ignored.
 # labels:

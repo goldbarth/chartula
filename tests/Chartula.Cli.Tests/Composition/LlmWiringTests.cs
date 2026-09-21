@@ -1,3 +1,4 @@
+using System.Collections;
 using Chartula.Cli.Composition;
 using Chartula.Cli.Configuration;
 using Chartula.Core.Llm;
@@ -15,18 +16,32 @@ namespace Chartula.Cli.Tests.Composition;
 /// </summary>
 public sealed class LlmWiringTests
 {
-    private static ServiceProvider Build(string yaml, bool withAnthropicKey = true)
+    // The endpoint is environment-only: chartula.yaml may not set it.
+    private static readonly (string, string) LocalEndpoint = ("Chartula__Llm__BaseUrl", "http://localhost:11434/v1");
+
+    private static ServiceProvider Build(
+        string yaml, bool withAnthropicKey = true, params (string Name, string Value)[] environment)
         => new ServiceCollection()
-            .AddChartulaLlm(Configure(yaml, withAnthropicKey))
+            .AddChartulaLlm(Configure(yaml, withAnthropicKey, environment))
             .BuildServiceProvider();
 
-    private static IConfiguration Configure(string yaml, bool withAnthropicKey = true)
-        => new ConfigurationBuilder()
-            .AddInMemoryCollection(ChartulaYamlConfiguration.Flatten(yaml))
-            .AddInMemoryCollection(withAnthropicKey
-                ? [new KeyValuePair<string, string?>("ANTHROPIC_API_KEY", "test-key")]
-                : [])
-            .Build();
+    private static IConfiguration Configure(
+        string yaml, bool withAnthropicKey = true, params (string Name, string Value)[] environment)
+    {
+        Hashtable variables = [];
+        foreach ((string name, string value) in environment)
+        {
+            variables[name] = value;
+        }
+
+        if (withAnthropicKey)
+        {
+            variables["ANTHROPIC_API_KEY"] = "test-key";
+        }
+
+        return ChartulaConfiguration.Build(
+            new ConfigurationBuilder().AddInMemoryCollection(ChartulaYamlConfiguration.Flatten(yaml)), variables);
+    }
 
     [Fact]
     public void An_anthropic_run_without_a_key_is_refused_naming_the_variable()
@@ -42,11 +57,9 @@ public sealed class LlmWiringTests
     public void A_renamed_key_variable_is_the_one_named_when_it_is_missing()
     {
         InvalidOperationException error = Assert.Throws<InvalidOperationException>(() => Build(
-            """
-            llm:
-              apiKeyEnvironmentVariable: CLAUDE_KEY
-            """,
-            withAnthropicKey: false));
+            "",
+            withAnthropicKey: false,
+            ("Chartula__Llm__ApiKeyEnvironmentVariable", "CLAUDE_KEY")));
 
         Assert.Contains("CLAUDE_KEY", error.Message);
         Assert.DoesNotContain("ANTHROPIC_API_KEY", error.Message);
@@ -60,9 +73,9 @@ public sealed class LlmWiringTests
             llm:
               provider: openai-compatible
               model: qwen3:8b
-              baseUrl: http://localhost:11434/v1
             """,
-            withAnthropicKey: false).GetRequiredService<IChatClient>());
+            withAnthropicKey: false,
+            LocalEndpoint).GetRequiredService<IChatClient>());
     }
 
     [Fact]
@@ -87,8 +100,8 @@ public sealed class LlmWiringTests
             llm:
               provider: openai-compatible
               model: qwen3:8b
-              baseUrl: http://localhost:11434/v1
-            """).GetRequiredService<LlmOptions>();
+            """,
+           environment: LocalEndpoint).GetRequiredService<LlmOptions>();
 
         Assert.Equal("openai-compatible", options.Provider);
         Assert.Equal("qwen3:8b", options.Model);
@@ -105,8 +118,8 @@ public sealed class LlmWiringTests
             """
             llm:
               provider: openai-compatible
-              baseUrl: http://localhost:11434/v1
-            """));
+            """,
+           environment: LocalEndpoint));
 
         Assert.Contains("llm.model", error.Message);
         Assert.Contains("openai-compatible", error.Message);
@@ -128,7 +141,7 @@ public sealed class LlmWiringTests
         InvalidOperationException error =
             Assert.Throws<InvalidOperationException>(services.GetRequiredService<IChatClient>);
 
-        Assert.Contains("llm.baseUrl", error.Message);
+        Assert.Contains("Chartula__Llm__BaseUrl", error.Message);
     }
 
     [Fact]
@@ -139,8 +152,8 @@ public sealed class LlmWiringTests
             llm:
               provider: openai-compatible
               model: qwen3:8b
-              baseUrl: localhost:11434
-            """);
+            """,
+            environment: ("Chartula__Llm__BaseUrl", "localhost:11434"));
 
         InvalidOperationException error =
             Assert.Throws<InvalidOperationException>(services.GetRequiredService<IChatClient>);
@@ -159,9 +172,8 @@ public sealed class LlmWiringTests
             llm:
               provider: openai-compatible
               model: qwen3:8b
-              baseUrl: http://localhost:11434/v1
-              apiKeyEnvironmentVariable: A_VARIABLE_THAT_IS_NOT_SET
-            """);
+            """,
+            environment: [LocalEndpoint, ("Chartula__Llm__ApiKeyEnvironmentVariable", "A_VARIABLE_THAT_IS_NOT_SET")]);
 
         Assert.NotNull(services.GetRequiredService<IChatClient>());
     }
@@ -185,9 +197,9 @@ public sealed class LlmWiringTests
              llm:
                provider: openai-compatible
                model: qwen3:8b
-               baseUrl: http://localhost:11434/v1
                thinking: {thinking}
-             """));
+             """,
+            environment: LocalEndpoint));
 
         Assert.Contains("llm.thinking", error.Message);
         Assert.Contains(thinking, error.Message);
@@ -215,9 +227,9 @@ public sealed class LlmWiringTests
             llm:
               provider: openai-compatible
               model: qwen3:8b
-              baseUrl: http://localhost:11434/v1
               thinking: provider-default
-            """).GetRequiredService<ChatModelOptions>();
+            """,
+           environment: LocalEndpoint).GetRequiredService<ChatModelOptions>();
 
         // Nothing is added to the request, which is exactly what makes it portable.
         Assert.Null(options.RawRepresentationFactory);
