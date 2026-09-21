@@ -26,13 +26,7 @@ public sealed class PlantedGitTests : IDisposable
         Assert.Contains("no tag is reachable from HEAD", error);
     }
 
-    public void Dispose()
-    {
-        if (Directory.Exists(_checkout))
-        {
-            Directory.Delete(_checkout, recursive: true);
-        }
-    }
+    public void Dispose() => TestDirectory.Delete(_checkout);
 
     /// <summary>
     /// Plants a git in the checkout and returns the file it leaves behind when run.

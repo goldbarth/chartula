@@ -35,11 +35,5 @@ public sealed class FirstTagTests : IDisposable
         Assert.DoesNotContain("GitHub API", output + error);
     }
 
-    public void Dispose()
-    {
-        if (Directory.Exists(_checkout))
-        {
-            Directory.Delete(_checkout, recursive: true);
-        }
-    }
+    public void Dispose() => TestDirectory.Delete(_checkout);
 }
