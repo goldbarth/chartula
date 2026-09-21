@@ -65,6 +65,9 @@ cd chartula
 dotnet restore Chartula.slnx
 ```
 
+Every project has a `packages.lock.json`, and CI restores with `--locked-mode`, so a build uses exactly the package versions recorded there.
+If you add or update a package, commit the updated lock files with it; a pull request whose lock files do not match its project files fails CI.
+
 ---
 
 ## Build and test

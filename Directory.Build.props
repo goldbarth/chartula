@@ -1,0 +1,10 @@
+<Project>
+
+  <PropertyGroup>
+    <!-- Every restore resolves exactly what packages.lock.json records, so a
+         compromised or re-published package version cannot slip into a build
+         unnoticed; CI restores with locked mode and fails on any drift. -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+  </PropertyGroup>
+
+</Project>
