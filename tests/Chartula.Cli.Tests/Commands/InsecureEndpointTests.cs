@@ -14,7 +14,7 @@ public sealed class InsecureEndpointTests : IDisposable
     {
         Directory.CreateDirectory(_directory);
 
-        (int exitCode, string error) = await CliProcess.RunChartulaAsync(
+        (int exitCode, _, string error) = await CliProcess.RunChartulaAsync(
             _directory,
             new Dictionary<string, string?>
             {

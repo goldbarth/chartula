@@ -18,8 +18,22 @@ internal sealed class StubCommitReader(DateOnly? taggedAt = null) : IReleaseComm
 
     private readonly DateOnly? _taggedAt = taggedAt ?? DefaultTagDate;
 
-    public Task<CommitRange> ReadReleaseCommitsAsync(string tag, CancellationToken cancellationToken = default)
-        => Task.FromResult(new CommitRange(tag, null, [new CommitInfo("sha", "feat: add search")], _taggedAt));
+    /// <summary>What the pipeline passed as the release start.</summary>
+    public string? Since { get; private set; }
+
+    /// <summary>
+    /// A range bounded by a previous tag, as for any release after the first; a test
+    /// about the first one sets <see cref="WholeHistory"/>.
+    /// </summary>
+    public bool WholeHistory { get; init; }
+
+    public Task<CommitRange> ReadReleaseCommitsAsync(
+        string tag, string? since = null, CancellationToken cancellationToken = default)
+    {
+        Since = since;
+        string? from = since ?? (WholeHistory ? null : "v0.9.0");
+        return Task.FromResult(new CommitRange(tag, from, [new CommitInfo("sha", "feat: add search")], _taggedAt));
+    }
 }
 
 internal sealed class StubPullRequestReader : IReleasePullRequestReader

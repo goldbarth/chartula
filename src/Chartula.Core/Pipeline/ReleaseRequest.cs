@@ -39,4 +39,20 @@ public sealed record ReleaseRequest(string Tag, RepositoryCoordinates Repository
     /// </para>
     /// </summary>
     public IReadOnlyCollection<Audience>? Audiences { get; init; }
+
+    /// <summary>
+    /// The tag or commit the release starts after, or <c>null</c> to start after
+    /// the previous tag. Where a release starts is a fact decision, so it is the
+    /// operator's to name - on a first tag there is nothing else to start from.
+    /// </summary>
+    public string? Since { get; init; }
+
+    /// <summary>
+    /// Whether a range that spans all history may be rendered. A first tag with no
+    /// <see cref="Since"/> has such a range, and rendered as it is, it reads as a
+    /// development log: intermediate states next to the changes that replaced
+    /// them. So it is refused unless asked for, for a project whose history is the
+    /// release.
+    /// </summary>
+    public bool WholeHistory { get; init; }
 }

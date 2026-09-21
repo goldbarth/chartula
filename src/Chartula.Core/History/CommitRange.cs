@@ -1,13 +1,14 @@
 namespace Chartula.Core.History;
 
 /// <summary>
-/// The commits belonging to a release: everything after the previous tag up to
-/// and including the release tag. When there is no previous tag, this is the
-/// first release and spans all history up to the tag.
+/// The commits belonging to a release: everything after its start up to and
+/// including the release tag. The start is the previous tag, or a ref the operator
+/// named; with neither, the range is all history up to the tag.
 /// </summary>
 /// <param name="ToTag">The release tag the commits belong to.</param>
-/// <param name="FromTag">
-/// The previous tag the range starts after, or <c>null</c> for the first release.
+/// <param name="From">
+/// The tag or commit the range starts after, or <c>null</c> when it spans all
+/// history - a first tag with no start named.
 /// </param>
 /// <param name="Commits">The commits in the range.</param>
 /// <param name="TaggedAt">
@@ -19,10 +20,10 @@ namespace Chartula.Core.History;
 /// </param>
 public sealed record CommitRange(
     string ToTag,
-    string? FromTag,
+    string? From,
     IReadOnlyList<CommitInfo> Commits,
     DateOnly? TaggedAt = null)
 {
-    /// <summary>True when there is no previous tag and the range is all history.</summary>
-    public bool IsFirstRelease => FromTag is null;
+    /// <summary>True when nothing bounds the range and it is all history.</summary>
+    public bool IsWholeHistory => From is null;
 }

@@ -19,20 +19,14 @@ public sealed class PlantedGitTests : IDisposable
         await GitAsync("remote", "add", "origin", "git@github.com:owner/name.git");
         string marker = Plant();
 
-        (int exitCode, string error) = await RunChartulaAsync("preview");
+        (int exitCode, _, string error) = await RunChartulaAsync("preview");
 
         Assert.False(File.Exists(marker), "The planted git ran.");
         Assert.Equal(1, exitCode);
         Assert.Contains("no tag is reachable from HEAD", error);
     }
 
-    public void Dispose()
-    {
-        if (Directory.Exists(_checkout))
-        {
-            Directory.Delete(_checkout, recursive: true);
-        }
-    }
+    public void Dispose() => TestDirectory.Delete(_checkout);
 
     /// <summary>
     /// Plants a git in the checkout and returns the file it leaves behind when run.
@@ -56,7 +50,7 @@ public sealed class PlantedGitTests : IDisposable
         return marker;
     }
 
-    private Task<(int ExitCode, string Error)> RunChartulaAsync(params string[] arguments)
+    private Task<CliResult> RunChartulaAsync(params string[] arguments)
         => CliProcess.RunChartulaAsync(
             _checkout,
             new Dictionary<string, string?>
@@ -71,7 +65,7 @@ public sealed class PlantedGitTests : IDisposable
     // before the plant exists.
     private async Task GitAsync(params string[] arguments)
     {
-        (int exitCode, string error) = await CliProcess.RunAsync("git", _checkout, arguments);
+        (int exitCode, _, string error) = await CliProcess.RunAsync("git", _checkout, arguments);
         Assert.True(exitCode == 0, $"git {string.Join(' ', arguments)} failed: {error}");
     }
 }

@@ -39,6 +39,12 @@ internal static class Program
             return 1;
         }
 
+        if (!ReleaseStart.TryParse(args, out ReleaseStart start, out string? startError))
+        {
+            Console.Error.WriteLine(startError);
+            return 1;
+        }
+
         IConfiguration configuration;
         ServiceProvider services;
         try
@@ -81,7 +87,12 @@ internal static class Program
             return await ReleaseCommand.RunAsync(
                 pipeline,
                 mode.Value,
-                new ReleaseRequest(target.Tag, target.Repository) { Audiences = audiences },
+                new ReleaseRequest(target.Tag, target.Repository)
+                {
+                    Audiences = audiences,
+                    Since = start.Since,
+                    WholeHistory = start.WholeHistory,
+                },
                 Console.Out,
                 CancellationToken.None);
         }
@@ -152,6 +163,11 @@ internal static class Program
           --tag <tag>    The release tag. Default: the nearest tag reachable from HEAD.
           --repo <o/n>   The GitHub repository, as owner/name. Default: read from
                          the 'origin' remote.
+          --since <ref>  Start the release after this tag or commit instead of the
+                         previous tag. A first tag needs this or --whole-history.
+          --whole-history
+                         Render a first tag's whole history, e.g. for a project
+                         whose history is the release.
           --no-publish   Write changelog.json and CHANGELOG.md, but publish no release notes.
           --audience <a> Render only this audience: technical, customer or product.
                          Repeat it, or separate them with commas. All three by
