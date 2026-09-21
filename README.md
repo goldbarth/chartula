@@ -125,7 +125,8 @@ This provider is **experimental** - see [Running against your own endpoint](docs
 
 A run starts without `GITHUB_TOKEN` and says so, because a small release still fits: GitHub allows 60 API requests an hour per IP address unauthenticated, and a run spends roughly one per pull request.
 Beyond that the run fails partway through with a 403, and the budget is shared with everything else reaching GitHub from that address.
-A token raises the limit to 5000 an hour - `export GITHUB_TOKEN=$(gh auth token)` is enough if you have the GitHub CLI.
+A token raises the limit to 5000 an hour.
+Use a fine-grained token scoped to the repository, with Contents and Pull requests read-only, and Contents read and write once you publish release notes - see [A GitHub token](docs/cli.md#a-github-token).
 
 `generate` writes four outputs:
 

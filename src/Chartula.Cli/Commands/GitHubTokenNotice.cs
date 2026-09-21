@@ -20,6 +20,13 @@ internal static class GitHubTokenNotice
     private const int AuthenticatedRequestsPerHour = 5000;
 
     /// <summary>
+    /// Where a fine-grained token is created. Named rather than <c>gh auth token</c>,
+    /// which is the user's broadest credential - read and write to every repository
+    /// they can reach - handed to a process that reads repository content.
+    /// </summary>
+    private const string NewTokenUrl = "https://github.com/settings/personal-access-tokens/new";
+
+    /// <summary>
     /// The notice for a run configured this way, or <c>null</c> when a token is
     /// present and there is nothing to warn about. The environment variable is
     /// named as configured, so the message stays true when it was renamed.
@@ -39,7 +46,9 @@ internal static class GitHubTokenNotice
               GitHub allows {UnauthenticatedRequestsPerHour} requests an hour per IP address without one, and a run
               spends roughly one per pull request, so a release can exhaust the budget
               partway through. A token raises the limit to {AuthenticatedRequestsPerHour}.
-              Set one with: export {variable}=$(gh auth token)
+              Create a fine-grained token for this repository at {NewTokenUrl}
+              with Contents and Pull requests read-only (Contents read and write to publish
+              release notes), then: export {variable}=<token>
             """;
     }
 }

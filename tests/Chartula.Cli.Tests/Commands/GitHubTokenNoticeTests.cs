@@ -35,6 +35,9 @@ public sealed class GitHubTokenNoticeTests
         Assert.Contains("60", notice);
         Assert.Contains("5000", notice);
         Assert.Contains("export GITHUB_TOKEN=", notice);
+        Assert.Contains("fine-grained", notice);
+        Assert.Contains("https://github.com/settings/personal-access-tokens/new", notice);
+        Assert.DoesNotContain("gh auth token", notice);
     }
 
     [Fact]
