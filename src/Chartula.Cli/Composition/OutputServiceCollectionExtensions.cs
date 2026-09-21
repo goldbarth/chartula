@@ -1,4 +1,3 @@
-using System.Reflection;
 using Chartula.Cli.Configuration;
 using Chartula.Core.Prompting;
 using Chartula.Core.Serialization;
@@ -28,8 +27,7 @@ internal static class OutputServiceCollectionExtensions
     // instructions and model it rendered with.
     internal static RunProvenance Provenance(LlmOptions llm)
         => new(
-            typeof(OutputServiceCollectionExtensions).Assembly
-                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion,
+            ToolVersion.Informational,
             llm.Provider,
             llm.Model,
             ChangelogPromptBuilder.PromptHash);

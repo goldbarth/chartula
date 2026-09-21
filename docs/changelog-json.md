@@ -78,7 +78,7 @@ Endpoint hosts, flags and check verdicts are deliberately not recorded: the file
     "product": "- Dark mode toggle added."
   },
   "provenance": {
-    "toolVersion": "0.1.0-alpha+2c43772833e4ed32790e5549848f7f42bc0e4eee",
+    "toolVersion": "0.1.0-preview.1+2c43772833e4ed32790e5549848f7f42bc0e4eee",
     "provider": "anthropic",
     "model": "claude-sonnet-5",
     "promptHash": "sha256:3f1c...e9a0"
