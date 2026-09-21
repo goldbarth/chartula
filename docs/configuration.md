@@ -64,7 +64,7 @@ These are the ones Chartula is built for.
 | --- | --- | --- | --- | --- |
 | `claude-opus-5` | $5 / $25 | 1M | 128K | The current top tier. |
 | `claude-opus-4-8` | $5 / $25 | 1M | 128K | |
-| `claude-sonnet-5` | $3 / $15 | 1M | 128K | The default. $2 / $10 introductory through 2026-08-31. |
+| `claude-sonnet-5` | $2 / $10 | 1M | 128K | The default. |
 | `claude-haiku-4-5` | $1 / $5 | 200K | 64K | The cheapest. Keep `maxOutputTokens` at or below 64000. |
 
 Prices are Anthropic's first-party rates as of 2026-07-31 and change over time; treat the table as a starting point, not a quote.
@@ -306,6 +306,39 @@ The faithfulness checks. The rule-based check always runs and is not configurabl
 | `thorough` | `true` | Whether the thorough (second-pass LLM) check runs. |
 
 Every run reports what each check caught and what it cost - see [`run-metrics.md`](run-metrics.md) for deciding whether the thorough check earns its tokens.
+
+### `cost`
+
+What a run may spend. Nothing here is required: without a ceiling every run is estimated and none is refused.
+
+| Key | Default | Description |
+| --- | --- | --- |
+| `ceiling` | none | The most a run may cost, in US dollars. A run whose estimate is above it stops before the first model call. |
+| `inputPerMillionTokens` | from the price table | The price of a million input tokens, in US dollars. Set together with `outputPerMillionTokens`. |
+| `outputPerMillionTokens` | from the price table | The price of a million output tokens, thinking included. |
+
+Before the first model call, every run prints an estimate to stderr - per call and in total, and in dollars when the model's price is known:
+
+```console
+Estimate before the first model call - an upper bound, not a forecast:
+  rephrase technical         at most     6,402 in,    32,000 out
+  thorough check technical   at most    39,008 in,    32,000 out
+  rephrase customer          at most    10,150 in,    32,000 out
+  thorough check customer    at most    38,903 in,    32,000 out
+  Total, 4 calls             at most    94,463 in,   128,000 out = at most $1.47 (claude-sonnet-5 at $2.00 / $10.00 per million tokens)
+  Output is counted at llm.maxOutputTokens (32,000 per call), the provider's hard cap; a call typically uses a small part of it.
+```
+
+The estimate is an upper bound, so a run under the ceiling cannot cost more than it - and it is loose, so it is not what the bill will say:
+
+- Input is counted as the prompt's UTF-8 bytes, plus the response schema and 1,000 tokens per call for what the provider adds. No tokenizer produces more tokens than bytes; real prose runs about four characters to a token.
+- Output is counted at `llm.maxOutputTokens` per call, the only number the provider enforces, although a call uses a small part of it. Lowering `llm.maxOutputTokens` tightens the estimate more than anything else - but a ceiling too low for the thinking a model does leaves no text, see `maxOutputTokens` above.
+- A thorough check is counted even when the rendering it would check fails.
+
+On this repository's `0.1.0-preview.1` with all three audiences, the estimate was $3.60 against a measured $0.25.
+
+The price table knows `claude-opus-5` and `claude-opus-4-8` ($5 / $25), `claude-sonnet-5` ($2 / $10) and `claude-haiku-4-5` ($1 / $5), at Anthropic's first-party rates, and only when no `Chartula__Llm__BaseUrl` points elsewhere.
+Any other model has no price: the estimate stays in tokens, and a `ceiling` refuses the run until `inputPerMillionTokens` and `outputPerMillionTokens` are set, since a ceiling it cannot check would otherwise pass silently.
 
 ### `review`
 

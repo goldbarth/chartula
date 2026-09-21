@@ -97,3 +97,12 @@
 # Review mode - present generated texts for sign-off before writing.
 # review:
 #   enabled: false
+
+# What a run may spend. Every run prints an upper bound of its cost before the
+# first model call; a run whose bound is above ceiling (US dollars) stops there,
+# having spent nothing. The price table knows Anthropic's models; for any other,
+# set both prices, or a ceiling refuses the run. See docs/configuration.md, "cost".
+# cost:
+#   ceiling: 2.00
+#   inputPerMillionTokens: 2
+#   outputPerMillionTokens: 10
