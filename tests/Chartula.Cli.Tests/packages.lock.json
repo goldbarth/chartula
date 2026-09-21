@@ -261,7 +261,7 @@
         "resolved": "18.1.0",
         "contentHash": "5K+9KFg2TdTl7VXv88Qzi/0lqK6JFoNP3lRuImPYGRV7K/QYklDyTrj4+A+KAki1JsQi6qKY+hDyY7d6WRqjrw=="
       },
-      "Chartula": {
+      "chartula": {
         "type": "Project",
         "dependencies": {
           "Anthropic": "[12.49.0, )",
@@ -286,6 +286,12 @@
           "Chartula.Core": "[1.0.0, )"
         }
       }
-    }
+    },
+    "net10.0/linux-arm64": {},
+    "net10.0/linux-x64": {},
+    "net10.0/osx-arm64": {},
+    "net10.0/osx-x64": {},
+    "net10.0/win-arm64": {},
+    "net10.0/win-x64": {}
   }
 }
