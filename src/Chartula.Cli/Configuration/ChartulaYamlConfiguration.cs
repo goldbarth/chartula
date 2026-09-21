@@ -27,9 +27,9 @@ internal static class ChartulaYamlConfiguration
     /// <summary>The keys the file may not set, each with the variable that sets it instead.</summary>
     private static readonly Dictionary<string, string> EnvironmentOnlyKeys = new(StringComparer.OrdinalIgnoreCase)
     {
-        [$"{LlmOptions.SectionName}:BaseUrl"] = "Chartula__Llm__BaseUrl",
+        [$"{LlmOptions.SectionName}:BaseUrl"] = LlmOptions.BaseUrlVariable,
         [$"{LlmOptions.SectionName}:ApiKeyEnvironmentVariable"] = "Chartula__Llm__ApiKeyEnvironmentVariable",
-        [$"{GitHubOptions.SectionName}:ApiBaseUrl"] = "Chartula__GitHub__ApiBaseUrl",
+        [$"{GitHubOptions.SectionName}:ApiBaseUrl"] = GitHubOptions.ApiBaseUrlVariable,
         [$"{GitHubOptions.SectionName}:TokenEnvironmentVariable"] = "Chartula__GitHub__TokenEnvironmentVariable",
     };
 

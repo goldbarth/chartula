@@ -10,6 +10,9 @@ public sealed class LlmOptions
     /// <summary>Configuration section these options bind to.</summary>
     public const string SectionName = "Chartula:Llm";
 
+    /// <summary>The environment variable that sets <see cref="BaseUrl"/>, the only place it can be set.</summary>
+    public const string BaseUrlVariable = "Chartula__Llm__BaseUrl";
+
     /// <summary>
     /// The provider to use: <c>anthropic</c> or <c>openai-compatible</c>. See
     /// <see cref="LlmProviderParser"/>.

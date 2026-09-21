@@ -147,18 +147,34 @@ public sealed class LlmWiringTests
     [Fact]
     public void An_unusable_endpoint_is_rejected_by_name()
     {
-        ServiceProvider services = Build(
+        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() => Build(
             """
             llm:
               provider: openai-compatible
               model: qwen3:8b
             """,
-            environment: ("Chartula__Llm__BaseUrl", "localhost:11434"));
-
-        InvalidOperationException error =
-            Assert.Throws<InvalidOperationException>(services.GetRequiredService<IChatClient>);
+            environment: ("Chartula__Llm__BaseUrl", "localhost:11434")));
 
         Assert.Contains("localhost:11434", error.Message);
+    }
+
+    // Refused at startup for either provider: a proxy in front of the Anthropic API
+    // receives the key as much as an OpenAI-compatible endpoint does.
+    [Theory]
+    [InlineData("anthropic")]
+    [InlineData("openai-compatible")]
+    public void An_http_endpoint_on_another_machine_is_refused_before_the_run(string provider)
+    {
+        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() => Build(
+            $"""
+             llm:
+               provider: {provider}
+               model: some-model
+             """,
+            environment: ("Chartula__Llm__BaseUrl", "http://192.168.1.10:11434/v1")));
+
+        Assert.Contains("Chartula__Llm__BaseUrl", error.Message);
+        Assert.Contains("cleartext", error.Message);
     }
 
     // The endpoints this provider exists for need no key at all. Refusing to build a
