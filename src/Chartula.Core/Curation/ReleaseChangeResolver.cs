@@ -30,7 +30,7 @@ public sealed class ReleaseChangeResolver : IReleaseChangeResolver
         // degrade to commit data - that is the "no clean PRs" fallback.
         if (pullRequests.Count > 0)
         {
-            return pullRequests.Select(FromPullRequest).ToArray();
+            return RevertPairing.Apply(range, pullRequests).Select(FromPullRequest).ToArray();
         }
 
         return range.Commits.Select(FromCommit).ToArray();

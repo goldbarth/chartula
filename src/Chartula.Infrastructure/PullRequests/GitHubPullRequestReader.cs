@@ -20,32 +20,44 @@ public sealed class GitHubPullRequestReader(HttpClient httpClient) : IReleasePul
         ArgumentNullException.ThrowIfNull(repository);
         ArgumentNullException.ThrowIfNull(range);
 
-        List<PullRequestInfo> pullRequests = [];
-        HashSet<int> seen = [];
+        // In the order first seen, with every commit of the range that belongs to each:
+        // a revert that names commits is paired with pull requests through them.
+        List<GitHubPullRequestDto> merged = [];
+        Dictionary<int, List<string>> commitsByPull = [];
 
         foreach (CommitInfo commit in range.Commits)
         {
             foreach (GitHubPullRequestDto dto in await GetPullsForCommitAsync(repository, commit.Sha, cancellationToken))
             {
                 // Merged pull requests only, de-duplicated across commits.
-                if (dto.MergedAt is null || !seen.Add(dto.Number))
+                if (dto.MergedAt is null)
                 {
                     continue;
                 }
 
-                pullRequests.Add(new PullRequestInfo(
-                    dto.Number,
-                    dto.Title ?? string.Empty,
-                    string.IsNullOrEmpty(dto.Body) ? null : dto.Body,
-                    dto.Labels?
-                        .Select(label => label.Name ?? string.Empty)
-                        .Where(name => name.Length > 0)
-                        .ToArray() ?? [],
-                    dto.HtmlUrl ?? string.Empty));
+                if (!commitsByPull.TryGetValue(dto.Number, out List<string>? commits))
+                {
+                    commits = [];
+                    commitsByPull[dto.Number] = commits;
+                    merged.Add(dto);
+                }
+
+                commits.Add(commit.Sha);
             }
         }
 
-        return pullRequests;
+        return [.. merged.Select(dto => new PullRequestInfo(
+            dto.Number,
+            dto.Title ?? string.Empty,
+            string.IsNullOrEmpty(dto.Body) ? null : dto.Body,
+            dto.Labels?
+                .Select(label => label.Name ?? string.Empty)
+                .Where(name => name.Length > 0)
+                .ToArray() ?? [],
+            dto.HtmlUrl ?? string.Empty)
+        {
+            CommitShas = commitsByPull[dto.Number],
+        })];
     }
 
     private async Task<GitHubPullRequestDto[]> GetPullsForCommitAsync(

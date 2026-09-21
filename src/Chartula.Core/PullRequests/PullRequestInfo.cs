@@ -15,4 +15,12 @@ public sealed record PullRequestInfo(
     string Title,
     string? Description,
     IReadOnlyList<string> Labels,
-    string Url);
+    string Url)
+{
+    /// <summary>
+    /// The commits in the release range that belong to this pull request, as full
+    /// hashes. It is how a revert that names commits is paired with the pull
+    /// requests it takes back; empty when the source did not say.
+    /// </summary>
+    public IReadOnlyList<string> CommitShas { get; init; } = [];
+}

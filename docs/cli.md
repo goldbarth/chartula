@@ -147,8 +147,13 @@ Error: v0.1.0 is the first tag, so its range is the whole history (69 commits).
 Passing both is refused, since they answer the same question two ways.
 Adopting Chartula on a project with a long history usually means `--since` on the first run, pointing at the last state that was already shipped; every later tag starts after its predecessor on its own.
 
-Within any range, a change that a later change in the same range reverted or replaced is still rendered as an entry of its own.
-Chartula cannot tell that one pull request undoes another without reading their meaning, which would put a fact decision into the model.
+A revert that names what it takes back is paired with it: when both are in the same range, neither is rendered, since the change never shipped.
+It counts as named when the revert's title or description has a commit hash of at least seven characters that matches exactly one commit in the range (`This reverts commit ...`, `Reverts d85a4b9, bc826ba`), or GitHub's `Reverts owner/repo#N`.
+A revert that names anything outside the range, or nothing recognisable, takes back what it could match and stays as an entry of its own, so a removal a reader may have met is never hidden.
+A pull request number in prose (`the waterfall from #61`) does not count: it is as often context as a target.
+
+Beyond that, a change that a later change in the same range replaced without reverting it is still rendered as an entry of its own.
+Chartula cannot tell that one pull request supersedes another without reading their meaning, which would put a fact decision into the model.
 
 ## Environment
 
