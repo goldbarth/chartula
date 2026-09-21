@@ -38,7 +38,7 @@ A `1.0.0` pre-release would promise that the shape of 1.0 is already known, and 
   No `alpha` or `beta` labels are used in version numbers, to keep the signal to users simple: "not yet stable" is the only distinction that matters before 1.0.
   The project calls this phase "alpha" in prose; the version number does not repeat it.
 - **Why a suffix on a `0.y.z` version:** the suffix says "not yet stable" in the version itself, wherever the version appears.
-  The GitHub release is marked as a pre-release to match, so it is never shown as the latest release.
+  The GitHub release itself is not marked as a pre-release: the suffix says it already, and only a release GitHub counts as latest can be installed through the stable `releases/latest/download` link the install script uses.
 - **Incrementing:** each new pre-release build increments `N` by one (`preview.1` -> `preview.2` -> `preview.3`, …). `N` never resets while still pre-1.0.0, and no meaning is attached to the number itself beyond ordering.
 - **What triggers a new preview:** any change worth shipping, feature or fix, ships as the next `preview.N`. There is no separate PATCH/MINOR tracking underneath the preview label.
 - **Exit criteria - when preview ends and `1.0.0` ships:**
@@ -86,7 +86,7 @@ It is announced ahead of time, and a migration note ships with the release (see 
 
 1. Set `Version` in the csproj to the next version, in a pull request like any other change.
 2. After it is merged, tag the merge commit on `main` and push the tag (`v0.1.0-preview.2`).
-3. `.github/workflows/release.yml` refuses a tag that does not match the csproj or is not on `main`, runs CI on the tagged commit, builds and smoke-tests each binary on a runner of its own platform, and creates a draft pre-release with the binaries, `SHA256SUMS` and the attestations.
+3. `.github/workflows/release.yml` refuses a tag that does not match the csproj or is not on `main`, runs CI on the tagged commit, builds and smoke-tests each binary on a runner of its own platform, and creates a draft release with the binaries, `SHA256SUMS` and the attestations.
 4. `chartula generate` for the tag writes the notes into that draft; a person reads them and publishes the release.
 
 **Version string formatting**
