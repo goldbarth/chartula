@@ -9,7 +9,7 @@ namespace Chartula.Infrastructure.History;
 /// native git dependencies, which matters for the native-AOT binaries on the
 /// roadmap.
 /// </summary>
-public sealed class GitCliCommitReader(string repositoryPath) : IReleaseCommitReader
+public sealed class GitCliCommitReader(GitExecutable git, string repositoryPath) : IReleaseCommitReader
 {
     // ASCII unit separator: a field delimiter that cannot appear in a hash or a
     // commit subject. Emitted by git's %x1f format token, split on here.
@@ -94,5 +94,5 @@ public sealed class GitCliCommitReader(string repositoryPath) : IReleaseCommitRe
     private Task<GitResult> RunGitAsync(
         IReadOnlyList<string> arguments,
         CancellationToken cancellationToken)
-        => GitCli.RunAsync(repositoryPath, arguments, cancellationToken);
+        => GitCli.RunAsync(git, repositoryPath, arguments, cancellationToken);
 }

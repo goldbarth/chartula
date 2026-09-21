@@ -4,18 +4,19 @@ namespace Chartula.Infrastructure.History;
 
 /// <summary>
 /// Runs the <c>git</c> CLI in a directory. Shared by every reader that shells out,
-/// so a missing git fails with the same message wherever it is first needed.
+/// so a git that cannot start fails with the same message wherever it is first needed.
 /// </summary>
 internal static class GitCli
 {
     public static async Task<GitResult> RunAsync(
+        GitExecutable git,
         string workingDirectory,
         IReadOnlyList<string> arguments,
         CancellationToken cancellationToken)
     {
         ProcessStartInfo startInfo = new()
         {
-            FileName = "git",
+            FileName = git.Path,
             WorkingDirectory = workingDirectory,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -34,7 +35,7 @@ internal static class GitCli
         catch (Exception ex)
         {
             throw new InvalidOperationException(
-                "Could not start 'git'. Is Git installed and on the PATH?", ex);
+                $"Could not start git at '{git.Path}'.", ex);
         }
 
         Task<string> standardOutput = process.StandardOutput.ReadToEndAsync(cancellationToken);

@@ -14,7 +14,7 @@ public sealed class GitCliRepositoryReaderTests
         repo.Tag("v1.1.0");
         repo.Commit("C");
 
-        Assert.Equal("v1.1.0", await new GitCliRepositoryReader(repo.Path).ReadNearestTagAsync());
+        Assert.Equal("v1.1.0", await new GitCliRepositoryReader(GitExecutable.FromPath(), repo.Path).ReadNearestTagAsync());
     }
 
     [Fact]
@@ -23,7 +23,7 @@ public sealed class GitCliRepositoryReaderTests
         using TempGitRepository repo = new();
         repo.Commit("A");
 
-        Assert.Null(await new GitCliRepositoryReader(repo.Path).ReadNearestTagAsync());
+        Assert.Null(await new GitCliRepositoryReader(GitExecutable.FromPath(), repo.Path).ReadNearestTagAsync());
     }
 
     [Fact]
@@ -32,7 +32,7 @@ public sealed class GitCliRepositoryReaderTests
         using TempGitRepository repo = new();
         repo.Run("remote", "add", "origin", "git@github.com:owner/name.git");
 
-        Assert.Equal("git@github.com:owner/name.git", await new GitCliRepositoryReader(repo.Path).ReadRemoteUrlAsync("origin"));
+        Assert.Equal("git@github.com:owner/name.git", await new GitCliRepositoryReader(GitExecutable.FromPath(), repo.Path).ReadRemoteUrlAsync("origin"));
     }
 
     [Fact]
@@ -42,7 +42,7 @@ public sealed class GitCliRepositoryReaderTests
         Directory.CreateDirectory(directory);
         try
         {
-            GitCliRepositoryReader reader = new(directory);
+            GitCliRepositoryReader reader = new(GitExecutable.FromPath(), directory);
 
             Assert.Null(await reader.ReadNearestTagAsync());
             Assert.Null(await reader.ReadRemoteUrlAsync("origin"));
