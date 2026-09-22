@@ -41,4 +41,20 @@ public sealed class EndpointNoticeTests
         Assert.Contains("openai-compatible at https://api.groq.com/openai/v1, key from GROQ_API_KEY", notice);
         Assert.DoesNotContain("secret", notice);
     }
+
+    // #87: what the run asked the model for, resolved to the name the provenance
+    // records, so the terminal and the files agree.
+    [Theory]
+    [InlineData(null, "provider-default")]
+    [InlineData("off", "disabled")]
+    [InlineData("adaptive", "high")]
+    [InlineData("xhigh", "xhigh")]
+    public void Names_the_model_and_the_resolved_thinking_mode(string? configured, string resolved)
+    {
+        string notice = configured is null
+            ? Notice(("Chartula__Llm__Model", "claude-sonnet-5"))
+            : Notice(("Chartula__Llm__Model", "claude-sonnet-5"), ("Chartula__Llm__Thinking", configured));
+
+        Assert.Contains($"claude-sonnet-5, thinking {resolved}", notice);
+    }
 }

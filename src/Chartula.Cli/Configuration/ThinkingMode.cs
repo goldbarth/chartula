@@ -1,30 +1,39 @@
 namespace Chartula.Cli.Configuration;
 
 /// <summary>
-/// Whether the model reasons before it answers. Thinking is billed as output
-/// tokens, so this is a cost knob as much as a quality one.
+/// How much the model reasons before it answers, in one vocabulary for every
+/// provider. Each adapter translates it to its own mechanism - Anthropic's thinking
+/// and effort, OpenAI's <c>reasoning_effort</c> - so the same value in
+/// <c>chartula.yaml</c> asks for the same thing whichever provider serves it.
+/// Reasoning is billed as output tokens, so this is a cost knob as much as a
+/// quality one.
 /// </summary>
 public enum ThinkingMode
 {
     /// <summary>
     /// Send nothing, and let each model apply its own default. Models disagree about
-    /// what that means - some think, some do not - so this is the only mode whose
+    /// what that means - some reason, some do not - so this is the only mode whose
     /// behavior depends on the configured model.
     /// </summary>
     ProviderDefault,
 
-    /// <summary>
-    /// No thinking. Accepted by the models Chartula documents; Claude Fable 5 rejects
-    /// an explicit off and wants the field omitted instead, so pair it with
-    /// <see cref="ProviderDefault"/> there.
-    /// </summary>
+    /// <summary>No reasoning.</summary>
     Disabled,
 
+    /// <summary>Reasoning at low effort.</summary>
+    Low,
+
+    /// <summary>Reasoning at medium effort.</summary>
+    Medium,
+
     /// <summary>
-    /// Adaptive thinking - the model decides how much to think. Claude 4.6 and newer
-    /// only. Older models, Haiku 4.5 among them, have no adaptive mode and reject it.
+    /// Reasoning at high effort. What Anthropic's adaptive thinking does when no
+    /// effort is given, so <c>adaptive</c> reads as this.
     /// </summary>
-    Adaptive,
+    High,
+
+    /// <summary>Reasoning at the highest effort both providers name (<c>xhigh</c>).</summary>
+    ExtraHigh,
 }
 
 /// <summary>
@@ -52,11 +61,16 @@ public static class ThinkingModeParser
         return normalized switch
         {
             "providerdefault" or "default" => ThinkingMode.ProviderDefault,
-            "disabled" or "off" or "false" => ThinkingMode.Disabled,
-            "adaptive" or "on" or "true" => ThinkingMode.Adaptive,
+            "disabled" or "off" or "false" or "none" => ThinkingMode.Disabled,
+            "low" => ThinkingMode.Low,
+            "medium" => ThinkingMode.Medium,
+            // adaptive and on predate the effort levels; both meant thinking at the
+            // provider's default depth, which is high.
+            "high" or "adaptive" or "on" or "true" => ThinkingMode.High,
+            "xhigh" or "extrahigh" => ThinkingMode.ExtraHigh,
             _ => throw new InvalidOperationException(
-                $"Unknown llm.thinking value '{value}'. Valid values: provider-default, disabled, adaptive " +
-                "(aliases: default, off, on)."),
+                $"Unknown llm.thinking value '{value}'. Valid values: provider-default, disabled, low, medium, " +
+                "high, xhigh (aliases: default, off, adaptive, on)."),
         };
     }
 
@@ -65,7 +79,10 @@ public static class ThinkingModeParser
     {
         ThinkingMode.ProviderDefault => "provider-default",
         ThinkingMode.Disabled => "disabled",
-        ThinkingMode.Adaptive => "adaptive",
+        ThinkingMode.Low => "low",
+        ThinkingMode.Medium => "medium",
+        ThinkingMode.High => "high",
+        ThinkingMode.ExtraHigh => "xhigh",
         _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null),
     };
 }

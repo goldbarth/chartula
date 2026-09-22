@@ -46,10 +46,10 @@ public sealed class LlmOptions
     public int MaxOutputTokens { get; init; } = 32_000;
 
     /// <summary>
-    /// Whether the model thinks before answering: <c>provider-default</c>,
-    /// <c>disabled</c>, or <c>adaptive</c>. Unset leaves each model on its own
-    /// default, which is not the same across models - see
-    /// <see cref="ThinkingModeParser"/>.
+    /// How much the model reasons before answering: <c>provider-default</c>,
+    /// <c>disabled</c>, <c>low</c>, <c>medium</c>, <c>high</c> or <c>xhigh</c>, the same
+    /// for every provider. Unset leaves each model on its own default, which is not the
+    /// same across models - see <see cref="ThinkingModeParser"/>.
     /// </summary>
     public string? Thinking { get; init; }
 }

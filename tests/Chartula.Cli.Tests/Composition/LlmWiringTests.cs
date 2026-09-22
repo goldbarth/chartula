@@ -200,25 +200,25 @@ public sealed class LlmWiringTests
         Assert.NotNull(Build("llm:\n  model: claude-haiku-4-5").GetRequiredService<IChatClient>());
     }
 
-    // Thinking travels in an Anthropic request type. Dropping the setting silently
-    // would bill differently than the user asked for, on a provider where the field
-    // has no meaning at all.
+    // #87: thinking is one setting for every provider, so an OpenAI-compatible run
+    // carries it like an Anthropic one instead of being refused.
     [Theory]
-    [InlineData("adaptive")]
-    [InlineData("disabled")]
-    public void Thinking_is_refused_for_the_openai_compatible_provider(string thinking)
+    [InlineData("disabled", ReasoningEffort.None)]
+    [InlineData("low", ReasoningEffort.Low)]
+    [InlineData("adaptive", ReasoningEffort.High)]
+    [InlineData("xhigh", ReasoningEffort.ExtraHigh)]
+    public void Thinking_is_carried_for_the_openai_compatible_provider(string thinking, ReasoningEffort expected)
     {
-        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() => Build(
+        ChatModelOptions options = Build(
             $"""
              llm:
                provider: openai-compatible
                model: qwen3:8b
                thinking: {thinking}
              """,
-            environment: LocalEndpoint));
+            environment: LocalEndpoint).GetRequiredService<ChatModelOptions>();
 
-        Assert.Contains("llm.thinking", error.Message);
-        Assert.Contains(thinking, error.Message);
+        Assert.Equal(expected, options.Reasoning?.Effort);
     }
 
     // The model check runs while the section is read, not on the first request.
@@ -229,7 +229,7 @@ public sealed class LlmWiringTests
             """
             llm:
               model: claude-haiku-4-5
-              thinking: adaptive
+              thinking: high
             """));
 
         Assert.Contains("claude-haiku-4-5", error.Message);
@@ -247,8 +247,8 @@ public sealed class LlmWiringTests
             """,
            environment: LocalEndpoint).GetRequiredService<ChatModelOptions>();
 
-        // Nothing is added to the request, which is exactly what makes it portable.
-        Assert.Null(options.RawRepresentationFactory);
+        // Nothing is added to the request, which leaves the endpoint on its own default.
+        Assert.Null(options.Reasoning);
     }
 
     [Fact]

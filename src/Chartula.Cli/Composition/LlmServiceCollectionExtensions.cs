@@ -29,7 +29,7 @@ internal static class LlmServiceCollectionExtensions
         services.AddSingleton(new ChatModelOptions
         {
             MaxOutputTokens = options.MaxOutputTokens,
-            RawRepresentationFactory = ThinkingFactory(provider, options),
+            Reasoning = Reasoning(provider, options),
         });
 
         // Last among the refusals: a setting that is wrong in chartula.yaml is named
@@ -126,33 +126,32 @@ internal static class LlmServiceCollectionExtensions
     }
 
     /// <summary>
-    /// The raw-representation hook that carries thinking, which only Anthropic has
-    /// here. The fragment it builds is an Anthropic request type, so handing it to
-    /// any other client would fail at the first call rather than at startup - hence
-    /// the explicit refusal instead of quietly dropping the setting the user made.
+    /// The configured thinking mode as the provider-neutral request field. Both
+    /// adapters translate it themselves - Anthropic to thinking plus effort, OpenAI to
+    /// <c>reasoning_effort</c> - so the same value means the same thing on either.
     /// </summary>
-    private static Func<IChatClient, object?>? ThinkingFactory(LlmProvider provider, LlmOptions options)
+    private static ReasoningOptions? Reasoning(LlmProvider provider, LlmOptions options)
     {
         ThinkingMode mode = ThinkingModeParser.Parse(options.Thinking);
 
         if (provider == LlmProvider.Anthropic)
         {
-            // The model and ceiling go in twice on purpose: once for the ordinary path,
-            // and once inside the fragment, which the adapter takes as given rather
-            // than merging. Both readings come from the same options so they cannot drift.
-            return AnthropicThinking.FactoryFor(mode, options.Model, options.MaxOutputTokens);
+            ClaudeThinkingSupport.EnsureModelAccepts(mode, options.Model);
         }
 
-        if (mode != ThinkingMode.ProviderDefault)
+        ReasoningEffort? effort = mode switch
         {
-            throw new InvalidOperationException(
-                $"llm.thinking '{options.Thinking}' is not supported with llm.provider " +
-                $"'{LlmProviderParser.ToConfigurationValue(provider)}'. Thinking is carried in a " +
-                "provider-specific request field that only Anthropic has here; remove the key, or " +
-                "set it to provider-default, and let the endpoint's own default apply.");
-        }
+            ThinkingMode.Disabled => ReasoningEffort.None,
+            ThinkingMode.Low => ReasoningEffort.Low,
+            ThinkingMode.Medium => ReasoningEffort.Medium,
+            ThinkingMode.High => ReasoningEffort.High,
+            ThinkingMode.ExtraHigh => ReasoningEffort.ExtraHigh,
+            _ => null,
+        };
 
-        return null;
+        // Provider default sends nothing at all: the absence is what leaves each model
+        // on its own behavior.
+        return effort is null ? null : new ReasoningOptions { Effort = effort };
     }
 
     private static IChatClient CreateChatClient(
