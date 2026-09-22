@@ -18,6 +18,7 @@ public sealed class RunMetrics : IRunMetrics
     private int _thoroughOnlyFlags;
     private int _thoroughNotEvaluated;
     private TimeSpan? _runDuration;
+    private ReleaseScope? _scope;
 
     public void RecordLlmCall(LlmOperation operation, LlmCall call)
     {
@@ -57,6 +58,16 @@ public sealed class RunMetrics : IRunMetrics
         lock (_gate)
         {
             _runDuration = duration;
+        }
+    }
+
+    public void RecordReleaseScope(ReleaseScope scope)
+    {
+        ArgumentNullException.ThrowIfNull(scope);
+
+        lock (_gate)
+        {
+            _scope = scope;
         }
     }
 
@@ -109,6 +120,7 @@ public sealed class RunMetrics : IRunMetrics
                 new Dictionary<LlmOperation, LlmUsage>(_llm))
             {
                 Duration = _runDuration,
+                Scope = _scope,
             };
         }
     }

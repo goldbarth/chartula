@@ -21,6 +21,10 @@ public sealed class NullRunMetrics : IRunMetrics
     {
     }
 
+    public void RecordReleaseScope(ReleaseScope scope)
+    {
+    }
+
     public void RecordFaithfulnessChecks(
         IReadOnlyCollection<string> ruleBasedFlags,
         IReadOnlyCollection<string> thoroughFlags,

@@ -163,4 +163,16 @@ public sealed class RunRecordJsonSerializerTests
         Assert.Equal(4_000, rephrase.GetProperty("cachedInputTokens").GetInt64());
         Assert.False(rephrase.TryGetProperty("reasoningTokens", out _));
     }
+
+    [Fact]
+    public void Writes_how_much_release_the_run_worked_on()
+    {
+        RunMetrics metrics = new();
+        metrics.RecordReleaseScope(new ReleaseScope(14, 10, 9, 7, 22_512));
+        RunRecord record = Record() with { Metrics = metrics.Snapshot() };
+
+        RunRecordMetrics written = RunRecordJsonSerializer.Deserialize(RunRecordJsonSerializer.Serialize(record, At)).Metrics;
+
+        Assert.Equal(new RunRecordRelease(14, 10, 9, 7, 22_512), written.Release);
+    }
 }

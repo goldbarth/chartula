@@ -62,6 +62,12 @@ public sealed class ReleasePipeline(
         IReadOnlyList<PullRequestInfo> pullRequests =
             await pullRequestReader.GetMergedPullRequestsAsync(request.Repository, range, cancellationToken);
         FactBase factBase = factBaseBuilder.Build(range, pullRequests);
+        _metrics.RecordReleaseScope(new ReleaseScope(
+            range.Commits.Count,
+            pullRequests.Count,
+            factBase.Changes.Count,
+            factBase.Changes.Count(static change => !string.IsNullOrWhiteSpace(change.Description)),
+            factBase.Changes.Sum(static change => (long)(change.Description?.Length ?? 0))));
 
         IReadOnlyDictionary<Audience, ChangelogGenerationResult> rendered =
             await renderer.RenderAsync(factBase, request.Audiences, cancellationToken);

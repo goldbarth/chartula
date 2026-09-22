@@ -17,6 +17,9 @@ public interface IRunMetrics
     /// <summary>Records how long the whole run took, from reading history to the last model call.</summary>
     void RecordRunDuration(TimeSpan duration);
 
+    /// <summary>Records how much release the run worked on, once its facts are established.</summary>
+    void RecordReleaseScope(ReleaseScope scope);
+
     /// <summary>
     /// Records one pass of both faithfulness checks over the same text. Passing both
     /// findings together is what lets the report tell which claims only the thorough
