@@ -1,5 +1,6 @@
 using Chartula.Cli.Composition;
 using Chartula.Cli.Configuration;
+using Chartula.Core.Observability;
 using Chartula.Core.Serialization;
 using Chartula.Infrastructure.Serialization;
 using Microsoft.Extensions.Configuration;
@@ -29,5 +30,6 @@ public sealed class OutputWiringTests
         Assert.IsType<FileChangelogJsonWriter>(services.GetRequiredService<IChangelogJsonWriter>());
         Assert.IsType<FileChangelogMarkdownWriter>(services.GetRequiredService<IChangelogMarkdownWriter>());
         Assert.IsType<FileCustomerPageWriter>(services.GetRequiredService<ICustomerPageWriter>());
+        Assert.IsType<FileRunRecordWriter>(services.GetRequiredService<IRunRecordWriter>());
     }
 }

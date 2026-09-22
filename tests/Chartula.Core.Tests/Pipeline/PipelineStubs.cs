@@ -3,6 +3,7 @@ using Chartula.Core.Faithfulness;
 using Chartula.Core.Generation;
 using Chartula.Core.History;
 using Chartula.Core.Llm;
+using Chartula.Core.Observability;
 using Chartula.Core.PullRequests;
 using Chartula.Core.Releases;
 using Chartula.Core.Rendering;
@@ -179,5 +180,16 @@ internal sealed class RecordingThoroughChecker : IThoroughFaithfulnessChecker
     {
         Checked.Add(output);
         return Task.FromResult(FaithfulnessReport.Checked([]));
+    }
+}
+
+internal sealed class SpyRunRecordWriter : IRunRecordWriter
+{
+    public List<RunRecord> Records { get; } = [];
+
+    public Task<string> WriteAsync(RunRecord record, CancellationToken cancellationToken = default)
+    {
+        Records.Add(record);
+        return Task.FromResult("chartula-runs/run.json");
     }
 }

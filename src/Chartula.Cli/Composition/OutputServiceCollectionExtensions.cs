@@ -1,5 +1,6 @@
 using Chartula.Cli.Configuration;
 using Chartula.Core.Facts;
+using Chartula.Core.Observability;
 using Chartula.Core.Prompting;
 using Chartula.Core.Serialization;
 using Chartula.Infrastructure.Serialization;
@@ -23,12 +24,18 @@ internal static class OutputServiceCollectionExtensions
         FactBaseOptions factBase = configuration.GetSection(FactBaseOptions.SectionName).Get<FactBaseOptions>()
                                    ?? new FactBaseOptions();
 
-        services.AddSingleton<IChangelogJsonWriter>(sp => new FileChangelogJsonWriter(
-            Directory.GetCurrentDirectory(),
-            Provenance(
+        RunProvenance ProvenanceOf(IServiceProvider sp)
+            => Provenance(
                 sp.GetRequiredService<LlmOptions>(),
                 faithfulness.Thorough,
-                FactBaseDepthParser.Parse(factBase.Depth))));
+                FactBaseDepthParser.Parse(factBase.Depth));
+
+        services.AddSingleton<IChangelogJsonWriter>(
+            sp => new FileChangelogJsonWriter(Directory.GetCurrentDirectory(), ProvenanceOf(sp)));
+        // The run record says what the run was made with in the same terms as the
+        // file it wrote, so the two can be matched without a second source.
+        services.AddSingleton<IRunRecordWriter>(
+            sp => new FileRunRecordWriter(Directory.GetCurrentDirectory(), ProvenanceOf(sp)));
         services.AddSingleton<IChangelogMarkdownWriter>(
             _ => new FileChangelogMarkdownWriter(Directory.GetCurrentDirectory()));
         services.AddSingleton<ICustomerPageWriter>(

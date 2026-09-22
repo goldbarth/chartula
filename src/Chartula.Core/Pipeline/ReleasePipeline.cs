@@ -21,7 +21,8 @@ namespace Chartula.Core.Pipeline;
 /// leaves the release notes alone. The technical rendering feeds CHANGELOG.md and
 /// the release notes, the customer rendering feeds a page of its own, and every
 /// audience text is stored in changelog.json. Along the way it records what each
-/// faithfulness check caught, so the run reports its own cost.
+/// faithfulness check caught, so the run reports its own cost, and a run that
+/// writes keeps that report in a local run record.
 /// </summary>
 public sealed class ReleasePipeline(
     IReleaseCommitReader commitReader,
@@ -35,7 +36,8 @@ public sealed class ReleasePipeline(
     IChangelogMarkdownWriter markdownWriter,
     ICustomerPageWriter customerPageWriter,
     IReleaseNotesWriter releaseNotesWriter,
-    IRunMetrics? metrics = null) : IReleasePipeline
+    IRunMetrics? metrics = null,
+    IRunRecordWriter? runRecordWriter = null) : IReleasePipeline
 {
     private readonly IRunMetrics _metrics = metrics ?? NullRunMetrics.Instance;
 
@@ -92,6 +94,18 @@ public sealed class ReleasePipeline(
             });
         }
 
+        RunReport report = _metrics.Snapshot();
+
+        // Every model call is behind us, so the record is complete here. It is kept
+        // for a run in which nothing rendered too: those tokens were spent all the
+        // same. Preview keeps its promise to write nothing.
+        string? runRecord = null;
+        if (mode != PipelineMode.Preview && runRecordWriter is not null)
+        {
+            runRecord = await runRecordWriter.WriteAsync(
+                new RunRecord(request.Tag, request.Repository, mode, outcomes, report), cancellationToken);
+        }
+
         IReadOnlyList<string> written = [];
         IReadOnlyList<string> skipped = [];
         string? publishFailure = null;
@@ -104,10 +118,11 @@ public sealed class ReleasePipeline(
                 request, range, factBase, finalTexts, descriptions, mode, cancellationToken);
         }
 
-        return new ReleaseOutcome(request.Tag, mode, outcomes, written, _metrics.Snapshot())
+        return new ReleaseOutcome(request.Tag, mode, outcomes, written, report)
         {
             SkippedOutputs = skipped,
             PublishFailure = publishFailure,
+            RunRecord = runRecord,
         };
     }
 

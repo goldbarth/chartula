@@ -107,6 +107,10 @@ internal static class ReleaseCommand
 
         builder.AppendLine();
         builder.Append(RunReportFormatter.Format(outcome.Metrics));
+        if (outcome.RunRecord is { } runRecord)
+        {
+            builder.AppendLine($"  Recorded in {runRecord}");
+        }
 
         return builder.ToString();
     }

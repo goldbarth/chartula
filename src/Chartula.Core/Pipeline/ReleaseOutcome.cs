@@ -55,6 +55,12 @@ public sealed record ReleaseOutcome(
     /// </summary>
     public string? PublishFailure { get; init; }
 
+    /// <summary>
+    /// Where the run record went, or <c>null</c> when none was written: a preview
+    /// writes nothing, and a pipeline without a record writer keeps none.
+    /// </summary>
+    public string? RunRecord { get; init; }
+
     public ReleaseOutcome(
         string tag,
         PipelineMode mode,
