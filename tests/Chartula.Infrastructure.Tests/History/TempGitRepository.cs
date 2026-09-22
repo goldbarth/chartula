@@ -25,7 +25,8 @@ internal sealed class TempGitRepository : IDisposable
 
     public void Tag(string name) => Run("tag", name);
 
-    public void Run(params string[] arguments)
+    /// <summary>Runs git in the repository and returns its trimmed output.</summary>
+    public string Run(params string[] arguments)
     {
         ProcessStartInfo startInfo = new()
         {
@@ -42,6 +43,7 @@ internal sealed class TempGitRepository : IDisposable
 
         using Process process = Process.Start(startInfo)
             ?? throw new InvalidOperationException("Could not start git.");
+        Task<string> output = process.StandardOutput.ReadToEndAsync();
         string error = process.StandardError.ReadToEnd();
         process.WaitForExit();
         if (process.ExitCode != 0)
@@ -49,6 +51,8 @@ internal sealed class TempGitRepository : IDisposable
             throw new InvalidOperationException(
                 $"git {string.Join(' ', arguments)} failed: {error}");
         }
+
+        return output.Result.Trim();
     }
 
     public void Dispose()

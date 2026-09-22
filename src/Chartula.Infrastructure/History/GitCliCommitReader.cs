@@ -25,13 +25,11 @@ public sealed class GitCliCommitReader(GitExecutable git, string repositoryPath)
             throw new ArgumentException("A release tag is required.", nameof(tag));
         }
 
-        // Fail clearly if the tag does not resolve to a commit.
         GitResult verify = await RunGitAsync(
             ["rev-parse", "--verify", "--quiet", $"{tag}^{{commit}}"], cancellationToken);
         if (verify.ExitCode != 0)
         {
-            throw new InvalidOperationException(
-                $"Tag '{tag}' does not resolve to a commit in the repository.");
+            throw new InvalidOperationException(await DescribeMissingTagAsync(tag, cancellationToken));
         }
 
         string? from = string.IsNullOrWhiteSpace(since)
@@ -49,6 +47,40 @@ public sealed class GitCliCommitReader(GitExecutable git, string repositoryPath)
 
         DateOnly? taggedAt = await ReadTagDateAsync(tag, cancellationToken);
         return new CommitRange(tag, from, ParseCommits(log.StandardOutput), taggedAt);
+    }
+
+    /// <summary>
+    /// Why the tag was not found, in terms the caller can act on. The history is read
+    /// from the directory the run starts in, so the likely cause is starting it in the
+    /// wrong place - outside any repository, in another checkout, or in a clone
+    /// without the tag - and the message names the place and what it holds.
+    /// </summary>
+    private async Task<string> DescribeMissingTagAsync(string tag, CancellationToken cancellationToken)
+    {
+        GitResult root = await RunGitAsync(["rev-parse", "--show-toplevel"], cancellationToken);
+        if (root.ExitCode != 0)
+        {
+            return $"""
+                '{Path.GetFullPath(repositoryPath)}' is not inside a git repository.
+                  Run chartula from a checkout of the repository the release belongs to.
+                """;
+        }
+
+        // The newest tags show a typo or a naming scheme at a glance; none at all is
+        // a clone that never fetched them.
+        GitResult tags = await RunGitAsync(["tag", "--sort=-creatordate"], cancellationToken);
+        string[] latest = tags.ExitCode == 0
+            ? tags.StandardOutput.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            : [];
+        string found = latest.Length == 0
+            ? "It has no tags."
+            : $"Its latest tags: {string.Join(", ", latest.Take(3))}.";
+
+        return $"""
+            Tag '{tag}' is not in the checkout at {root.StandardOutput.Trim()}.
+              {found}
+              Run from a checkout of the repository the release belongs to, with its tags fetched (git fetch --tags).
+            """;
     }
 
     // The nearest tag reachable from the parent of the release tag, if any. Fails
