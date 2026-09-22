@@ -149,4 +149,18 @@ public sealed class RunRecordJsonSerializerTests
         Assert.Equal(new RunRecordLlmUsage(1, 0, 5, 1), metrics.Rephrase);
         Assert.Null(metrics.DurationSeconds);
     }
+
+    [Fact]
+    public void Writes_cached_and_reasoning_tokens_and_leaves_out_what_was_not_reported()
+    {
+        RunMetrics metrics = new();
+        metrics.RecordLlmCall(LlmOperation.Rephrase, new LlmCall(5_000, 300) { CachedInputTokens = 4_000 });
+        RunRecord record = Record() with { Metrics = metrics.Snapshot() };
+
+        using JsonDocument parsed = JsonDocument.Parse(RunRecordJsonSerializer.Serialize(record, At));
+        JsonElement rephrase = parsed.RootElement.GetProperty("metrics").GetProperty("rephrase");
+
+        Assert.Equal(4_000, rephrase.GetProperty("cachedInputTokens").GetInt64());
+        Assert.False(rephrase.TryGetProperty("reasoningTokens", out _));
+    }
 }

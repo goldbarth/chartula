@@ -36,6 +36,8 @@ public sealed class RunMetrics : IRunMetrics
                 current.CallsWithoutUsage + unreportedCalls,
                 current.Tokens + new TokenUsage(call.InputTokens ?? 0, call.OutputTokens ?? 0))
             {
+                CachedInputTokens = Add(current.CachedInputTokens, call.CachedInputTokens),
+                ReasoningTokens = Add(current.ReasoningTokens, call.ReasoningTokens),
                 FailedCalls = current.FailedCalls + (answered ? 0 : 1),
                 Duration = current.Duration + call.Duration,
                 LongestCall = call.Duration > current.LongestCall ? call.Duration : current.LongestCall,
@@ -45,6 +47,10 @@ public sealed class RunMetrics : IRunMetrics
             };
         }
     }
+
+    // Unknown stays unknown until a call reports it; after that, calls that did not
+    // report add nothing rather than making the known part unknown again.
+    private static long? Add(long? sum, long? value) => value is null ? sum : (sum ?? 0) + value;
 
     public void RecordRunDuration(TimeSpan duration)
     {

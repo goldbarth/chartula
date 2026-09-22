@@ -21,6 +21,7 @@ public static class RunReportFormatter
         builder.AppendLine("Run metrics");
         builder.AppendLine($"  Rule-based check: {Activity(report.RuleBased)}, no tokens");
         builder.AppendLine($"  Thorough check:   {Activity(report.Thorough)}, {Tokens(check.Tokens)}{Time(check)}");
+        AppendTokenDetail(builder, check);
         AppendFailures(builder, check);
         if (report.ThoroughNotEvaluated > 0)
         {
@@ -33,6 +34,7 @@ public static class RunReportFormatter
             $"    caught {Claims(report.ThoroughOnlyFlags)} the rule-based check missed, "
             + $"for {Count(check.Tokens.TotalTokens)} tokens in {Calls(check.TotalCalls)}");
         builder.AppendLine($"  Rephrasing:       {Calls(rephrase.TotalCalls)}, {Tokens(rephrase.Tokens)}{Time(rephrase)}");
+        AppendTokenDetail(builder, rephrase);
         AppendFailures(builder, rephrase);
         string runTime = report.Duration is { } duration ? $" in {Duration(duration)}" : string.Empty;
         builder.AppendLine($"  Total:            {Count(report.TotalTokens.TotalTokens)} tokens{runTime}");
@@ -62,6 +64,21 @@ public static class RunReportFormatter
         return calls == 1
             ? $", {Duration(usage.Duration)}"
             : $", {Duration(usage.Duration)} (longest {Duration(usage.LongestCall)})";
+    }
+
+    // What part of the tokens were cheaper (cached) or invisible (reasoning). Said
+    // as not reported where the provider does not break it out: a zero would claim
+    // the model did not reason.
+    private static void AppendTokenDetail(StringBuilder builder, LlmUsage usage)
+    {
+        if (usage.TotalCalls == 0)
+        {
+            return;
+        }
+
+        string cached = usage.CachedInputTokens is { } c ? $"{Count(c)} in cached" : "cached input not reported";
+        string reasoning = usage.ReasoningTokens is { } r ? $"{Count(r)} out reasoning" : "reasoning not reported";
+        builder.AppendLine($"    of which {cached}, {reasoning}");
     }
 
     private static void AppendFailures(StringBuilder builder, LlmUsage usage)

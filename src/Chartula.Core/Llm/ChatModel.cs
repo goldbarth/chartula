@@ -92,6 +92,8 @@ public sealed class ChatModel(
             // Providers are not obliged to report usage; an unreported call is still a call.
             _metrics.RecordLlmCall(operation, new LlmCall(response.Usage?.InputTokenCount, response.Usage?.OutputTokenCount)
             {
+                CachedInputTokens = response.Usage?.CachedInputTokenCount,
+                ReasoningTokens = response.Usage?.ReasoningTokenCount,
                 Duration = Stopwatch.GetElapsedTime(started),
                 Attempts = attempts.Observed,
             });

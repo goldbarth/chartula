@@ -58,7 +58,11 @@ public sealed record RunRecordLlmUsage(
     [property: JsonPropertyName("durationSeconds")] double DurationSeconds = 0,
     [property: JsonPropertyName("longestCallSeconds")] double LongestCallSeconds = 0,
     [property: JsonPropertyName("retries"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    int? Retries = null);
+    int? Retries = null,
+    [property: JsonPropertyName("cachedInputTokens"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    long? CachedInputTokens = null,
+    [property: JsonPropertyName("reasoningTokens"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    long? ReasoningTokens = null);
 
 /// <summary>How often the rule-based check ran and what it found.</summary>
 public sealed record RunRecordCheck(
