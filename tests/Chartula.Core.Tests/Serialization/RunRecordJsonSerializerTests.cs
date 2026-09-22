@@ -14,8 +14,8 @@ public sealed class RunRecordJsonSerializerTests
     private static RunRecord Record(PipelineMode mode = PipelineMode.Generate)
     {
         RunMetrics metrics = new();
-        metrics.RecordLlmCall(LlmOperation.Rephrase, 1_500, 300);
-        metrics.RecordLlmCall(LlmOperation.Rephrase, null, 200);
+        metrics.RecordLlmCall(LlmOperation.Rephrase, new LlmCall(1_500, 300));
+        metrics.RecordLlmCall(LlmOperation.Rephrase, new LlmCall(null, 200));
         metrics.RecordFaithfulnessChecks(["shared"], ["shared", "only thorough"], thoroughEvaluated: true);
 
         return new RunRecord(
@@ -103,5 +103,50 @@ public sealed class RunRecordJsonSerializerTests
         using JsonDocument parsed = JsonDocument.Parse(RunRecordJsonSerializer.Serialize(Record(), At));
 
         Assert.False(parsed.RootElement.TryGetProperty("provenance", out _));
+    }
+
+    // #128: the time of each operation and of the run, and the retries where they
+    // could be counted.
+    [Fact]
+    public void Writes_time_failed_calls_and_retries()
+    {
+        RunMetrics metrics = new();
+        metrics.RecordLlmCall(LlmOperation.Rephrase, new LlmCall(10, 1) { Duration = TimeSpan.FromMilliseconds(1_234.5678), Attempts = 2 });
+        metrics.RecordLlmCall(LlmOperation.Rephrase, new LlmCall(null, null) { Duration = TimeSpan.FromSeconds(2), Attempts = 4, Failed = true });
+        metrics.RecordRunDuration(TimeSpan.FromSeconds(64.5));
+        RunRecord record = Record() with { Metrics = metrics.Snapshot() };
+
+        RunRecordMetrics written = RunRecordJsonSerializer.Deserialize(RunRecordJsonSerializer.Serialize(record, At)).Metrics;
+
+        Assert.Equal(new RunRecordLlmUsage(1, 0, 10, 1, 1, 3.235, 2, 4), written.Rephrase);
+        Assert.Equal(64.5, written.DurationSeconds);
+    }
+
+    // Unknown is left out, so a record never claims a count of zero it did not see.
+    [Fact]
+    public void Retries_that_were_not_observed_are_left_out()
+    {
+        using JsonDocument parsed = JsonDocument.Parse(RunRecordJsonSerializer.Serialize(Record(), At));
+
+        Assert.False(parsed.RootElement.GetProperty("metrics").GetProperty("rephrase").TryGetProperty("retries", out _));
+    }
+
+    // Records written before the fields existed still read.
+    [Fact]
+    public void A_record_without_time_fields_reads_with_zeros()
+    {
+        const string earlier = """
+            {"schemaVersion":1,"recordedAt":"2026-09-22T12:30:15+00:00","tag":"v1","repository":"o/r","mode":"generate",
+             "audiences":[],"metrics":{
+               "rephrase":{"calls":1,"callsWithoutUsage":0,"inputTokens":5,"outputTokens":1},
+               "faithfulnessCheck":{"calls":0,"callsWithoutUsage":0,"inputTokens":0,"outputTokens":0},
+               "ruleBasedCheck":{"runs":0,"runsWithFindings":0,"flags":0},
+               "thoroughCheck":{"runs":0,"runsWithFindings":0,"flags":0,"onlyThoroughFlags":0,"notEvaluated":0}}}
+            """;
+
+        RunRecordMetrics metrics = RunRecordJsonSerializer.Deserialize(earlier).Metrics;
+
+        Assert.Equal(new RunRecordLlmUsage(1, 0, 5, 1), metrics.Rephrase);
+        Assert.Null(metrics.DurationSeconds);
     }
 }

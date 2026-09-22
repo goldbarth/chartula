@@ -9,9 +9,9 @@ public sealed class RunMetricsTests
     {
         RunMetrics metrics = new();
 
-        metrics.RecordLlmCall(LlmOperation.Rephrase, 100, 20);
-        metrics.RecordLlmCall(LlmOperation.Rephrase, 150, 30);
-        metrics.RecordLlmCall(LlmOperation.FaithfulnessCheck, 200, 10);
+        metrics.RecordLlmCall(LlmOperation.Rephrase, new LlmCall(100, 20));
+        metrics.RecordLlmCall(LlmOperation.Rephrase, new LlmCall(150, 30));
+        metrics.RecordLlmCall(LlmOperation.FaithfulnessCheck, new LlmCall(200, 10));
 
         RunReport report = metrics.Snapshot();
 
@@ -27,7 +27,7 @@ public sealed class RunMetricsTests
     {
         RunMetrics metrics = new();
 
-        metrics.RecordLlmCall(LlmOperation.Rephrase, null, null);
+        metrics.RecordLlmCall(LlmOperation.Rephrase, new LlmCall(null, null));
 
         LlmUsage usage = metrics.Snapshot().UsageOf(LlmOperation.Rephrase);
         Assert.Equal(1, usage.TotalCalls);
@@ -40,8 +40,8 @@ public sealed class RunMetricsTests
     {
         RunMetrics metrics = new();
 
-        metrics.RecordLlmCall(LlmOperation.Rephrase, 100, null);
-        metrics.RecordLlmCall(LlmOperation.FaithfulnessCheck, null, 20);
+        metrics.RecordLlmCall(LlmOperation.Rephrase, new LlmCall(100, null));
+        metrics.RecordLlmCall(LlmOperation.FaithfulnessCheck, new LlmCall(null, 20));
 
         RunReport report = metrics.Snapshot();
 
@@ -58,9 +58,9 @@ public sealed class RunMetricsTests
     {
         RunMetrics metrics = new();
 
-        metrics.RecordLlmCall(LlmOperation.Rephrase, 100, 20);
-        metrics.RecordLlmCall(LlmOperation.Rephrase, null, null);
-        metrics.RecordLlmCall(LlmOperation.Rephrase, 150, 30);
+        metrics.RecordLlmCall(LlmOperation.Rephrase, new LlmCall(100, 20));
+        metrics.RecordLlmCall(LlmOperation.Rephrase, new LlmCall(null, null));
+        metrics.RecordLlmCall(LlmOperation.Rephrase, new LlmCall(150, 30));
 
         LlmUsage usage = metrics.Snapshot().UsageOf(LlmOperation.Rephrase);
 
@@ -132,7 +132,7 @@ public sealed class RunMetricsTests
         RunMetrics metrics = new();
 
         metrics.RecordFaithfulnessChecks(ruleBasedFlags: ["a", "b"], thoroughFlags: ["a", "b"], thoroughEvaluated: true);
-        metrics.RecordLlmCall(LlmOperation.FaithfulnessCheck, 900, 40);
+        metrics.RecordLlmCall(LlmOperation.FaithfulnessCheck, new LlmCall(900, 40));
 
         RunReport report = metrics.Snapshot();
 
@@ -146,10 +146,10 @@ public sealed class RunMetricsTests
     public void A_snapshot_does_not_change_when_recording_continues()
     {
         RunMetrics metrics = new();
-        metrics.RecordLlmCall(LlmOperation.Rephrase, 10, 5);
+        metrics.RecordLlmCall(LlmOperation.Rephrase, new LlmCall(10, 5));
 
         RunReport taken = metrics.Snapshot();
-        metrics.RecordLlmCall(LlmOperation.Rephrase, 1_000, 500);
+        metrics.RecordLlmCall(LlmOperation.Rephrase, new LlmCall(1_000, 500));
 
         Assert.Equal(15, taken.TotalTokens.TotalTokens);
     }
@@ -163,7 +163,7 @@ public sealed class RunMetricsTests
         {
             // Every other call reports no usage, so both counters are under contention.
             long? tokens = i % 2 == 0 ? 1 : null;
-            metrics.RecordLlmCall(LlmOperation.Rephrase, tokens, tokens);
+            metrics.RecordLlmCall(LlmOperation.Rephrase, new LlmCall(tokens, tokens));
             metrics.RecordFaithfulnessChecks(["a"], ["a", "b"], thoroughEvaluated: true);
         });
 
@@ -181,9 +181,45 @@ public sealed class RunMetricsTests
     {
         IRunMetrics metrics = NullRunMetrics.Instance;
 
-        metrics.RecordLlmCall(LlmOperation.Rephrase, 100, 100);
+        metrics.RecordLlmCall(LlmOperation.Rephrase, new LlmCall(100, 100));
         metrics.RecordFaithfulnessChecks(["a"], ["b"], thoroughEvaluated: true);
 
         Assert.Equal(RunReport.Empty, metrics.Snapshot());
+    }
+
+    // #128: time adds up per operation, the longest call is kept, and retries count
+    // only from calls whose requests could be counted.
+    [Fact]
+    public void Durations_add_up_and_the_longest_call_is_kept()
+    {
+        RunMetrics metrics = new();
+        metrics.RecordLlmCall(LlmOperation.Rephrase, new LlmCall(10, 1) { Duration = TimeSpan.FromSeconds(3), Attempts = 1 });
+        metrics.RecordLlmCall(LlmOperation.Rephrase, new LlmCall(10, 1) { Duration = TimeSpan.FromSeconds(7), Attempts = 3 });
+        metrics.RecordLlmCall(LlmOperation.Rephrase, new LlmCall(10, 1) { Duration = TimeSpan.FromSeconds(1) });
+
+        LlmUsage usage = metrics.Snapshot().UsageOf(LlmOperation.Rephrase);
+        Assert.Equal(TimeSpan.FromSeconds(11), usage.Duration);
+        Assert.Equal(TimeSpan.FromSeconds(7), usage.LongestCall);
+        Assert.Equal(2, usage.Retries);
+    }
+
+    [Fact]
+    public void Retries_stay_unknown_when_no_call_could_count_its_requests()
+    {
+        RunMetrics metrics = new();
+        metrics.RecordLlmCall(LlmOperation.Rephrase, new LlmCall(10, 1));
+
+        Assert.Null(metrics.Snapshot().UsageOf(LlmOperation.Rephrase).Retries);
+    }
+
+    [Fact]
+    public void The_run_duration_is_reported_once_recorded()
+    {
+        RunMetrics metrics = new();
+        Assert.Null(metrics.Snapshot().Duration);
+
+        metrics.RecordRunDuration(TimeSpan.FromSeconds(64));
+
+        Assert.Equal(TimeSpan.FromSeconds(64), metrics.Snapshot().Duration);
     }
 }

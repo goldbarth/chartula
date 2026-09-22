@@ -178,9 +178,10 @@ internal static class LlmServiceCollectionExtensions
         // own default is a real URL, so passing null through would blank it. Left
         // alone unless configured - a base URL is only set here for a proxy or a
         // gateway in front of the API.
+        HttpClient http = ModelRequestCountingHandler.CreateClient();
         AnthropicClient client = string.IsNullOrWhiteSpace(options.BaseUrl)
-            ? new AnthropicClient { ApiKey = apiKey }
-            : new AnthropicClient { ApiKey = apiKey, BaseUrl = options.BaseUrl };
+            ? new AnthropicClient { ApiKey = apiKey, HttpClient = http }
+            : new AnthropicClient { ApiKey = apiKey, BaseUrl = options.BaseUrl, HttpClient = http };
 
         return client.AsIChatClient(options.Model);
     }

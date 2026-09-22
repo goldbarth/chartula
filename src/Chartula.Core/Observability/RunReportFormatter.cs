@@ -20,7 +20,8 @@ public static class RunReportFormatter
         StringBuilder builder = new();
         builder.AppendLine("Run metrics");
         builder.AppendLine($"  Rule-based check: {Activity(report.RuleBased)}, no tokens");
-        builder.AppendLine($"  Thorough check:   {Activity(report.Thorough)}, {Tokens(check.Tokens)}");
+        builder.AppendLine($"  Thorough check:   {Activity(report.Thorough)}, {Tokens(check.Tokens)}{Time(check)}");
+        AppendFailures(builder, check);
         if (report.ThoroughNotEvaluated > 0)
         {
             builder.AppendLine(
@@ -31,15 +32,73 @@ public static class RunReportFormatter
         builder.AppendLine(
             $"    caught {Claims(report.ThoroughOnlyFlags)} the rule-based check missed, "
             + $"for {Count(check.Tokens.TotalTokens)} tokens in {Calls(check.TotalCalls)}");
-        builder.AppendLine($"  Rephrasing:       {Calls(rephrase.TotalCalls)}, {Tokens(rephrase.Tokens)}");
-        builder.AppendLine($"  Total:            {Count(report.TotalTokens.TotalTokens)} tokens");
+        builder.AppendLine($"  Rephrasing:       {Calls(rephrase.TotalCalls)}, {Tokens(rephrase.Tokens)}{Time(rephrase)}");
+        AppendFailures(builder, rephrase);
+        string runTime = report.Duration is { } duration ? $" in {Duration(duration)}" : string.Empty;
+        builder.AppendLine($"  Total:            {Count(report.TotalTokens.TotalTokens)} tokens{runTime}");
         if (report.CallsWithoutUsage > 0)
         {
             builder.AppendLine($"    lower bound, {report.CallsWithoutUsage} of {report.TotalCalls} calls unreported");
         }
 
+        if (rephrase.TotalCalls + rephrase.FailedCalls + check.TotalCalls + check.FailedCalls > 0)
+        {
+            builder.AppendLine($"  Retries:          {Retries(rephrase, check)}");
+        }
+
         return builder.ToString();
     }
+
+    // The time an operation's calls took, and the longest of them when there were
+    // several: one slow call and uniformly slow calls call for different fixes.
+    private static string Time(LlmUsage usage)
+    {
+        int calls = usage.TotalCalls + usage.FailedCalls;
+        if (calls == 0)
+        {
+            return string.Empty;
+        }
+
+        return calls == 1
+            ? $", {Duration(usage.Duration)}"
+            : $", {Duration(usage.Duration)} (longest {Duration(usage.LongestCall)})";
+    }
+
+    private static void AppendFailures(StringBuilder builder, LlmUsage usage)
+    {
+        if (usage.FailedCalls > 0)
+        {
+            builder.AppendLine($"    {Calls(usage.FailedCalls)} failed without an answer");
+        }
+    }
+
+    // Not observed is said as such: zero would claim the calls went through first time.
+    private static string Retries(LlmUsage rephrase, LlmUsage check)
+    {
+        if (rephrase.Retries is null && check.Retries is null)
+        {
+            return "not observed";
+        }
+
+        int total = (rephrase.Retries ?? 0) + (check.Retries ?? 0);
+        if (total == 0)
+        {
+            return "none";
+        }
+
+        // Only operations that made calls: one that never ran has nothing to observe.
+        IEnumerable<string> parts = new[] { ("rephrasing", rephrase), ("thorough check", check) }
+            .Where(static part => part.Item2.TotalCalls + part.Item2.FailedCalls > 0)
+            .Select(static part => $"{part.Item1} {Observed(part.Item2.Retries)}");
+        return $"{Count(total)} ({string.Join(", ", parts)})";
+    }
+
+    private static string Observed(int? retries) => retries is { } value ? Count(value) : "not observed";
+
+    private static string Duration(TimeSpan duration)
+        => duration.TotalSeconds < 60
+            ? $"{duration.TotalSeconds.ToString("0.0", CultureInfo.InvariantCulture)} s"
+            : $"{(int)duration.TotalMinutes} min {duration.Seconds} s";
 
     private static string Activity(CheckActivity activity)
         => $"{Runs(activity.Runs)}, {Count(activity.RunsWithFindings)} with findings, {Claims(activity.Flags)}";

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Chartula.Core.Observability;
 using Chartula.Core.Prompting;
 using Microsoft.Extensions.AI;
@@ -48,11 +49,10 @@ public sealed class ChatModel(
             new(ChatRole.User, prompt.User),
         ];
 
-        ChatResponse<RenderedEntries> response = await _chat.GetResponseAsync<RenderedEntries>(
-            messages, RequestOptions(), cancellationToken: cancellationToken);
-
         // Recorded before it is judged: a call that does not count was still paid for.
-        Record(LlmOperation.Rephrase, response.Usage);
+        ChatResponse<RenderedEntries> response = await CallAsync(
+            LlmOperation.Rephrase,
+            () => _chat.GetResponseAsync<RenderedEntries>(messages, RequestOptions(), cancellationToken: cancellationToken));
         return CallValidity.Entries(prompt, response);
     }
 
@@ -69,17 +69,43 @@ public sealed class ChatModel(
             new(ChatRole.User, prompt.User),
         ];
 
-        ChatResponse<FaithfulnessVerdict> response =
-            await _chat.GetResponseAsync<FaithfulnessVerdict>(
-                messages, RequestOptions(), cancellationToken: cancellationToken);
-        Record(LlmOperation.FaithfulnessCheck, response.Usage);
+        ChatResponse<FaithfulnessVerdict> response = await CallAsync(
+            LlmOperation.FaithfulnessCheck,
+            () => _chat.GetResponseAsync<FaithfulnessVerdict>(messages, RequestOptions(), cancellationToken: cancellationToken));
         return CallValidity.Verdict(prompt, response);
     }
 
-    // Providers are not obliged to report usage; an unreported call is still a call.
-    private void Record(LlmOperation operation, UsageDetails? usage)
-        => _metrics.RecordLlmCall(
-            operation,
-            usage?.InputTokenCount,
-            usage?.OutputTokenCount);
+    /// <summary>
+    /// Makes one model call and records it whatever the outcome: the time and the
+    /// requests of a call that failed were spent too, and a run that was slow because
+    /// its calls were retried has to be able to say so.
+    /// </summary>
+    private async Task<TResponse> CallAsync<TResponse>(LlmOperation operation, Func<Task<TResponse>> call)
+        where TResponse : ChatResponse
+    {
+        using ModelCallAttempts attempts = ModelCallAttempts.Begin();
+        long started = Stopwatch.GetTimestamp();
+        try
+        {
+            TResponse response = await call();
+
+            // Providers are not obliged to report usage; an unreported call is still a call.
+            _metrics.RecordLlmCall(operation, new LlmCall(response.Usage?.InputTokenCount, response.Usage?.OutputTokenCount)
+            {
+                Duration = Stopwatch.GetElapsedTime(started),
+                Attempts = attempts.Observed,
+            });
+            return response;
+        }
+        catch (Exception)
+        {
+            _metrics.RecordLlmCall(operation, new LlmCall(null, null)
+            {
+                Duration = Stopwatch.GetElapsedTime(started),
+                Attempts = attempts.Observed,
+                Failed = true,
+            });
+            throw;
+        }
+    }
 }

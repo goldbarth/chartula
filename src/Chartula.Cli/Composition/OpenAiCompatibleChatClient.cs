@@ -1,4 +1,5 @@
 using System.ClientModel;
+using System.ClientModel.Primitives;
 using Chartula.Cli.Configuration;
 using Microsoft.Extensions.AI;
 using OpenAI;
@@ -56,6 +57,7 @@ internal static class OpenAiCompatibleChatClient
         {
             Endpoint = endpoint,
             NetworkTimeout = LocalEndpointTimeout,
+            Transport = new HttpClientPipelineTransport(ModelRequestCountingHandler.CreateClient()),
         });
 
         return client.GetChatClient(options.Model).AsIChatClient();
