@@ -76,6 +76,7 @@ A failed audience has no `flags`: it was never checked, and an empty list would 
 | `ruleBasedCheck` | `runs`, `runsWithFindings` and `flags` of the free check. |
 | `thoroughCheck` | The same three for the thorough check, plus `onlyThoroughFlags` - the claims only it caught - and `notEvaluated` - the runs that came back unreadable. |
 | `durationSeconds` | How long the whole run took. |
+| `release` | How much release the run worked on: `commits`, `pullRequests`, `facts`, `factsWithDescription` and `descriptionCharacters` - the description text the model read, at the configured `factBase.depth`. |
 
 Times are seconds with millisecond precision.
 `cachedInputTokens` is the part of `inputTokens` served from the provider's cache, `reasoningTokens` the part of `outputTokens` spent reasoning.
@@ -156,7 +157,14 @@ Both operations are always present, with zeros when they made no call, so any tw
       "onlyThoroughFlags": 1,
       "notEvaluated": 0
     },
-    "durationSeconds": 64.311
+    "durationSeconds": 64.311,
+    "release": {
+      "commits": 14,
+      "pullRequests": 10,
+      "facts": 9,
+      "factsWithDescription": 7,
+      "descriptionCharacters": 22512
+    }
   }
 }
 ```

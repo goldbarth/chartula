@@ -71,6 +71,9 @@ public sealed record RunReport(
     int ThoroughOnlyFlags,
     IReadOnlyDictionary<LlmOperation, LlmUsage> Llm)
 {
+    /// <summary>How much release the run worked on, or <c>null</c> when it was not recorded.</summary>
+    public ReleaseScope? Scope { get; init; }
+
     /// <summary>How long the run took, or <c>null</c> when it was not measured.</summary>
     public TimeSpan? Duration { get; init; }
 

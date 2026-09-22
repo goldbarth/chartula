@@ -43,7 +43,11 @@ public static class RunRecordJsonSerializer
                     metrics.Thorough.Flags,
                     metrics.ThoroughOnlyFlags,
                     metrics.ThoroughNotEvaluated),
-                metrics.Duration is { } duration ? Seconds(duration) : null));
+                metrics.Duration is { } duration ? Seconds(duration) : null,
+                metrics.Scope is { } scope
+                    ? new RunRecordRelease(
+                        scope.Commits, scope.PullRequests, scope.Facts, scope.FactsWithDescription, scope.DescriptionCharacters)
+                    : null));
 
         return JsonSerializer.Serialize(document, RunRecordJsonContext.Default.RunRecordDocument);
     }

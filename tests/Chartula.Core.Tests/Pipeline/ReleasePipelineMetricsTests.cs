@@ -109,4 +109,18 @@ public sealed class ReleasePipelineMetricsTests
 
         Assert.NotNull(outcome.Metrics.Duration);
     }
+
+    // The context for the run's token counts: how much release it read, and how much
+    // description text the model got beyond the titles.
+    [Fact]
+    public async Task A_run_records_how_much_release_it_worked_on()
+    {
+        RunMetrics metrics = new();
+
+        ReleaseOutcome outcome = await BuildPipeline(new PassThroughThoroughChecker(), metrics)
+            .RunAsync(Request(), PipelineMode.Preview);
+
+        // One commit, one pull request, one fact described as "Adds search.".
+        Assert.Equal(new ReleaseScope(1, 1, 1, 1, 12), outcome.Metrics.Scope);
+    }
 }

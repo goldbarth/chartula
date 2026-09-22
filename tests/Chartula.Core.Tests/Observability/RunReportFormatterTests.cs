@@ -142,4 +142,21 @@ public sealed class RunReportFormatterTests
 
         Assert.Contains("    of which 0 in cached, reasoning not reported", RunReportFormatter.Format(metrics.Snapshot()));
     }
+
+    [Fact]
+    public void The_summary_opens_with_how_much_release_the_run_worked_on()
+    {
+        RunMetrics metrics = new();
+        metrics.RecordReleaseScope(new ReleaseScope(14, 10, 9, 7, 22_512));
+
+        Assert.Contains(
+            "  Release:          14 commits, 10 pull requests, 9 facts (7 with a description, 22,512 characters)",
+            RunReportFormatter.Format(metrics.Snapshot()));
+    }
+
+    [Fact]
+    public void A_report_without_a_scope_has_no_release_line()
+    {
+        Assert.DoesNotContain("Release:", RunReportFormatter.Format(RunReport.Empty));
+    }
 }

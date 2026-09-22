@@ -19,6 +19,11 @@ public static class RunReportFormatter
 
         StringBuilder builder = new();
         builder.AppendLine("Run metrics");
+        if (report.Scope is { } scope)
+        {
+            builder.AppendLine($"  Release:          {Scope(scope)}");
+        }
+
         builder.AppendLine($"  Rule-based check: {Activity(report.RuleBased)}, no tokens");
         builder.AppendLine($"  Thorough check:   {Activity(report.Thorough)}, {Tokens(check.Tokens)}{Time(check)}");
         AppendTokenDetail(builder, check);
@@ -116,6 +121,14 @@ public static class RunReportFormatter
         => duration.TotalSeconds < 60
             ? $"{duration.TotalSeconds.ToString("0.0", CultureInfo.InvariantCulture)} s"
             : $"{(int)duration.TotalMinutes} min {duration.Seconds} s";
+
+    // The context for every number below it: cost follows description length more
+    // than the count of pull requests.
+    private static string Scope(ReleaseScope scope)
+        => $"{Count(scope.Commits)} {(scope.Commits == 1 ? "commit" : "commits")}, "
+           + $"{Count(scope.PullRequests)} {(scope.PullRequests == 1 ? "pull request" : "pull requests")}, "
+           + $"{Count(scope.Facts)} {(scope.Facts == 1 ? "fact" : "facts")} "
+           + $"({Count(scope.FactsWithDescription)} with a description, {Count(scope.DescriptionCharacters)} characters)";
 
     private static string Activity(CheckActivity activity)
         => $"{Runs(activity.Runs)}, {Count(activity.RunsWithFindings)} with findings, {Claims(activity.Flags)}";

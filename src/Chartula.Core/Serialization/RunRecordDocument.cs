@@ -42,7 +42,17 @@ public sealed record RunRecordMetrics(
     [property: JsonPropertyName("ruleBasedCheck")] RunRecordCheck RuleBasedCheck,
     [property: JsonPropertyName("thoroughCheck")] RunRecordThoroughCheck ThoroughCheck,
     [property: JsonPropertyName("durationSeconds"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    double? DurationSeconds = null);
+    double? DurationSeconds = null,
+    [property: JsonPropertyName("release"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    RunRecordRelease? Release = null);
+
+/// <summary>How much release the run worked on - the context for its token counts.</summary>
+public sealed record RunRecordRelease(
+    [property: JsonPropertyName("commits")] int Commits,
+    [property: JsonPropertyName("pullRequests")] int PullRequests,
+    [property: JsonPropertyName("facts")] int Facts,
+    [property: JsonPropertyName("factsWithDescription")] int FactsWithDescription,
+    [property: JsonPropertyName("descriptionCharacters")] long DescriptionCharacters);
 
 /// <summary>
 /// Calls, tokens and time of one LLM operation. The fields after the tokens were

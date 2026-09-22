@@ -6,6 +6,7 @@ A `generate` run also keeps it in a local file, so runs can be compared after th
 
 ```text
 Run metrics
+  Release:          14 commits, 10 pull requests, 9 facts (7 with a description, 22,512 characters)
   Rule-based check: 3 runs, 1 with findings, 1 claim, no tokens
   Thorough check:   3 runs, 2 with findings, 2 claims, 6,230 in / 130 out, 14.2 s (longest 6.1 s)
     of which 4,096 in cached, 40 out reasoning
@@ -20,6 +21,7 @@ Run metrics
 
 | Line | Reading |
 | --- | --- |
+| `Release` | How much release the run worked on: commits in the range, the merged pull requests behind them, the facts the changelog was written from after filtering, and the characters of description the model read beyond the titles. Cost follows those characters more than the count of pull requests. |
 | `runs` | How often the check was asked to run - once per rendered audience. |
 | `with findings` | How many of those runs flagged at least one claim, the check's hit rate. |
 | `claims` | How many claims the check flagged in total. |
