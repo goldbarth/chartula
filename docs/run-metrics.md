@@ -8,8 +8,10 @@ A `generate` run also keeps it in a local file, so runs can be compared after th
 Run metrics
   Rule-based check: 3 runs, 1 with findings, 1 claim, no tokens
   Thorough check:   3 runs, 2 with findings, 2 claims, 6,230 in / 130 out, 14.2 s (longest 6.1 s)
+    of which 4,096 in cached, 40 out reasoning
     caught 1 claim the rule-based check missed, for 6,360 tokens in 3 calls
   Rephrasing:       3 calls, 5,437 in / 859 out, 41.0 s (longest 22.1 s)
+    of which 0 in cached, 212 out reasoning
   Total:            12,656 tokens in 1 min 4 s
   Retries:          1 (rephrasing 1, thorough check 0)
 ```
@@ -22,9 +24,16 @@ Run metrics
 | `with findings` | How many of those runs flagged at least one claim, the check's hit rate. |
 | `claims` | How many claims the check flagged in total. |
 | `in / out` | Tokens sent to and produced by the model, attributed to that operation. |
+| `of which ... cached` | The part of the input the provider served from its prompt cache, which most providers bill at a lower rate. |
+| `of which ... reasoning` | The part of the output the model spent reasoning rather than writing - billed as output, never seen in the changelog. |
 | time, `longest` | How long that operation's calls took together, retries included, and the longest single call. |
 | `in <time>` | How long the whole run took, from reading history to the last model call. |
 | `Retries` | Requests sent again after the first, per operation - see below. |
+
+Providers break these out differently.
+OpenAI and compatible endpoints that follow it report both; Anthropic reports cache reads but folds thinking into the output without a separate count.
+What a provider does not report is shown as `not reported`, never as zero: zero reasoning would claim the model did not think.
+Either way the `out` figure is complete - reasoning is inside it, not on top of it.
 
 ## When a run was slow
 

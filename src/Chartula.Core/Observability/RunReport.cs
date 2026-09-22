@@ -9,6 +9,18 @@ public sealed record LlmUsage(int TotalCalls, int CallsWithoutUsage, TokenUsage 
     /// <summary>Nothing called, nothing spent.</summary>
     public static LlmUsage None { get; } = new(0, 0, TokenUsage.None);
 
+    /// <summary>
+    /// Input tokens served from the provider's cache, summed over the calls that
+    /// reported it; <c>null</c> when none did.
+    /// </summary>
+    public long? CachedInputTokens { get; init; }
+
+    /// <summary>
+    /// Output tokens spent reasoning, summed over the calls that reported it;
+    /// <c>null</c> when none did - which is not the same as no reasoning.
+    /// </summary>
+    public long? ReasoningTokens { get; init; }
+
     /// <summary>Calls that ended in an error. Not in <see cref="TotalCalls"/>, which counts answers.</summary>
     public int FailedCalls { get; init; }
 

@@ -71,14 +71,15 @@ A failed audience has no `flags`: it was never checked, and an empty list would 
 
 | Field | Description |
 | --- | --- |
-| `rephrase` | The rephrasing calls: `calls`, `callsWithoutUsage`, `inputTokens`, `outputTokens`, `failedCalls`, `durationSeconds`, `longestCallSeconds`, and `retries` when they could be counted. |
+| `rephrase` | The rephrasing calls: `calls`, `callsWithoutUsage`, `inputTokens`, `outputTokens`, `failedCalls`, `durationSeconds`, `longestCallSeconds`, and - when they could be counted or were reported - `retries`, `cachedInputTokens` and `reasoningTokens`. |
 | `faithfulnessCheck` | The thorough check's calls, in the same fields. All zero when the check was off. |
 | `ruleBasedCheck` | `runs`, `runsWithFindings` and `flags` of the free check. |
 | `thoroughCheck` | The same three for the thorough check, plus `onlyThoroughFlags` - the claims only it caught - and `notEvaluated` - the runs that came back unreadable. |
 | `durationSeconds` | How long the whole run took. |
 
 Times are seconds with millisecond precision.
-`retries` is left out when it could not be counted, rather than written as zero - see [When a run was slow](run-metrics.md#when-a-run-was-slow).
+`cachedInputTokens` is the part of `inputTokens` served from the provider's cache, `reasoningTokens` the part of `outputTokens` spent reasoning.
+`retries`, `cachedInputTokens` and `reasoningTokens` are left out when they could not be counted or were not reported, rather than written as zero - see [When a run was slow](run-metrics.md#when-a-run-was-slow).
 A record written before these fields existed reads with zeros for them and no `retries`.
 
 The numbers mean what they mean in the [run summary](run-metrics.md#what-the-numbers-mean).

@@ -71,7 +71,9 @@ public static class RunRecordJsonSerializer
             usage.FailedCalls,
             Seconds(usage.Duration),
             Seconds(usage.LongestCall),
-            usage.Retries);
+            usage.Retries,
+            usage.CachedInputTokens,
+            usage.ReasoningTokens);
 
     // Milliseconds are the finest a model call is worth measuring in.
     private static double Seconds(TimeSpan duration) => Math.Round(duration.TotalSeconds, 3);

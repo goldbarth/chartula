@@ -122,4 +122,24 @@ public sealed class RunReportFormatterTests
         Assert.Contains("  Retries:          3 (rephrasing 3)", text);
         Assert.DoesNotContain("lower bound", text);
     }
+
+    [Fact]
+    public void The_summary_breaks_out_cached_input_and_reasoning()
+    {
+        RunMetrics metrics = new();
+        metrics.RecordLlmCall(LlmOperation.Rephrase, new LlmCall(5_000, 300) { CachedInputTokens = 4_000, ReasoningTokens = 250 });
+
+        Assert.Contains("    of which 4,000 in cached, 250 out reasoning", RunReportFormatter.Format(metrics.Snapshot()));
+    }
+
+    // A provider that folds reasoning into the output without a count: zero would
+    // claim the model did not reason.
+    [Fact]
+    public void What_the_provider_does_not_break_out_is_said_to_be_not_reported()
+    {
+        RunMetrics metrics = new();
+        metrics.RecordLlmCall(LlmOperation.Rephrase, new LlmCall(5_000, 300) { CachedInputTokens = 0 });
+
+        Assert.Contains("    of which 0 in cached, reasoning not reported", RunReportFormatter.Format(metrics.Snapshot()));
+    }
 }

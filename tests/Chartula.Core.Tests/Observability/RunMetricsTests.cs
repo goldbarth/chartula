@@ -222,4 +222,21 @@ public sealed class RunMetricsTests
 
         Assert.Equal(TimeSpan.FromSeconds(64), metrics.Snapshot().Duration);
     }
+
+    // Unknown until a call reports it; a later call that does not report leaves the
+    // known part as it was instead of making it unknown again.
+    [Fact]
+    public void Cached_and_reasoning_tokens_sum_over_the_calls_that_reported_them()
+    {
+        RunMetrics metrics = new();
+        metrics.RecordLlmCall(LlmOperation.Rephrase, new LlmCall(100, 10));
+        Assert.Null(metrics.Snapshot().UsageOf(LlmOperation.Rephrase).ReasoningTokens);
+
+        metrics.RecordLlmCall(LlmOperation.Rephrase, new LlmCall(100, 10) { CachedInputTokens = 60, ReasoningTokens = 4 });
+        metrics.RecordLlmCall(LlmOperation.Rephrase, new LlmCall(100, 10) { CachedInputTokens = 40 });
+
+        LlmUsage usage = metrics.Snapshot().UsageOf(LlmOperation.Rephrase);
+        Assert.Equal(100, usage.CachedInputTokens);
+        Assert.Equal(4, usage.ReasoningTokens);
+    }
 }
