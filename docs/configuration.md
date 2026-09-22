@@ -73,7 +73,7 @@ Model ids are complete as written - do not append a date suffix.
 All four support the structured output the thorough faithfulness check needs, so a cheaper model does not cost you that check.
 What it can cost you is changelog quality, which is the whole product - so read the output of a cheaper run before adopting it, rather than assuming the saving is free.
 
-The reason to care: a run pays per token twice over, once to rephrase and once for the thorough check, and prompt iteration means running it repeatedly.
+The reason to care: every audience is one rephrasing call and one thorough-check call, and prompt iteration means running them repeatedly.
 Haiku 4.5's list prices are a fifth of Opus's, which is the difference between iterating freely and rationing runs.
 
 Measured on this repository's `0.1.0-preview.1`, on 2026-09-17, with `claude-sonnet-5`, all three audiences, the thorough check on, and 48 changes:
@@ -85,7 +85,6 @@ Measured on this repository's `0.1.0-preview.1`, on 2026-09-17, with `claude-son
 
 These are single runs taken during development, not settled figures, and work with cheaper models has barely started.
 Rephrasing and the thorough check each ran once per audience, so every figure is the sum of three calls, and a run for a single audience costs roughly a third.
-An earlier figure of $1.78 for the `v0.1.0` changelog on Opus 4.8 is under review and should not be relied on.
 
 Haiku 4.5's 200K context is the one hard limit in the table.
 A release with many changes at `factBase.depth: title-and-description` produces a long fact list, and that list is sent once per audience plus once per thorough check.
@@ -304,6 +303,11 @@ The faithfulness checks. The rule-based check always runs and is not configurabl
 | Key | Default | Description |
 | --- | --- | --- |
 | `thorough` | `true` | Whether the thorough (second-pass LLM) check runs. |
+
+On by default, because it is cheap for what it finds.
+On the three alpha runs in the README (`claude-sonnet-5`, technical and customer), it took 29%, 29% and 45% of the tokens of runs that cost about $0.06, $0.07 and $0.20 in total.
+Its tokens are reported apart from rephrasing, so a run without it costs what is left: a few cents less.
+On one of those runs it caught the only invented claim the rule-based check missed - the example in the README.
 
 Every run reports what each check caught and what it cost - see [`run-metrics.md`](run-metrics.md) for deciding whether the thorough check earns its tokens.
 
