@@ -65,6 +65,10 @@ Runs the same pipeline as `preview` and then writes the outputs:
 
 A field with no source behind it is left out rather than filled in - no description when the facts do not support one, no date when the tag has none.
 
+Publishing is the last step, so when GitHub refuses it - most often a token without Contents read and write - the files are already written.
+The summary lists them under "Wrote:", names the refusal under "Not published:", and the run exits with 1.
+A re-run replaces this release's entries in `CHANGELOG.md` and its draft rather than adding to them, but pays for the model calls again.
+
 ### `--no-publish`
 
 ```console

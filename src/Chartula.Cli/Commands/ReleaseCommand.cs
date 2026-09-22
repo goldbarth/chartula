@@ -25,10 +25,11 @@ internal static class ReleaseCommand
             ReleaseOutcome outcome = await pipeline.RunAsync(request, mode, cancellationToken);
             output.Write(Format(outcome));
 
-            // Every audience the run asked for is part of the result. A script or a CI
-            // job reads the exit code, not the output, so a missing one has to show there;
-            // whatever did render is still written.
-            return outcome.Renderings.All(audience => audience.Success) ? 0 : 1;
+            // Every audience the run asked for is part of the result, and so is the
+            // publication generate was asked for. A script or a CI job reads the exit
+            // code, not the output, so a missing one has to show there; whatever did
+            // render is still written.
+            return outcome.Renderings.All(audience => audience.Success) && outcome.PublishFailure is null ? 0 : 1;
         }
         catch (WholeHistoryException ex)
         {
@@ -127,6 +128,20 @@ internal static class ReleaseCommand
         else
         {
             builder.AppendLine("Nothing to write.");
+        }
+
+        if (outcome.PublishFailure is { } failure)
+        {
+            // What was written stays listed above, so the reader sees the run was not
+            // lost, and what a second run costs is said before they start one.
+            builder.AppendLine("Not published: the release notes.");
+            foreach (string line in failure.Split('\n'))
+            {
+                builder.AppendLine($"  {line.TrimEnd()}");
+            }
+
+            builder.AppendLine("  The files above are written. A re-run replaces this release's entries rather");
+            builder.AppendLine("  than adding them, but pays for the model calls again; --no-publish skips this step.");
         }
 
         if (outcome.SkippedOutputs.Count == 0)

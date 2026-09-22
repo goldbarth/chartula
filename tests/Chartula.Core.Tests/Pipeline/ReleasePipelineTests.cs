@@ -7,6 +7,7 @@ using Chartula.Core.Labeling;
 using Chartula.Core.Llm;
 using Chartula.Core.Pipeline;
 using Chartula.Core.PullRequests;
+using Chartula.Core.Releases;
 using Chartula.Core.Rendering;
 using Chartula.Core.Review;
 
@@ -19,7 +20,7 @@ public sealed class ReleasePipelineTests
     private readonly SpyCustomerPageWriter _customerPage = new();
     private readonly SpyReleaseNotesWriter _releaseNotes = new();
 
-    private ReleasePipeline BuildPipeline(IReleaseRenderer? renderer = null)
+    private ReleasePipeline BuildPipeline(IReleaseRenderer? renderer = null, IReleaseNotesWriter? releaseNotes = null)
     {
         ConventionalCommitCategorizer categorizer = new();
         LabelRulePolicy labelPolicy = new(LabelRules.None);
@@ -38,7 +39,7 @@ public sealed class ReleasePipelineTests
             _json,
             _markdown,
             _customerPage,
-            _releaseNotes);
+            releaseNotes ?? _releaseNotes);
     }
 
     private static ReleaseRequest Request() => new("v1.0.0", new RepositoryCoordinates("octo", "repo"));
@@ -68,6 +69,20 @@ public sealed class ReleasePipelineTests
         Assert.Equal(1, _customerPage.Calls);
         Assert.Equal(0, _markdown.Calls);
         Assert.Equal(0, _releaseNotes.Calls);
+    }
+
+    // #219: publishing is the last write, so a refusal there leaves the files written;
+    // the outcome has to carry both, not trade the list for the error.
+    [Fact]
+    public async Task A_refused_publication_keeps_the_files_the_run_wrote()
+    {
+        ReleaseOutcome outcome = await BuildPipeline(releaseNotes: new RefusingReleaseNotesWriter("refused"))
+            .RunAsync(Request(), PipelineMode.Generate);
+
+        Assert.Equal("refused", outcome.PublishFailure);
+        Assert.Contains("CHANGELOG.md", outcome.WrittenOutputs);
+        Assert.Equal(1, _json.Calls);
+        Assert.Equal(1, _customerPage.Calls);
     }
 
     [Fact]

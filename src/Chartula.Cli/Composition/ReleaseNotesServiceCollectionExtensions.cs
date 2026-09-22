@@ -20,7 +20,9 @@ internal static class ReleaseNotesServiceCollectionExtensions
         GitHubOptions options = GitHubHttpClientFactory.ReadOptions(configuration);
 
         services.AddSingleton<IReleaseNotesWriter>(_ =>
-            new GitHubReleaseNotesWriter(GitHubHttpClientFactory.Create(options, configuration)));
+            new GitHubReleaseNotesWriter(
+                GitHubHttpClientFactory.Create(options, configuration),
+                options.TokenEnvironmentVariable));
         return services;
     }
 }
