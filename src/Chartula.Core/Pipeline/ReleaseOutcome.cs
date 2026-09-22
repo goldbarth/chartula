@@ -48,6 +48,13 @@ public sealed record ReleaseOutcome(
     /// </summary>
     public IReadOnlyList<string> SkippedOutputs { get; init; } = [];
 
+    /// <summary>
+    /// Why publishing the release notes failed, or <c>null</c> when it did not.
+    /// Publishing is the last write, so by then the files are written and the model
+    /// calls paid for; failing the whole run would hide both behind one error.
+    /// </summary>
+    public string? PublishFailure { get; init; }
+
     public ReleaseOutcome(
         string tag,
         PipelineMode mode,

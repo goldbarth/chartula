@@ -116,6 +116,14 @@ internal sealed class SpyReleaseNotesWriter : IReleaseNotesWriter
     }
 }
 
+/// <summary>A release notes writer that is refused, as a read-only token is.</summary>
+internal sealed class RefusingReleaseNotesWriter(string message) : IReleaseNotesWriter
+{
+    public Task<string> WriteAsync(
+        RepositoryCoordinates repository, string tag, string body, CancellationToken cancellationToken = default)
+        => throw new InvalidOperationException(message);
+}
+
 internal sealed class SpyCustomerPageWriter : ICustomerPageWriter
 {
     public int Calls { get; private set; }

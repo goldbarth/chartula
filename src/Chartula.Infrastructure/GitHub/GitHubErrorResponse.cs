@@ -1,0 +1,108 @@
+using System.Net;
+using System.Net.Http.Headers;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
+namespace Chartula.Infrastructure.GitHub;
+
+/// <summary>
+/// What an error response from the GitHub API says, read the same way by every
+/// GitHub adapter: GitHub's own message rather than the raw body, whether the
+/// request carried a token, the permission GitHub names as missing, and whether
+/// the rate limit rather than access was the reason.
+/// </summary>
+internal sealed class GitHubErrorResponse
+{
+    private GitHubErrorResponse(HttpResponseMessage response, bool withToken, string message)
+    {
+        StatusCode = response.StatusCode;
+        Status = $"{(int)response.StatusCode} {response.ReasonPhrase}";
+        WithToken = withToken;
+        Message = message;
+        NeededPermission = Header(response, "x-accepted-github-permissions");
+
+        // A spent budget is a 403 or 429 and says nothing about access.
+        RateLimited = response.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.TooManyRequests
+                      && Header(response, "x-ratelimit-remaining") == "0";
+    }
+
+    public HttpStatusCode StatusCode { get; }
+
+    /// <summary>The status as it is shown, e.g. <c>404 Not Found</c>.</summary>
+    public string Status { get; }
+
+    public bool WithToken { get; }
+
+    /// <summary>GitHub's own message, or the body itself when it has none.</summary>
+    public string Message { get; }
+
+    /// <summary>The permission GitHub says a fine-grained token is missing, or <c>null</c>.</summary>
+    public string? NeededPermission { get; }
+
+    public bool RateLimited { get; }
+
+    public static async Task<GitHubErrorResponse> ReadAsync(
+        HttpResponseMessage response, HttpRequestHeaders sentHeaders, CancellationToken cancellationToken)
+    {
+        string body = await response.Content.ReadAsStringAsync(cancellationToken);
+        return new GitHubErrorResponse(response, sentHeaders.Authorization is not null, MessageOf(body));
+    }
+
+    /// <summary>
+    /// The sentence for a rejected token or a spent rate limit, which read the same
+    /// whatever the request was for, or <c>null</c> when the error is neither.
+    /// </summary>
+    public string? DescribeCredentials(string tokenVariable)
+    {
+        if (StatusCode == HttpStatusCode.Unauthorized && WithToken)
+        {
+            return $"GitHub rejected the token in {tokenVariable} ({Status}): it is expired, revoked or mistyped.";
+        }
+
+        if (RateLimited)
+        {
+            string remedy = WithToken
+                ? "Wait until it resets and run again."
+                : $"A token in {tokenVariable} raises it; see the warning at the start of the run.";
+            return $"GitHub's rate limit is spent ({Status}). {remedy}";
+        }
+
+        return null;
+    }
+
+    /// <summary>Which token the request carried, as the line an error names it in.</summary>
+    public string DescribeToken(string tokenVariable)
+        => WithToken
+            ? $"The request carried the token from {tokenVariable}."
+            : $"The request carried no token: {tokenVariable} is not set.";
+
+    private static string? Header(HttpResponseMessage response, string name)
+        => response.Headers.TryGetValues(name, out IEnumerable<string>? values) ? values.FirstOrDefault() : null;
+
+    private static string MessageOf(string body)
+    {
+        try
+        {
+            if (JsonSerializer.Deserialize(body, GitHubErrorJsonContext.Default.GitHubErrorDto)?.Message is { Length: > 0 } message)
+            {
+                return message;
+            }
+        }
+        catch (JsonException)
+        {
+            // Not JSON (a proxy's HTML page, say); the body is all there is.
+        }
+
+        return body.Length <= 200 ? body : body[..200] + "...";
+    }
+}
+
+/// <summary>The body GitHub sends with an error status. Only its message is read.</summary>
+internal sealed class GitHubErrorDto
+{
+    public string? Message { get; init; }
+}
+
+[JsonSourceGenerationOptions(PropertyNameCaseInsensitive = true)]
+[JsonSerializable(typeof(GitHubErrorDto))]
+internal sealed partial class GitHubErrorJsonContext : JsonSerializerContext;

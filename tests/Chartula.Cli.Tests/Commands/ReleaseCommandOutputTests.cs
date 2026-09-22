@@ -162,4 +162,35 @@ public sealed class ReleaseCommandOutputTests
 
         Assert.DoesNotContain("description:", text, StringComparison.Ordinal);
     }
+
+    // #219: a refused publication is listed after what was written, fails the exit
+    // code, and says what a second run would cost.
+    [Fact]
+    public async Task A_refused_publication_lists_the_written_files_and_fails_the_run()
+    {
+        ReleaseOutcome outcome = new(
+            "v1.0.0",
+            PipelineMode.Generate,
+            [new AudienceOutcome(Audience.Technical, Success: true, "- Added search", [], Error: null)],
+            ["changelog.json", "CHANGELOG.md"])
+        {
+            PublishFailure = "GitHub refused to publish the release notes for v1.0.0 to octo/repo (403 Forbidden).\n  Publishing needs a token with Contents read and write on octo/repo.",
+        };
+
+        StringWriter output = new();
+        int exitCode = await ReleaseCommand.RunAsync(
+            new StubPipeline(outcome),
+            PipelineMode.Generate,
+            new ReleaseRequest("v1.0.0", new RepositoryCoordinates("octo", "repo")),
+            output,
+            CancellationToken.None);
+        string text = output.ToString();
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("Wrote:\n  - changelog.json\n  - CHANGELOG.md\nNot published: the release notes.\n", text.ReplaceLineEndings("\n"));
+        Assert.Contains("  GitHub refused to publish the release notes for v1.0.0 to octo/repo (403 Forbidden).", text);
+        Assert.Contains("    Publishing needs a token with Contents read and write on octo/repo.", text);
+        Assert.Contains("--no-publish skips this step", text);
+        Assert.DoesNotContain("Error:", text);
+    }
 }

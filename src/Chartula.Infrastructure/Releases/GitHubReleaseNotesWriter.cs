@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using Chartula.Core.PullRequests;
 using Chartula.Core.Releases;
+using Chartula.Infrastructure.GitHub;
 
 namespace Chartula.Infrastructure.Releases;
 
@@ -14,7 +15,12 @@ namespace Chartula.Infrastructure.Releases;
 /// publishing, so nothing goes public on its own - and an update touches only the
 /// body, so a release someone already published stays published.
 /// </summary>
-public sealed class GitHubReleaseNotesWriter(HttpClient httpClient) : IReleaseNotesWriter
+/// <param name="httpClient">The configured GitHub client.</param>
+/// <param name="tokenVariable">
+/// The environment variable the token is read from, named in an error so the
+/// message points at what the caller can change.
+/// </param>
+public sealed class GitHubReleaseNotesWriter(HttpClient httpClient, string tokenVariable) : IReleaseNotesWriter
 {
     public async Task<string> WriteAsync(
         RepositoryCoordinates repository,
@@ -28,11 +34,12 @@ public sealed class GitHubReleaseNotesWriter(HttpClient httpClient) : IReleaseNo
 
         string basePath = $"repos/{repository.Owner}/{repository.Name}/releases";
 
-        GitHubReleaseDto? existing = await GetByTagAsync(basePath, tag, cancellationToken)
-                                     ?? await FindDraftByTagAsync(basePath, tag, cancellationToken);
+        Target target = new(repository, tag);
+        GitHubReleaseDto? existing = await GetByTagAsync(basePath, target, cancellationToken)
+                                     ?? await FindDraftByTagAsync(basePath, target, cancellationToken);
         GitHubReleaseDto release = existing is not null
-            ? await UpdateAsync($"{basePath}/{existing.Id}", tag, body, cancellationToken)
-            : await CreateAsync(basePath, tag, body, cancellationToken);
+            ? await UpdateAsync($"{basePath}/{existing.Id}", target, body, cancellationToken)
+            : await CreateAsync(basePath, target, body, cancellationToken);
 
         // A draft's link does not say it is one, and a reader who follows it expecting
         // a public release would otherwise not know there is a step left.
@@ -47,21 +54,21 @@ public sealed class GitHubReleaseNotesWriter(HttpClient httpClient) : IReleaseNo
     /// It lags a new release by a moment, so two runs for the same tag started within
     /// seconds of each other can still leave two drafts; a run takes longer than that.
     /// </summary>
-    private async Task<GitHubReleaseDto?> FindDraftByTagAsync(string basePath, string tag, CancellationToken ct)
+    private async Task<GitHubReleaseDto?> FindDraftByTagAsync(string basePath, Target target, CancellationToken ct)
     {
         const int PageSize = 100;
         for (int page = 1; ; page++)
         {
             string path = $"{basePath}?per_page={PageSize}&page={page}";
-            HttpResponseMessage response = await SendAsync(() => httpClient.GetAsync(path, ct), tag);
+            HttpResponseMessage response = await SendAsync(() => httpClient.GetAsync(path, ct), target.Tag);
             List<GitHubReleaseDto> releases;
             using (response)
             {
-                await EnsureSuccessAsync(response, tag, ct);
-                releases = await ReadAsync(response, GitHubReleaseJsonContext.Default.ListGitHubReleaseDto, tag, ct);
+                await EnsureSuccessAsync(response, target, ct);
+                releases = await ReadAsync(response, GitHubReleaseJsonContext.Default.ListGitHubReleaseDto, target.Tag, ct);
             }
 
-            if (releases.Find(release => release.Draft && release.TagName == tag) is { } draft)
+            if (releases.Find(release => release.Draft && release.TagName == target.Tag) is { } draft)
             {
                 return draft;
             }
@@ -73,10 +80,10 @@ public sealed class GitHubReleaseNotesWriter(HttpClient httpClient) : IReleaseNo
         }
     }
 
-    private async Task<GitHubReleaseDto?> GetByTagAsync(string basePath, string tag, CancellationToken ct)
+    private async Task<GitHubReleaseDto?> GetByTagAsync(string basePath, Target target, CancellationToken ct)
     {
         HttpResponseMessage response = await SendAsync(
-            () => httpClient.GetAsync($"{basePath}/tags/{tag}", ct), tag);
+            () => httpClient.GetAsync($"{basePath}/tags/{target.Tag}", ct), target.Tag);
 
         using (response)
         {
@@ -85,32 +92,32 @@ public sealed class GitHubReleaseNotesWriter(HttpClient httpClient) : IReleaseNo
                 return null; // no release for this tag yet
             }
 
-            await EnsureSuccessAsync(response, tag, ct);
-            return await ReadReleaseAsync(response, tag, ct);
+            await EnsureSuccessAsync(response, target, ct);
+            return await ReadReleaseAsync(response, target.Tag, ct);
         }
     }
 
-    private async Task<GitHubReleaseDto> UpdateAsync(string releasePath, string tag, string body, CancellationToken ct)
+    private async Task<GitHubReleaseDto> UpdateAsync(string releasePath, Target target, string body, CancellationToken ct)
     {
         using StringContent content = JsonContent(GitHubReleaseJsonContext.Default.UpdateReleaseRequest,
-            new UpdateReleaseRequest(tag, body));
-        HttpResponseMessage response = await SendAsync(() => httpClient.PatchAsync(releasePath, content, ct), releasePath);
+            new UpdateReleaseRequest(target.Tag, body));
+        HttpResponseMessage response = await SendAsync(() => httpClient.PatchAsync(releasePath, content, ct), target.Tag);
         using (response)
         {
-            await EnsureSuccessAsync(response, releasePath, ct);
-            return await ReadReleaseAsync(response, releasePath, ct);
+            await EnsureSuccessAsync(response, target, ct);
+            return await ReadReleaseAsync(response, target.Tag, ct);
         }
     }
 
-    private async Task<GitHubReleaseDto> CreateAsync(string basePath, string tag, string body, CancellationToken ct)
+    private async Task<GitHubReleaseDto> CreateAsync(string basePath, Target target, string body, CancellationToken ct)
     {
         using StringContent content = JsonContent(GitHubReleaseJsonContext.Default.CreateReleaseRequest,
-            new CreateReleaseRequest(tag, body));
-        HttpResponseMessage response = await SendAsync(() => httpClient.PostAsync(basePath, content, ct), tag);
+            new CreateReleaseRequest(target.Tag, body));
+        HttpResponseMessage response = await SendAsync(() => httpClient.PostAsync(basePath, content, ct), target.Tag);
         using (response)
         {
-            await EnsureSuccessAsync(response, tag, ct);
-            return await ReadReleaseAsync(response, tag, ct);
+            await EnsureSuccessAsync(response, target, ct);
+            return await ReadReleaseAsync(response, target.Tag, ct);
         }
     }
 
@@ -127,16 +134,46 @@ public sealed class GitHubReleaseNotesWriter(HttpClient httpClient) : IReleaseNo
         }
     }
 
-    private static async Task EnsureSuccessAsync(HttpResponseMessage response, string what, CancellationToken ct)
+    private async Task EnsureSuccessAsync(HttpResponseMessage response, Target target, CancellationToken ct)
     {
         if (response.IsSuccessStatusCode)
         {
             return;
         }
 
-        string body = await response.Content.ReadAsStringAsync(ct);
-        throw new InvalidOperationException(
-            $"GitHub API returned {(int)response.StatusCode} {response.ReasonPhrase} for release '{what}'. {Truncate(body)}");
+        GitHubErrorResponse error = await GitHubErrorResponse.ReadAsync(response, httpClient.DefaultRequestHeaders, ct);
+        throw new InvalidOperationException(Describe(error, target));
+    }
+
+    /// <summary>
+    /// Names the cause the caller can act on. The pull requests were read a moment
+    /// earlier, so a refusal here is about writing: the likeliest cause is the
+    /// read-only token the docs recommend until a run publishes.
+    /// </summary>
+    private string Describe(GitHubErrorResponse error, Target target)
+    {
+        string repo = $"{target.Repository.Owner}/{target.Repository.Name}";
+
+        if (error.DescribeCredentials(tokenVariable) is { } credentials)
+        {
+            return credentials;
+        }
+
+        if (error.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden or HttpStatusCode.NotFound)
+        {
+            // GitHub names the permission a fine-grained token is missing.
+            string permission = error.NeededPermission is { } needed
+                ? $"\n  GitHub says the token needs: {needed}"
+                : string.Empty;
+
+            return $"""
+                GitHub refused to publish the release notes for {target.Tag} to {repo} ({error.Status}).
+                  {error.DescribeToken(tokenVariable)}{permission}
+                  Publishing needs a token with Contents read and write on {repo}.
+                """;
+        }
+
+        return $"GitHub API returned {error.Status} for release '{target.Tag}': {error.Message}";
     }
 
     private static Task<GitHubReleaseDto> ReadReleaseAsync(
@@ -167,5 +204,6 @@ public sealed class GitHubReleaseNotesWriter(HttpClient httpClient) : IReleaseNo
         System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> typeInfo, T value)
         => new(JsonSerializer.Serialize(value, typeInfo), Encoding.UTF8, "application/json");
 
-    private static string Truncate(string value) => value.Length <= 200 ? value : value[..200] + "...";
+    /// <summary>The release a run writes to, named in its errors.</summary>
+    private sealed record Target(RepositoryCoordinates Repository, string Tag);
 }
