@@ -51,7 +51,10 @@ public sealed class ProvenanceWiringTests
     [Theory]
     [InlineData(ThinkingMode.ProviderDefault)]
     [InlineData(ThinkingMode.Disabled)]
-    [InlineData(ThinkingMode.Adaptive)]
+    [InlineData(ThinkingMode.Low)]
+    [InlineData(ThinkingMode.Medium)]
+    [InlineData(ThinkingMode.High)]
+    [InlineData(ThinkingMode.ExtraHigh)]
     public void A_recorded_thinking_mode_reads_back_as_itself(ThinkingMode mode)
         => Assert.Equal(mode, ThinkingModeParser.Parse(ThinkingModeParser.Name(mode)));
 

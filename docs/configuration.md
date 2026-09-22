@@ -22,10 +22,11 @@ Plain `http` is accepted only for this machine (`localhost`, `127.0.0.1`, `::1`)
 A model server elsewhere on your network needs `https` too.
 
 Chartula does not load the rest of your environment: besides `Chartula__` settings it reads only `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GITHUB_TOKEN` and the variables named by the two settings above.
-Every run starts by printing the endpoints and credential variable names in force, never their values:
+Every run starts by printing the endpoints and credential variable names in force, never their values, and the model and thinking mode it asks for:
 
 ```console
 Model:  anthropic at its default endpoint, key from ANTHROPIC_API_KEY
+        claude-sonnet-5, thinking provider-default
 GitHub: https://api.github.com/, token from GITHUB_TOKEN
 ```
 
@@ -42,7 +43,7 @@ The model provider and which model to use. The endpoint and the name of the key 
 | `provider` | `anthropic` | The LLM provider: `anthropic` or `openai-compatible` (**experimental**, see below). Any other value fails the run. |
 | `model` | per provider | The model id passed to the provider. See [Choosing a model](#choosing-a-model). |
 | `maxOutputTokens` | `32000` | Ceiling on the tokens the model may produce per call, thinking included. Thinking is produced first, so a ceiling that only fits it leaves no text. |
-| `thinking` | `provider-default` | Whether the model reasons before answering. One of `provider-default`, `disabled`, `adaptive`. `anthropic` only. |
+| `thinking` | `provider-default` | How much the model reasons before answering. One of `provider-default`, `disabled`, `low`, `medium`, `high`, `xhigh`, the same for every provider. |
 
 Three of those defaults depend on the provider, because a default that is right for one is wrong for the other:
 
@@ -94,6 +95,16 @@ If a run fails on context rather than on quality, that is the signal to move up 
 
 Thinking is reasoning the model does before it answers. You never see it in the changelog, and it is billed as output tokens.
 
+One value means the same on every provider. Chartula sends it in the provider-neutral form, and each provider's adapter translates it:
+
+| `thinking` | Anthropic | OpenAI and compatible endpoints |
+| --- | --- | --- |
+| `provider-default` | nothing sent | nothing sent |
+| `disabled` | thinking disabled | `reasoning_effort: none` |
+| `low`, `medium`, `high`, `xhigh` | adaptive thinking at that effort | `reasoning_effort` at that level |
+
+`adaptive` and `on` are read as `high`: adaptive thinking without an effort is high effort, so a file written before the levels existed asks for what it asked for.
+
 The default, `provider-default`, sends no thinking field at all and leaves every model on its own behavior - which is **not** the same behavior across models. Measured on the same release, same command, on 2026-07-31:
 
 | Model | Thinks by default | Cost as it comes | With `thinking: disabled` |
@@ -122,16 +133,16 @@ Everything in the top half scales with what was found. The two thinking runs spe
 
 Not every value works on every model, and a rejected value fails the run rather than falling back:
 
-- `adaptive` needs Claude 4.6 or newer. Haiku 4.5 has no adaptive mode and rejects it.
+- An effort level needs Claude 4.6 or newer. Haiku 4.5 has no adaptive mode and rejects it.
+- `xhigh` needs Claude Opus 4.7 or newer; the 4.6 models reject it.
 - `disabled` is fine on the models above, but Claude Fable 5 always thinks and rejects an explicit off - leave `provider-default` there.
 
-Both combinations are refused when the configuration is read, before anything is fetched.
+These are refused when the configuration is read, before anything is fetched.
 A model id Chartula cannot read, such as a gateway alias, is passed through, and the API rejects a bad combination on the first request instead.
+The same goes for every OpenAI-compatible endpoint: its model ids say nothing reliable about what they accept, so a model that does not reason, or does not know a level, answers the first request with an error rather than being refused in advance.
 
-Set `disabled` or `adaptive` to make the behavior the same on every model rather than a property of the one you picked. On the evidence so far, thinking costs 20-25% more and found fewer claims, not more - but that is one release, measured once, so treat it as a reason to set the value deliberately rather than as a settled answer. Read the run metrics after you change it.
+Set a value explicitly to make the behavior the same on every model rather than a property of the one you picked. On the evidence so far, thinking costs 20-25% more and found fewer claims, not more - but that is one release, measured once, so treat it as a reason to set the value deliberately rather than as a settled answer. Read the run metrics after you change it.
 
-`thinking` is an Anthropic setting.
-It travels in a request field that has no equivalent in the OpenAI dialect, so setting anything but `provider-default` together with `provider: openai-compatible` fails the run instead of being quietly dropped.
 
 #### Running against your own endpoint
 

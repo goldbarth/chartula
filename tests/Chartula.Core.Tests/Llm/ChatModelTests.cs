@@ -201,22 +201,20 @@ public sealed class ChatModelTests
         Assert.Equal(FaithfulnessCheckStatus.Checked, report.Status);
     }
 
-    // Thinking has no provider-agnostic field in ChatOptions, so it rides the
-    // raw-representation hook. If ChatModel drops the factory, the setting silently
-    // does nothing and the only symptom is the invoice.
+    // If ChatModel drops the reasoning setting, it silently does nothing and the only
+    // symptom is the invoice.
     [Fact]
-    public async Task RephraseAsync_passes_the_raw_representation_factory_through()
+    public async Task RephraseAsync_passes_the_reasoning_setting_through()
     {
-        object marker = new();
         StubChatClient chat = new(NoEntries);
         ChatModel model = new(
             chat,
             new ChangelogPromptBuilder(),
-            new ChatModelOptions { RawRepresentationFactory = _ => marker });
+            new ChatModelOptions { Reasoning = new ReasoningOptions { Effort = ReasoningEffort.Low } });
 
         await model.RephraseAsync(new RephraseRequest(new GroundedFacts(["Adds search"]), Audience.Technical));
 
-        Assert.Same(marker, chat.LastOptions!.RawRepresentationFactory!(chat));
+        Assert.Equal(ReasoningEffort.Low, chat.LastOptions!.Reasoning?.Effort);
     }
 
     // Providers require an output ceiling and quietly substitute a small default when

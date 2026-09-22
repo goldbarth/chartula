@@ -1,13 +1,21 @@
-using Anthropic.Models.Messages;
+using System.ClientModel;
+using System.ClientModel.Primitives;
+using System.Net;
+using System.Text.Json;
+using Anthropic;
 using Chartula.Cli.Composition;
 using Chartula.Cli.Configuration;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using OpenAI;
 
 namespace Chartula.Cli.Tests.Configuration;
 
 /// <summary>
 /// Thinking is billed as output tokens and models disagree about their own default,
-/// so it has to be something a user can state rather than discover on an invoice.
+/// so it has to be something a user can state rather than discover on an invoice -
+/// and state once, in words that mean the same on every provider (#87).
 /// </summary>
 public sealed class ThinkingModeTests
 {
@@ -18,11 +26,27 @@ public sealed class ThinkingModeTests
     [InlineData("default", ThinkingMode.ProviderDefault)]
     [InlineData("disabled", ThinkingMode.Disabled)]
     [InlineData("off", ThinkingMode.Disabled)]
-    [InlineData("Adaptive", ThinkingMode.Adaptive)]
-    [InlineData("on", ThinkingMode.Adaptive)]
+    [InlineData("none", ThinkingMode.Disabled)]
+    [InlineData("low", ThinkingMode.Low)]
+    [InlineData("Medium", ThinkingMode.Medium)]
+    [InlineData("high", ThinkingMode.High)]
+    [InlineData("xhigh", ThinkingMode.ExtraHigh)]
+    [InlineData("extra-high", ThinkingMode.ExtraHigh)]
     public void Parses_the_configured_mode(string? configured, ThinkingMode expected)
     {
         Assert.Equal(expected, ThinkingModeParser.Parse(configured));
+    }
+
+    // adaptive and on were the one way to turn thinking on before the effort levels.
+    // Adaptive thinking without an effort is high effort, so existing files keep
+    // asking for what they asked for.
+    [Theory]
+    [InlineData("adaptive")]
+    [InlineData("Adaptive")]
+    [InlineData("on")]
+    public void The_earlier_on_values_read_as_high(string configured)
+    {
+        Assert.Equal(ThinkingMode.High, ThinkingModeParser.Parse(configured));
     }
 
     [Fact]
@@ -52,60 +76,62 @@ public sealed class ThinkingModeTests
         Assert.Equal(ThinkingMode.Disabled, ThinkingModeParser.Parse(llm.Thinking));
     }
 
-    // Provider default means sending no thinking field at all, not sending one that
-    // says "default" - the absence is what leaves each model on its own behavior.
-    [Fact]
-    public void The_provider_default_adds_nothing_to_the_request()
-    {
-        Assert.Null(AnthropicThinking.FactoryFor(ThinkingMode.ProviderDefault, "claude-opus-4-8", 16_000));
-    }
-
+    // What actually leaves the machine, through the real adapters with only the
+    // network stubbed. The mapping lives in the provider packages, so a package update
+    // that changed it would otherwise show up only on the invoice.
     [Theory]
-    [InlineData(ThinkingMode.Disabled)]
-    [InlineData(ThinkingMode.Adaptive)]
-    public void An_explicit_mode_becomes_a_thinking_field_on_the_request(ThinkingMode mode)
+    [InlineData("provider-default", null, null, null)]
+    [InlineData("disabled", """{"type":"disabled"}""", null, "none")]
+    [InlineData("low", """{"type":"adaptive"}""", "low", "low")]
+    [InlineData("medium", """{"type":"adaptive"}""", "medium", "medium")]
+    [InlineData("high", """{"type":"adaptive"}""", "high", "high")]
+    [InlineData("xhigh", """{"type":"adaptive"}""", "xhigh", "xhigh")]
+    public async Task One_value_asks_every_provider_for_the_same_thing(
+        string thinking, string? anthropicThinking, string? anthropicEffort, string? openAiEffort)
     {
-        MessageCreateParams request = Request(mode);
+        ChatOptions options = new()
+        {
+            MaxOutputTokens = 2_000,
+            Reasoning = Services("anthropic", "claude-sonnet-5", thinking).Reasoning,
+        };
 
-        Assert.NotNull(request.Thinking);
-    }
+        CapturingHandler anthropic = new(AnthropicReply);
+        IChatClient anthropicClient = new AnthropicClient { ApiKey = "k", HttpClient = new HttpClient(anthropic) }
+            .AsIChatClient("claude-sonnet-5");
+        await anthropicClient.GetResponseAsync("hi", options);
 
-    // The adapter merges the messages into this fragment and takes everything else as
-    // given, so a fragment that forgets the model asks the provider for whatever it
-    // does say. That failure is invisible in unit tests and obvious in an API error:
-    // an earlier version shipped a placeholder here and the API answered
-    // "model: placeholder" on every call.
-    [Fact]
-    public void The_fragment_carries_the_configured_model_and_ceiling()
-    {
-        MessageCreateParams request = Request(ThinkingMode.Disabled);
+        CapturingHandler openAi = new(OpenAiReply);
+        IChatClient openAiClient = new OpenAIClient(
+                new ApiKeyCredential("k"),
+                new OpenAIClientOptions { Transport = new HttpClientPipelineTransport(new HttpClient(openAi)) })
+            .GetChatClient("gpt-test").AsIChatClient();
+        await openAiClient.GetResponseAsync("hi", options);
 
-        // ToString round-trips the JSON form, quotes included.
-        Assert.Contains("claude-opus-4-8", request.Model.ToString());
-        Assert.Equal(4_096, request.MaxTokens);
-    }
+        Assert.Equal(anthropicThinking, anthropic.Field("thinking"));
+        Assert.Equal(anthropicEffort, anthropic.Field("output_config", "effort"));
+        Assert.Equal(openAiEffort, openAi.Field("reasoning_effort"));
 
-    // Messages are the one field the adapter appends to rather than replaces.
-    [Fact]
-    public void The_fragment_leaves_the_conversation_to_the_adapter()
-    {
-        Assert.Empty(Request(ThinkingMode.Disabled).Messages);
+        // The request keeps its model and ceiling: nothing replaces the ordinary path.
+        Assert.Equal("claude-sonnet-5", anthropic.Field("model"));
+        Assert.Equal("2000", anthropic.Field("max_tokens"));
     }
 
     // The API rejects these combinations on the first request. Refused here instead,
     // so the run fails before it fetches anything rather than after.
     [Theory]
-    [InlineData(ThinkingMode.Adaptive, "claude-haiku-4-5")]
-    [InlineData(ThinkingMode.Adaptive, "claude-haiku-4-5-20251001")]
-    [InlineData(ThinkingMode.Adaptive, "claude-opus-4-20250514")]
-    [InlineData(ThinkingMode.Adaptive, "claude-3-5-haiku-20241022")]
-    [InlineData(ThinkingMode.Adaptive, "us.anthropic.claude-sonnet-4-5-20250929-v1:0")]
+    [InlineData(ThinkingMode.High, "claude-haiku-4-5")]
+    [InlineData(ThinkingMode.Low, "claude-haiku-4-5-20251001")]
+    [InlineData(ThinkingMode.High, "claude-opus-4-20250514")]
+    [InlineData(ThinkingMode.Medium, "claude-3-5-haiku-20241022")]
+    [InlineData(ThinkingMode.High, "us.anthropic.claude-sonnet-4-5-20250929-v1:0")]
+    [InlineData(ThinkingMode.ExtraHigh, "claude-opus-4-6")]
+    [InlineData(ThinkingMode.ExtraHigh, "claude-sonnet-4-6")]
     [InlineData(ThinkingMode.Disabled, "claude-fable-5")]
     [InlineData(ThinkingMode.Disabled, "claude-fable-5-1")]
-    public void A_mode_the_model_rejects_fails_at_config_load(ThinkingMode mode, string model)
+    public void A_mode_the_claude_model_rejects_fails_at_config_load(ThinkingMode mode, string model)
     {
         InvalidOperationException error =
-            Assert.Throws<InvalidOperationException>(() => AnthropicThinking.FactoryFor(mode, model, 4_096));
+            Assert.Throws<InvalidOperationException>(() => ClaudeThinkingSupport.EnsureModelAccepts(mode, model));
 
         Assert.Contains("llm.thinking", error.Message);
         Assert.Contains(model, error.Message);
@@ -114,33 +140,71 @@ public sealed class ThinkingModeTests
     // An id this cannot read is left to the API: refusing it would block gateway
     // aliases and models released after this list.
     [Theory]
-    [InlineData(ThinkingMode.Adaptive, "claude-opus-4-6")]
-    [InlineData(ThinkingMode.Adaptive, "claude-opus-4-8")]
-    [InlineData(ThinkingMode.Adaptive, "claude-sonnet-5")]
-    [InlineData(ThinkingMode.Adaptive, "claude-fable-5-1")]
+    [InlineData(ThinkingMode.High, "claude-opus-4-6")]
+    [InlineData(ThinkingMode.ExtraHigh, "claude-opus-4-8")]
+    [InlineData(ThinkingMode.Low, "claude-sonnet-5")]
+    [InlineData(ThinkingMode.High, "claude-fable-5-1")]
     [InlineData(ThinkingMode.Disabled, "claude-haiku-4-5")]
     [InlineData(ThinkingMode.Disabled, "claude-opus-5")]
-    [InlineData(ThinkingMode.Adaptive, "my-gateway-alias")]
-    [InlineData(ThinkingMode.Disabled, "my-gateway-alias")]
-    public void A_mode_the_model_accepts_or_an_unknown_model_builds_a_fragment(ThinkingMode mode, string model)
+    [InlineData(ThinkingMode.ExtraHigh, "my-gateway-alias")]
+    [InlineData(ThinkingMode.ProviderDefault, "claude-haiku-4-5")]
+    [InlineData(ThinkingMode.ProviderDefault, "claude-fable-5")]
+    public void A_mode_the_model_accepts_or_an_unknown_model_passes(ThinkingMode mode, string model)
     {
-        Assert.NotNull(AnthropicThinking.FactoryFor(mode, model, 4_096));
+        ClaudeThinkingSupport.EnsureModelAccepts(mode, model);
     }
 
-    // Provider default sends nothing, so there is nothing for any model to reject.
-    [Theory]
-    [InlineData("claude-haiku-4-5")]
-    [InlineData("claude-fable-5")]
-    public void The_provider_default_is_accepted_by_every_model(string model)
+    private static Core.Llm.ChatModelOptions Services(string provider, string model, string thinking)
     {
-        Assert.Null(AnthropicThinking.FactoryFor(ThinkingMode.ProviderDefault, model, 4_096));
+        IConfiguration configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(ChartulaYamlConfiguration.Flatten(
+                $"""
+                 llm:
+                   provider: {provider}
+                   model: {model}
+                   thinking: {thinking}
+                 """))
+            .AddInMemoryCollection([new("ANTHROPIC_API_KEY", "k")])
+            .Build();
+
+        return new ServiceCollection().AddChartulaLlm(configuration).BuildServiceProvider()
+            .GetRequiredService<Core.Llm.ChatModelOptions>();
     }
 
-    private static MessageCreateParams Request(ThinkingMode mode)
-    {
-        Func<Microsoft.Extensions.AI.IChatClient, object?>? factory =
-            AnthropicThinking.FactoryFor(mode, "claude-opus-4-8", 4_096);
+    private const string AnthropicReply =
+        """{"id":"m","type":"message","role":"assistant","model":"x","content":[{"type":"text","text":"ok"}],"stop_reason":"end_turn","usage":{"input_tokens":1,"output_tokens":1}}""";
 
-        return Assert.IsType<MessageCreateParams>(factory!(null!));
+    private const string OpenAiReply =
+        """{"id":"c","object":"chat.completion","created":1,"model":"x","choices":[{"index":0,"message":{"role":"assistant","content":"ok"},"finish_reason":"stop"}],"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}""";
+
+    /// <summary>Records the first request body and answers with a canned reply.</summary>
+    private sealed class CapturingHandler(string reply) : HttpMessageHandler
+    {
+        private string? _body;
+
+        /// <summary>A field of the request body as raw JSON (strings unquoted), or null when absent.</summary>
+        public string? Field(params string[] path)
+        {
+            using JsonDocument document = JsonDocument.Parse(_body!);
+            JsonElement element = document.RootElement;
+            foreach (string name in path)
+            {
+                if (!element.TryGetProperty(name, out element))
+                {
+                    return null;
+                }
+            }
+
+            return element.ValueKind == JsonValueKind.String ? element.GetString() : element.GetRawText();
+        }
+
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            _body ??= await request.Content!.ReadAsStringAsync(ct);
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(reply, System.Text.Encoding.UTF8, "application/json"),
+            };
+        }
     }
 }

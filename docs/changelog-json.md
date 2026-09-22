@@ -43,7 +43,7 @@ Each field is left out when the run does not have a value for it, never written 
 | `provider` | string | The model provider as configured: `anthropic` or `openai-compatible`. |
 | `model` | string | The model id the renderings were written with. |
 | `promptHash` | string | `sha256:` and a hex digest of every instruction Chartula sends - each audience's system prompt and the thorough check's - without the facts. Two files with the same hash were rendered from the same instructions. |
-| `thinking` | string | The configured `llm.thinking`: `provider-default`, `disabled` or `adaptive`. `provider-default` records the setting, not whether the model thought - some models think by default, others do not (see [`thinking`](configuration.md#thinking)). |
+| `thinking` | string | The configured `llm.thinking`: `provider-default`, `disabled`, `low`, `medium`, `high` or `xhigh`, as the configuration spells it (`adaptive` is recorded as `high`). `provider-default` records the setting, not whether the model thought - some models think by default, others do not (see [`thinking`](configuration.md#thinking)). |
 | `thoroughCheck` | boolean | Whether the thorough faithfulness check ran (`faithfulness.thorough`). |
 | `factBaseDepth` | string | The configured `factBase.depth`: `title-only`, `title-and-description` or `title-description-and-issues`. |
 

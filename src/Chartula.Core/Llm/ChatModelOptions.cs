@@ -25,11 +25,9 @@ public sealed class ChatModelOptions
     public int MaxOutputTokens { get; init; } = 32_000;
 
     /// <summary>
-    /// An optional hook for provider-specific request fields that have no
-    /// provider-agnostic equivalent - thinking being the one Chartula needs. The
-    /// object it returns is the provider's own request type, so only the composition
-    /// root can build one; this type carries the delegate without naming a provider.
-    /// Null sends nothing extra, which leaves each model on its own default.
+    /// How much the model reasons, in the provider-neutral form every adapter
+    /// translates to its own request field. Null sends nothing, which leaves each
+    /// model on its own default.
     /// </summary>
-    public Func<IChatClient, object?>? RawRepresentationFactory { get; init; }
+    public ReasoningOptions? Reasoning { get; init; }
 }

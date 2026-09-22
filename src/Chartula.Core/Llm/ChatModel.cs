@@ -32,7 +32,7 @@ public sealed class ChatModel(
         => new()
         {
             MaxOutputTokens = _options.MaxOutputTokens,
-            RawRepresentationFactory = _options.RawRepresentationFactory,
+            Reasoning = _options.Reasoning,
         };
 
     public async Task<RenderedEntries> RephraseAsync(

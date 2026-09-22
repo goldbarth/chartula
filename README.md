@@ -267,6 +267,9 @@ A `chartula.yaml` in your repository root refines the defaults, and every settin
 [`chartula.example.yaml`](chartula.example.yaml) is a commented starting point - copy it and uncomment only what you need.
 Every option is documented in [Configuration](docs/configuration.md).
 
+`llm.thinking` is one setting for every provider: `disabled`, or an effort of `low`, `medium`, `high` or `xhigh`, which Chartula sends in a provider-neutral form that Anthropic reads as adaptive thinking at that effort and OpenAI-compatible endpoints as `reasoning_effort`.
+Left unset, each model keeps its own default, and models differ - see [`thinking`](docs/configuration.md#thinking).
+
 ---
 
 ## Documentation
