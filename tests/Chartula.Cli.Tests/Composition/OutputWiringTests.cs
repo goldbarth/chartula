@@ -2,6 +2,7 @@ using Chartula.Cli.Composition;
 using Chartula.Cli.Configuration;
 using Chartula.Core.Serialization;
 using Chartula.Infrastructure.Serialization;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Chartula.Cli.Tests.Composition;
@@ -16,7 +17,9 @@ public sealed class OutputWiringTests
     // The LLM options are registered by AddChartulaLlm in a real run; changelog.json
     // records the model from them.
     private static ServiceProvider Build()
-        => new ServiceCollection().AddSingleton(new LlmOptions()).AddChartulaOutputs().BuildServiceProvider();
+        => new ServiceCollection().AddSingleton(new LlmOptions())
+            .AddChartulaOutputs(new ConfigurationBuilder().Build())
+            .BuildServiceProvider();
 
     [Fact]
     public void Every_local_output_resolves_to_a_writer_that_puts_files_on_disk()

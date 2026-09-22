@@ -120,7 +120,7 @@ internal static class Program
             .AddChartulaGeneration()
             .AddChartulaFaithfulness(configuration)
             .AddChartulaReview(configuration)
-            .AddChartulaOutputs()
+            .AddChartulaOutputs(configuration)
             .AddChartulaReleaseNotes(configuration)
             .AddChartulaPipeline()
             .BuildServiceProvider();

@@ -29,7 +29,13 @@ public sealed record ChangelogProvenance(
     [property: JsonPropertyName("model"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     string? Model,
     [property: JsonPropertyName("promptHash"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    string? PromptHash);
+    string? PromptHash,
+    [property: JsonPropertyName("thinking"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    string? Thinking = null,
+    [property: JsonPropertyName("thoroughCheck"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    bool? ThoroughCheck = null,
+    [property: JsonPropertyName("factBaseDepth"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    string? FactBaseDepth = null);
 
 /// <summary>One change entry in <see cref="ChangelogDocument"/>.</summary>
 public sealed record ChangelogChange(

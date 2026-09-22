@@ -25,6 +25,37 @@ public sealed class ProvenanceSerializationTests
         Assert.Equal("sha256:ff", provenance.GetProperty("promptHash").GetString());
     }
 
+    // #223: a boolean false is a value, not an absent one - "the check was off" must
+    // survive, where an unset setting is left out like any other.
+    [Fact]
+    public void Records_thinking_the_thorough_check_and_the_depth_and_reads_them_back()
+    {
+        string json = ChangelogJsonSerializer.Serialize(
+            Facts, null, new RunProvenance("0.1.0", "anthropic", "m", null, "disabled", false, "title-only"));
+
+        using JsonDocument parsed = JsonDocument.Parse(json);
+        JsonElement provenance = parsed.RootElement.GetProperty("provenance");
+        Assert.Equal("disabled", provenance.GetProperty("thinking").GetString());
+        Assert.False(provenance.GetProperty("thoroughCheck").GetBoolean());
+        Assert.Equal("title-only", provenance.GetProperty("factBaseDepth").GetString());
+
+        Assert.Equal(
+            new ChangelogProvenance("0.1.0", "anthropic", "m", null, "disabled", false, "title-only"),
+            ChangelogJsonSerializer.Deserialize(json).Provenance);
+    }
+
+    [Fact]
+    public void Settings_a_run_does_not_have_are_left_out()
+    {
+        using JsonDocument parsed = JsonDocument.Parse(ChangelogJsonSerializer.Serialize(
+            Facts, null, new RunProvenance("0.1.0", "anthropic", "m", null)));
+
+        JsonElement provenance = parsed.RootElement.GetProperty("provenance");
+        Assert.False(provenance.TryGetProperty("thinking", out _));
+        Assert.False(provenance.TryGetProperty("thoroughCheck", out _));
+        Assert.False(provenance.TryGetProperty("factBaseDepth", out _));
+    }
+
     // An absent source is an absent field: an empty one would read as a fact about the run.
     [Theory]
     [InlineData(null)]

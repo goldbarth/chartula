@@ -15,4 +15,18 @@ namespace Chartula.Core.Serialization;
 /// <c>ChangelogPromptBuilder.PromptHash</c>. Two files with the same hash were
 /// rendered from the same instructions.
 /// </param>
-public sealed record RunProvenance(string? ToolVersion, string? Provider, string? Model, string? PromptHash);
+/// <param name="Thinking">
+/// The configured thinking mode. <c>provider-default</c> is the model's own
+/// behavior, which thinks on some models and not on others, so it records the
+/// setting, not whether the model thought.
+/// </param>
+/// <param name="ThoroughCheck">Whether the thorough faithfulness check ran.</param>
+/// <param name="FactBaseDepth">How much of each pull request the facts were built from.</param>
+public sealed record RunProvenance(
+    string? ToolVersion,
+    string? Provider,
+    string? Model,
+    string? PromptHash,
+    string? Thinking = null,
+    bool? ThoroughCheck = null,
+    string? FactBaseDepth = null);

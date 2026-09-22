@@ -59,4 +59,13 @@ public static class ThinkingModeParser
                 "(aliases: default, off, on)."),
         };
     }
+
+    /// <summary>The mode as the configuration spells it, the name <see cref="Parse"/> reads back.</summary>
+    public static string Name(ThinkingMode mode) => mode switch
+    {
+        ThinkingMode.ProviderDefault => "provider-default",
+        ThinkingMode.Disabled => "disabled",
+        ThinkingMode.Adaptive => "adaptive",
+        _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null),
+    };
 }
