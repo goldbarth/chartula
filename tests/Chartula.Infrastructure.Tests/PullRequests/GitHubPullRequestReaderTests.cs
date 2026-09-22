@@ -209,7 +209,9 @@ public sealed class GitHubPullRequestReaderTests
     {
         StubHttpMessageHandler handler = StubHttpMessageHandler.ReturningStatus(
             HttpStatusCode.Unauthorized, """{"message":"Bad credentials"}""");
-        GitHubPullRequestReader reader = new(StubHttpMessageHandler.ClientFor(handler), "MY_TOKEN");
+        HttpClient client = StubHttpMessageHandler.ClientFor(handler);
+        client.DefaultRequestHeaders.Authorization = new("Bearer", "expired");
+        GitHubPullRequestReader reader = new(client, "MY_TOKEN");
 
         InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(
             () => reader.GetMergedPullRequestsAsync(Repo, RangeWith("abc123")));

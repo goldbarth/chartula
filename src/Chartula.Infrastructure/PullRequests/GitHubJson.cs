@@ -29,19 +29,9 @@ internal sealed class GitHubLabelDto
 }
 
 /// <summary>
-/// The body GitHub sends with an error status. Only its message is read, so an
-/// error is reported in GitHub's words rather than as raw JSON.
-/// </summary>
-internal sealed class GitHubErrorDto
-{
-    public string? Message { get; init; }
-}
-
-/// <summary>
 /// Source-generated (reflection-free) serialization context, so PR parsing stays
 /// AOT- and trim-safe.
 /// </summary>
 [JsonSourceGenerationOptions(PropertyNameCaseInsensitive = true)]
 [JsonSerializable(typeof(GitHubPullRequestDto[]))]
-[JsonSerializable(typeof(GitHubErrorDto))]
 internal sealed partial class GitHubJsonContext : JsonSerializerContext;

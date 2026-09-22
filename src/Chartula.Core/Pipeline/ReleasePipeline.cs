@@ -94,18 +94,20 @@ public sealed class ReleasePipeline(
 
         IReadOnlyList<string> written = [];
         IReadOnlyList<string> skipped = [];
+        string? publishFailure = null;
         // A run in which no audience rendered has nothing to record. Writing the fact
         // base alone would replace the renderings of an earlier, good run with none,
         // and read as a run that produced something.
         if (mode != PipelineMode.Preview && finalTexts.Count > 0)
         {
-            (written, skipped) = await WriteOutputsAsync(
+            (written, skipped, publishFailure) = await WriteOutputsAsync(
                 request, range, factBase, finalTexts, descriptions, mode, cancellationToken);
         }
 
         return new ReleaseOutcome(request.Tag, mode, outcomes, written, _metrics.Snapshot())
         {
             SkippedOutputs = skipped,
+            PublishFailure = publishFailure,
         };
     }
 
@@ -132,7 +134,7 @@ public sealed class ReleasePipeline(
         return flags;
     }
 
-    private async Task<(IReadOnlyList<string> Written, IReadOnlyList<string> Skipped)> WriteOutputsAsync(
+    private async Task<(IReadOnlyList<string> Written, IReadOnlyList<string> Skipped, string? PublishFailure)> WriteOutputsAsync(
         ReleaseRequest request,
         CommitRange range,
         FactBase factBase,
@@ -143,6 +145,7 @@ public sealed class ReleasePipeline(
     {
         List<string> written = [];
         List<string> skipped = [];
+        string? publishFailure = null;
 
         written.Add(await jsonWriter.WriteAsync(factBase, finalTexts, cancellationToken));
 
@@ -176,8 +179,17 @@ public sealed class ReleasePipeline(
             // silence, so a run that published nothing says so.
             if (mode == PipelineMode.Generate)
             {
-                written.Add(await releaseNotesWriter.WriteAsync(
-                    request.Repository, request.Tag, technical, cancellationToken));
+                // The one write that leaves the machine, and the last one: a refusal
+                // here is reported next to what was written, not instead of it.
+                try
+                {
+                    written.Add(await releaseNotesWriter.WriteAsync(
+                        request.Repository, request.Tag, technical, cancellationToken));
+                }
+                catch (InvalidOperationException ex)
+                {
+                    publishFailure = ex.Message;
+                }
             }
             else
             {
@@ -186,7 +198,7 @@ public sealed class ReleasePipeline(
             }
         }
 
-        return (written, skipped);
+        return (written, skipped, publishFailure);
     }
 
     /// <summary>
