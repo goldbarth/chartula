@@ -17,17 +17,40 @@ public sealed class RunMetrics : IRunMetrics
     private int _thoroughFlags;
     private int _thoroughOnlyFlags;
     private int _thoroughNotEvaluated;
+    private TimeSpan? _runDuration;
 
-    public void RecordLlmCall(LlmOperation operation, long? inputTokens, long? outputTokens)
+    public void RecordLlmCall(LlmOperation operation, LlmCall call)
+    {
+        ArgumentNullException.ThrowIfNull(call);
+
+        lock (_gate)
+        {
+            LlmUsage current = _llm.TryGetValue(operation, out LlmUsage? existing) ? existing : LlmUsage.None;
+
+            // A failed call returned no usage to count, but its time was spent.
+            bool answered = !call.Failed;
+            int unreportedCalls = answered && (call.InputTokens is null || call.OutputTokens is null) ? 1 : 0;
+
+            _llm[operation] = new LlmUsage(
+                current.TotalCalls + (answered ? 1 : 0),
+                current.CallsWithoutUsage + unreportedCalls,
+                current.Tokens + new TokenUsage(call.InputTokens ?? 0, call.OutputTokens ?? 0))
+            {
+                FailedCalls = current.FailedCalls + (answered ? 0 : 1),
+                Duration = current.Duration + call.Duration,
+                LongestCall = call.Duration > current.LongestCall ? call.Duration : current.LongestCall,
+                Retries = call.Attempts is { } attempts
+                    ? (current.Retries ?? 0) + Math.Max(0, attempts - 1)
+                    : current.Retries,
+            };
+        }
+    }
+
+    public void RecordRunDuration(TimeSpan duration)
     {
         lock (_gate)
         {
-            int unreportedCalls = inputTokens is null || outputTokens is null ? 1 : 0;
-            LlmUsage current = _llm.TryGetValue(operation, out LlmUsage? existing) ? existing : LlmUsage.None;
-            _llm[operation] = new LlmUsage(
-                current.TotalCalls + 1,
-                current.CallsWithoutUsage + unreportedCalls,
-                current.Tokens + new TokenUsage(inputTokens ?? 0, outputTokens ?? 0));
+            _runDuration = duration;
         }
     }
 
@@ -77,7 +100,10 @@ public sealed class RunMetrics : IRunMetrics
                 new CheckActivity(_thoroughRuns, _thoroughRunsWithFindings, _thoroughFlags),
                 _thoroughNotEvaluated,
                 _thoroughOnlyFlags,
-                new Dictionary<LlmOperation, LlmUsage>(_llm));
+                new Dictionary<LlmOperation, LlmUsage>(_llm))
+            {
+                Duration = _runDuration,
+            };
         }
     }
 }

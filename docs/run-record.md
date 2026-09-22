@@ -71,10 +71,15 @@ A failed audience has no `flags`: it was never checked, and an empty list would 
 
 | Field | Description |
 | --- | --- |
-| `rephrase` | The rephrasing calls: `calls`, `callsWithoutUsage`, `inputTokens`, `outputTokens`. |
-| `faithfulnessCheck` | The thorough check's calls, in the same four fields. All zero when the check was off. |
+| `rephrase` | The rephrasing calls: `calls`, `callsWithoutUsage`, `inputTokens`, `outputTokens`, `failedCalls`, `durationSeconds`, `longestCallSeconds`, and `retries` when they could be counted. |
+| `faithfulnessCheck` | The thorough check's calls, in the same fields. All zero when the check was off. |
 | `ruleBasedCheck` | `runs`, `runsWithFindings` and `flags` of the free check. |
 | `thoroughCheck` | The same three for the thorough check, plus `onlyThoroughFlags` - the claims only it caught - and `notEvaluated` - the runs that came back unreadable. |
+| `durationSeconds` | How long the whole run took. |
+
+Times are seconds with millisecond precision.
+`retries` is left out when it could not be counted, rather than written as zero - see [When a run was slow](run-metrics.md#when-a-run-was-slow).
+A record written before these fields existed reads with zeros for them and no `retries`.
 
 The numbers mean what they mean in the [run summary](run-metrics.md#what-the-numbers-mean).
 `callsWithoutUsage` above zero makes the token counts a lower bound.
@@ -122,13 +127,21 @@ Both operations are always present, with zeros when they made no call, so any tw
       "calls": 2,
       "callsWithoutUsage": 0,
       "inputTokens": 5437,
-      "outputTokens": 859
+      "outputTokens": 859,
+      "failedCalls": 0,
+      "durationSeconds": 41.023,
+      "longestCallSeconds": 22.105,
+      "retries": 1
     },
     "faithfulnessCheck": {
       "calls": 2,
       "callsWithoutUsage": 0,
       "inputTokens": 4120,
-      "outputTokens": 96
+      "outputTokens": 96,
+      "failedCalls": 0,
+      "durationSeconds": 9.87,
+      "longestCallSeconds": 5.2,
+      "retries": 0
     },
     "ruleBasedCheck": {
       "runs": 2,
@@ -141,7 +154,8 @@ Both operations are always present, with zeros when they made no call, so any tw
       "flags": 1,
       "onlyThoroughFlags": 1,
       "notEvaluated": 0
-    }
+    },
+    "durationSeconds": 64.311
   }
 }
 ```

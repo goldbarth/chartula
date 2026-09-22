@@ -40,14 +40,25 @@ public sealed record RunRecordMetrics(
     [property: JsonPropertyName("rephrase")] RunRecordLlmUsage Rephrase,
     [property: JsonPropertyName("faithfulnessCheck")] RunRecordLlmUsage FaithfulnessCheck,
     [property: JsonPropertyName("ruleBasedCheck")] RunRecordCheck RuleBasedCheck,
-    [property: JsonPropertyName("thoroughCheck")] RunRecordThoroughCheck ThoroughCheck);
+    [property: JsonPropertyName("thoroughCheck")] RunRecordThoroughCheck ThoroughCheck,
+    [property: JsonPropertyName("durationSeconds"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    double? DurationSeconds = null);
 
-/// <summary>Calls and tokens of one LLM operation.</summary>
+/// <summary>
+/// Calls, tokens and time of one LLM operation. The fields after the tokens were
+/// added under schema version 1; a record written before them reads with zeros and
+/// no retry count.
+/// </summary>
 public sealed record RunRecordLlmUsage(
     [property: JsonPropertyName("calls")] int Calls,
     [property: JsonPropertyName("callsWithoutUsage")] int CallsWithoutUsage,
     [property: JsonPropertyName("inputTokens")] long InputTokens,
-    [property: JsonPropertyName("outputTokens")] long OutputTokens);
+    [property: JsonPropertyName("outputTokens")] long OutputTokens,
+    [property: JsonPropertyName("failedCalls")] int FailedCalls = 0,
+    [property: JsonPropertyName("durationSeconds")] double DurationSeconds = 0,
+    [property: JsonPropertyName("longestCallSeconds")] double LongestCallSeconds = 0,
+    [property: JsonPropertyName("retries"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    int? Retries = null);
 
 /// <summary>How often the rule-based check ran and what it found.</summary>
 public sealed record RunRecordCheck(

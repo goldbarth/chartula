@@ -8,6 +8,21 @@ public sealed record LlmUsage(int TotalCalls, int CallsWithoutUsage, TokenUsage 
 {
     /// <summary>Nothing called, nothing spent.</summary>
     public static LlmUsage None { get; } = new(0, 0, TokenUsage.None);
+
+    /// <summary>Calls that ended in an error. Not in <see cref="TotalCalls"/>, which counts answers.</summary>
+    public int FailedCalls { get; init; }
+
+    /// <summary>The time all calls took, failed ones included.</summary>
+    public TimeSpan Duration { get; init; }
+
+    /// <summary>The longest single call - the one to look at when a run was slow.</summary>
+    public TimeSpan LongestCall { get; init; }
+
+    /// <summary>
+    /// Requests sent beyond the first, across the calls whose requests could be
+    /// counted; <c>null</c> when none could, which is not the same as no retries.
+    /// </summary>
+    public int? Retries { get; init; }
 }
 
 /// <summary>How often a faithfulness check ran and how often it found something.</summary>
@@ -44,6 +59,9 @@ public sealed record RunReport(
     int ThoroughOnlyFlags,
     IReadOnlyDictionary<LlmOperation, LlmUsage> Llm)
 {
+    /// <summary>How long the run took, or <c>null</c> when it was not measured.</summary>
+    public TimeSpan? Duration { get; init; }
+
     /// <summary>An empty report - nothing ran.</summary>
     public static RunReport Empty { get; } = new(
         new CheckActivity(0, 0, 0),
@@ -60,6 +78,9 @@ public sealed record RunReport(
 
     /// <summary>Calls whose usage the provider did not report in full - the token total is a lower bound by that many calls.</summary>
     public int CallsWithoutUsage => Llm.Values.Sum(usage => usage.CallsWithoutUsage);
+
+    /// <summary>Calls that ended in an error, across operations.</summary>
+    public int FailedCalls => Llm.Values.Sum(usage => usage.FailedCalls);
 
     /// <summary>Calls and tokens for one operation; none if it never ran.</summary>
     public LlmUsage UsageOf(LlmOperation operation)

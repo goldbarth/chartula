@@ -7,10 +7,11 @@ A `generate` run also keeps it in a local file, so runs can be compared after th
 ```text
 Run metrics
   Rule-based check: 3 runs, 1 with findings, 1 claim, no tokens
-  Thorough check:   3 runs, 2 with findings, 2 claims, 6,230 in / 130 out
+  Thorough check:   3 runs, 2 with findings, 2 claims, 6,230 in / 130 out, 14.2 s (longest 6.1 s)
     caught 1 claim the rule-based check missed, for 6,360 tokens in 3 calls
-  Rephrasing:       3 calls, 5,437 in / 859 out
-  Total:            12,656 tokens
+  Rephrasing:       3 calls, 5,437 in / 859 out, 41.0 s (longest 22.1 s)
+  Total:            12,656 tokens in 1 min 4 s
+  Retries:          1 (rephrasing 1, thorough check 0)
 ```
 
 ## What the numbers mean
@@ -21,6 +22,23 @@ Run metrics
 | `with findings` | How many of those runs flagged at least one claim, the check's hit rate. |
 | `claims` | How many claims the check flagged in total. |
 | `in / out` | Tokens sent to and produced by the model, attributed to that operation. |
+| time, `longest` | How long that operation's calls took together, retries included, and the longest single call. |
+| `in <time>` | How long the whole run took, from reading history to the last model call. |
+| `Retries` | Requests sent again after the first, per operation - see below. |
+
+## When a run was slow
+
+A slow run has three usual causes, and the summary tells them apart:
+
+- **One slow call** - the `longest` time is most of the operation's time. A long release, or a model thinking at length.
+- **Uniformly slow calls** - the `longest` time is close to the average. A slow model or endpoint.
+- **Retried calls** - `Retries` above zero. The provider was overloaded, rate-limited the key, or a request timed out and was sent again. Every provider client does this on its own, and without the count a retried call looks like one slow call.
+
+Retries are counted from the requests the transport actually sends, the same way for every provider.
+`not observed` means they could not be counted, which is not the same as none: it appears only for a model client Chartula did not build itself.
+
+A call that ended in an error rather than an answer is listed under its operation as `failed without an answer`.
+Its time is in the totals, its tokens are not - there were none to report.
 
 The rule-based check makes no LLM call, so it always costs no tokens.
 

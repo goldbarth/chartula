@@ -97,4 +97,16 @@ public sealed class ReleasePipelineMetricsTests
 
         Assert.Equal(RunReport.Empty, outcome.Metrics);
     }
+
+    // #128: the whole run's time, so a slow run shows as one before its calls are read.
+    [Fact]
+    public async Task A_run_records_how_long_it_took()
+    {
+        RunMetrics metrics = new();
+
+        ReleaseOutcome outcome = await BuildPipeline(new PassThroughThoroughChecker(), metrics)
+            .RunAsync(Request(), PipelineMode.Preview);
+
+        Assert.NotNull(outcome.Metrics.Duration);
+    }
 }

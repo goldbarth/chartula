@@ -42,7 +42,8 @@ public static class RunRecordJsonSerializer
                     metrics.Thorough.RunsWithFindings,
                     metrics.Thorough.Flags,
                     metrics.ThoroughOnlyFlags,
-                    metrics.ThoroughNotEvaluated)));
+                    metrics.ThoroughNotEvaluated),
+                metrics.Duration is { } duration ? Seconds(duration) : null));
 
         return JsonSerializer.Serialize(document, RunRecordJsonContext.Default.RunRecordDocument);
     }
@@ -62,7 +63,18 @@ public static class RunRecordJsonSerializer
     };
 
     private static RunRecordLlmUsage Usage(LlmUsage usage)
-        => new(usage.TotalCalls, usage.CallsWithoutUsage, usage.Tokens.InputTokens, usage.Tokens.OutputTokens);
+        => new(
+            usage.TotalCalls,
+            usage.CallsWithoutUsage,
+            usage.Tokens.InputTokens,
+            usage.Tokens.OutputTokens,
+            usage.FailedCalls,
+            Seconds(usage.Duration),
+            Seconds(usage.LongestCall),
+            usage.Retries);
+
+    // Milliseconds are the finest a model call is worth measuring in.
+    private static double Seconds(TimeSpan duration) => Math.Round(duration.TotalSeconds, 3);
 }
 
 /// <summary>Source-generated (reflection-free) context for the run record format.</summary>

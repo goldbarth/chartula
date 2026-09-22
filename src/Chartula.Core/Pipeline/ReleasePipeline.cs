@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Chartula.Core.Facts;
 using Chartula.Core.Faithfulness;
 using Chartula.Core.Generation;
@@ -47,6 +48,7 @@ public sealed class ReleasePipeline(
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
+        long started = Stopwatch.GetTimestamp();
 
         CommitRange range = await commitReader.ReadReleaseCommitsAsync(request.Tag, request.Since, cancellationToken);
 
@@ -94,6 +96,9 @@ public sealed class ReleasePipeline(
             });
         }
 
+        // Everything the run waited on - history, GitHub, every model call - up to the
+        // point its results are known; writing them takes no time worth reporting.
+        _metrics.RecordRunDuration(Stopwatch.GetElapsedTime(started));
         RunReport report = _metrics.Snapshot();
 
         // Every model call is behind us, so the record is complete here. It is kept

@@ -8,8 +8,8 @@ public sealed class RunReportFormatterTests
     {
         RunMetrics metrics = new();
         metrics.RecordFaithfulnessChecks(["shared"], ["shared", "only thorough"], thoroughEvaluated: true);
-        metrics.RecordLlmCall(LlmOperation.Rephrase, 1_500, 300);
-        metrics.RecordLlmCall(LlmOperation.FaithfulnessCheck, 2_000, 40);
+        metrics.RecordLlmCall(LlmOperation.Rephrase, new LlmCall(1_500, 300));
+        metrics.RecordLlmCall(LlmOperation.FaithfulnessCheck, new LlmCall(2_000, 40));
         return metrics.Snapshot();
     }
 
@@ -38,8 +38,8 @@ public sealed class RunReportFormatterTests
     {
         RunMetrics metrics = new();
         metrics.RecordFaithfulnessChecks(["shared"], ["shared", "only thorough"], thoroughEvaluated: true);
-        metrics.RecordLlmCall(LlmOperation.Rephrase, 1_500, 300);
-        metrics.RecordLlmCall(LlmOperation.FaithfulnessCheck, null, null);
+        metrics.RecordLlmCall(LlmOperation.Rephrase, new LlmCall(1_500, 300));
+        metrics.RecordLlmCall(LlmOperation.FaithfulnessCheck, new LlmCall(null, null));
         return metrics.Snapshot();
     }
 
@@ -70,5 +70,56 @@ public sealed class RunReportFormatterTests
 
         Assert.Contains("0 runs", text);
         Assert.Contains("0 tokens", text);
+    }
+
+    // #128: which call took the time, whether it was sent again, how long the run was.
+    [Fact]
+    public void The_summary_reports_time_per_operation_the_run_and_retries()
+    {
+        RunMetrics metrics = new();
+        metrics.RecordFaithfulnessChecks([], [], thoroughEvaluated: true);
+        metrics.RecordLlmCall(LlmOperation.Rephrase, new LlmCall(1_500, 300) { Duration = TimeSpan.FromSeconds(18.95), Attempts = 1 });
+        metrics.RecordLlmCall(LlmOperation.Rephrase, new LlmCall(1_500, 300) { Duration = TimeSpan.FromSeconds(22.1), Attempts = 2 });
+        metrics.RecordLlmCall(LlmOperation.FaithfulnessCheck, new LlmCall(2_000, 40) { Duration = TimeSpan.FromSeconds(6.5), Attempts = 1 });
+        metrics.RecordRunDuration(TimeSpan.FromSeconds(64));
+
+        string text = RunReportFormatter.Format(metrics.Snapshot());
+
+        Assert.Contains("  Rephrasing:       2 calls, 3,000 in / 600 out, 41.1 s (longest 22.1 s)", text);
+        Assert.Contains("2,000 in / 40 out, 6.5 s", text);
+        Assert.Contains("  Total:            5,640 tokens in 1 min 4 s", text);
+        Assert.Contains("  Retries:          1 (rephrasing 1, thorough check 0)", text);
+    }
+
+    [Fact]
+    public void Retries_that_could_not_be_counted_are_said_to_be_not_observed()
+    {
+        RunMetrics metrics = new();
+        metrics.RecordLlmCall(LlmOperation.Rephrase, new LlmCall(1_500, 300));
+
+        Assert.Contains("  Retries:          not observed", RunReportFormatter.Format(metrics.Snapshot()));
+    }
+
+    [Fact]
+    public void Calls_answered_first_time_read_as_no_retries()
+    {
+        RunMetrics metrics = new();
+        metrics.RecordLlmCall(LlmOperation.Rephrase, new LlmCall(1_500, 300) { Attempts = 1 });
+
+        Assert.Contains("  Retries:          none", RunReportFormatter.Format(metrics.Snapshot()));
+    }
+
+    [Fact]
+    public void Failed_calls_are_named_under_their_operation()
+    {
+        RunMetrics metrics = new();
+        metrics.RecordLlmCall(LlmOperation.Rephrase, new LlmCall(null, null) { Duration = TimeSpan.FromMinutes(3), Attempts = 4, Failed = true });
+
+        string text = RunReportFormatter.Format(metrics.Snapshot());
+
+        Assert.Contains("  Rephrasing:       0 calls, 0 in / 0 out, 3 min 0 s", text);
+        Assert.Contains("    1 call failed without an answer", text);
+        Assert.Contains("  Retries:          3 (rephrasing 3)", text);
+        Assert.DoesNotContain("lower bound", text);
     }
 }
