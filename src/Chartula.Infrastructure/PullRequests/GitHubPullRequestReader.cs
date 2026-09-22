@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text.Json;
 using Chartula.Core.History;
 using Chartula.Core.PullRequests;
@@ -10,7 +11,12 @@ namespace Chartula.Infrastructure.PullRequests;
 /// AOT-friendly; the client's base address, auth, and headers are configured by
 /// the composition root.
 /// </summary>
-public sealed class GitHubPullRequestReader(HttpClient httpClient) : IReleasePullRequestReader
+/// <param name="httpClient">The configured GitHub client.</param>
+/// <param name="tokenVariable">
+/// The environment variable the token is read from, named in an error so the
+/// message points at what the caller can change.
+/// </param>
+public sealed class GitHubPullRequestReader(HttpClient httpClient, string tokenVariable) : IReleasePullRequestReader
 {
     public async Task<IReadOnlyList<PullRequestInfo>> GetMergedPullRequestsAsync(
         RepositoryCoordinates repository,
@@ -25,9 +31,13 @@ public sealed class GitHubPullRequestReader(HttpClient httpClient) : IReleasePul
         List<GitHubPullRequestDto> merged = [];
         Dictionary<int, List<string>> commitsByPull = [];
 
+        bool first = true;
         foreach (CommitInfo commit in range.Commits)
         {
-            foreach (GitHubPullRequestDto dto in await GetPullsForCommitAsync(repository, commit.Sha, cancellationToken))
+            GitHubPullRequestDto[] pulls = await GetPullsForCommitAsync(repository, commit.Sha, first, cancellationToken);
+            first = false;
+
+            foreach (GitHubPullRequestDto dto in pulls)
             {
                 // Merged pull requests only, de-duplicated across commits.
                 if (dto.MergedAt is null)
@@ -63,6 +73,7 @@ public sealed class GitHubPullRequestReader(HttpClient httpClient) : IReleasePul
     private async Task<GitHubPullRequestDto[]> GetPullsForCommitAsync(
         RepositoryCoordinates repository,
         string sha,
+        bool first,
         CancellationToken cancellationToken)
     {
         string path = $"repos/{repository.Owner}/{repository.Name}/commits/{sha}/pulls";
@@ -83,9 +94,7 @@ public sealed class GitHubPullRequestReader(HttpClient httpClient) : IReleasePul
             if (!response.IsSuccessStatusCode)
             {
                 string body = await response.Content.ReadAsStringAsync(cancellationToken);
-                throw new InvalidOperationException(
-                    $"GitHub API returned {(int)response.StatusCode} {response.ReasonPhrase} " +
-                    $"for commit {sha}. {Truncate(body)}");
+                throw new InvalidOperationException(Describe(response, repository, sha, first, ErrorMessage(body)));
             }
 
             try
@@ -102,6 +111,93 @@ public sealed class GitHubPullRequestReader(HttpClient httpClient) : IReleasePul
         }
     }
 
-    private static string Truncate(string value)
-        => value.Length <= 200 ? value : value[..200] + "...";
+    /// <summary>
+    /// Names the cause the caller can act on. GitHub answers every request here with
+    /// a status about one commit, but on the first request a 403 or 404 is about the
+    /// repository or the credentials - nothing has been read from it yet - so the
+    /// message says that instead of naming a commit.
+    /// </summary>
+    private string Describe(
+        HttpResponseMessage response,
+        RepositoryCoordinates repository,
+        string sha,
+        bool first,
+        string gitHubMessage)
+    {
+        string repo = $"{repository.Owner}/{repository.Name}";
+        string status = $"{(int)response.StatusCode} {response.ReasonPhrase}";
+        bool withToken = httpClient.DefaultRequestHeaders.Authorization is not null;
+
+        if (response.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            return $"GitHub rejected the token in {tokenVariable} ({status}): it is expired, revoked or mistyped.";
+        }
+
+        // A spent budget is a 403 or 429 anywhere in the release, and says nothing
+        // about access; the unauthenticated budget is the one a run can exhaust.
+        if (response.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.TooManyRequests
+            && Header(response, "x-ratelimit-remaining") == "0")
+        {
+            string remedy = withToken
+                ? "Wait until it resets and run again."
+                : $"A token in {tokenVariable} raises it; see the warning at the start of the run.";
+            return $"GitHub's rate limit is spent ({status}). {remedy}";
+        }
+
+        // The endpoint reports a commit it does not know as 422, and so does a
+        // repository that exists but is not the one the history was read from.
+        if (response.StatusCode == HttpStatusCode.UnprocessableEntity)
+        {
+            return $"""
+                Commit {sha} is not in {repo} on GitHub ({status}).
+                  Either the current directory is not a checkout of {repo} (check --repo),
+                  or the commit has not been pushed.
+                """;
+        }
+
+        if (first && response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.Forbidden)
+        {
+            string token = withToken
+                ? $"The request carried the token from {tokenVariable}."
+                : $"The request carried no token: {tokenVariable} is not set.";
+            string likely = withToken
+                ? $"  - the token cannot read {repo}, or lacks the Pull requests (read) permission"
+                : $"  - {repo} is private, and reading it needs a token in {tokenVariable}";
+
+            // GitHub names the permission a fine-grained token is missing.
+            string? needed = Header(response, "x-accepted-github-permissions");
+            string permission = needed is null ? string.Empty : $"\n  GitHub says the token needs: {needed}";
+
+            return $"""
+                GitHub cannot read {repo} ({status}).
+                  {token}{permission}
+                  Likely causes:
+                  - --repo is misspelled
+                {likely}
+                """;
+        }
+
+        return $"GitHub API returned {status} for commit {sha}: {gitHubMessage}";
+    }
+
+    private static string? Header(HttpResponseMessage response, string name)
+        => response.Headers.TryGetValues(name, out IEnumerable<string>? values) ? values.FirstOrDefault() : null;
+
+    /// <summary>GitHub's own message from an error body, or the body itself when it has none.</summary>
+    private static string ErrorMessage(string body)
+    {
+        try
+        {
+            if (JsonSerializer.Deserialize(body, GitHubJsonContext.Default.GitHubErrorDto)?.Message is { Length: > 0 } message)
+            {
+                return message;
+            }
+        }
+        catch (JsonException)
+        {
+            // Not JSON (a proxy's HTML page, say); the body is all there is.
+        }
+
+        return body.Length <= 200 ? body : body[..200] + "...";
+    }
 }

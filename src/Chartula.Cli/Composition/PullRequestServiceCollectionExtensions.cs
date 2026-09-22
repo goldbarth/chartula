@@ -21,7 +21,9 @@ internal static class PullRequestServiceCollectionExtensions
 
         services.AddSingleton(options);
         services.AddSingleton<IReleasePullRequestReader>(_ =>
-            new GitHubPullRequestReader(GitHubHttpClientFactory.Create(options, configuration)));
+            new GitHubPullRequestReader(
+                GitHubHttpClientFactory.Create(options, configuration),
+                options.TokenEnvironmentVariable));
         return services;
     }
 }
