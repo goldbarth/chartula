@@ -23,9 +23,18 @@ internal static class EndpointNotice
         // Chartula does not repeat - see LlmProviderDefaults.
         string endpoint = llm.BaseUrl ?? "its default endpoint";
         string thinking = ThinkingModeParser.Name(ThinkingModeParser.Parse(llm.Thinking));
+
+        // The check's own model is named only when it differs; otherwise the line
+        // above already says what the check runs with.
+        FaithfulnessOptions faithfulness = ThoroughCheckModel.Read(configuration);
+        ThoroughCheckModel check = ThoroughCheckModel.Resolve(llm, faithfulness);
+        string checkLine = faithfulness.Thorough && check.DiffersFrom(llm)
+            ? $"\n        thorough check: {check.Model}, thinking {ThinkingModeParser.Name(check.Thinking)}"
+            : string.Empty;
+
         return $"""
             Model:  {llm.Provider} at {endpoint}, key from {llm.ApiKeyEnvironmentVariable}
-                    {llm.Model}, thinking {thinking}
+                    {llm.Model}, thinking {thinking}{checkLine}
             GitHub: {gitHub.ApiBaseUrl}, token from {gitHub.TokenEnvironmentVariable}
             """;
     }

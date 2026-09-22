@@ -29,12 +29,19 @@ public sealed class ChatModel(
 
     // Fresh per call: the typed-response path clones and augments these, so a shared
     // instance would leak one call's response format into the next.
-    private ChatOptions RequestOptions()
-        => new()
-        {
-            MaxOutputTokens = _options.MaxOutputTokens,
-            Reasoning = _options.Reasoning,
-        };
+    private ChatOptions RequestOptions(LlmOperation operation)
+        => operation == LlmOperation.FaithfulnessCheck
+            ? new()
+            {
+                MaxOutputTokens = _options.MaxOutputTokens,
+                ModelId = _options.CheckModelId,
+                Reasoning = _options.CheckReasoning,
+            }
+            : new()
+            {
+                MaxOutputTokens = _options.MaxOutputTokens,
+                Reasoning = _options.Reasoning,
+            };
 
     public async Task<RenderedEntries> RephraseAsync(
         RephraseRequest request,
@@ -52,7 +59,7 @@ public sealed class ChatModel(
         // Recorded before it is judged: a call that does not count was still paid for.
         ChatResponse<RenderedEntries> response = await CallAsync(
             LlmOperation.Rephrase,
-            () => _chat.GetResponseAsync<RenderedEntries>(messages, RequestOptions(), cancellationToken: cancellationToken));
+            () => _chat.GetResponseAsync<RenderedEntries>(messages, RequestOptions(LlmOperation.Rephrase), cancellationToken: cancellationToken));
         return CallValidity.Entries(prompt, response);
     }
 
@@ -71,7 +78,7 @@ public sealed class ChatModel(
 
         ChatResponse<FaithfulnessVerdict> response = await CallAsync(
             LlmOperation.FaithfulnessCheck,
-            () => _chat.GetResponseAsync<FaithfulnessVerdict>(messages, RequestOptions(), cancellationToken: cancellationToken));
+            () => _chat.GetResponseAsync<FaithfulnessVerdict>(messages, RequestOptions(LlmOperation.FaithfulnessCheck), cancellationToken: cancellationToken));
         return CallValidity.Verdict(prompt, response);
     }
 

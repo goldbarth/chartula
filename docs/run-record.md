@@ -52,7 +52,7 @@ The file is UTF-8, indented JSON.
 | `tag` | string | The release tag the run was for. |
 | `repository` | string | The repository, as `owner/name`. |
 | `mode` | string | `generate` or `generate --no-publish`. |
-| `provenance` | object | What the run was made with, in the same fields as [`changelog.json`'s provenance](changelog-json.md#provenance): tool version, provider, model, prompt hash, `thinking`, `thoroughCheck` and `factBaseDepth`. |
+| `provenance` | object | What the run was made with, in the same fields as [`changelog.json`'s provenance](changelog-json.md#provenance): tool version, provider, model, prompt hash, `thinking`, `thoroughCheck`, `factBaseDepth`, `checkModel` and `checkThinking`. |
 | `audiences` | array | One entry per audience the run asked for (see below). |
 | `metrics` | object | Calls, tokens and check activity (see below). |
 

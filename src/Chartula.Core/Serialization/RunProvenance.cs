@@ -22,6 +22,8 @@ namespace Chartula.Core.Serialization;
 /// </param>
 /// <param name="ThoroughCheck">Whether the thorough faithfulness check ran.</param>
 /// <param name="FactBaseDepth">How much of each pull request the facts were built from.</param>
+/// <param name="CheckModel">The model the thorough check asked, when it ran.</param>
+/// <param name="CheckThinking">The thinking mode the thorough check asked for, when it ran.</param>
 public sealed record RunProvenance(
     string? ToolVersion,
     string? Provider,
@@ -29,4 +31,6 @@ public sealed record RunProvenance(
     string? PromptHash,
     string? Thinking = null,
     bool? ThoroughCheck = null,
-    string? FactBaseDepth = null);
+    string? FactBaseDepth = null,
+    string? CheckModel = null,
+    string? CheckThinking = null);

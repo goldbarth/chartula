@@ -60,7 +60,9 @@ public static class ChangelogJsonSerializer
                 Present(provenance.PromptHash),
                 Present(provenance.Thinking),
                 provenance.ThoroughCheck,
-                Present(provenance.FactBaseDepth));
+                Present(provenance.FactBaseDepth),
+                Present(provenance.CheckModel),
+                Present(provenance.CheckThinking));
 
     // Blank is not a value: it is left out like null, so the file never says "".
     private static string? Present(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;

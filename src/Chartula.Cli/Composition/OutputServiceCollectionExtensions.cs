@@ -19,15 +19,14 @@ internal static class OutputServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        FaithfulnessOptions faithfulness = configuration.GetSection(FaithfulnessOptions.SectionName).Get<FaithfulnessOptions>()
-                                           ?? new FaithfulnessOptions();
+        FaithfulnessOptions faithfulness = ThoroughCheckModel.Read(configuration);
         FactBaseOptions factBase = configuration.GetSection(FactBaseOptions.SectionName).Get<FactBaseOptions>()
                                    ?? new FactBaseOptions();
 
         RunProvenance ProvenanceOf(IServiceProvider sp)
             => Provenance(
                 sp.GetRequiredService<LlmOptions>(),
-                faithfulness.Thorough,
+                faithfulness,
                 FactBaseDepthParser.Parse(factBase.Depth));
 
         services.AddSingleton<IChangelogJsonWriter>(
@@ -46,13 +45,20 @@ internal static class OutputServiceCollectionExtensions
     // Everything here is known before the run starts: what wrote the file, which
     // instructions and model it rendered with, and the settings that move a run's
     // cost and output most, so two files can be compared without anyone's memory.
-    internal static RunProvenance Provenance(LlmOptions llm, bool thoroughCheck, FactBaseDepth depth)
-        => new(
+    // The check's model and thinking are recorded resolved - also when they only
+    // repeat the rendering's - so a file never needs the configuration to be read.
+    internal static RunProvenance Provenance(LlmOptions llm, FaithfulnessOptions faithfulness, FactBaseDepth depth)
+    {
+        ThoroughCheckModel? check = faithfulness.Thorough ? ThoroughCheckModel.Resolve(llm, faithfulness) : null;
+        return new(
             ToolVersion.Informational,
             llm.Provider,
             llm.Model,
             ChangelogPromptBuilder.PromptHash,
             ThinkingModeParser.Name(ThinkingModeParser.Parse(llm.Thinking)),
-            thoroughCheck,
-            FactBaseDepthParser.Name(depth));
+            faithfulness.Thorough,
+            FactBaseDepthParser.Name(depth),
+            check?.Model,
+            check is null ? null : ThinkingModeParser.Name(check.Thinking));
+    }
 }
