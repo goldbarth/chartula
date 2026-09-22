@@ -49,7 +49,10 @@ public static class ChangelogJsonSerializer
                     Present(provenance.ToolVersion),
                     Present(provenance.Provider),
                     Present(provenance.Model),
-                    Present(provenance.PromptHash)));
+                    Present(provenance.PromptHash),
+                    Present(provenance.Thinking),
+                    provenance.ThoroughCheck,
+                    Present(provenance.FactBaseDepth)));
 
         return JsonSerializer.Serialize(document, ChangelogJsonContext.Default.ChangelogDocument);
     }

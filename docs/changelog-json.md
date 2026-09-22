@@ -43,6 +43,11 @@ Each field is left out when the run does not have a value for it, never written 
 | `provider` | string | The model provider as configured: `anthropic` or `openai-compatible`. |
 | `model` | string | The model id the renderings were written with. |
 | `promptHash` | string | `sha256:` and a hex digest of every instruction Chartula sends - each audience's system prompt and the thorough check's - without the facts. Two files with the same hash were rendered from the same instructions. |
+| `thinking` | string | The configured `llm.thinking`: `provider-default`, `disabled` or `adaptive`. `provider-default` records the setting, not whether the model thought - some models think by default, others do not (see [`thinking`](configuration.md#thinking)). |
+| `thoroughCheck` | boolean | Whether the thorough faithfulness check ran (`faithfulness.thorough`). |
+| `factBaseDepth` | string | The configured `factBase.depth`: `title-only`, `title-and-description` or `title-description-and-issues`. |
+
+The last three are the settings that move a run's cost and output most, so two files can be compared by what they were made with rather than by what someone remembers.
 
 Endpoint hosts, flags and check verdicts are deliberately not recorded: the file is meant to be published, and a host can name an internal gateway.
 
@@ -81,7 +86,10 @@ Endpoint hosts, flags and check verdicts are deliberately not recorded: the file
     "toolVersion": "0.1.0-preview.1+2c43772833e4ed32790e5549848f7f42bc0e4eee",
     "provider": "anthropic",
     "model": "claude-sonnet-5",
-    "promptHash": "sha256:3f1c...e9a0"
+    "promptHash": "sha256:3f1c...e9a0",
+    "thinking": "disabled",
+    "thoroughCheck": true,
+    "factBaseDepth": "title-and-description"
   }
 }
 ```

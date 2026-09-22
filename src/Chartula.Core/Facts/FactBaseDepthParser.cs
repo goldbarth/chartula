@@ -32,4 +32,13 @@ public static class FactBaseDepthParser
                 "title-description-and-issues (aliases: title, description, full)."),
         };
     }
+
+    /// <summary>The depth as the configuration spells it, the name <see cref="Parse"/> reads back.</summary>
+    public static string Name(FactBaseDepth depth) => depth switch
+    {
+        FactBaseDepth.TitleOnly => "title-only",
+        FactBaseDepth.TitleAndDescription => "title-and-description",
+        FactBaseDepth.TitleDescriptionAndIssues => "title-description-and-issues",
+        _ => throw new ArgumentOutOfRangeException(nameof(depth), depth, null),
+    };
 }

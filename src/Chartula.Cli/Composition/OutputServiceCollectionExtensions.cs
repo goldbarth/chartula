@@ -1,7 +1,9 @@
 using Chartula.Cli.Configuration;
+using Chartula.Core.Facts;
 using Chartula.Core.Prompting;
 using Chartula.Core.Serialization;
 using Chartula.Infrastructure.Serialization;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Chartula.Cli.Composition;
@@ -12,10 +14,21 @@ namespace Chartula.Cli.Composition;
 /// </summary>
 internal static class OutputServiceCollectionExtensions
 {
-    public static IServiceCollection AddChartulaOutputs(this IServiceCollection services)
+    public static IServiceCollection AddChartulaOutputs(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
+        FaithfulnessOptions faithfulness = configuration.GetSection(FaithfulnessOptions.SectionName).Get<FaithfulnessOptions>()
+                                           ?? new FaithfulnessOptions();
+        FactBaseOptions factBase = configuration.GetSection(FactBaseOptions.SectionName).Get<FactBaseOptions>()
+                                   ?? new FactBaseOptions();
+
         services.AddSingleton<IChangelogJsonWriter>(sp => new FileChangelogJsonWriter(
-            Directory.GetCurrentDirectory(), Provenance(sp.GetRequiredService<LlmOptions>())));
+            Directory.GetCurrentDirectory(),
+            Provenance(
+                sp.GetRequiredService<LlmOptions>(),
+                faithfulness.Thorough,
+                FactBaseDepthParser.Parse(factBase.Depth))));
         services.AddSingleton<IChangelogMarkdownWriter>(
             _ => new FileChangelogMarkdownWriter(Directory.GetCurrentDirectory()));
         services.AddSingleton<ICustomerPageWriter>(
@@ -23,12 +36,16 @@ internal static class OutputServiceCollectionExtensions
         return services;
     }
 
-    // Everything here is known before the run starts: what wrote the file and which
-    // instructions and model it rendered with.
-    internal static RunProvenance Provenance(LlmOptions llm)
+    // Everything here is known before the run starts: what wrote the file, which
+    // instructions and model it rendered with, and the settings that move a run's
+    // cost and output most, so two files can be compared without anyone's memory.
+    internal static RunProvenance Provenance(LlmOptions llm, bool thoroughCheck, FactBaseDepth depth)
         => new(
             ToolVersion.Informational,
             llm.Provider,
             llm.Model,
-            ChangelogPromptBuilder.PromptHash);
+            ChangelogPromptBuilder.PromptHash,
+            ThinkingModeParser.Name(ThinkingModeParser.Parse(llm.Thinking)),
+            thoroughCheck,
+            FactBaseDepthParser.Name(depth));
 }
