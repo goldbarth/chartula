@@ -75,6 +75,59 @@ public sealed class GitCliCommitReaderTests
         Assert.Contains("v9.9.9", ex.Message);
     }
 
+    // #146: the likely cause is a run started in the wrong place, so the message
+    // names the checkout it read and what that checkout holds.
+    [Fact]
+    public async Task An_unknown_tag_names_the_checkout_and_its_latest_tags()
+    {
+        using TempGitRepository repo = new();
+        repo.Commit("A");
+        repo.Tag("v1.0.0");
+        repo.Commit("B");
+        repo.Tag("v1.1.0");
+
+        GitCliCommitReader reader = new(GitExecutable.FromPath(), repo.Path);
+
+        InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => reader.ReadReleaseCommitsAsync("v9.9.9"));
+        Assert.Contains($"Tag 'v9.9.9' is not in the checkout at {repo.Run("rev-parse", "--show-toplevel")}.", ex.Message);
+        Assert.Contains("v1.1.0", ex.Message);
+        Assert.Contains("v1.0.0", ex.Message);
+        Assert.Contains("git fetch --tags", ex.Message);
+    }
+
+    [Fact]
+    public async Task An_unknown_tag_in_a_checkout_without_tags_says_it_has_none()
+    {
+        using TempGitRepository repo = new();
+        repo.Commit("A");
+
+        GitCliCommitReader reader = new(GitExecutable.FromPath(), repo.Path);
+
+        InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => reader.ReadReleaseCommitsAsync("v1.0.0"));
+        Assert.Contains("It has no tags.", ex.Message);
+    }
+
+    [Fact]
+    public async Task A_directory_outside_any_repository_is_named_as_such()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), "chartula-no-git-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        try
+        {
+            GitCliCommitReader reader = new(GitExecutable.FromPath(), directory);
+
+            InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => reader.ReadReleaseCommitsAsync("v1.0.0"));
+            Assert.StartsWith($"'{directory}' is not inside a git repository.", ex.Message);
+        }
+        finally
+        {
+            Directory.Delete(directory);
+        }
+    }
+
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
