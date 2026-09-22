@@ -71,4 +71,5 @@ desktop.ini
 
 # Chartula local test output (generated changelogs during development)
 /tmp-output/
+/chartula-runs/
 *.local.md

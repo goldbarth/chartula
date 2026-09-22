@@ -63,6 +63,9 @@ Runs the same pipeline as `preview` and then writes the outputs:
 - **`changelog.json`** - every audience's text plus the fact base behind it, in the [documented, stable format](changelog-json.md).
 - **GitHub release notes** - the technical rendering, as a **draft** release for `<release-tag>` that you publish on GitHub after reading it. A release that already exists for the tag keeps its state: a draft stays a draft, a published release stays published, and only its notes are replaced. The output marks a draft with `(draft)` after its link.
 
+It also keeps a [run record](run-record.md) in `chartula-runs/`: what the run cost and what it was made with, for comparing runs later.
+It stays on your machine, never published.
+
 A field with no source behind it is left out rather than filled in - no description when the facts do not support one, no date when the tag has none.
 
 Publishing is the last step, so when GitHub refuses it - most often a token without Contents read and write - the files are already written.
@@ -215,10 +218,11 @@ See [Configuration](configuration.md) for every key and its default.
 `1` on a usage error (missing option, unknown command, unknown audience), a run-time failure (bad configuration, a pipeline error), or a run in which any requested audience failed.
 
 An audience that failed does not hold back the ones that rendered: `generate` still writes their outputs and says `<n> of <m> audiences failed.`
-When no audience rendered, nothing is written at all, so an earlier run's `changelog.json` is not replaced by one without renderings.
+When no audience rendered, no output is written, so an earlier run's `changelog.json` is not replaced by one without renderings; only the [run record](run-record.md) is kept, since the tokens were spent.
 Errors are written to stderr when they are about the invocation itself, and to stdout as `Error: <message>` when the pipeline started running and then failed.
 
 ## After a run
 
 Every run - `preview` or `generate` - ends with a report of what it did and what it cost in tokens.
 See [Run metrics](run-metrics.md) for how to read it.
+`generate` keeps the same report in a [run record](run-record.md) and names the file below it.

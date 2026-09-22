@@ -43,19 +43,24 @@ public static class ChangelogJsonSerializer
                 change.Labels,
                 change.Description)).ToArray(),
             BuildRenderings(renderings),
-            provenance is null
-                ? null
-                : new ChangelogProvenance(
-                    Present(provenance.ToolVersion),
-                    Present(provenance.Provider),
-                    Present(provenance.Model),
-                    Present(provenance.PromptHash),
-                    Present(provenance.Thinking),
-                    provenance.ThoroughCheck,
-                    Present(provenance.FactBaseDepth)));
+            ToDocument(provenance));
 
         return JsonSerializer.Serialize(document, ChangelogJsonContext.Default.ChangelogDocument);
     }
+
+    // Shared with the run record, so a run and the file it wrote describe their
+    // making in the same fields.
+    internal static ChangelogProvenance? ToDocument(RunProvenance? provenance)
+        => provenance is null
+            ? null
+            : new ChangelogProvenance(
+                Present(provenance.ToolVersion),
+                Present(provenance.Provider),
+                Present(provenance.Model),
+                Present(provenance.PromptHash),
+                Present(provenance.Thinking),
+                provenance.ThoroughCheck,
+                Present(provenance.FactBaseDepth));
 
     // Blank is not a value: it is left out like null, so the file never says "".
     private static string? Present(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;

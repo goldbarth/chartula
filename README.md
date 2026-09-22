@@ -226,6 +226,7 @@ An output whose audience was not rendered is not written, and the run lists what
 ## What a run costs
 
 Every run ends with a summary of the tokens it used - see [Run metrics](docs/run-metrics.md).
+`generate` also keeps it in a local [run record](docs/run-record.md), so two runs can be compared from their files.
 Measured on three repositories with the defaults (`claude-sonnet-5`, technical and customer, thorough check on):
 
 | Release | Pull requests | Tokens | Of which thorough check | At $2 / $10 per MTok |
@@ -276,6 +277,7 @@ Every option is documented in [Configuration](docs/configuration.md).
 | [Configuration](docs/configuration.md) | Every `chartula.yaml` section and its defaults. |
 | [`changelog.json` format](docs/changelog-json.md) | The stable output schema other tools build on. |
 | [Run metrics](docs/run-metrics.md) | Reading a run's cost, and judging whether the thorough check earns it. |
+| [Run record](docs/run-record.md) | The local file each `generate` run keeps, for comparing runs. |
 | [Architecture](docs/architecture.md) | The layering, the pipeline, and the choices behind them. |
 | [Test fixtures](docs/test-fixtures.md) | How the pipeline is tested without spending tokens. |
 | [Contributing](CONTRIBUTING.md) | Working on Chartula. |
