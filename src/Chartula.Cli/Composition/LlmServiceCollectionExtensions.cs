@@ -25,11 +25,16 @@ internal static class LlmServiceCollectionExtensions
         LlmProvider provider = LlmProviderParser.Parse(configuration[$"{LlmOptions.SectionName}:Provider"]);
         LlmOptions options = ReadOptions(configuration, provider);
 
+        ThoroughCheckModel check = ThoroughCheckModel.Resolve(options, ThoroughCheckModel.Read(configuration));
+
         services.AddSingleton(options);
         services.AddSingleton(new ChatModelOptions
         {
             MaxOutputTokens = options.MaxOutputTokens,
-            Reasoning = Reasoning(provider, options),
+            Reasoning = Reasoning(provider, options.Model, ThinkingModeParser.Parse(options.Thinking)),
+            // Sent only when it differs: the client already asks the rendering model.
+            CheckModelId = check.Model == options.Model ? null : check.Model,
+            CheckReasoning = Reasoning(provider, check.Model, check.Thinking, check.ThinkingKey, check.ModelKey),
         });
 
         // Last among the refusals: a setting that is wrong in chartula.yaml is named
@@ -130,13 +135,16 @@ internal static class LlmServiceCollectionExtensions
     /// adapters translate it themselves - Anthropic to thinking plus effort, OpenAI to
     /// <c>reasoning_effort</c> - so the same value means the same thing on either.
     /// </summary>
-    private static ReasoningOptions? Reasoning(LlmProvider provider, LlmOptions options)
+    private static ReasoningOptions? Reasoning(
+        LlmProvider provider,
+        string model,
+        ThinkingMode mode,
+        string thinkingKey = "llm.thinking",
+        string modelKey = "llm.model")
     {
-        ThinkingMode mode = ThinkingModeParser.Parse(options.Thinking);
-
         if (provider == LlmProvider.Anthropic)
         {
-            ClaudeThinkingSupport.EnsureModelAccepts(mode, options.Model);
+            ClaudeThinkingSupport.EnsureModelAccepts(mode, model, thinkingKey, modelKey);
         }
 
         ReasoningEffort? effort = mode switch

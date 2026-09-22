@@ -30,4 +30,17 @@ public sealed class ChatModelOptions
     /// model on its own default.
     /// </summary>
     public ReasoningOptions? Reasoning { get; init; }
+
+    /// <summary>
+    /// The model the thorough check asks, sent per call; <c>null</c> leaves the
+    /// client's own model, the one that renders.
+    /// </summary>
+    public string? CheckModelId { get; init; }
+
+    /// <summary>
+    /// How much the thorough check's model reasons. Separate from
+    /// <see cref="Reasoning"/> because the check answers a short verdict, and thinking
+    /// there has been measured to cost thousands of tokens without finding more.
+    /// </summary>
+    public ReasoningOptions? CheckReasoning { get; init; }
 }

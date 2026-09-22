@@ -46,8 +46,10 @@ Each field is left out when the run does not have a value for it, never written 
 | `thinking` | string | The configured `llm.thinking`: `provider-default`, `disabled`, `low`, `medium`, `high` or `xhigh`, as the configuration spells it (`adaptive` is recorded as `high`). `provider-default` records the setting, not whether the model thought - some models think by default, others do not (see [`thinking`](configuration.md#thinking)). |
 | `thoroughCheck` | boolean | Whether the thorough faithfulness check ran (`faithfulness.thorough`). |
 | `factBaseDepth` | string | The configured `factBase.depth`: `title-only`, `title-and-description` or `title-description-and-issues`. |
+| `checkModel` | string | The model the thorough check asked: `faithfulness.model`, or `llm.model` when not set. Present only when the check ran. |
+| `checkThinking` | string | The thinking mode the thorough check asked for, spelled as `thinking`. Present only when the check ran. |
 
-The last three are the settings that move a run's cost and output most, so two files can be compared by what they were made with rather than by what someone remembers.
+`thinking`, `thoroughCheck`, `factBaseDepth`, `checkModel` and `checkThinking` are the settings that move a run's cost and output most, so two files can be compared by what they were made with rather than by what someone remembers.
 
 Endpoint hosts, flags and check verdicts are deliberately not recorded: the file is meant to be published, and a host can name an internal gateway.
 
@@ -89,7 +91,9 @@ Endpoint hosts, flags and check verdicts are deliberately not recorded: the file
     "promptHash": "sha256:3f1c...e9a0",
     "thinking": "disabled",
     "thoroughCheck": true,
-    "factBaseDepth": "title-and-description"
+    "factBaseDepth": "title-and-description",
+    "checkModel": "claude-sonnet-5",
+    "checkThinking": "disabled"
   }
 }
 ```

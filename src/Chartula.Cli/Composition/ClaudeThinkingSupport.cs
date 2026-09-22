@@ -23,7 +23,12 @@ internal static partial class ClaudeThinkingSupport
     /// rejects a bad combination there, just later.
     /// </summary>
     /// <exception cref="InvalidOperationException">The model is known to reject the mode.</exception>
-    public static void EnsureModelAccepts(ThinkingMode mode, string model)
+    /// <param name="mode">The thinking mode asked for.</param>
+    /// <param name="model">The model id it is asked of.</param>
+    /// <param name="thinkingKey">The setting the mode came from, named in the refusal.</param>
+    /// <param name="modelKey">The setting the model came from, named in the refusal.</param>
+    public static void EnsureModelAccepts(
+        ThinkingMode mode, string model, string thinkingKey = "llm.thinking", string modelKey = "llm.model")
     {
         Match match = ModelIdRegex().Match(model);
         if (!match.Success)
@@ -43,22 +48,22 @@ internal static partial class ClaudeThinkingSupport
             && version.CompareTo((4, 6)) < 0)
         {
             throw new InvalidOperationException(
-                $"llm.thinking '{name}' is not supported by llm.model '{model}'. A thinking effort " +
-                "needs Claude 4.6 or newer; set llm.thinking to disabled or provider-default, or pick a newer model.");
+                $"{thinkingKey} '{name}' is not supported by {modelKey} '{model}'. A thinking effort " +
+                "needs Claude 4.6 or newer; set {thinkingKey} to disabled or provider-default, or pick a newer model.");
         }
 
         if (mode == ThinkingMode.ExtraHigh && version == (4, 6))
         {
             throw new InvalidOperationException(
-                $"llm.thinking 'xhigh' is not supported by llm.model '{model}'. The xhigh effort arrived " +
-                "with Claude Opus 4.7; set llm.thinking to high, or pick a newer model.");
+                $"{thinkingKey} 'xhigh' is not supported by {modelKey} '{model}'. The xhigh effort arrived " +
+                "with Claude Opus 4.7; set {thinkingKey} to high, or pick a newer model.");
         }
 
         if (mode == ThinkingMode.Disabled && family == "fable")
         {
             throw new InvalidOperationException(
-                $"llm.thinking 'disabled' is not supported by llm.model '{model}'. Claude Fable always " +
-                "thinks and rejects an explicit off; set llm.thinking to provider-default.");
+                $"{thinkingKey} 'disabled' is not supported by {modelKey} '{model}'. Claude Fable always " +
+                "thinks and rejects an explicit off; set {thinkingKey} to provider-default.");
         }
     }
 

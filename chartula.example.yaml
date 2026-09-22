@@ -93,6 +93,11 @@
 # check earns its tokens.
 # faithfulness:
 #   thorough: true
+# The thorough check can ask its own model, at the same provider and endpoint -
+# render with a cheaper model and check with a stronger one, or the reverse.
+# thinking takes the values of llm.thinking. Both default to what llm says.
+#   model: claude-opus-5
+#   thinking: disabled
 
 # Review mode - present generated texts for sign-off before writing.
 # review:

@@ -35,7 +35,11 @@ public sealed record ChangelogProvenance(
     [property: JsonPropertyName("thoroughCheck"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     bool? ThoroughCheck = null,
     [property: JsonPropertyName("factBaseDepth"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    string? FactBaseDepth = null);
+    string? FactBaseDepth = null,
+    [property: JsonPropertyName("checkModel"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    string? CheckModel = null,
+    [property: JsonPropertyName("checkThinking"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    string? CheckThinking = null);
 
 /// <summary>One change entry in <see cref="ChangelogDocument"/>.</summary>
 public sealed record ChangelogChange(

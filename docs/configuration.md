@@ -314,6 +314,16 @@ The faithfulness checks. The rule-based check always runs and is not configurabl
 | Key | Default | Description |
 | --- | --- | --- |
 | `thorough` | `true` | Whether the thorough (second-pass LLM) check runs. |
+| `model` | `llm.model` | The model the thorough check asks, at the same provider, endpoint and key as the rendering. |
+| `thinking` | `llm.thinking` | How much the thorough check's model reasons, in the values of [`llm.thinking`](#thinking). |
+
+Rendering and checking are different jobs: one writes prose from the facts, the other compares a finished text with them and answers a short verdict.
+They need not run on the same model.
+A cheaper model can render and a stronger one check, or the reverse, and the run metrics show each one's tokens and time on its own line, so the trade-off can be read from a run.
+Thinking is set apart for the same reason: on the check it has been measured to cost thousands of output tokens and find fewer claims, not more (see [`thinking`](#thinking)).
+
+A combination the Claude model is known to reject is refused when the configuration is read, naming the key it came from (`faithfulness.thinking`, or `llm.thinking` when the check inherits it).
+The run header names the check's model when it differs from the rendering's, and the [provenance](changelog-json.md#provenance) records it either way.
 
 On by default, because it is cheap for what it finds.
 On the three alpha runs in the README (`claude-sonnet-5`, technical and customer), it took 29%, 29% and 45% of the tokens of runs that cost about $0.06, $0.07 and $0.20 in total.

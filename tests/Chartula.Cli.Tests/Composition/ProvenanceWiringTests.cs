@@ -13,7 +13,7 @@ public sealed class ProvenanceWiringTests
     {
         RunProvenance provenance = OutputServiceCollectionExtensions.Provenance(
             new LlmOptions { Provider = "openai-compatible", Model = "qwen3:8b", BaseUrl = "http://localhost:11434/v1" },
-            thoroughCheck: true,
+            new FaithfulnessOptions(),
             FactBaseDepth.TitleAndDescription);
 
         Assert.False(string.IsNullOrWhiteSpace(provenance.ToolVersion));
@@ -29,7 +29,7 @@ public sealed class ProvenanceWiringTests
     {
         RunProvenance provenance = OutputServiceCollectionExtensions.Provenance(
             new LlmOptions { Model = "claude-sonnet-5", Thinking = "off" },
-            thoroughCheck: false,
+            new FaithfulnessOptions { Thorough = false },
             FactBaseDepth.TitleOnly);
 
         Assert.Equal("disabled", provenance.Thinking);
@@ -42,7 +42,7 @@ public sealed class ProvenanceWiringTests
     public void An_unset_thinking_mode_is_recorded_as_the_provider_default()
     {
         RunProvenance provenance = OutputServiceCollectionExtensions.Provenance(
-            new LlmOptions { Model = "claude-sonnet-5" }, thoroughCheck: true, FactBaseDepthParser.Default);
+            new LlmOptions { Model = "claude-sonnet-5" }, new FaithfulnessOptions(), FactBaseDepthParser.Default);
 
         Assert.Equal("provider-default", provenance.Thinking);
         Assert.Equal("title-and-description", provenance.FactBaseDepth);
