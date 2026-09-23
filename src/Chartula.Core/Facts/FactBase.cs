@@ -9,8 +9,8 @@ namespace Chartula.Core.Facts;
 /// <param name="Changes">The included changes, as index-card facts.</param>
 public sealed record FactBase(string Tag, IReadOnlyList<ChangeFact> Changes)
 {
-    // As with ChangeFact: the changes are compared by content, not by list identity, so
-    // a fact base written and read back equals the one it came from.
+    // Compare Changes by content, as in ChangeFact, not by list reference.
+    // A fact base that is written and read back then equals the original.
     public bool Equals(FactBase? other)
         => other is not null && Tag == other.Tag && Changes.SequenceEqual(other.Changes);
 

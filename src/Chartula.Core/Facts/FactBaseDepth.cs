@@ -1,9 +1,9 @@
 namespace Chartula.Core.Facts;
 
 /// <summary>
-/// How much source material feeds each <see cref="ChangeFact"/>, so the fact base
-/// fits a team's PR style. Deeper modes carry more, at the cost of more material
-/// for the LLM to rephrase.
+/// How much source material feeds each <see cref="ChangeFact"/>.
+/// Teams pick the depth that fits their PR style.
+/// Deeper modes carry more detail, but also give the LLM more material to rephrase.
 /// </summary>
 public enum FactBaseDepth
 {
