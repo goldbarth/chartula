@@ -4,6 +4,27 @@ Chartula runs with sensible defaults and needs no configuration to work.
 A `chartula.yaml` in the repository root refines that default behavior; it is never required.
 Environment variables override the file, so anything here can be set with `Chartula__Section__Key` too.
 
+## A file that cannot be read as meant
+
+A `chartula.yaml` is refused before the run starts when any part of it would not be read as written, naming the file, the line and the column:
+
+- YAML that does not parse - most often indentation: a key indented under a key that already has a value, a line that lines up with no key above it, or a tab.
+- A key that is not listed below, including a key indented into the wrong section; the refusal names where it belongs, or the key it most likely is.
+- A value of the wrong kind: `true`/`false` keys take only those, list keys a list such as `[Internal]`, the others a single value.
+- The same key twice, or a second YAML document after `---`.
+
+Nothing in the file is ignored silently: a setting that is not in force would otherwise read as one that is.
+Every problem is named at once, one per line:
+
+```console
+$ chartula preview
+Configuration error: chartula.yaml, line 3, column 3: 'faithfulness' is not a key of 'llm' but a section of its own. Check the indentation: 'faithfulness:' starts at the beginning of its line, like 'llm:'.
+chartula.yaml, line 6, column 12: 'review.enabled' is 'yes'; expected true or false.
+```
+
+An empty value (`model:`, `~` or `null`) leaves the setting at its default, as leaving the key out does.
+Keys are matched regardless of case.
+
 ## Environment-only settings
 
 Four settings decide where release data and credentials are sent: the two endpoints, and the names of the variables whose values go to them.

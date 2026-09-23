@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Configuration;
-using YamlDotNet.Serialization;
 
 namespace Chartula.Cli.Configuration;
 
@@ -45,20 +44,27 @@ internal static class ChartulaYamlConfiguration
             return builder;
         }
 
-        return builder.AddInMemoryCollection(Flatten(File.ReadAllText(path)));
+        return builder.AddInMemoryCollection(Flatten(File.ReadAllText(path), Path.GetFileName(path)));
     }
 
     /// <summary>
     /// Flattens a YAML document into prefixed configuration key/value pairs. Throws
-    /// when the document sets a key that only the environment may set.
+    /// when the document sets a key that only the environment may set, and when it is
+    /// not valid YAML or holds a key or a value <see cref="ChartulaYamlSchema"/> does
+    /// not allow - each named by <paramref name="fileName"/>, line and column.
     /// </summary>
-    public static IReadOnlyList<KeyValuePair<string, string?>> Flatten(string yaml)
+    public static IReadOnlyList<KeyValuePair<string, string?>> Flatten(string yaml, string fileName = "chartula.yaml")
     {
-        object? root = new Deserializer().Deserialize<object?>(yaml);
+        (IReadOnlyList<KeyValuePair<string, string?>> pairs, IReadOnlyList<string> problems) =
+            ChartulaYamlReader.Read(yaml, fileName, RootKey);
 
-        List<KeyValuePair<string, string?>> pairs = [];
-        Flatten(RootKey, root, pairs);
+        // First: it is the refusal that decides where credentials go.
         RefuseEnvironmentOnlyKeys(pairs);
+        if (problems.Count > 0)
+        {
+            throw new InvalidOperationException(string.Join('\n', problems));
+        }
+
         return pairs;
     }
 
@@ -76,35 +82,6 @@ internal static class ChartulaYamlConfiguration
             $"chartula.yaml sets {string.Join(", ", refused)}. " +
             "Endpoints and the names of credential variables are read from the environment only: " +
             "the file is repository content, and these decide where release data and credentials are sent.");
-    }
-
-    private static void Flatten(string prefix, object? node, List<KeyValuePair<string, string?>> pairs)
-    {
-        switch (node)
-        {
-            case IDictionary<object, object> map:
-                foreach (KeyValuePair<object, object> entry in map)
-                {
-                    Flatten($"{prefix}:{entry.Key}", entry.Value, pairs);
-                }
-
-                break;
-
-            case IList<object> list:
-                for (int i = 0; i < list.Count; i++)
-                {
-                    Flatten($"{prefix}:{i}", list[i], pairs);
-                }
-
-                break;
-
-            case null:
-                break;
-
-            default:
-                pairs.Add(new KeyValuePair<string, string?>(prefix, node.ToString()));
-                break;
-        }
     }
 
     private static string? FindConfigFile(string directory)
