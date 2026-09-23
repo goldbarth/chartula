@@ -4,16 +4,16 @@ using System.Text;
 namespace Chartula.Core.Serialization;
 
 /// <summary>
-/// Composes the new <c>CHANGELOG.md</c> content from the existing file and a
-/// release. The new section is prepended at the top; existing sections are kept
-/// verbatim. Running twice for the same release replaces that section in place
-/// rather than duplicating it, so the operation is idempotent and never reorders
-/// history. Pure and deterministic; the file I/O lives in the writer.
+/// Composes the new <c>CHANGELOG.md</c> content from the existing file and a release.
+/// The new section goes at the top, and existing sections are kept verbatim.
+/// Running twice for the same release replaces that section in place instead of
+/// duplicating it. So the operation is idempotent and never reorders history.
+/// Pure and deterministic. The file I/O lives in the writer.
 /// <para>
-/// The section opens on <c>## VERSION - DATE</c>, Common Changelog's release
-/// heading: the version without the tag's <c>v</c>, and the tag's own date. A
-/// section is matched by that version, so one written as <c>## v1.2.0</c> before
-/// the heading changed is still the same release.
+/// The section starts with <c>## VERSION - DATE</c>, Common Changelog's release
+/// heading: the version without the tag's <c>v</c>, and the tag's own date.
+/// Sections are matched by version. A section written as <c>## v1.2.0</c> before
+/// the heading format changed still matches the same release.
 /// </para>
 /// </summary>
 public static class ChangelogMarkdownComposer
@@ -100,14 +100,14 @@ public static class ChangelogMarkdownComposer
         return true;
     }
 
-    // "v1.2.0" is the tag, "1.2.0" the version. Only a "v" in front of a digit is
-    // taken off, so a tag that is not a version at all is kept as it is.
+    // "v1.2.0" is the tag, "1.2.0" the version. Only a "v" before a digit is removed,
+    // so a tag that is not a version is kept as it is.
     private static string Version(string tag)
         => tag.Length > 1 && (tag[0] is 'v' or 'V') && char.IsAsciiDigit(tag[1]) ? tag[1..] : tag;
 
     private static string BuildSection(string version, DateOnly? taggedAt, string body)
     {
-        // A date with no source is left off rather than filled with today's.
+        // Leave out a date without a source instead of using today's date.
         string heading = taggedAt is { } date
             ? $"## {version} - {date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}"
             : $"## {version}";

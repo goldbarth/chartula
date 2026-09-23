@@ -7,18 +7,18 @@ using Chartula.Core.Llm;
 namespace Chartula.Core.Serialization;
 
 /// <summary>
-/// Serializes a <see cref="FactBase"/> to the stable <c>changelog.json</c> format
-/// (and back). Pure and deterministic; uses source-generated metadata so it stays
-/// AOT- and trim-safe. The category is written as its name for a stable, readable
-/// record. The rendered audience texts are stored alongside the facts, so the
-/// customer and product versions are backed up without extra files in the repo.
+/// Serializes a <see cref="FactBase"/> to the stable <c>changelog.json</c> format and back.
+/// Pure and deterministic. It uses source-generated metadata, so it stays AOT- and trim-safe.
+/// The category is written as its name, which keeps the record stable and readable.
+/// The rendered audience texts are stored next to the facts, so the customer and
+/// product versions are kept without extra files in the repository.
 /// </summary>
 public static class ChangelogJsonSerializer
 {
     /// <summary>The current on-disk schema version.</summary>
     public const int SchemaVersion = 1;
 
-    // Fixed order, so the stored renderings object is deterministic.
+    // A fixed order keeps the stored renderings object deterministic.
     private static readonly Audience[] RenderingOrder =
         [Audience.Technical, Audience.Customer, Audience.Product];
 
@@ -48,8 +48,8 @@ public static class ChangelogJsonSerializer
         return JsonSerializer.Serialize(document, ChangelogJsonContext.Default.ChangelogDocument);
     }
 
-    // Shared with the run record, so a run and the file it wrote describe their
-    // making in the same fields.
+    // The run record uses this too, so a run record and the changelog.json it wrote
+    // describe their provenance in the same fields.
     internal static ChangelogProvenance? ToDocument(RunProvenance? provenance)
         => provenance is null
             ? null
@@ -64,7 +64,7 @@ public static class ChangelogJsonSerializer
                 Present(provenance.CheckModel),
                 Present(provenance.CheckThinking));
 
-    // Blank is not a value: it is left out like null, so the file never says "".
+    // Treat a blank value like null and leave it out, so the file never contains "".
     private static string? Present(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
 
     private static Dictionary<string, string> BuildRenderings(IReadOnlyDictionary<Audience, string>? renderings)
@@ -92,10 +92,10 @@ public static class ChangelogJsonSerializer
            ?? throw new InvalidOperationException("changelog.json deserialized to null.");
 
     /// <summary>
-    /// Reads the facts back out of a stored document. The inverse of
-    /// <see cref="Serialize"/>: a written <c>changelog.json</c> round-trips to the fact
-    /// base it came from, which is what lets a real release be frozen and replayed.
-    /// The renderings are not part of the facts and are dropped.
+    /// Reads the facts back out of a stored document. The inverse of <see cref="Serialize"/>.
+    /// A written <c>changelog.json</c> reads back to the fact base it came from, so a
+    /// real release can be stored and replayed.
+    /// The renderings are not facts and are dropped.
     /// </summary>
     public static FactBase DeserializeFactBase(string json) => ToFactBase(Deserialize(json));
 
@@ -121,8 +121,8 @@ public static class ChangelogJsonSerializer
                 change.UserVisible,
                 change.Breaking,
                 change.LinkedIssues,
-                // A document written before the field existed has no labels; that
-                // reads back as no labels, not as a null the fact base would carry.
+                // A document written before the labels field existed reads back with
+                // an empty list, so the fact base never carries null.
                 change.Labels ?? [],
                 change.Description))]);
     }
