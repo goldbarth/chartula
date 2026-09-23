@@ -1,9 +1,9 @@
 namespace Chartula.Core.Observability;
 
 /// <summary>
-/// Keeps a <see cref="RunRecord"/> on the machine the run was made on. It is never
-/// published: usage is a fact about the run, not about the release, so it has no
-/// place in <c>changelog.json</c> or the release notes.
+/// Keeps a <see cref="RunRecord"/> on the machine the run was made on.
+/// It is never published: usage is a fact about the run, not about the release, so it
+/// does not belong in <c>changelog.json</c> or the release notes.
 /// </summary>
 public interface IRunRecordWriter
 {

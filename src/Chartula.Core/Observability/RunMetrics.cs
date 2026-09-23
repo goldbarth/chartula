@@ -1,8 +1,8 @@
 namespace Chartula.Core.Observability;
 
 /// <summary>
-/// Default <see cref="IRunMetrics"/>. Accumulates one run's activity in memory. Audiences
-/// may be rendered concurrently, so recording is guarded by a lock.
+/// Default <see cref="IRunMetrics"/>. Accumulates one run's activity in memory.
+/// Audiences may be rendered concurrently, so recording is guarded by a lock.
 /// </summary>
 public sealed class RunMetrics : IRunMetrics
 {
@@ -28,7 +28,7 @@ public sealed class RunMetrics : IRunMetrics
         {
             LlmUsage current = _llm.TryGetValue(operation, out LlmUsage? existing) ? existing : LlmUsage.None;
 
-            // A failed call returned no usage to count, but its time was spent.
+            // A failed call returned no usage, but its duration still counts.
             bool answered = !call.Failed;
             int unreportedCalls = answered && (call.InputTokens is null || call.OutputTokens is null) ? 1 : 0;
 
@@ -49,8 +49,8 @@ public sealed class RunMetrics : IRunMetrics
         }
     }
 
-    // Unknown stays unknown until a call reports it; after that, calls that did not
-    // report add nothing rather than making the known part unknown again.
+    // The sum stays null until a call reports a value. After that, calls without a
+    // value add nothing, instead of turning the known sum back into null.
     private static long? Add(long? sum, long? value) => value is null ? sum : (sum ?? 0) + value;
 
     public void RecordRunDuration(TimeSpan duration)
@@ -79,8 +79,7 @@ public sealed class RunMetrics : IRunMetrics
         ArgumentNullException.ThrowIfNull(ruleBasedFlags);
         ArgumentNullException.ThrowIfNull(thoroughFlags);
 
-        // What the thorough check caught that the free check did not - the reason to
-        // pay for it at all.
+        // Claims only the thorough check caught. They are the reason to pay for it.
         int onlyThorough = thoroughFlags.Except(ruleBasedFlags, StringComparer.Ordinal).Count();
 
         lock (_gate)

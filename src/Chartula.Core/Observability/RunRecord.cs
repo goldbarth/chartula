@@ -4,10 +4,10 @@ using Chartula.Core.PullRequests;
 namespace Chartula.Core.Observability;
 
 /// <summary>
-/// What a run did and cost, kept past the terminal output so two runs can be
-/// compared from their files rather than from numbers copied by hand. It holds
-/// no rendered text: the texts are in <c>changelog.json</c>, and this is about the
-/// run, not the release.
+/// What a run did and cost, kept in a file after the terminal output is gone.
+/// Two runs can then be compared from their files instead of numbers copied by hand.
+/// It holds no rendered text: the texts are in <c>changelog.json</c>, and this record
+/// is about the run, not the release.
 /// </summary>
 /// <param name="Tag">The release tag the run was for.</param>
 /// <param name="Repository">The repository the release belongs to.</param>
