@@ -101,4 +101,39 @@ public sealed class ThoroughFaithfulnessCheckerTests
         Assert.Equal(FaithfulnessCheckStatus.Skipped, report.Status);
         Assert.Equal(0, model.CheckCallCount);
     }
+
+    // #234: a check whose model the endpoint does not serve used to end the whole run
+    // with an unhandled exception, taking the renderings with it.
+    [Fact]
+    public async Task A_failed_call_leaves_the_text_unverified_with_the_failure_as_the_reason()
+    {
+        IThoroughFaithfulnessChecker checker = new ThoroughFaithfulnessChecker(
+            new FailingModel(new InvalidOperationException("anthropic at https://x/v1/messages answered 404 Not Found")),
+            new ThoroughFaithfulnessOptions(Enabled: true));
+
+        FaithfulnessReport report = await checker.CheckAsync("Fixed a parser bug.", Facts());
+
+        Assert.Equal(FaithfulnessCheckStatus.NotEvaluated, report.Status);
+        Assert.Equal("anthropic at https://x/v1/messages answered 404 Not Found", report.Reason);
+        Assert.Empty(report.UnsupportedClaims);
+    }
+
+    [Fact]
+    public async Task Cancellation_is_not_a_failed_check()
+    {
+        IThoroughFaithfulnessChecker checker = new ThoroughFaithfulnessChecker(
+            new FailingModel(new OperationCanceledException()), new ThoroughFaithfulnessOptions(Enabled: true));
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => checker.CheckAsync("Fixed a parser bug.", Facts()));
+    }
+
+    private sealed class FailingModel(Exception failure) : IChangelogModel
+    {
+        public Task<RenderedEntries> RephraseAsync(RephraseRequest request, CancellationToken cancellationToken = default)
+            => throw new NotSupportedException("Not exercised by faithfulness tests.");
+
+        public Task<FaithfulnessReport> CheckFaithfulnessAsync(
+            FaithfulnessRequest request, CancellationToken cancellationToken = default)
+            => Task.FromException<FaithfulnessReport>(failure);
+    }
 }

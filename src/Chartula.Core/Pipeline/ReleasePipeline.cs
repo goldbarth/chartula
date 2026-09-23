@@ -154,7 +154,8 @@ public sealed class ReleasePipeline(
         // flag of its own that is indistinguishable from a check that found nothing.
         if (!thoroughEvaluated)
         {
-            flags.Add($"The thorough check could not be evaluated: {thorough.Reason}.");
+            // A reason that is a model call's failure may already end in a sentence of its own.
+            flags.Add($"The thorough check could not be evaluated: {thorough.Reason?.TrimEnd('.')}.");
         }
 
         return flags;

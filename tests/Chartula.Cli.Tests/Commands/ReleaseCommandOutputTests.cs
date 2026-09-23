@@ -193,4 +193,59 @@ public sealed class ReleaseCommandOutputTests
         Assert.Contains("--no-publish skips this step", text);
         Assert.DoesNotContain("Error:", text);
     }
+
+    private static async Task<string> FormatAsync(params AudienceOutcome[] renderings)
+    {
+        StringWriter output = new();
+        await ReleaseCommand.RunAsync(
+            new StubPipeline(new ReleaseOutcome("v1.0.0", PipelineMode.Preview, renderings, [])),
+            PipelineMode.Preview,
+            new ReleaseRequest("v1.0.0", new RepositoryCoordinates("octo", "repo")),
+            output,
+            CancellationToken.None);
+        return output.ToString().ReplaceLineEndings("\n");
+    }
+
+    private static AudienceOutcome Failed(Audience audience, string error)
+        => new(audience, Success: false, Text: null, [], error);
+
+    // #234: one endpoint refusing one model is one problem, however many audiences asked.
+    [Fact]
+    public async Task Audiences_failing_for_the_same_reason_say_it_once()
+    {
+        const string Error = "Changelog generation for 'v1.0.0' failed: anthropic at https://x/v1/messages answered 404 Not Found for model 'm'.";
+
+        string text = await FormatAsync(
+            Failed(Audience.Technical, Error), Failed(Audience.Customer, Error), Failed(Audience.Product, Error));
+
+        Assert.Equal(2, text.Split("answered 404").Length);
+        Assert.Contains("--- Customer ---\n  (failed) The same as Technical.\n", text);
+        Assert.Contains("--- Product ---\n  (failed) The same as Technical.\n", text);
+    }
+
+    [Fact]
+    public async Task Audiences_failing_for_different_reasons_say_each()
+    {
+        string text = await FormatAsync(
+            Failed(Audience.Technical, "the model's answer did not match the expected entry format"),
+            Failed(Audience.Customer, "anthropic at https://x/v1/messages answered 529 Overloaded for model 'm'."));
+
+        Assert.Contains("  (failed) the model's answer did not match the expected entry format\n", text);
+        Assert.Contains("  (failed) anthropic at https://x/v1/messages answered 529 Overloaded for model 'm'.\n", text);
+        Assert.DoesNotContain("The same as", text);
+    }
+
+    // A failed call explains itself over several lines; flush-left they would read as
+    // output of their own.
+    [Fact]
+    public async Task A_failure_over_several_lines_stays_indented_under_its_audience()
+    {
+        string text = await FormatAsync(
+            Failed(Audience.Technical, "answered 401 Unauthorized.\nThe endpoint rejected the key in ANTHROPIC_API_KEY."),
+            new AudienceOutcome(
+                Audience.Customer, Success: true, "- Added search", ["The thorough check could not be evaluated: answered 404.\nThe endpoint said: no."], Error: null));
+
+        Assert.Contains("  (failed) answered 401 Unauthorized.\n           The endpoint rejected the key in ANTHROPIC_API_KEY.\n", text);
+        Assert.Contains("    ! The thorough check could not be evaluated: answered 404.\n      The endpoint said: no.\n", text);
+    }
 }

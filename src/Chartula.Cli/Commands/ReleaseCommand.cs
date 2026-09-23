@@ -1,4 +1,5 @@
 using System.Text;
+using Chartula.Core.Llm;
 using Chartula.Core.Observability;
 using Chartula.Core.Pipeline;
 using Chartula.Core.PullRequests;
@@ -62,12 +63,24 @@ internal static class ReleaseCommand
         });
         builder.AppendLine();
 
+        // Two audiences failing the same way - one endpoint refusing one model - is one
+        // problem, and printing it twice reads as two.
+        Dictionary<string, Audience> firstFailedWith = [];
         foreach (AudienceOutcome audience in outcome.Renderings)
         {
             builder.AppendLine($"--- {audience.Audience} ---");
             if (!audience.Success)
             {
-                builder.AppendLine($"  (failed) {audience.Error}");
+                string error = audience.Error ?? string.Empty;
+                if (firstFailedWith.TryGetValue(error, out Audience first))
+                {
+                    builder.AppendLine($"  (failed) The same as {first}.");
+                }
+                else
+                {
+                    firstFailedWith[error] = audience.Audience;
+                    AppendIndented(builder, "  (failed) ", error);
+                }
             }
             else
             {
@@ -83,7 +96,7 @@ internal static class ReleaseCommand
                     builder.AppendLine("  Flagged for review:");
                     foreach (string flag in audience.Flags)
                     {
-                        builder.AppendLine($"    ! {flag}");
+                        AppendIndented(builder, "    ! ", flag);
                     }
                 }
             }
@@ -113,6 +126,22 @@ internal static class ReleaseCommand
         }
 
         return builder.ToString();
+    }
+
+    /// <summary>
+    /// Appends <paramref name="text"/> after <paramref name="prefix"/>, its further lines
+    /// indented to where the first one's text starts. A failed model call explains itself
+    /// over several lines, and flush-left they would read as output of their own.
+    /// </summary>
+    private static void AppendIndented(StringBuilder builder, string prefix, string text)
+    {
+        string indent = new(' ', prefix.Length);
+        string[] lines = text.Split('\n');
+        builder.Append(prefix).AppendLine(lines[0].TrimEnd());
+        foreach (string line in lines.Skip(1))
+        {
+            builder.Append(indent).AppendLine(line.TrimEnd());
+        }
     }
 
     /// <summary>

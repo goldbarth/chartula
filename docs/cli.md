@@ -221,6 +221,26 @@ An audience that failed does not hold back the ones that rendered: `generate` st
 When no audience rendered, no output is written, so an earlier run's `changelog.json` is not replaced by one without renderings; only the [run record](run-record.md) is kept, since the tokens were spent.
 Errors are written to stderr when they are about the invocation itself, and to stdout as `Error: <message>` when the pipeline started running and then failed.
 
+### When a model call fails
+
+A failed model call names the provider, the address it asked, the model and the status, then what that status usually means, then the endpoint's own message.
+Audiences that failed for the same reason say it once:
+
+```console
+--- Technical ---
+  (failed) Changelog generation for 'v1.2.0' failed: openai-compatible at http://localhost:11434/v1/chat/completions answered 404 Not Found for model 'gpt-luna'.
+           Either the endpoint does not serve that model id (check llm.model), or Chartula__Llm__BaseUrl is not the address of this provider's API - another provider's, or a wrong path such as a missing /v1.
+           The endpoint said: The model `gpt-luna` does not exist or you do not have access to it.
+
+--- Customer ---
+  (failed) The same as Technical.
+```
+
+A `401` or `403` names the variable the key was read from, and says so when that variable is not set.
+An endpoint that cannot be reached at all is named as configured, with the transport's reason (`Connection refused`, a failed name lookup).
+
+A failed call of the thorough check does not fail the audience: the rendering is kept and flagged as `The thorough check could not be evaluated`, with the same explanation, and names `faithfulness.model` when the check asks a model of its own.
+
 ## After a run
 
 Every run - `preview` or `generate` - ends with a report of what it did and what it cost in tokens.

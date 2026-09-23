@@ -16,9 +16,11 @@ internal sealed class ModelRequestCountingHandler(HttpMessageHandler? inner = nu
     /// A client for a provider SDK. Its timeout is infinite, as in the clients the
     /// SDKs build for themselves: they enforce their own per-request timeout, and the
     /// <see cref="HttpClient"/> default of 100 seconds would cut off a long call first.
+    /// Error responses are kept under the count, so a failed call can name what it was
+    /// told - see <see cref="ModelErrorResponseHandler"/>.
     /// </summary>
     public static HttpClient CreateClient(HttpMessageHandler? inner = null)
-        => new(new ModelRequestCountingHandler(inner)) { Timeout = Timeout.InfiniteTimeSpan };
+        => new(new ModelRequestCountingHandler(new ModelErrorResponseHandler(inner))) { Timeout = Timeout.InfiniteTimeSpan };
 
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
