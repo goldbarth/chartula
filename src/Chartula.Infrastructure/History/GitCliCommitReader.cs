@@ -4,18 +4,18 @@ using Chartula.Core.History;
 namespace Chartula.Infrastructure.History;
 
 /// <summary>
-/// An <see cref="IReleaseCommitReader"/> that reads history by invoking the
-/// <c>git</c> CLI in a repository directory. Shelling out keeps the tool free of
-/// native git dependencies, which matters for the native-AOT binaries on the
-/// roadmap.
+/// An <see cref="IReleaseCommitReader"/> that reads history by running the <c>git</c>
+/// CLI in a repository directory.
+/// Using the CLI keeps the tool free of native git dependencies, which matters for
+/// the native-AOT binaries on the roadmap.
 /// </summary>
 public sealed class GitCliCommitReader(GitExecutable git, string repositoryPath) : IReleaseCommitReader
 {
-    // ASCII unit separator: a field delimiter that cannot appear in a hash or a
-    // commit subject. Emitted by git's %x1f format token, split on here.
+    // ASCII unit separator: a field delimiter that cannot appear in a hash or a commit
+    // subject. git's %x1f format token emits it, and ParseCommits splits on it.
     private const char FieldSeparator = '\u001f';
 
-    // How to get the history a shallow clone left out, for each place it is made.
+    // How to fetch the history a shallow clone left out, locally and per CI system.
     private const string FetchFullHistory = """
           Fetch the full history and tags: git fetch --unshallow --tags
           In GitHub Actions, check out with fetch-depth: 0; in GitLab CI, set GIT_DEPTH: 0.
@@ -38,10 +38,10 @@ public sealed class GitCliCommitReader(GitExecutable git, string repositoryPath)
             throw new InvalidOperationException(await DescribeMissingTagAsync(tag, cancellationToken));
         }
 
-        // A shallow clone - the default of actions/checkout and GitLab CI - ends its
-        // history at the fetch depth, where a first tag's would end. Neither the
-        // previous tag nor the whole history can be read from it, only a start that
-        // was fetched along with the tag.
+        // A shallow clone is the default of actions/checkout and GitLab CI. Its history
+        // ends at the fetch depth, which looks like the start of a first tag's history.
+        // So neither the previous tag nor the whole history can be read from it, only
+        // an explicit start that was fetched together with the tag.
         bool shallow = await IsShallowAsync(cancellationToken);
         if (shallow && string.IsNullOrWhiteSpace(since))
         {
@@ -69,10 +69,10 @@ public sealed class GitCliCommitReader(GitExecutable git, string repositoryPath)
     }
 
     /// <summary>
-    /// Why the tag was not found, in terms the caller can act on. The history is read
-    /// from the directory the run starts in, so the likely cause is starting it in the
-    /// wrong place - outside any repository, in another checkout, or in a clone
-    /// without the tag - and the message names the place and what it holds.
+    /// Explains why the tag was not found, so the caller can act on it.
+    /// The history is read from the directory the run starts in, so the likely cause
+    /// is starting in the wrong place: outside any repository, in another checkout, or
+    /// in a clone without the tag. The message names the directory and what it contains.
     /// </summary>
     private async Task<string> DescribeMissingTagAsync(string tag, CancellationToken cancellationToken)
     {
@@ -85,8 +85,8 @@ public sealed class GitCliCommitReader(GitExecutable git, string repositoryPath)
                 """;
         }
 
-        // The newest tags show a typo or a naming scheme at a glance; none at all is
-        // a clone that never fetched them.
+        // The newest tags reveal a typo or a naming scheme at a glance. No tags at all
+        // means the clone never fetched them.
         GitResult tags = await RunGitAsync(["tag", "--sort=-creatordate"], cancellationToken);
         string[] latest = tags.ExitCode == 0
             ? tags.StandardOutput.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -102,8 +102,8 @@ public sealed class GitCliCommitReader(GitExecutable git, string repositoryPath)
             """;
     }
 
-    // The nearest tag reachable from the parent of the release tag, if any. Fails
-    // (and yields no previous tag) on a first tag or a root commit.
+    // The nearest tag reachable from the parent of the release tag. On a first tag or
+    // a root commit git fails, which yields no previous tag.
     private async Task<string?> ReadPreviousTagAsync(string tag, CancellationToken cancellationToken)
     {
         GitResult previous = await RunGitAsync(
@@ -113,10 +113,10 @@ public sealed class GitCliCommitReader(GitExecutable git, string repositoryPath)
             : null;
     }
 
-    // A start that is not behind the tag would give a range of commits that are not
-    // in the release at all, or none, so it is refused rather than read. In a shallow
-    // clone the start also has to be fetched, and so does everything between it and
-    // the tag: a range cut off inside reads as a smaller release.
+    // Refuse a start that is not an ancestor of the tag: its range would hold commits
+    // outside the release, or none.
+    // In a shallow clone, the start and everything between it and the tag must also be
+    // fetched. A range cut off inside would read as a smaller release.
     private async Task<string> VerifyStartAsync(
         string since,
         string tag,
@@ -164,10 +164,10 @@ public sealed class GitCliCommitReader(GitExecutable git, string repositoryPath)
     }
 
     /// <summary>
-    /// Whether a commit whose parents were not fetched lies inside the range. git
-    /// lists those boundary commits in the <c>shallow</c> file and nowhere else;
-    /// one inside the range means commits reachable from the tag but not from the
-    /// start, on a merged branch, were left out.
+    /// Whether the range contains a commit whose parents were not fetched.
+    /// git lists these boundary commits only in the <c>shallow</c> file.
+    /// A boundary commit inside the range means commits of the release were left out:
+    /// commits on a merged branch, reachable from the tag but not from the start.
     /// </summary>
     private async Task<bool> IsCutOffAsync(string since, string tag, CancellationToken cancellationToken)
     {
@@ -192,10 +192,10 @@ public sealed class GitCliCommitReader(GitExecutable git, string repositoryPath)
     }
 
     /// <summary>
-    /// The date the tag was created: the tagger date for an annotated tag, the
-    /// commit date for a lightweight one, which is what <c>creatordate</c> means.
-    /// Returns <c>null</c> when git gives nothing readable, so an output built on
-    /// it can omit the field rather than invent a date.
+    /// The date the tag was created (<c>creatordate</c>): the tagger date for an
+    /// annotated tag, the commit date for a lightweight one.
+    /// Returns <c>null</c> when git returns nothing readable, so outputs can omit the
+    /// date instead of inventing one.
     /// </summary>
     private async Task<DateOnly?> ReadTagDateAsync(string tag, CancellationToken cancellationToken)
     {

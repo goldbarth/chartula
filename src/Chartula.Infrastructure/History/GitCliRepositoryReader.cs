@@ -1,16 +1,16 @@
 namespace Chartula.Infrastructure.History;
 
 /// <summary>
-/// Reads what a checkout already knows about the release a run is for, so the
-/// command line does not have to repeat it. Both reads answer <c>null</c> rather
-/// than throw when git has nothing to give: whether that is an error depends on
-/// whether the flag it stands in for was passed.
+/// Reads what a checkout already knows about the release, so the operator does not
+/// have to pass it on the command line.
+/// Both reads return <c>null</c> instead of throwing when git has no answer. Whether
+/// that is an error depends on whether the matching flag was passed.
 /// </summary>
 public sealed class GitCliRepositoryReader(GitExecutable git, string repositoryPath)
 {
     /// <summary>
-    /// The nearest tag reachable from <c>HEAD</c> - the release the checkout is at
-    /// or has moved past. A tag on another branch is not a release of this one.
+    /// The nearest tag reachable from <c>HEAD</c>: the release the checkout is at or
+    /// has moved past. A tag on another branch is not a release of this branch.
     /// </summary>
     public async Task<string?> ReadNearestTagAsync(CancellationToken cancellationToken = default)
         => Output(await GitCli.RunAsync(

@@ -1,10 +1,10 @@
 namespace Chartula.Infrastructure.History;
 
 /// <summary>
-/// The git binary a run shells out to, resolved once to an absolute path. Started by
-/// bare name, .NET's <c>Process</c> looks in the application directory and the current
-/// directory before <c>PATH</c>, and a run's current directory is the checkout it
-/// reads - so an executable named <c>git</c> committed to that repository would run
+/// The git binary a run calls, resolved once to an absolute path.
+/// Started by bare name, .NET's <c>Process</c> searches the application directory and
+/// the current directory before <c>PATH</c>. A run's current directory is the checkout
+/// it reads. So an executable named <c>git</c> committed to that repository would run
 /// with the operator's environment, keys included.
 /// </summary>
 public sealed record GitExecutable
@@ -19,9 +19,9 @@ public sealed record GitExecutable
 
     /// <summary>
     /// The first <c>git</c> (<c>git.exe</c> on Windows) in an absolute directory of
-    /// <paramref name="pathVariable"/>. Relative entries such as <c>.</c> or an empty
-    /// one are skipped: they resolve against the current directory, which is the hole
-    /// this type closes.
+    /// <paramref name="pathVariable"/>.
+    /// Relative entries such as <c>.</c> and empty entries are skipped: they resolve
+    /// against the current directory, the hole this type closes.
     /// </summary>
     public static GitExecutable Resolve(string? pathVariable)
     {
@@ -54,7 +54,7 @@ public sealed record GitExecutable
             return false;
         }
 
-        // Windows has no execute bit; the .exe name is what makes it runnable.
+        // Windows has no execute bit. The .exe name makes the file runnable.
         return OperatingSystem.IsWindows()
             || (File.GetUnixFileMode(path)
                 & (UnixFileMode.UserExecute | UnixFileMode.GroupExecute | UnixFileMode.OtherExecute)) != 0;
