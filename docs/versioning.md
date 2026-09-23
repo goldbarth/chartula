@@ -77,7 +77,8 @@ It is announced ahead of time, and a migration note ships with the release (see 
 
 **Release assets**
 
-- Every release carries one self-contained single-file binary per platform: `chartula-linux-x64`, `chartula-linux-arm64`, `chartula-osx-x64`, `chartula-osx-arm64`, `chartula-win-x64.exe`, `chartula-win-arm64.exe`.
+- Every release carries one self-contained single-file binary per platform: `chartula-linux-x64`, `chartula-linux-arm64`, `chartula-linux-musl-x64`, `chartula-linux-musl-arm64`, `chartula-osx-x64`, `chartula-osx-arm64`, `chartula-win-x64.exe`, `chartula-win-arm64.exe`.
+  The `linux-musl` binaries are for Alpine and other musl systems, and need `libstdc++` there.
 - `SHA256SUMS` lists the checksum of every binary, and every binary has a GitHub build provenance attestation (`gh attestation verify <file> --repo goldbarth/chartula`).
 - The `Version` in `src/Chartula.Cli/Chartula.Cli.csproj` is the only place the version is written.
   The binary, the User-Agent it sends and `changelog.json` all read it from there.
@@ -86,8 +87,9 @@ It is announced ahead of time, and a migration note ships with the release (see 
 
 1. Set `Version` in the csproj to the next version, in a pull request like any other change.
 2. After it is merged, tag the merge commit on `main` and push the tag (`v0.1.0-preview.2`).
-3. `.github/workflows/release.yml` refuses a tag that does not match the csproj or is not on `main`, runs CI on the tagged commit, builds and smoke-tests each binary on a runner of its own platform, and creates a draft release with the binaries, `SHA256SUMS` and the attestations.
+3. `.github/workflows/release.yml` refuses a tag that does not match the csproj or is not on `main`, runs CI on the tagged commit, builds and smoke-tests each binary on its own platform (the Linux ones in a Debian slim or an Alpine container, which have none of the runner's extra libraries), and creates a draft release with the binaries, `SHA256SUMS` and the attestations.
 4. `chartula generate` for the tag writes the notes into that draft; a person reads them and publishes the release.
+5. Publishing runs `.github/workflows/install.yml` against the release: the install scripts, then a real `chartula preview`, in fresh containers of every mainstream Linux (glibc and musl, x64 and arm64), on macOS and on Windows.
 
 **Version string formatting**
 
