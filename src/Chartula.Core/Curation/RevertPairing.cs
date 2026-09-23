@@ -5,21 +5,24 @@ using Chartula.Core.PullRequests;
 namespace Chartula.Core.Curation;
 
 /// <summary>
-/// Takes a revert and what it reverted out of a release when both are in it: the
-/// changes never shipped, and a revert filtered away as internal would leave them in
-/// the facts as if they had (#206). Pairing is a fact decision, so it only follows
-/// what a revert names in a form read without judgment:
+/// Removes a revert and its reverted change from a release when both are in it.
+/// Neither change shipped. If the revert were filtered out as internal, the reverted
+/// change would stay in the facts as if it had shipped (#206).
+/// Pairing is a fact decision, so it only follows targets a revert names unambiguously:
 /// <list type="bullet">
 /// <item>a commit hash of at least 7 characters that is the prefix of exactly one
 /// commit in the range ("This reverts commit ...", "Reverts d85a4b9, ...");</item>
 /// <item>GitHub's revert button: "Reverts owner/repo#N" or "Reverts #N".</item>
 /// </list>
-/// A pull request number in prose is not a target: "#61" is as often context. A
-/// revert whose every named target is in the release drops out with them; one that
-/// names anything it cannot resolve here - an earlier release, an ambiguous hash -
-/// takes back what it did resolve and stays, so the reader still sees it. A revert
-/// that is itself reverted in the same release is undone, one level deep: its
-/// targets stay.
+/// A pull request number in prose is not a target, because "#61" is as often just context.
+/// Outcomes:
+/// <list type="bullet">
+/// <item>All named targets are in the release: the revert is removed together with them.</item>
+/// <item>A named target cannot be resolved (an earlier release, an ambiguous hash): the
+/// resolved targets are removed, and the revert stays so the reader still sees it.</item>
+/// <item>A revert that is itself reverted in the same release is undone, one level
+/// deep: its targets stay.</item>
+/// </list>
 /// </summary>
 internal static partial class RevertPairing
 {
@@ -53,7 +56,7 @@ internal static partial class RevertPairing
             reverts[pull.Number] = Resolve(pull, range, pullByCommit, numbers);
         }
 
-        // A revert another revert takes back no longer takes anything back itself.
+        // A revert that another revert takes back removes nothing itself.
         HashSet<int> undone = [.. reverts.Values.SelectMany(revert => revert.Targets).Where(reverts.ContainsKey)];
 
         HashSet<int> removed = [];
@@ -77,7 +80,7 @@ internal static partial class RevertPairing
     private static (IReadOnlyList<int> Targets, bool Complete) Resolve(
         PullRequestInfo revert, CommitRange range, Dictionary<string, int> pullByCommit, HashSet<int> numbers)
     {
-        // The body as a reader sees it: a hash in a hidden template comment names nothing.
+        // Read the body as a reader sees it: a hash in a hidden template comment names nothing.
         string text = revert.Title + "\n" + PullRequestBody.Description(revert.Description);
 
         List<int> targets = [];

@@ -4,14 +4,15 @@ using Chartula.Core.PullRequests;
 namespace Chartula.Core.Curation;
 
 /// <summary>
-/// Default <see cref="IReleaseChangeResolver"/>. Prefers merged pull requests;
-/// falls back to commit data when there are none, and to the pull request body
-/// (then a generic label) when a title is missing or uninformative.
+/// Default <see cref="IReleaseChangeResolver"/>. It prefers merged pull requests.
+/// Without pull requests it falls back to commit data.
+/// When a title is missing or uninformative, it falls back to the first informative
+/// line of the pull request body, then to "PR #N".
 /// </summary>
 public sealed class ReleaseChangeResolver : IReleaseChangeResolver
 {
-    // Whole-title words that carry no information on their own. A prefixed title
-    // like "fix: auth bug" is unaffected - only an exact match counts. This is a
+    // Titles that carry no information on their own. Only an exact match of the whole
+    // title counts, so a prefixed title like "fix: auth bug" is unaffected. This is a
     // starter set; it becomes configurable with the config work.
     private static readonly HashSet<string> UninformativeTitles =
         new(StringComparer.OrdinalIgnoreCase)
@@ -26,8 +27,8 @@ public sealed class ReleaseChangeResolver : IReleaseChangeResolver
         ArgumentNullException.ThrowIfNull(range);
         ArgumentNullException.ThrowIfNull(pullRequests);
 
-        // Merged PRs are the preferred source. Only when there are none do we
-        // degrade to commit data - that is the "no clean PRs" fallback.
+        // Merged PRs are the preferred source. Fall back to commit data only when
+        // there are none.
         if (pullRequests.Count > 0)
         {
             return RevertPairing.Apply(range, pullRequests).Select(FromPullRequest).ToArray();
@@ -38,8 +39,8 @@ public sealed class ReleaseChangeResolver : IReleaseChangeResolver
 
     private static ReleaseChange FromPullRequest(PullRequestInfo pull)
     {
-        // Read once, here: everything downstream - the title fallback, breaking
-        // status, linked issues, the prompt - sees the same description.
+        // Extract the description once, here, so everything downstream sees the same
+        // description: the title fallback, breaking status, linked issues and the prompt.
         string? description = PullRequestBody.Description(pull.Description);
         return new ReleaseChange(
             Title: ResolveTitle(pull, description),
