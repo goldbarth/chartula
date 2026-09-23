@@ -1,0 +1,85 @@
+name: Binaries
+
+# One self-contained binary per platform, built and smoke-tested, each uploaded as
+# the artifact binary-<rid>. release.yml releases them; install.yml installs them
+# the way a user does before they are released.
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  binary:
+    name: binary (${{ matrix.rid }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      # Let every platform finish, so one failure does not hide another.
+      fail-fast: false
+      matrix:
+        # A Linux binary is smoke-tested in a slim container rather than on the runner,
+        # which has ICU and every library a user's image may lack. The musl ones run
+        # in Alpine with the one package install.sh asks for.
+        include:
+          - { rid: linux-x64, runner: ubuntu-latest, ext: '', container: 'debian:12-slim' }
+          - { rid: linux-arm64, runner: ubuntu-24.04-arm, ext: '', container: 'debian:12-slim' }
+          - { rid: linux-musl-x64, runner: ubuntu-latest, ext: '', container: 'alpine:latest' }
+          - { rid: linux-musl-arm64, runner: ubuntu-24.04-arm, ext: '', container: 'alpine:latest' }
+          - { rid: osx-x64, runner: macos-15-intel, ext: '', container: '' }
+          - { rid: osx-arm64, runner: macos-latest, ext: '', container: '' }
+          - { rid: win-x64, runner: windows-latest, ext: .exe, container: '' }
+          - { rid: win-arm64, runner: windows-11-arm, ext: .exe, container: '' }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+      # A musl binary is published from the glibc runner: self-contained and not
+      # native AOT, it needs only the musl runtime pack, which the restore brings.
+      - name: Publish
+        shell: bash
+        run: |
+          dotnet publish src/Chartula.Cli -c Release -r ${{ matrix.rid }} --self-contained \
+            -p:RestoreLockedMode=true -warnaserror -o "$RUNNER_TEMP/publish"
+          mkdir -p "$RUNNER_TEMP/dist"
+          cp "$RUNNER_TEMP/publish/chartula${{ matrix.ext }}" "$RUNNER_TEMP/dist/chartula-${{ matrix.rid }}${{ matrix.ext }}"
+      # Each binary runs on its own platform, outside the checkout, with no key: it
+      # must start, print its usage, and end a run with the hint that names the
+      # missing key. A crash here is one a user would otherwise hit first.
+      - name: Smoke test
+        shell: bash
+        working-directory: ${{ runner.temp }}
+        env:
+          CONTAINER: ${{ matrix.container }}
+        run: |
+          binary="./dist/chartula-${{ matrix.rid }}${{ matrix.ext }}"
+          if [ -n "$CONTAINER" ]; then
+            run() {
+              docker run --rm -v "$PWD:/w:ro" -w /w "$CONTAINER" sh -c \
+                'if [ -e /etc/alpine-release ]; then apk add --no-cache -q libstdc++ >/dev/null; fi; exec "$@"' sh "$@"
+            }
+          else
+            run() { "$@"; }
+          fi
+
+          run "$binary" --help > help.txt
+          grep -q "chartula generate" help.txt || { cat help.txt; echo "::error::--help did not print the usage."; exit 1; }
+
+          set +e
+          run env -u ANTHROPIC_API_KEY -u GITHUB_TOKEN "$binary" preview --tag v0.0.0 --repo owner/name 2> stderr.txt
+          code=$?
+          set -e
+          cat stderr.txt
+          if [ "$code" -ne 1 ] || ! grep -q "ANTHROPIC_API_KEY" stderr.txt; then
+            echo "::error::A run without a key exited with $code instead of ending with the hint."
+            exit 1
+          fi
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: binary-${{ matrix.rid }}
+          path: ${{ runner.temp }}/dist/*
+          if-no-files-found: error

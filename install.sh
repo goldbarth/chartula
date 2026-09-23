@@ -3,9 +3,10 @@
 #
 #   curl -fsSL https://raw.githubusercontent.com/goldbarth/chartula/main/install.sh | sh
 #
-# It picks the binary for this machine, checks it against the release's
-# SHA256SUMS, and puts it on the PATH as `chartula`. Nothing else on the system is
-# changed; if the install directory is not on the PATH, it prints the line to add.
+# It picks the binary for this machine - glibc or musl (Alpine) on Linux - checks
+# it against the release's SHA256SUMS, and puts it on the PATH as `chartula`.
+# Nothing else on the system is changed: a missing library or a missing PATH entry
+# is named with the line that fixes it, never fixed by the script.
 #
 # Settings, all optional:
 #   CHARTULA_VERSION      a release tag such as v0.1.0-preview.1 (default: the latest release)
@@ -60,13 +61,40 @@ platform() {
         arch=arm64
     fi
 
-    # The Linux binaries are built against glibc; on musl (Alpine) they would not
-    # start, and the error then would not say why.
-    if [ "$os" = linux ] && ldd --version 2>&1 | grep -qi musl; then
-        fail "this Linux uses musl (e.g. Alpine), and Chartula's Linux binaries need glibc. Build it from source: https://github.com/$REPO#installation"
+    # A glibc binary does not start on musl, and the shell then only says
+    # "not found". The loader is the test: ldd is not on every musl system.
+    if [ "$os" = linux ] && is_musl; then
+        os=linux-musl
     fi
 
     echo "$os-$arch"
+}
+
+is_musl() {
+    for loader in /lib/ld-musl-*.so.1; do
+        [ -e "$loader" ] && return 0
+    done
+    ldd --version 2>&1 | grep -qi musl
+}
+
+# The musl binary needs the C++ runtime (libstdc++, which brings libgcc), which a
+# glibc system always has and Alpine does not. Checked before the download, so a
+# run without it changes nothing; installing it is left to the user.
+require_libstdcxx() {
+    for dir in /usr/lib /lib /usr/local/lib /usr/lib64 /lib64; do
+        [ -e "$dir/libstdc++.so.6" ] && return 0
+    done
+
+    if command -v apk >/dev/null 2>&1; then
+        install_line="apk add libstdc++"
+    else
+        install_line="install libstdc++ with your package manager"
+    fi
+    as_root=""
+    [ "$(id -u)" = 0 ] || as_root=" (as root)"
+    fail "Chartula needs libstdc++, which is not installed. Install it$as_root with:
+  $install_line
+then run this again. Nothing was installed."
 }
 
 newest_tag() {
@@ -88,8 +116,23 @@ sha256() {
     fi
 }
 
+# The shell the user typed the install line into. $SHELL is unset in most
+# containers; the script's parent is that shell under `curl | sh`, and /proc says
+# which one it is.
+user_shell() {
+    if [ -n "${SHELL:-}" ]; then
+        basename "$SHELL"
+    elif [ -r "/proc/$PPID/comm" ]; then
+        cat "/proc/$PPID/comm"
+    fi
+}
+
 path_hint() {
-    case "$(basename "${SHELL:-sh}")" in
+    # The file each shell reads when a new terminal opens. An interactive bash that
+    # is not a login shell - a terminal on Linux, `docker run -it ... bash` - reads
+    # ~/.bashrc and never ~/.profile, so ~/.profile is only for the shells that read
+    # nothing else.
+    case "$(user_shell)" in
         zsh) rc="$HOME/.zshrc" ;;
         bash) if [ "$(uname -s)" = Darwin ]; then rc="$HOME/.bash_profile"; else rc="$HOME/.bashrc"; fi ;;
         fish) rc="" ;;
@@ -99,12 +142,13 @@ path_hint() {
     say ""
     say "$INSTALL_DIR is not on your PATH yet, so the shell cannot find chartula."
     if [ -z "$rc" ]; then
-        say "Add it once with:"
+        say "Add it, for this terminal and new ones, with:"
         say "  fish_add_path $INSTALL_DIR"
     else
-        say "Add it once with:"
+        say "Use it in this terminal now with:"
+        say "  export PATH=\"$INSTALL_DIR:\$PATH\""
+        say "and keep it for new terminals with:"
         say "  echo 'export PATH=\"$INSTALL_DIR:\$PATH\"' >> $rc"
-        say "then open a new terminal."
     fi
 }
 
@@ -116,6 +160,9 @@ main() {
 
     rid=$(platform)
     file="chartula-$rid"
+    case "$rid" in
+        linux-musl-*) require_libstdcxx ;;
+    esac
 
     if [ -n "${CHARTULA_DOWNLOAD_URL:-}" ]; then
         base="${CHARTULA_DOWNLOAD_URL%/}"

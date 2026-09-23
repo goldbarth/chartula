@@ -1,14 +1,21 @@
 name: Install
 
-# Runs the install scripts the way a user does, on every platform a binary is
-# built for, against the published release: when a script changes, and whenever
-# a release is published, so a release that cannot be installed shows up at once.
+# Installs Chartula the way a user does and runs it the way a user does: install.sh
+# in fresh containers of every mainstream Linux and on macOS, install.ps1 on Windows,
+# then a real `chartula preview` (see .github/scripts/check-install.sh). A pull
+# request installs the binaries it builds; a published release installs itself, so a
+# release that cannot be installed or does not run shows up at once.
 on:
   pull_request:
     paths:
       - install.sh
       - install.ps1
       - .github/workflows/install.yml
+      - .github/workflows/binaries.yml
+      - .github/scripts/check-install.sh
+      - global.json
+      - Directory.Build.props
+      - src/Chartula.Cli/Chartula.Cli.csproj
   release:
     types: [published]
   workflow_dispatch:
@@ -17,27 +24,111 @@ permissions:
   contents: read
 
 jobs:
-  unix:
+  # A published release is tested as released; everything else builds its binaries.
+  binaries:
+    if: github.event_name != 'release'
+    uses: ./.github/workflows/binaries.yml
+
+  linux:
+    name: install.sh (${{ matrix.image }}, ${{ matrix.arch }})
+    needs: binaries
+    if: ${{ !failure() && !cancelled() }}
+    runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, arm64]
+        image:
+          - ubuntu:22.04
+          - ubuntu:24.04
+          - debian:12-slim
+          - fedora:latest
+          - almalinux:8
+          - almalinux:9
+          - opensuse/leap:15.6
+          - amazonlinux:2023
+          - archlinux:latest
+          - alpine:latest
+        exclude:
+          # Arch publishes no arm64 image.
+          - { image: 'archlinux:latest', arch: arm64 }
+        # git and ca-certificates only, as in a CI image; Alpine's libstdc++ is left
+        # to check-install.sh, which first checks that install.sh asks for it. Ubuntu
+        # and Debian also get curl: they ship neither curl nor wget, and the install
+        # line is `curl ... | sh`.
+        include:
+          - { image: 'ubuntu:22.04', packages: 'apt-get update && apt-get install -y --no-install-recommends git ca-certificates curl' }
+          - { image: 'ubuntu:24.04', packages: 'apt-get update && apt-get install -y --no-install-recommends git ca-certificates curl' }
+          - { image: 'debian:12-slim', packages: 'apt-get update && apt-get install -y --no-install-recommends git ca-certificates curl' }
+          - { image: 'fedora:latest', packages: 'dnf install -y git ca-certificates' }
+          - { image: 'almalinux:8', packages: 'dnf install -y git ca-certificates' }
+          - { image: 'almalinux:9', packages: 'dnf install -y git ca-certificates' }
+          - { image: 'opensuse/leap:15.6', packages: 'zypper -n install git ca-certificates' }
+          - { image: 'amazonlinux:2023', packages: 'dnf install -y git ca-certificates' }
+          - { image: 'archlinux:latest', packages: 'pacman -Sy --noconfirm git ca-certificates' }
+          - { image: 'alpine:latest', packages: 'apk add --no-cache git ca-certificates' }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        if: github.event_name != 'release'
+        with:
+          pattern: binary-linux-*
+          merge-multiple: true
+          path: ${{ runner.temp }}/dist
+      - name: Install and run in ${{ matrix.image }}
+        env:
+          IMAGE: ${{ matrix.image }}
+          PACKAGES: ${{ matrix.packages }}
+          CHARTULA_VERSION: ${{ github.event.release.tag_name }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          # Served the way a release serves them, so install.sh runs unchanged.
+          if [ -z "$CHARTULA_VERSION" ]; then
+            (cd "$RUNNER_TEMP/dist" && sha256sum chartula-* > SHA256SUMS)
+            python3 -m http.server 8000 --bind 127.0.0.1 --directory "$RUNNER_TEMP/dist" > /dev/null 2>&1 &
+            # Up before the first request, or curl finds nothing listening yet.
+            for _ in $(seq 50); do curl -fsS -o /dev/null http://127.0.0.1:8000/SHA256SUMS && break; sleep 0.2; done
+            export CHARTULA_DOWNLOAD_URL=http://127.0.0.1:8000
+          fi
+          docker run --rm --network host -v "$PWD:/src:ro" \
+            -e PACKAGES -e CHARTULA_DOWNLOAD_URL -e CHARTULA_VERSION -e GITHUB_TOKEN \
+            "$IMAGE" /src/.github/scripts/check-install.sh
+
+  macos:
     name: install.sh (${{ matrix.runner }})
+    needs: binaries
+    if: ${{ !failure() && !cancelled() }}
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
-        runner: [ubuntu-latest, ubuntu-24.04-arm, macos-15-intel, macos-latest]
+        runner: [macos-15-intel, macos-latest]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Install
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        if: github.event_name != 'release'
+        with:
+          pattern: binary-osx-*
+          merge-multiple: true
+          path: ${{ runner.temp }}/dist
+      - name: Install and run
         env:
-          # A published release is tested by its own tag; otherwise the latest one.
           CHARTULA_VERSION: ${{ github.event.release.tag_name }}
-        run: sh install.sh
-      - name: Run the installed binary
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
-          "$HOME/.local/bin/chartula" --help | head -n 1
-          file "$HOME/.local/bin/chartula"
+          if [ -z "$CHARTULA_VERSION" ]; then
+            (cd "$RUNNER_TEMP/dist" && shasum -a 256 chartula-* > SHA256SUMS)
+            python3 -m http.server 8000 --bind 127.0.0.1 --directory "$RUNNER_TEMP/dist" > /dev/null 2>&1 &
+            # Up before the first request, or curl finds nothing listening yet.
+            for _ in $(seq 50); do curl -fsS -o /dev/null http://127.0.0.1:8000/SHA256SUMS && break; sleep 0.2; done
+            export CHARTULA_DOWNLOAD_URL=http://127.0.0.1:8000
+          fi
+          sh .github/scripts/check-install.sh
 
   windows:
     name: install.ps1 (${{ matrix.runner }}, ${{ matrix.shell }})
+    needs: binaries
+    if: ${{ !failure() && !cancelled() }}
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -50,6 +141,27 @@ jobs:
         shell: ${{ matrix.shell }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        if: github.event_name != 'release'
+        with:
+          pattern: binary-win-*
+          merge-multiple: true
+          path: ${{ runner.temp }}/dist
+      # Started as a process of its own, so it outlives this step.
+      - name: Serve the binaries this change builds
+        if: github.event_name != 'release'
+        run: |
+          $dist = Join-Path $env:RUNNER_TEMP 'dist'
+          Get-ChildItem $dist -Filter 'chartula-*' |
+            ForEach-Object { "$((Get-FileHash -Algorithm SHA256 $_.FullName).Hash.ToLowerInvariant())  $($_.Name)" } |
+            Set-Content (Join-Path $dist 'SHA256SUMS')
+          Start-Process python -ArgumentList '-m', 'http.server', '8000', '--bind', '127.0.0.1', '--directory', $dist -WindowStyle Hidden
+          "CHARTULA_DOWNLOAD_URL=http://127.0.0.1:8000" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+          # Up before the first request, or the download finds nothing listening yet.
+          foreach ($attempt in 1..50) {
+            try { Invoke-WebRequest -UseBasicParsing -Uri http://127.0.0.1:8000/SHA256SUMS | Out-Null; break }
+            catch { Start-Sleep -Milliseconds 200 }
+          }
       - name: Install
         env:
           CHARTULA_VERSION: ${{ github.event.release.tag_name }}
@@ -58,11 +170,30 @@ jobs:
         run: |
           Get-Content install.ps1 -Raw | Invoke-Expression
           if (-not (Test-Path "$env:LOCALAPPDATA\Programs\chartula\chartula.exe")) { exit 1 }
+      # The same run as check-install.sh: a 401 from the model endpoint means git, the
+      # GitHub API over TLS and the model call all worked, for no tokens.
       - name: Run chartula from the user PATH in a new process
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          Chartula__Llm__Provider: openai-compatible
+          Chartula__Llm__Model: gpt-5.6-luna
+          Chartula__Llm__BaseUrl: https://api.openai.com/v1
+          OPENAI_API_KEY: sk-dummy
         run: |
           $env:Path = [Environment]::GetEnvironmentVariable('Path', 'User') + ';' + [Environment]::GetEnvironmentVariable('Path', 'Machine')
-          # Read all of it first: cutting the pipe after one line stops the process,
-          # and its exit code then reports the cut rather than the binary.
-          $usage = chartula --help
-          if ($LASTEXITCODE -ne 0) { exit 1 }
-          $usage | Select-Object -First 1
+          $work = Join-Path $env:RUNNER_TEMP 'chartula-check'
+          git clone --quiet https://github.com/goldbarth/chartula $work
+          Set-Location $work
+          # Chartula writes its notices to stderr; Windows PowerShell would turn the
+          # first line into a terminating error under the runner's 'Stop'.
+          $ErrorActionPreference = 'Continue'
+          $output = chartula preview --tag v0.1.0-preview.1 --since 4bc57c8 2>&1 | Out-String
+          $code = $LASTEXITCODE
+          $output
+          if ($code -ne 1 -or $output -notmatch 'answered 401 Unauthorized') {
+            Write-Output "::error::chartula preview exited with $code and did not report the model endpoint's 401."
+            exit 1
+          }
+          Write-Output 'Passed: git, the GitHub API and the model endpoint were all reached.'
+          # Otherwise the step ends with chartula's own exit code, the expected 1.
+          exit 0

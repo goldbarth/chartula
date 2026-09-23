@@ -99,6 +99,10 @@ What comes next, and in which order, is in the [Roadmap](ROADMAP.md).
 One command installs the latest release.
 It picks the binary for your machine, checks it against the release's checksums, and puts it where your terminal finds it.
 No .NET is needed.
+What it does need:
+
+- Linux with glibc or musl, on x64 or arm64 - on Alpine, `apk add libstdc++` first; macOS, Intel or Apple silicon; or Windows, x64 or arm64.
+- git, which Chartula reads the release's history with.
 
 **Linux and macOS**, in a terminal:
 
@@ -106,8 +110,17 @@ No .NET is needed.
 curl -fsSL https://raw.githubusercontent.com/goldbarth/chartula/main/install.sh | sh
 ```
 
-It installs to `~/.local/bin/chartula`.
-If that folder is not on your `PATH` yet, the script prints the one line to add, and changes no file of yours on its own.
+It installs to `~/.local/bin/chartula`, picking the musl binary on Alpine.
+If that folder is not on your `PATH` yet, the script prints the line that makes `chartula` work in this terminal and the one that keeps it for new ones, and changes no file of yours on its own.
+The same goes for a missing library: on Alpine without `libstdc++` it prints `apk add libstdc++` and installs nothing.
+
+**In a CI job or a Docker image based on Alpine**, which has neither git nor curl:
+
+```sh
+apk add --no-cache git libstdc++
+wget -qO- https://raw.githubusercontent.com/goldbarth/chartula/main/install.sh | sh
+export PATH="$HOME/.local/bin:$PATH"
+```
 
 **Windows**, in PowerShell:
 
@@ -128,7 +141,7 @@ To read a script before running it, open its link in a browser: [install.sh](ins
 
 ### Download by hand
 
-Every [release](https://github.com/goldbarth/chartula/releases/latest) carries one file per platform (`chartula-linux-x64`, `chartula-linux-arm64`, `chartula-osx-x64`, `chartula-osx-arm64`, `chartula-win-x64.exe`, `chartula-win-arm64.exe`), a `SHA256SUMS` file, and a build provenance attestation per binary.
+Every [release](https://github.com/goldbarth/chartula/releases/latest) carries one file per platform (`chartula-linux-x64`, `chartula-linux-arm64`, `chartula-linux-musl-x64`, `chartula-linux-musl-arm64`, `chartula-osx-x64`, `chartula-osx-arm64`, `chartula-win-x64.exe`, `chartula-win-arm64.exe`), a `SHA256SUMS` file, and a build provenance attestation per binary.
 On Linux and macOS, make the file executable, rename it to `chartula` and move it to a folder on your `PATH`:
 
 ```bash
