@@ -16,14 +16,27 @@ namespace Chartula.Core.Pipeline;
 /// <summary>
 /// Default <see cref="IReleasePipeline"/>. It reads the release history and pull
 /// requests, builds the fact base, renders every audience, runs the rule-based and
-/// thorough faithfulness checks and review, and writes the outputs. The modes
-/// differ in the final write step alone: preview writes and publishes nothing,
-/// generate does both, and generate-without-publishing writes the local files and
-/// leaves the release notes alone. The technical rendering feeds CHANGELOG.md and
-/// the release notes, the customer rendering feeds a page of its own, and every
-/// audience text is stored in changelog.json. Along the way it records what each
-/// faithfulness check caught, so the run reports its own cost, and a run that
-/// writes keeps that report in a local run record.
+/// thorough faithfulness checks and review, and writes the outputs.
+/// <para>
+/// The modes differ only in the final write step:
+/// <list type="bullet">
+/// <item>preview writes and publishes nothing,</item>
+/// <item>generate writes and publishes,</item>
+/// <item>generate-without-publishing writes the local files and leaves the release notes alone.</item>
+/// </list>
+/// </para>
+/// <para>
+/// Outputs:
+/// <list type="bullet">
+/// <item>The technical rendering feeds CHANGELOG.md and the release notes.</item>
+/// <item>The customer rendering feeds its own page.</item>
+/// <item>changelog.json stores every audience's text.</item>
+/// </list>
+/// </para>
+/// <para>
+/// The pipeline records what each faithfulness check caught, so the run reports its
+/// own cost. A run that writes keeps that report in a local run record.
+/// </para>
 /// </summary>
 public sealed class ReleasePipeline(
     IReleaseCommitReader commitReader,
@@ -52,8 +65,8 @@ public sealed class ReleasePipeline(
 
         CommitRange range = await commitReader.ReadReleaseCommitsAsync(request.Tag, request.Since, cancellationToken);
 
-        // Refused before the first request: asking where a release starts costs
-        // neither API budget nor tokens, and a guess at it would be a fact decision.
+        // Refuse before the first API request. Asking the operator where a release
+        // starts costs neither API budget nor tokens, and guessing it would be a fact decision.
         if (range.IsWholeHistory && !request.WholeHistory)
         {
             throw new WholeHistoryException(range.ToTag, range.Commits.Count);
@@ -85,9 +98,8 @@ public sealed class ReleasePipeline(
 
             string text = result.Text ?? string.Empty;
 
-            // The description is checked with the text it belongs to, not beside it:
-            // it is a sentence the model wrote from the same facts, so a claim it
-            // makes has to be as answerable as any other.
+            // Check the description together with its text. The model wrote it from the
+            // same facts, so its claims need the same check as any other.
             IReadOnlyList<string> flags =
                 await CollectFlagsAsync(Checkable(result), factBase, cancellationToken);
 
@@ -102,14 +114,14 @@ public sealed class ReleasePipeline(
             });
         }
 
-        // Everything the run waited on - history, GitHub, every model call - up to the
-        // point its results are known; writing them takes no time worth reporting.
+        // The run duration covers everything the run waited on: history, GitHub and
+        // every model call. Writing the results takes no time worth reporting.
         _metrics.RecordRunDuration(Stopwatch.GetElapsedTime(started));
         RunReport report = _metrics.Snapshot();
 
-        // Every model call is behind us, so the record is complete here. It is kept
-        // for a run in which nothing rendered too: those tokens were spent all the
-        // same. Preview keeps its promise to write nothing.
+        // All model calls are done, so the record is complete here.
+        // Write it even when nothing rendered, because those tokens were still spent.
+        // Preview writes no record, because preview writes nothing.
         string? runRecord = null;
         if (mode != PipelineMode.Preview && runRecordWriter is not null)
         {
@@ -120,9 +132,9 @@ public sealed class ReleasePipeline(
         IReadOnlyList<string> written = [];
         IReadOnlyList<string> skipped = [];
         string? publishFailure = null;
-        // A run in which no audience rendered has nothing to record. Writing the fact
-        // base alone would replace the renderings of an earlier, good run with none,
-        // and read as a run that produced something.
+        // Write no outputs when no audience rendered. Writing the fact base alone would
+        // replace the renderings of an earlier, good run with none, and would look
+        // like a run that produced something.
         if (mode != PipelineMode.Preview && finalTexts.Count > 0)
         {
             (written, skipped, publishFailure) = await WriteOutputsAsync(
@@ -143,18 +155,18 @@ public sealed class ReleasePipeline(
         IReadOnlyList<string> ruleBased = ruleBasedChecker.Check(text, factBase).UnsupportedClaims;
         FaithfulnessReport thorough = await thoroughChecker.CheckAsync(text, factBase, cancellationToken);
 
-        // Both findings go in together, so the report can tell what the paid check
-        // caught over and above the free one.
+        // Record both findings together, so the report can tell what the paid check
+        // caught beyond the free one.
         bool thoroughEvaluated = thorough.Status != FaithfulnessCheckStatus.NotEvaluated;
         _metrics.RecordFaithfulnessChecks(ruleBased, thorough.UnsupportedClaims, thoroughEvaluated);
 
         List<string> flags = [.. ruleBased, .. thorough.UnsupportedClaims];
 
-        // A check that ran and could not be read leaves the text unverified. Without a
-        // flag of its own that is indistinguishable from a check that found nothing.
+        // An unreadable thorough check leaves the text unverified. Without its own flag,
+        // it would look like a check that found nothing.
         if (!thoroughEvaluated)
         {
-            // A reason that is a model call's failure may already end in a sentence of its own.
+            // Trim the period: a reason from a failed model call may already end with one.
             flags.Add($"The thorough check could not be evaluated: {thorough.Reason?.TrimEnd('.')}.");
         }
 
@@ -176,11 +188,9 @@ public sealed class ReleasePipeline(
 
         written.Add(await jsonWriter.WriteAsync(factBase, finalTexts, cancellationToken));
 
-        // The audience the tool exists for gets a file a person can publish, in the
-        // published serialisation, and it is written whenever anything is - writing
-        // a page publishes nothing, so --no-publish has no reason to hold it back.
-        // A release whose customer section is empty is not published at all, so an
-        // empty body produces no page rather than an empty one.
+        // Write the customer page even with --no-publish: a local file publishes nothing.
+        // The page uses the published serialisation, so a person can publish it as is.
+        // An empty customer text produces no page, not an empty page.
         if (finalTexts.TryGetValue(Audience.Customer, out string? customer)
             && !string.IsNullOrWhiteSpace(customer))
         {
@@ -201,13 +211,14 @@ public sealed class ReleasePipeline(
         {
             written.Add(await markdownWriter.WriteAsync(request.Tag, range.TaggedAt, technical, cancellationToken));
 
-            // Writing the record and announcing the release are two acts. Only the
-            // second one is skipped here, and it is named rather than passed over in
-            // silence, so a run that published nothing says so.
+            // CHANGELOG.md is always written. Only publishing the release notes can be
+            // skipped, and a skipped publication is listed, so a run that published
+            // nothing says so.
             if (mode == PipelineMode.Generate)
             {
-                // The one write that leaves the machine, and the last one: a refusal
-                // here is reported next to what was written, not instead of it.
+                // Publishing the release notes is the only write that leaves the machine,
+                // and the last one. A failure here is reported together with what was
+                // already written.
                 try
                 {
                     written.Add(await releaseNotesWriter.WriteAsync(
@@ -229,9 +240,8 @@ public sealed class ReleasePipeline(
     }
 
     /// <summary>
-    /// The text a rendering is checked against the facts as: the description and
-    /// the body together, so nothing the model wrote escapes the check by being
-    /// carried in a different field.
+    /// The text of a rendering that the faithfulness checks see: description and body
+    /// together, so no text the model wrote escapes the check by sitting in another field.
     /// </summary>
     private static string Checkable(ChangelogGenerationResult result)
         => string.IsNullOrWhiteSpace(result.Description)

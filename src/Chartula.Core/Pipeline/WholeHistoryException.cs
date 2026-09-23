@@ -1,8 +1,9 @@
 namespace Chartula.Core.Pipeline;
 
 /// <summary>
-/// A run whose range is all history, which was not asked for. Its own type so the
-/// command surface can name its own way out - the domain does not know the flags.
+/// A run whose range is all history, although that was not requested.
+/// It is a separate type so the CLI can name its own flags as the way out. The domain
+/// does not know the flags.
 /// </summary>
 public sealed class WholeHistoryException(string tag, int commitCount)
     : InvalidOperationException(

@@ -27,32 +27,31 @@ public enum PipelineMode
 public sealed record ReleaseRequest(string Tag, RepositoryCoordinates Repository)
 {
     /// <summary>
-    /// The audiences to render, or <c>null</c> for all of them, which is what a
-    /// release wants. A run that asks for fewer pays for fewer: each audience is
-    /// its own rephrasing call and its own faithfulness check, while the fact base
-    /// behind them is the same. Measuring one audience's wording is the case this
-    /// exists for.
+    /// The audiences to render, or <c>null</c> for all of them, which is what a release needs.
+    /// Each audience costs its own rephrasing call and faithfulness check, while the
+    /// fact base is shared. So requesting fewer audiences costs less.
+    /// This exists to measure one audience's wording.
     /// <para>
-    /// An output whose audience was not rendered is not written. That is not a
-    /// special case here: the pipeline already writes each output only when the
-    /// rendering it is made of is present.
+    /// An output whose audience was not rendered is not written. This needs no special
+    /// case: the pipeline writes each output only when its rendering is present.
     /// </para>
     /// </summary>
     public IReadOnlyCollection<Audience>? Audiences { get; init; }
 
     /// <summary>
-    /// The tag or commit the release starts after, or <c>null</c> to start after
-    /// the previous tag. Where a release starts is a fact decision, so it is the
-    /// operator's to name - on a first tag there is nothing else to start from.
+    /// The tag or commit the release starts after, or <c>null</c> to start after the
+    /// previous tag.
+    /// Where a release starts is a fact decision, so the operator names it. On a first
+    /// tag, this is the only possible start.
     /// </summary>
     public string? Since { get; init; }
 
     /// <summary>
-    /// Whether a range that spans all history may be rendered. A first tag with no
-    /// <see cref="Since"/> has such a range, and rendered as it is, it reads as a
-    /// development log: intermediate states next to the changes that replaced
-    /// them. So it is refused unless asked for, for a project whose history is the
-    /// release.
+    /// Whether a range that spans all history may be rendered.
+    /// A first tag without <see cref="Since"/> has such a range. Rendered as is, it
+    /// reads as a development log: intermediate states next to the changes that
+    /// replaced them.
+    /// So it is refused unless requested, for a project whose whole history is the release.
     /// </summary>
     public bool WholeHistory { get; init; }
 }
