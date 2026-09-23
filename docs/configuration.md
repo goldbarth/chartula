@@ -196,7 +196,7 @@ $ export Chartula__Llm__ApiKeyEnvironmentVariable=GROQ_API_KEY
 $ export GROQ_API_KEY=<your key>
 ```
 
-If the key is missing or wrong, the endpoint answers `401` and the run fails there.
+If the key is missing or wrong, the endpoint answers `401` and the run fails there, naming the variable it read the key from (see [When a model call fails](cli.md#when-a-model-call-fails)).
 Chartula does not check the key itself, because whether one is needed is the endpoint's business, not Chartula's.
 
 #### The context window is the first thing to get right

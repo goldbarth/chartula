@@ -35,7 +35,7 @@ internal static class OpenAiCompatibleChatClient
     /// </summary>
     private static readonly TimeSpan LocalEndpointTimeout = TimeSpan.FromMinutes(10);
 
-    public static IChatClient Create(LlmOptions options, string? apiKey)
+    public static IChatClient Create(LlmOptions options, string? apiKey, HttpMessageHandler? transport = null)
     {
         ArgumentNullException.ThrowIfNull(options);
 
@@ -57,7 +57,7 @@ internal static class OpenAiCompatibleChatClient
         {
             Endpoint = endpoint,
             NetworkTimeout = LocalEndpointTimeout,
-            Transport = new HttpClientPipelineTransport(ModelRequestCountingHandler.CreateClient()),
+            Transport = new HttpClientPipelineTransport(ModelRequestCountingHandler.CreateClient(transport)),
         });
 
         return client.GetChatClient(options.Model).AsIChatClient();

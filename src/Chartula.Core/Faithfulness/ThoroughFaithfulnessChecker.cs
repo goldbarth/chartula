@@ -8,7 +8,9 @@ namespace Chartula.Core.Faithfulness;
 /// Default <see cref="IThoroughFaithfulnessChecker"/>. When enabled, it turns the
 /// fact base into grounded facts and runs a second LLM pass to flag claims the
 /// facts do not support. When disabled, or when there is nothing to check, it
-/// returns a faithful report without any LLM call.
+/// returns a faithful report without any LLM call. A call that fails leaves the text
+/// unverified, which is what <see cref="FaithfulnessCheckStatus.NotEvaluated"/> says;
+/// it does not take the rendering with it, which has already been paid for.
 /// </summary>
 public sealed class ThoroughFaithfulnessChecker(
     IChangelogModel model,
@@ -34,7 +36,20 @@ public sealed class ThoroughFaithfulnessChecker(
         }
 
         GroundedFacts facts = ToGroundedFacts(factBase);
-        return await _model.CheckFaithfulnessAsync(new FaithfulnessRequest(output, facts), cancellationToken);
+        try
+        {
+            return await _model.CheckFaithfulnessAsync(new FaithfulnessRequest(output, facts), cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            // The same failures a rendering reports as its error: a model the endpoint does
+            // not serve (faithfulness.model can differ from the rendering's), a rejected key.
+            return FaithfulnessReport.NotEvaluated(ex.Message);
+        }
     }
 
     // The full fact base as grounded statements, so the check compares the output

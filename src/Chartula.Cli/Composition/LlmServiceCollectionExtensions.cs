@@ -172,31 +172,45 @@ internal static class LlmServiceCollectionExtensions
         return effort is null ? null : new ReasoningOptions { Effort = effort };
     }
 
+    /// <summary>
+    /// The client a run's configuration builds, over <paramref name="transport"/> in
+    /// place of the network - the seam that lets a failed call be checked through the
+    /// real SDKs without an endpoint.
+    /// </summary>
+    internal static IChatClient CreateChatClient(IConfiguration configuration, HttpMessageHandler transport)
+    {
+        LlmProvider provider = LlmProviderParser.Parse(configuration[$"{LlmOptions.SectionName}:Provider"]);
+        return CreateChatClient(provider, ReadOptions(configuration, provider), configuration, transport);
+    }
+
     private static IChatClient CreateChatClient(
         LlmProvider provider,
         LlmOptions options,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        HttpMessageHandler? transport = null)
     {
         // Read the key by name; never hardcode it. An Anthropic run without one was
         // refused at registration; an OpenAI-compatible endpoint may need none.
         string? apiKey = configuration[options.ApiKeyEnvironmentVariable];
 
-        return provider switch
+        IChatClient client = provider switch
         {
-            LlmProvider.Anthropic => CreateAnthropicClient(options, apiKey),
-            LlmProvider.OpenAiCompatible => OpenAiCompatibleChatClient.Create(options, apiKey),
+            LlmProvider.Anthropic => CreateAnthropicClient(options, apiKey, transport),
+            LlmProvider.OpenAiCompatible => OpenAiCompatibleChatClient.Create(options, apiKey, transport),
             _ => throw new NotSupportedException(
                 $"LLM provider '{options.Provider}' is not supported yet."),
         };
+
+        return new FailureDescribingChatClient(client, options, apiKeyPresent: !string.IsNullOrWhiteSpace(apiKey));
     }
 
-    private static IChatClient CreateAnthropicClient(LlmOptions options, string? apiKey)
+    private static IChatClient CreateAnthropicClient(LlmOptions options, string? apiKey, HttpMessageHandler? transport)
     {
         // Two initializers rather than an assignment: BaseUrl is init-only, and its
         // own default is a real URL, so passing null through would blank it. Left
         // alone unless configured - a base URL is only set here for a proxy or a
         // gateway in front of the API.
-        HttpClient http = ModelRequestCountingHandler.CreateClient();
+        HttpClient http = ModelRequestCountingHandler.CreateClient(transport);
         AnthropicClient client = string.IsNullOrWhiteSpace(options.BaseUrl)
             ? new AnthropicClient { ApiKey = apiKey, HttpClient = http }
             : new AnthropicClient { ApiKey = apiKey, BaseUrl = options.BaseUrl, HttpClient = http };
