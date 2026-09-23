@@ -6,13 +6,11 @@ namespace Chartula.Core.Rendering;
 
 /// <summary>
 /// Default <see cref="IReleaseRenderer"/>. It renders each audience from the same
-/// fact base by delegating to the generator, one call per audience. Because the
-/// same base feeds every audience, the renderings share a single source of truth
-/// and cannot contradict each other.
+/// fact base by delegating to the generator, one call per audience.
+/// The same fact base feeds every audience, so the renderings cannot contradict each other.
 /// <para>
-/// The order is fixed rather than taken from the caller, so two runs asking for
-/// the same audiences make the same calls in the same order however the request
-/// was written.
+/// The audience order is fixed, not taken from the caller. Two runs that request the
+/// same audiences make the same calls in the same order, however the request lists them.
 /// </para>
 /// </summary>
 public sealed class ReleaseRenderer(IReleaseChangelogGenerator generator) : IReleaseRenderer
