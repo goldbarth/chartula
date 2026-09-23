@@ -7,28 +7,30 @@ using Chartula.Core.Llm;
 namespace Chartula.Core.Prompting;
 
 /// <summary>
-/// Default <see cref="IChangelogPromptBuilder"/>. The system prompt pins the model
-/// to rephrasing established facts - it may not invent, and it must treat each
-/// fact's category and breaking marker as given. Thin facts yield sparse output.
-/// The user prompt carries only the facts; nothing is added to pad them.
+/// Default <see cref="IChangelogPromptBuilder"/>.
+/// The system prompt restricts the model to rephrasing established facts. It may not
+/// invent, and it must take each fact's category and breaking marker as given.
+/// Thin facts produce sparse output.
+/// The user prompt carries only the facts, with nothing added to pad them.
 /// <para>
-/// The structure of a rendering is not the prompt's: headings, groups, order,
-/// markers and references are put around the entries in code, which is what issue
-/// #96 is about. The rules here are about the words of an entry. The first five
-/// apply to every audience, each format block only to its own.
+/// The prompt does not define the structure of a rendering. Code adds headings, groups,
+/// order, markers and references around the entries (#96).
+/// The rules here are about the wording of an entry. The first five rules apply to
+/// every audience, each format block only to its own audience.
 /// </para>
 /// </summary>
 /// <remarks>
-/// The prompt text lives in the <c>ChangelogPromptBuilder.Prompts.cs</c> partial;
-/// this file only composes it.
+/// The prompt text lives in the <c>ChangelogPromptBuilder.Prompts.cs</c> partial.
+/// This file only composes it.
 /// </remarks>
 public sealed partial class ChangelogPromptBuilder : IChangelogPromptBuilder
 {
     /// <summary>
     /// A SHA-256 hash of every instruction Chartula sends: the system prompt of each
-    /// audience and of the thorough check, and the check's user template - the text
-    /// Chartula controls, without the facts it wraps. It changes exactly when a
-    /// prompt changes, so a run's output can be traced to the instructions behind it.
+    /// audience, the system prompt of the thorough check, and the check's user template.
+    /// It covers the text Chartula controls, without the facts inside it.
+    /// It changes exactly when a prompt changes, so a run's output can be traced to
+    /// the instructions behind it.
     /// </summary>
     public static string PromptHash { get; } = ComputePromptHash();
 
@@ -37,8 +39,8 @@ public sealed partial class ChangelogPromptBuilder : IChangelogPromptBuilder
         StringBuilder text = new();
         foreach (Audience audience in (Audience[])[Audience.Technical, Audience.Customer, Audience.Product])
         {
-            // A separator no prompt contains, so moving text between two prompts
-            // changes the hash too.
+            // Separate the prompts with a character no prompt contains, so moving text
+            // from one prompt to another also changes the hash.
             text.Append(BuildSystemPrompt(audience)).Append('\0');
         }
 
@@ -67,10 +69,10 @@ public sealed partial class ChangelogPromptBuilder : IChangelogPromptBuilder
         system.AppendLine(RuleConsistentVoice);
         system.Append(AudienceGuidance(audience));
 
-        // One line ending on every platform: AppendLine writes "\r\n" on Windows, and
-        // the format blocks are raw literals that take the line endings of the source
-        // file as it was checked out. Without this the same build would send - and
-        // hash - a different prompt per platform.
+        // Use one line ending on every platform. AppendLine writes "\r\n" on Windows,
+        // and the format blocks are raw literals with the line endings of the checked-out
+        // source file. Without this, the same build would send and hash a different
+        // prompt per platform.
         return system.ToString().ReplaceLineEndings("\n");
     }
 
@@ -84,9 +86,9 @@ public sealed partial class ChangelogPromptBuilder : IChangelogPromptBuilder
     }
 
     /// <remarks>
-    /// Each audience carries the shape its template specifies. Only the customer
-    /// rendering is asked for a description, because only the customer page has a
-    /// field to put one in.
+    /// Each audience gets the format block its template specifies.
+    /// Only the customer rendering requests a description, because only the customer
+    /// page has a field for it.
     /// </remarks>
     private static string AudienceGuidance(Audience audience) => audience switch
     {
