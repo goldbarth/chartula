@@ -38,7 +38,13 @@ if [ -e /etc/alpine-release ]; then
     apk add --no-cache libstdc++ > /dev/null
 fi
 
-sh "$src/install.sh" | tee "$work/install.txt"
+# Not piped into tee: a pipeline's status is its last command's, and a failed
+# install would read as a passed one.
+if ! sh "$src/install.sh" > "$work/install.txt" 2>&1; then
+    cat "$work/install.txt"
+    fail "install.sh failed."
+fi
+cat "$work/install.txt"
 
 # The line the PATH hint prints for this terminal has to be the one that works in it.
 if ! command -v chartula > /dev/null 2>&1; then

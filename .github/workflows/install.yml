@@ -86,6 +86,8 @@ jobs:
           if [ -z "$CHARTULA_VERSION" ]; then
             (cd "$RUNNER_TEMP/dist" && sha256sum chartula-* > SHA256SUMS)
             python3 -m http.server 8000 --bind 127.0.0.1 --directory "$RUNNER_TEMP/dist" > /dev/null 2>&1 &
+            # Up before the first request, or curl finds nothing listening yet.
+            for _ in $(seq 50); do curl -fsS -o /dev/null http://127.0.0.1:8000/SHA256SUMS && break; sleep 0.2; done
             export CHARTULA_DOWNLOAD_URL=http://127.0.0.1:8000
           fi
           docker run --rm --network host -v "$PWD:/src:ro" \
@@ -117,6 +119,8 @@ jobs:
           if [ -z "$CHARTULA_VERSION" ]; then
             (cd "$RUNNER_TEMP/dist" && shasum -a 256 chartula-* > SHA256SUMS)
             python3 -m http.server 8000 --bind 127.0.0.1 --directory "$RUNNER_TEMP/dist" > /dev/null 2>&1 &
+            # Up before the first request, or curl finds nothing listening yet.
+            for _ in $(seq 50); do curl -fsS -o /dev/null http://127.0.0.1:8000/SHA256SUMS && break; sleep 0.2; done
             export CHARTULA_DOWNLOAD_URL=http://127.0.0.1:8000
           fi
           sh .github/scripts/check-install.sh
@@ -153,7 +157,11 @@ jobs:
             Set-Content (Join-Path $dist 'SHA256SUMS')
           Start-Process python -ArgumentList '-m', 'http.server', '8000', '--bind', '127.0.0.1', '--directory', $dist -WindowStyle Hidden
           "CHARTULA_DOWNLOAD_URL=http://127.0.0.1:8000" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
-          Start-Sleep -Seconds 2
+          # Up before the first request, or the download finds nothing listening yet.
+          foreach ($attempt in 1..50) {
+            try { Invoke-WebRequest -UseBasicParsing -Uri http://127.0.0.1:8000/SHA256SUMS | Out-Null; break }
+            catch { Start-Sleep -Milliseconds 200 }
+          }
       - name: Install
         env:
           CHARTULA_VERSION: ${{ github.event.release.tag_name }}
@@ -187,3 +195,5 @@ jobs:
             exit 1
           }
           Write-Output 'Passed: git, the GitHub API and the model endpoint were all reached.'
+          # Otherwise the step ends with chartula's own exit code, the expected 1.
+          exit 0
