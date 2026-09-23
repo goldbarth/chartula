@@ -12,13 +12,28 @@ internal sealed class TempGitRepository : IDisposable
 
     public TempGitRepository()
     {
-        Path = System.IO.Path.Combine(
-            System.IO.Path.GetTempPath(), "chartula-git-" + Guid.NewGuid().ToString("N"));
+        Path = NewPath();
         Directory.CreateDirectory(Path);
         Run("init", "-b", "main");
         Run("config", "user.email", "test@example.com");
         Run("config", "user.name", "Chartula Test");
         Run("config", "commit.gpgsign", "false");
+    }
+
+    private TempGitRepository(string path) => Path = path;
+
+    private static string NewPath() => System.IO.Path.Combine(
+        System.IO.Path.GetTempPath(), "chartula-git-" + Guid.NewGuid().ToString("N"));
+
+    /// <summary>
+    /// A shallow clone of this repository, the way CI checks one out. Cloned over
+    /// <c>file://</c>, because a local path makes git ignore the depth.
+    /// </summary>
+    public TempGitRepository ShallowClone(params string[] options)
+    {
+        TempGitRepository clone = new(NewPath());
+        Run(["clone", "--quiet", .. options, new Uri(Path).AbsoluteUri, clone.Path]);
+        return clone;
     }
 
     public void Commit(string subject) => Run("commit", "--allow-empty", "-m", subject);

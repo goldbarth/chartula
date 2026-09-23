@@ -204,6 +204,28 @@ chartula preview --whole-history
 
 Every option is in [CLI](docs/cli.md).
 
+### In CI
+
+Chartula reads the release from the checkout's history, so a CI job has to fetch all of it.
+A shallow clone - the default of `actions/checkout` and of GitLab CI - is refused, because it cannot tell where the release starts.
+
+GitHub Actions:
+
+```yaml
+- uses: actions/checkout@v7
+  with:
+    fetch-depth: 0   # full history and tags
+```
+
+GitLab CI:
+
+```yaml
+variables:
+  GIT_DEPTH: 0   # full history and tags
+```
+
+In a clone that is already shallow, `git fetch --unshallow --tags` fetches the rest.
+
 ### Credentials
 
 Credentials are read from environment variables, never from a config file.

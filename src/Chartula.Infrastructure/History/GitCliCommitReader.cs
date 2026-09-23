@@ -15,6 +15,12 @@ public sealed class GitCliCommitReader(GitExecutable git, string repositoryPath)
     // commit subject. Emitted by git's %x1f format token, split on here.
     private const char FieldSeparator = '\u001f';
 
+    // How to get the history a shallow clone left out, for each place it is made.
+    private const string FetchFullHistory = """
+          Fetch the full history and tags: git fetch --unshallow --tags
+          In GitHub Actions, check out with fetch-depth: 0; in GitLab CI, set GIT_DEPTH: 0.
+        """;
+
     public async Task<CommitRange> ReadReleaseCommitsAsync(
         string tag,
         string? since = null,
@@ -32,9 +38,22 @@ public sealed class GitCliCommitReader(GitExecutable git, string repositoryPath)
             throw new InvalidOperationException(await DescribeMissingTagAsync(tag, cancellationToken));
         }
 
+        // A shallow clone - the default of actions/checkout and GitLab CI - ends its
+        // history at the fetch depth, where a first tag's would end. Neither the
+        // previous tag nor the whole history can be read from it, only a start that
+        // was fetched along with the tag.
+        bool shallow = await IsShallowAsync(cancellationToken);
+        if (shallow && string.IsNullOrWhiteSpace(since))
+        {
+            throw new InvalidOperationException($"""
+                The checkout is a shallow clone: its history ends at the fetch depth, not where '{tag}' starts, so neither the previous tag nor the whole history can be read from it.
+                {FetchFullHistory}
+                """);
+        }
+
         string? from = string.IsNullOrWhiteSpace(since)
             ? await ReadPreviousTagAsync(tag, cancellationToken)
-            : await VerifyStartAsync(since.Trim(), tag, cancellationToken);
+            : await VerifyStartAsync(since.Trim(), tag, shallow, cancellationToken);
 
         string range = from is null ? tag : $"{from}..{tag}";
         GitResult log = await RunGitAsync(
@@ -95,25 +114,81 @@ public sealed class GitCliCommitReader(GitExecutable git, string repositoryPath)
     }
 
     // A start that is not behind the tag would give a range of commits that are not
-    // in the release at all, or none, so it is refused rather than read.
-    private async Task<string> VerifyStartAsync(string since, string tag, CancellationToken cancellationToken)
+    // in the release at all, or none, so it is refused rather than read. In a shallow
+    // clone the start also has to be fetched, and so does everything between it and
+    // the tag: a range cut off inside reads as a smaller release.
+    private async Task<string> VerifyStartAsync(
+        string since,
+        string tag,
+        bool shallow,
+        CancellationToken cancellationToken)
     {
         GitResult verify = await RunGitAsync(
             ["rev-parse", "--verify", "--quiet", $"{since}^{{commit}}"], cancellationToken);
         if (verify.ExitCode != 0)
         {
-            throw new InvalidOperationException(
-                $"The release start '{since}' does not resolve to a commit in the repository.");
+            throw new InvalidOperationException(shallow
+                ? $"""
+                    The release start '{since}' is not in the fetched history of this shallow clone.
+                    {FetchFullHistory}
+                    """
+                : $"The release start '{since}' does not resolve to a commit in the repository.");
         }
 
         GitResult ancestor = await RunGitAsync(["merge-base", "--is-ancestor", since, tag], cancellationToken);
         if (ancestor.ExitCode != 0)
         {
-            throw new InvalidOperationException(
-                $"The release start '{since}' is not an ancestor of '{tag}', so it cannot be where '{tag}' starts.");
+            throw new InvalidOperationException(shallow
+                ? $"""
+                    The release start '{since}' is not an ancestor of '{tag}' in the fetched history of this shallow clone; the commits that connect them may not have been fetched.
+                    {FetchFullHistory}
+                    """
+                : $"The release start '{since}' is not an ancestor of '{tag}', so it cannot be where '{tag}' starts.");
+        }
+
+        if (shallow && await IsCutOffAsync(since, tag, cancellationToken))
+        {
+            throw new InvalidOperationException($"""
+                The history between '{since}' and '{tag}' is cut off by the shallow clone, so commits of the release are missing from it.
+                {FetchFullHistory}
+                """);
         }
 
         return since;
+    }
+
+    private async Task<bool> IsShallowAsync(CancellationToken cancellationToken)
+    {
+        GitResult shallow = await RunGitAsync(["rev-parse", "--is-shallow-repository"], cancellationToken);
+        return shallow.ExitCode == 0 && shallow.StandardOutput.Trim() == "true";
+    }
+
+    /// <summary>
+    /// Whether a commit whose parents were not fetched lies inside the range. git
+    /// lists those boundary commits in the <c>shallow</c> file and nowhere else;
+    /// one inside the range means commits reachable from the tag but not from the
+    /// start, on a merged branch, were left out.
+    /// </summary>
+    private async Task<bool> IsCutOffAsync(string since, string tag, CancellationToken cancellationToken)
+    {
+        GitResult path = await RunGitAsync(["rev-parse", "--git-path", "shallow"], cancellationToken);
+        GitResult range = await RunGitAsync(["rev-list", $"{since}..{tag}"], cancellationToken);
+        if (path.ExitCode != 0 || range.ExitCode != 0)
+        {
+            throw new InvalidOperationException(
+                $"Failed to read whether '{since}..{tag}' is complete: {(path.StandardError + range.StandardError).Trim()}");
+        }
+
+        string file = Path.Combine(repositoryPath, path.StandardOutput.Trim());
+        if (!File.Exists(file))
+        {
+            return false;
+        }
+
+        HashSet<string> boundary = [.. await File.ReadAllLinesAsync(file, cancellationToken)];
+        return range.StandardOutput
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Any(boundary.Contains);
     }
 
     /// <summary>

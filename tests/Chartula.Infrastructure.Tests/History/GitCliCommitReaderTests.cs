@@ -228,4 +228,103 @@ public sealed class GitCliCommitReaderTests
 
         Assert.Contains("not an ancestor of 'v1.0.0'", error.Message);
     }
+
+    // #243: a shallow clone, the default checkout in CI, ends its history where a
+    // first tag's would, so without a check it read as one.
+    [Fact]
+    public async Task A_shallow_clone_is_refused_rather_than_read_as_a_first_tag()
+    {
+        using TempGitRepository origin = new();
+        origin.Commit("feat: A");
+        origin.Tag("v1.0.0");
+        origin.Commit("feat: B");
+        origin.Tag("v2.0.0");
+        using TempGitRepository clone = origin.ShallowClone("--depth", "1", "--branch", "v2.0.0");
+
+        InvalidOperationException error = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => new GitCliCommitReader(GitExecutable.FromPath(), clone.Path).ReadReleaseCommitsAsync("v2.0.0"));
+
+        Assert.StartsWith("The checkout is a shallow clone", error.Message);
+        Assert.Contains("git fetch --unshallow --tags", error.Message);
+        Assert.Contains("fetch-depth: 0", error.Message);
+        Assert.Contains("GIT_DEPTH: 0", error.Message);
+    }
+
+    [Fact]
+    public async Task A_start_fetched_with_the_tag_still_bounds_a_shallow_clone()
+    {
+        using TempGitRepository origin = new();
+        origin.Commit("feat: A");
+        origin.Commit("feat: B");
+        origin.Commit("feat: C");
+        origin.Commit("feat: D");
+        origin.Tag("v1.0.0");
+        using TempGitRepository clone = origin.ShallowClone("--depth", "3", "--branch", "v1.0.0");
+
+        CommitRange range = await new GitCliCommitReader(GitExecutable.FromPath(), clone.Path)
+            .ReadReleaseCommitsAsync("v1.0.0", since: "v1.0.0~2");
+
+        Assert.Equal(["feat: D", "feat: C"], range.Commits.Select(c => c.Subject));
+    }
+
+    [Fact]
+    public async Task A_start_outside_the_fetched_history_is_refused_as_such()
+    {
+        using TempGitRepository origin = new();
+        origin.Commit("feat: A");
+        origin.Tag("v1.0.0");
+        origin.Commit("feat: B");
+        origin.Tag("v2.0.0");
+        using TempGitRepository clone = origin.ShallowClone("--depth", "1", "--branch", "v2.0.0");
+
+        InvalidOperationException error = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => new GitCliCommitReader(GitExecutable.FromPath(), clone.Path).ReadReleaseCommitsAsync("v2.0.0", since: "v1.0.0"));
+
+        Assert.StartsWith("The release start 'v1.0.0' is not in the fetched history of this shallow clone.", error.Message);
+        Assert.Contains("git fetch --unshallow --tags", error.Message);
+    }
+
+    [Fact]
+    public async Task A_start_the_shallow_clone_does_not_connect_to_the_tag_is_refused()
+    {
+        using TempGitRepository origin = new();
+        origin.Commit("feat: A");
+        origin.Tag("v1.0.0");
+        origin.Commit("feat: B");
+        origin.Commit("feat: C");
+        origin.Tag("v2.0.0");
+        using TempGitRepository clone = origin.ShallowClone("--depth", "1", "--branch", "v2.0.0");
+        clone.Run("fetch", "--quiet", "--depth", "1", "origin", "tag", "v1.0.0");
+
+        InvalidOperationException error = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => new GitCliCommitReader(GitExecutable.FromPath(), clone.Path).ReadReleaseCommitsAsync("v2.0.0", since: "v1.0.0"));
+
+        Assert.StartsWith("The release start 'v1.0.0' is not an ancestor of 'v2.0.0' in the fetched history of this shallow clone", error.Message);
+        Assert.Contains("git fetch --unshallow --tags", error.Message);
+    }
+
+    // The start is connected to the tag along main, but the merged branch is cut off
+    // at the fetch depth: F1 is part of the release and missing from the clone.
+    [Fact]
+    public async Task A_range_the_shallow_clone_cuts_off_inside_is_refused()
+    {
+        using TempGitRepository origin = new();
+        origin.Commit("feat: A");
+        origin.Tag("start");
+        origin.Run("switch", "--quiet", "-c", "feature");
+        origin.Commit("feat: F1");
+        origin.Commit("feat: F2");
+        origin.Commit("feat: F3");
+        origin.Run("switch", "--quiet", "main");
+        origin.Commit("feat: M");
+        origin.Run("merge", "--quiet", "--no-ff", "-m", "Merge feature", "feature");
+        origin.Tag("v1.0.0");
+        using TempGitRepository clone = origin.ShallowClone("--depth", "3", "--branch", "v1.0.0");
+        clone.Run("fetch", "--quiet", "origin", "tag", "start");
+
+        InvalidOperationException error = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => new GitCliCommitReader(GitExecutable.FromPath(), clone.Path).ReadReleaseCommitsAsync("v1.0.0", since: "start"));
+
+        Assert.StartsWith("The history between 'start' and 'v1.0.0' is cut off by the shallow clone", error.Message);
+    }
 }
