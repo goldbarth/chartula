@@ -4,8 +4,8 @@ namespace Chartula.Core.PullRequests;
 
 /// <summary>
 /// Retrieves the merged pull requests associated with a release's commits, so the
-/// changelog is summarized per PR rather than per raw commit. The pipeline
-/// depends only on this port, not on the hosting platform's API.
+/// changelog is summarized per PR instead of per raw commit.
+/// The pipeline depends only on this port, not on the hosting platform's API.
 /// </summary>
 public interface IReleasePullRequestReader
 {
