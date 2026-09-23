@@ -28,8 +28,8 @@ public sealed class ThoroughFaithfulnessChecker(
         ArgumentNullException.ThrowIfNull(output);
         ArgumentNullException.ThrowIfNull(factBase);
 
-        // Toggle off, or nothing to check: no second pass, no LLM call. Reported as
-        // skipped rather than clean - nothing was verified either way.
+        // Disabled, or nothing to check: no LLM call.
+        // Report it as skipped, not as clean, because nothing was verified.
         if (!_options.Enabled || string.IsNullOrWhiteSpace(output))
         {
             return FaithfulnessReport.Skipped;
@@ -46,8 +46,9 @@ public sealed class ThoroughFaithfulnessChecker(
         }
         catch (Exception ex)
         {
-            // The same failures a rendering reports as its error: a model the endpoint does
-            // not serve (faithfulness.model can differ from the rendering's), a rejected key.
+            // These are the same failures a rendering reports as its error, for example a
+            // rejected key, or a model the endpoint does not serve (faithfulness.model can
+            // differ from the rendering's model).
             return FaithfulnessReport.NotEvaluated(ex.Message);
         }
     }
@@ -68,9 +69,9 @@ public sealed class ThoroughFaithfulnessChecker(
 
             statement.Append(": ").Append(change.Title);
 
-            // The technical rendering carries a pull request reference the composer
-            // adds after the model has written. A reference the check cannot find here
-            // reads to it as an invented one, and it flags every entry.
+            // Include the pull request reference. The composer adds it to the technical
+            // rendering after the model has written. Without it here, the check reads
+            // every reference as invented and flags every entry.
             if (change.Url is not null)
             {
                 statement.Append(" (");

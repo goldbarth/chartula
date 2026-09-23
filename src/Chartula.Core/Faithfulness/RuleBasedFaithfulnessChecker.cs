@@ -11,24 +11,24 @@ namespace Chartula.Core.Faithfulness;
 ///   <item>a number in the output that is not present in the fact base;</item>
 ///   <item>a quoted or backticked name that does not appear in the facts.</item>
 /// </list>
-/// Flags are advisory - they surface passages for review, not hard failures.
+/// Flags are advisory. They point a reviewer at passages and do not fail the run.
 /// </summary>
 /// <remarks>
-/// Both checks ask the same decidable question: is this token in the fact base or
-/// not. Breaking-change claims are deliberately not checked here. The output is
-/// free prose with no marker to anchor to, so telling "this release contains a
-/// breaking change" from prose that merely uses the word is a judgement, not a
-/// lookup - a regex on the word flags every mention. That claim belongs to
-/// <see cref="IThoroughFaithfulnessChecker"/>, whose prompt already covers
-/// meaning-level distortions and which sees which facts are marked breaking.
+/// Both checks ask the same decidable question: is this token in the fact base?
+/// Breaking-change claims are deliberately not checked here. The output is free prose
+/// without a marker to anchor to. Telling "this release contains a breaking change"
+/// apart from prose that merely uses the word needs judgement, not a lookup, and a
+/// regex on the word flags every mention.
+/// <see cref="IThoroughFaithfulnessChecker"/> checks that claim instead. Its prompt
+/// already covers distortions of meaning, and it sees which facts are marked breaking.
 /// </remarks>
 public sealed partial class RuleBasedFaithfulnessChecker : IRuleBasedFaithfulnessChecker
 {
     [GeneratedRegex(@"\d+(?:\.\d+)*", RegexOptions.CultureInvariant)]
     private static partial Regex Number();
 
-    // Backtick- or double-quote-delimited spans - the usual shape of an invented
-    // API, feature, or option name.
+    // Spans in backticks or double quotes: the usual shape of an invented API,
+    // feature or option name.
     [GeneratedRegex("`([^`]+)`|\"([^\"]+)\"", RegexOptions.CultureInvariant)]
     private static partial Regex QuotedName();
 
