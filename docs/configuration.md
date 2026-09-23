@@ -21,6 +21,14 @@ Both endpoints must use `https`.
 Plain `http` is accepted only for this machine (`localhost`, `127.0.0.1`, `::1`), which is where local model servers run; anywhere else it would send the key or token in cleartext, so the run is refused before its first request.
 A model server elsewhere on your network needs `https` too.
 
+`Chartula__Llm__BaseUrl` is also refused when its host belongs to another provider's API: `api.openai.com` with `llm.provider: anthropic`, and `api.anthropic.com` with `openai-compatible`.
+Any other host is accepted, because a proxy or a gateway in front of a provider lives at a host of its own; a host that serves another provider's API is never one, and the key sent there would have to be rotated.
+The usual way into this is an endpoint set in the environment while `llm.provider` sits in a `chartula.yaml` that is not there, so the refusal says when the provider was not set:
+
+```console
+Configuration error: Chartula__Llm__BaseUrl 'https://api.openai.com/v1' is OpenAI's API, but llm.provider is not set and defaults to 'anthropic', so the key in ANTHROPIC_API_KEY would be sent to OpenAI. For OpenAI's API, set llm.provider to openai-compatible (in chartula.yaml, or as Chartula__Llm__Provider); otherwise unset Chartula__Llm__BaseUrl.
+```
+
 Chartula does not load the rest of your environment: besides `Chartula__` settings it reads only `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GITHUB_TOKEN` and the variables named by the two settings above.
 Every run starts by printing the endpoints and credential variable names in force, never their values, and the model and thinking mode it asks for:
 
