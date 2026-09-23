@@ -11,7 +11,7 @@
     <AssemblyName>chartula</AssemblyName>
     <RootNamespace>Chartula.Cli</RootNamespace>
 
-    <Version>0.1.0-preview.1</Version>
+    <Version>0.1.0-preview.2</Version>
 
     <!-- Released as one self-contained file per platform, so a user needs no .NET.
          Set here rather than on the publish command line: the single-file analyzer
