@@ -211,6 +211,7 @@ The variable names above are the defaults; both can be renamed, in the environme
 `chartula.yaml` in the repository root refines the default behavior of both commands - which model is used, which labels affect curation, which categories are excluded, and more.
 It is never required; every command above works with no file present.
 See [Configuration](configuration.md) for every key and its default.
+A file that cannot be read as written - invalid YAML, an unknown or misplaced key, a value of the wrong kind - stops the run with a configuration error naming the file, the line and the column; see [A file that cannot be read as meant](configuration.md#a-file-that-cannot-be-read-as-meant).
 
 ## Exit status
 
