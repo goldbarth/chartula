@@ -63,14 +63,24 @@ internal static class LlmServiceCollectionExtensions
                 "ask it, for example with 'ollama list' or GET /v1/models.");
         }
 
+        string apiKeyVariable = configuration[$"{LlmOptions.SectionName}:ApiKeyEnvironmentVariable"]
+                                ?? defaults.ApiKeyEnvironmentVariable;
+        string? baseUrl = ReadBaseUrl(configuration) ?? defaults.BaseUrl;
+
+        // Here rather than where the client is built: the options are read before the
+        // run starts, and a key that went out cannot be called back.
+        ProviderHost.RequireOwnedBy(
+            provider,
+            providerConfigured: !string.IsNullOrWhiteSpace(configuration[$"{LlmOptions.SectionName}:Provider"]),
+            baseUrl,
+            apiKeyVariable);
+
         return new LlmOptions
         {
             Provider = LlmProviderParser.ToConfigurationValue(provider),
             Model = model,
-            ApiKeyEnvironmentVariable =
-                configuration[$"{LlmOptions.SectionName}:ApiKeyEnvironmentVariable"]
-                ?? defaults.ApiKeyEnvironmentVariable,
-            BaseUrl = ReadBaseUrl(configuration) ?? defaults.BaseUrl,
+            ApiKeyEnvironmentVariable = apiKeyVariable,
+            BaseUrl = baseUrl,
             MaxOutputTokens = ReadMaxOutputTokens(configuration),
             Thinking = configuration[$"{LlmOptions.SectionName}:Thinking"],
         };

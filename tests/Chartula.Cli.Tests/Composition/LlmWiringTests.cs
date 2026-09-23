@@ -259,4 +259,74 @@ public sealed class LlmWiringTests
 
         Assert.Contains("ollama", error.Message);
     }
+
+    // #233: how the mismatch happens - the endpoint came from the environment, the
+    // provider from a chartula.yaml that was not there.
+    [Fact]
+    public void An_anthropic_key_is_never_sent_to_openai_when_the_provider_is_not_set()
+    {
+        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() => Build(
+            "",
+            environment: ("Chartula__Llm__BaseUrl", "https://api.openai.com/v1")));
+
+        Assert.Contains("Chartula__Llm__BaseUrl 'https://api.openai.com/v1' is OpenAI's API", error.Message);
+        Assert.Contains("llm.provider is not set and defaults to 'anthropic'", error.Message);
+        Assert.Contains("the key in ANTHROPIC_API_KEY would be sent to OpenAI", error.Message);
+        Assert.Contains("set llm.provider to openai-compatible", error.Message);
+    }
+
+    [Theory]
+    [InlineData("anthropic", "https://api.openai.com/v1", "OpenAI", "ANTHROPIC_API_KEY")]
+    [InlineData("openai-compatible", "https://api.anthropic.com/v1", "Anthropic", "OPENAI_API_KEY")]
+    // The same host, spelled the ways a URL may spell it.
+    [InlineData("anthropic", "https://API.OpenAI.com./v1", "OpenAI", "ANTHROPIC_API_KEY")]
+    public void A_provider_s_key_is_never_sent_to_another_provider_s_host(
+        string provider, string baseUrl, string owner, string keyVariable)
+    {
+        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() => Build(
+            $"""
+             llm:
+               provider: {provider}
+               model: some-model
+             """,
+            environment: ("Chartula__Llm__BaseUrl", baseUrl)));
+
+        Assert.Contains($"is {owner}'s API, but llm.provider is '{provider}'", error.Message);
+        Assert.Contains($"the key in {keyVariable} would be sent to {owner}", error.Message);
+    }
+
+    // Named in the refusal as the variable in force, not the default.
+    [Fact]
+    public void A_renamed_key_variable_is_the_one_named_when_the_host_is_foreign()
+    {
+        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() => Build(
+            "",
+            environment:
+            [
+                ("Chartula__Llm__BaseUrl", "https://api.openai.com/v1"),
+                ("Chartula__Llm__ApiKeyEnvironmentVariable", "CLAUDE_KEY"),
+            ]));
+
+        Assert.Contains("the key in CLAUDE_KEY would be sent to OpenAI", error.Message);
+    }
+
+    // A base URL for anthropic exists for proxies and gateways; only a host known to
+    // belong to another provider is refused.
+    [Theory]
+    [InlineData("anthropic", "https://llm-gateway.example.com/anthropic")]
+    [InlineData("anthropic", "https://api.anthropic.com")]
+    [InlineData("openai-compatible", "https://api.openai.com/v1")]
+    [InlineData("openai-compatible", "https://api.groq.com/openai/v1")]
+    public void An_endpoint_that_may_serve_the_provider_is_accepted(string provider, string baseUrl)
+    {
+        ServiceProvider services = Build(
+            $"""
+             llm:
+               provider: {provider}
+               model: some-model
+             """,
+            environment: ("Chartula__Llm__BaseUrl", baseUrl));
+
+        Assert.Equal(baseUrl, services.GetRequiredService<LlmOptions>().BaseUrl);
+    }
 }
