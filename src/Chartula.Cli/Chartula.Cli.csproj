@@ -21,6 +21,11 @@
     <!-- Halves the download (88 to 44 MB) for about 60 ms more at startup, next to
          a run that waits seconds on a model. -->
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <!-- No ICU: a slim container image (Debian, Ubuntu, Fedora, Alpine) has none,
+         and the runtime ends the process at startup when it is missing. Chartula
+         compares, sorts and formats ordinally or with the invariant culture, and
+         writes no text in the user's locale, so ICU would change nothing it prints. -->
+    <InvariantGlobalization>true</InvariantGlobalization>
     <Authors>Felix Wahl</Authors>
     <Description>Multi-audience, grounded changelog generator for your repository.</Description>
   </PropertyGroup>
