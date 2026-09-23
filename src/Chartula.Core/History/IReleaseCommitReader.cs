@@ -22,7 +22,8 @@ public interface IReleaseCommitReader
     /// <exception cref="System.ArgumentException"><paramref name="tag"/> is null or blank.</exception>
     /// <exception cref="System.InvalidOperationException">
     /// The tag or the start does not resolve, the start is not an ancestor of the
-    /// tag, or history could not be read.
+    /// tag, history could not be read, or it is incomplete: a shallow clone with
+    /// no start named, or one that cuts the range off.
     /// </exception>
     Task<CommitRange> ReadReleaseCommitsAsync(
         string tag,
