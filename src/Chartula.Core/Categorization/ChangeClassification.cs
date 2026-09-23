@@ -1,9 +1,9 @@
 namespace Chartula.Core.Categorization;
 
 /// <summary>
-/// The deterministic classification of a change: its category, plus whether it is
-/// a breaking change (tracked separately so a breaking feature stays a feature
-/// while still being flagged prominently).
+/// The deterministic classification of a change: its category and whether it is breaking.
+/// The breaking flag is separate from the category, so a breaking feature stays a
+/// feature and is still flagged prominently.
 /// </summary>
 /// <param name="Category">The category decided from the change's convention.</param>
 /// <param name="IsBreaking">

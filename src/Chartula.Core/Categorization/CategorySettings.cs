@@ -1,9 +1,13 @@
 namespace Chartula.Core.Categorization;
 
 /// <summary>
-/// How categories are presented: the order they appear in, a display name per
-/// category, and whether breaking changes float to the top. Drives the order (and
-/// naming) of the facts fed to generation.
+/// How categories are presented:
+/// <list type="bullet">
+/// <item>the order they appear in,</item>
+/// <item>a display name per category,</item>
+/// <item>whether breaking changes move to the top.</item>
+/// </list>
+/// These settings decide the order and naming of the facts passed to generation.
 /// </summary>
 public sealed class CategorySettings
 {

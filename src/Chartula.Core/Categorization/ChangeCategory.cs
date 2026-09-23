@@ -1,9 +1,8 @@
 namespace Chartula.Core.Categorization;
 
 /// <summary>
-/// The kind of change, decided deterministically from commit/PR conventions
-/// before any LLM runs, so the model can never invent what kind of change
-/// something is.
+/// The kind of change, decided deterministically from commit and PR conventions.
+/// It is decided before any LLM runs, so the model cannot invent the kind of change.
 /// </summary>
 public enum ChangeCategory
 {
