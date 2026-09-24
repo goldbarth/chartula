@@ -3,14 +3,14 @@ using Chartula.Core.Serialization;
 namespace Chartula.Core.Tests.Serialization;
 
 /// <summary>
-/// The published serialisation of a customer rendering. These assert the shape of
-/// the opening rather than that something was produced: the opening is what makes
-/// the rendering a document a person can publish, and it is the part a reader of
-/// the file never sees go wrong until a site refuses to parse it.
+/// The published serialisation of a customer rendering.
+/// These tests assert the exact shape of the front matter, not just that something was
+/// produced. The front matter makes the rendering a publishable document, and a
+/// mistake in it stays unnoticed until a site refuses to parse it.
 /// </summary>
 public sealed class CustomerPageComposerTests
 {
-    // Every field present; a test that wants one absent takes it away with "with",
+    // Every field is present. A test that needs a field absent removes it with "with",
     // so "no value" is never confused with "the default value".
     private static CustomerPage Page(
         string tag = "v0.1.0",
@@ -46,7 +46,7 @@ public sealed class CustomerPageComposerTests
         Assert.Equal("Release 0.1.0", CustomerPageComposer.TitleFor("v0.1.0"));
         Assert.Equal("Release 0.1.0", CustomerPageComposer.TitleFor("0.1.0"));
 
-        // A leading "v" is only a version prefix in front of a digit; "vega" is a name.
+        // A leading "v" is a version prefix only before a digit. "vega" is a name.
         Assert.Equal("Release vega", CustomerPageComposer.TitleFor("vega"));
     }
 
@@ -62,8 +62,8 @@ public sealed class CustomerPageComposerTests
     [Fact]
     public void A_blank_description_is_omitted_rather_than_emitted_empty()
     {
-        // An empty field reads as a fact about the release - that it has nothing to
-        // summarise - which is not what "nobody could write one" means.
+        // An empty field would read as a fact about the release (nothing to summarise),
+        // which is not what "no description could be written" means.
         string page = CustomerPageComposer.Compose(Page(description: "   "));
 
         Assert.DoesNotContain("description:", page, StringComparison.Ordinal);
@@ -102,8 +102,8 @@ public sealed class CustomerPageComposerTests
     [Fact]
     public void A_description_yaml_would_misread_is_quoted()
     {
-        // A model writes a sentence, not a YAML scalar; "Preview: what a run would
-        // produce" is a mapping to a parser and a sentence to a reader.
+        // A model writes a sentence, not a YAML scalar. "Preview: what a run would
+        // produce" is a sentence to a reader but a mapping to a YAML parser.
         string page = CustomerPageComposer.Compose(
             Page(description: "Preview: what a run would produce, without writing it."));
 
