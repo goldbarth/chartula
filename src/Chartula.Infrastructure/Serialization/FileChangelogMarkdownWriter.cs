@@ -4,9 +4,9 @@ namespace Chartula.Infrastructure.Serialization;
 
 /// <summary>
 /// An <see cref="IChangelogMarkdownWriter"/> that reads and rewrites
-/// <c>CHANGELOG.md</c> in a directory on disk. The prepend/preserve/idempotency
-/// logic lives in <see cref="ChangelogMarkdownComposer"/>; this adapter only reads
-/// the existing file and writes the composed result.
+/// <c>CHANGELOG.md</c> in a directory on disk.
+/// <see cref="ChangelogMarkdownComposer"/> prepends, preserves and replaces sections.
+/// This adapter only reads the existing file and writes the composed result.
 /// </summary>
 public sealed class FileChangelogMarkdownWriter(string outputDirectory) : IChangelogMarkdownWriter
 {

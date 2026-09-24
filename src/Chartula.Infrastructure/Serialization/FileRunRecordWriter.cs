@@ -6,11 +6,15 @@ using Chartula.Core.Serialization;
 namespace Chartula.Infrastructure.Serialization;
 
 /// <summary>
-/// An <see cref="IRunRecordWriter"/> that keeps one file per run in a directory of
-/// its own. One file per run rather than one appended file: each record is a
-/// whole, indented JSON document that can be read and diffed on its own, and a
-/// run never rewrites what an earlier one recorded. The directory keeps them out
-/// of the release's files and is one line in a <c>.gitignore</c>.
+/// An <see cref="IRunRecordWriter"/> that keeps one file per run in its own directory.
+/// One file per run instead of one appended file:
+/// <list type="bullet">
+/// <item>each record is a complete, indented JSON document that can be read and
+/// diffed on its own,</item>
+/// <item>a run never rewrites what an earlier run recorded.</item>
+/// </list>
+/// The directory keeps the records apart from the release's files and takes one
+/// line in a <c>.gitignore</c>.
 /// </summary>
 public sealed class FileRunRecordWriter(
     string outputDirectory,
@@ -32,8 +36,8 @@ public sealed class FileRunRecordWriter(
 
         byte[] json = Encoding.UTF8.GetBytes(RunRecordJsonSerializer.Serialize(record, now, provenance));
 
-        // The time first, so the files list in the order the runs were made. Two
-        // runs in the same second get a suffix rather than one replacing the other.
+        // Start with the time, so the files sort in run order. A second run in the same
+        // second gets a suffix instead of replacing the first file.
         string stem = now.UtcDateTime.ToString("yyyyMMdd'T'HHmmss'Z'", CultureInfo.InvariantCulture)
                       + "-" + FileNamePart(record.Tag);
         for (int attempt = 1; ; attempt++)
@@ -51,7 +55,7 @@ public sealed class FileRunRecordWriter(
         }
     }
 
-    // A tag may carry a slash (release/1.2) or a character a file system refuses.
+    // A tag may contain a slash (release/1.2) or a character a file system does not allow.
     private static string FileNamePart(string tag)
         => string.Concat(tag.Select(static c => char.IsAsciiLetterOrDigit(c) || c is '.' or '-' or '_' ? c : '-'));
 }
