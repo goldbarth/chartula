@@ -5,7 +5,7 @@
 # It picks the binary for this machine, checks it against the release's
 # SHA256SUMS, installs it as chartula.exe and adds its folder to the user's PATH.
 # Editing PATH by hand is where a first install on Windows usually stalls, so the
-# script does it; it touches the user's PATH only, never the machine's.
+# script does it. It changes only the user's PATH, never the machine's.
 #
 # Settings, all optional:
 #   $env:CHARTULA_VERSION       a release tag such as v0.1.0-preview.1 (default: the latest release)
@@ -107,7 +107,7 @@
         Write-Host "More: https://github.com/$repo#readme"
     }
     catch {
-        # Fail has already said what went wrong; anything else is reported here.
+        # Fail has already reported its own error. Any other error is reported here.
         # No exit: under `irm | iex` it would close the user's PowerShell window.
         if ($_.Exception.Message -ne $failed) {
             Write-Host "Error: $($_.Exception.Message)" -ForegroundColor Red
