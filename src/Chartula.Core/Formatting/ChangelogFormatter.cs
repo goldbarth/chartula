@@ -16,7 +16,7 @@ public sealed class ChangelogFormatter : IChangelogFormatter
 {
     // Markers rewritten to a "- " bullet. A leading hyphen is already the target
     // marker, so only its spacing is normalized.
-    private static readonly char[] BulletMarkers = ['*', '+', '•']; // '•'
+    private static readonly char[] BulletMarkers = ['*', '+', '•'];
 
     public string Format(string rendered)
     {

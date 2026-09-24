@@ -8,9 +8,7 @@ namespace Chartula.Core.Llm;
 /// <remarks>
 /// The single shipped implementation is backed by a provider-agnostic
 /// <c>Microsoft.Extensions.AI.IChatClient</c>, so swapping the model provider is
-/// a composition-root change and never touches the pipeline. The prompts these
-/// operations use are refined in the prompt-design issue; this interface only
-/// fixes the seam.
+/// a composition-root change and never touches the pipeline.
 /// </remarks>
 public interface IChangelogModel
 {

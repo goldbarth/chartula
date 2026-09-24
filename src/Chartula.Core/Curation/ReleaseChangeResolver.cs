@@ -12,8 +12,7 @@ namespace Chartula.Core.Curation;
 public sealed class ReleaseChangeResolver : IReleaseChangeResolver
 {
     // Titles that carry no information on their own. Only an exact match of the whole
-    // title counts, so a prefixed title like "fix: auth bug" is unaffected. This is a
-    // starter set; it becomes configurable with the config work.
+    // title counts, so a prefixed title like "fix: auth bug" is unaffected.
     private static readonly HashSet<string> UninformativeTitles =
         new(StringComparer.OrdinalIgnoreCase)
         {
