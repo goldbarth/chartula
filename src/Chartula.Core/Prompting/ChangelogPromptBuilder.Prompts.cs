@@ -99,9 +99,16 @@ public sealed partial class ChangelogPromptBuilder
     /// </para>
     /// <para>
     /// The outcome rule first says where the outcome comes from: the reader's side of
-    /// the change, and for a fix, what the reader no longer has to do about it.
-    /// Then the test checks the result, ending on two finished entries with invented
+    /// the change, and for a fix, what the reader no longer has to do about it or can
+    /// now count on. Then the test checks the result, ending on two finished entries with invented
     /// subjects. A test rejects a sentence but does not produce one (#122).
+    /// </para>
+    /// <para>
+    /// The outcome is also bounded by the facts. Over three runs of one release, 17 of 33
+    /// thorough-check flags quoted the outcome: a guarantee the facts limit, most often a
+    /// model instruction read as a promise, or something the reader "no longer has to
+    /// do" that no fact says they ever did. Without the bound, the rule that an outcome
+    /// is always written produces those claims.
     /// </para>
     /// <para>
     /// No category is named here. A category reaches the model under its configured
@@ -142,14 +149,21 @@ public sealed partial class ChangelogPromptBuilder
         "Fixed an issue where".
         - Write what the reader can now rely on from their side of the change, not from
         the change: what they no longer have to do, no longer have to check, no longer
-        have to work around, or can now count on without looking. For a fix the opening
-        is the fault as the reader ran into it, so the outcome is never that the fault is
-        gone: it is what they no longer have to do about it. Take it from the facts of
-        this change, which usually say what it was for.
+        have to work around, or can now count on without looking. Name something they
+        no longer have to do only when the facts say they had to do it; otherwise it is
+        what they can now count on. For a fix the opening is the fault as the reader ran
+        into it, so the outcome is never that the fault is gone: it is what they no
+        longer have to do about it, or what they can now count on. Take it from the facts
+        of this change, which usually say what it was for.
         - The outcome must survive this test: strike the opening clause and read what is
         left. If it only restates the opening, negates it, or names a value or a
         mechanism, it is not an outcome. Say what the reader can now rely on instead.
         Striking the clause is not the way out.
+        - An outcome promises no more than the facts establish. If the facts name a case
+        in which it does not hold, or say it cannot be guaranteed, the outcome carries
+        that limit as a condition the reader can place themselves inside or outside.
+        What a model is instructed to do is such a limit: say what the product now tells
+        it to do, which here counts as the outcome, not as a mechanism.
         - Two entries in that shape follow, one for a fix and one for a new capability.
         Their subjects are invented: take the shape from them and never a word of their
         content.
@@ -243,6 +257,9 @@ public sealed partial class ChangelogPromptBuilder
     /// Each claim names its fact by pull request number (the sentences from "A fact from a
     /// pull request" on). Before they existed, 5 of 38 flags over five runs of one release
     /// named a pull request, and the reviewer had to search the facts for the other 33.
+    /// The reason is asked for here as well as by its own field in the answer's schema:
+    /// with a claim field alone, the model quoted the passage and left out what was wrong
+    /// with it.
     /// The number is taken from one fixed place only, because titles and descriptions
     /// mention issue numbers, which read like pull requests. Code still checks it against
     /// the fact base.
@@ -253,6 +270,8 @@ public sealed partial class ChangelogPromptBuilder
         "distortions where the wording overstates or changes what happened (for " +
         "example, a bug fix described as a security fix). Report each unsupported " +
         "claim; if every claim is supported, report none. " +
+        "For each claim, quote the words of the output that make it, and give the " +
+        "reason: what the facts say instead, or that they say nothing about it. " +
         "A fact from a pull request opens on its number in brackets, such as [#12]. " +
         "With each claim, give the number of the pull request whose fact the claim " +
         "rephrases, taken from those brackets and never from elsewhere in a fact. Give " +
