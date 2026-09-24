@@ -1,9 +1,9 @@
 namespace Chartula.Cli.Tests.Commands;
 
 /// <summary>
-/// Runs the built CLI from a checkout whose only tag is its first. Without a start
-/// the run has to stop before any request, which is why the repository named does
-/// not exist: reaching GitHub would fail differently.
+/// Runs the built CLI from a checkout with only one tag, the first.
+/// Without a start, the run must stop before any request. The named repository does
+/// not exist on purpose: reaching GitHub would fail with a different error.
 /// </summary>
 public sealed class FirstTagTests : IDisposable
 {

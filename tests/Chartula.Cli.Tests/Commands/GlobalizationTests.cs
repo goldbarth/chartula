@@ -4,10 +4,10 @@ using System.Text.Json;
 namespace Chartula.Cli.Tests.Commands;
 
 /// <summary>
-/// The binary has to start where there is no ICU - a slim container image, a CI job -
-/// which it did not: the runtime ended it at startup with "Couldn't find a valid ICU
-/// package". What it carries is read from the runtime configuration the build writes
-/// next to it, the same one the single-file binary embeds.
+/// The binary must start where there is no ICU, for example in a slim container image
+/// or a CI job. It used to fail at startup with "Couldn't find a valid ICU package".
+/// The test reads the setting from the runtime configuration the build writes next to
+/// the binary, the same file the single-file binary embeds.
 /// </summary>
 public sealed class GlobalizationTests
 {
@@ -24,7 +24,8 @@ public sealed class GlobalizationTests
             .GetBoolean());
     }
 
-    // Otherwise the suite would check output the shipped binary does not produce.
+    // The tests must run invariant too. Otherwise they would check output the shipped
+    // binary does not produce.
     [Fact]
     public void The_tests_run_without_icu_too()
     {

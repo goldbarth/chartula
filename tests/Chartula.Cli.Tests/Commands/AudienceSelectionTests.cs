@@ -55,8 +55,8 @@ public sealed class AudienceSelectionTests
     [Fact]
     public void An_unknown_name_is_an_error_that_names_the_three_that_exist()
     {
-        // A misspelling that rendered nothing would look like a release with
-        // nothing to say, which is the one reading this must not allow.
+        // A misspelling that rendered nothing would look like a release with nothing to
+        // say. That misreading must not be possible.
         Assert.False(AudienceSelection.TryParse(
             ["generate", "--audience", "custmer"], out IReadOnlyCollection<Audience>? audiences, out string? error));
 

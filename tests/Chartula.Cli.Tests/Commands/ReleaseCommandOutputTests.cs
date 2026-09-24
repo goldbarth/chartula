@@ -6,8 +6,8 @@ using Chartula.Core.PullRequests;
 namespace Chartula.Cli.Tests.Commands;
 
 /// <summary>
-/// What a run wrote - and what it deliberately did not - has to be readable from
-/// its output, or a skipped publication looks like a complete run.
+/// The output must show what a run wrote and what it deliberately skipped. Otherwise a
+/// skipped publication looks like a complete run.
 /// </summary>
 public sealed class ReleaseCommandOutputTests
 {
@@ -127,8 +127,8 @@ public sealed class ReleaseCommandOutputTests
     [Fact]
     public async Task A_rendering_with_a_description_shows_it_above_the_text()
     {
-        // The description opens the published page, so a preview that hides it
-        // vouches for everything but the first line the reader will see.
+        // The description is the first line of the published page. A preview that hides
+        // it would vouch for everything except the first line the reader sees.
         ReleaseOutcome outcome = new(
             "v1.0.0",
             PipelineMode.Preview,
@@ -163,8 +163,8 @@ public sealed class ReleaseCommandOutputTests
         Assert.DoesNotContain("description:", text, StringComparison.Ordinal);
     }
 
-    // #219: a refused publication is listed after what was written, fails the exit
-    // code, and says what a second run would cost.
+    // #219: a refused publication is listed after the written files, sets exit code 1,
+    // and says what a re-run would cost.
     [Fact]
     public async Task A_refused_publication_lists_the_written_files_and_fails_the_run()
     {
@@ -209,7 +209,7 @@ public sealed class ReleaseCommandOutputTests
     private static AudienceOutcome Failed(Audience audience, string error)
         => new(audience, Success: false, Text: null, [], error);
 
-    // #234: one endpoint refusing one model is one problem, however many audiences asked.
+    // #234: one endpoint refusing one model is one problem, however many audiences hit it.
     [Fact]
     public async Task Audiences_failing_for_the_same_reason_say_it_once()
     {
@@ -235,8 +235,8 @@ public sealed class ReleaseCommandOutputTests
         Assert.DoesNotContain("The same as", text);
     }
 
-    // A failed call explains itself over several lines; flush-left they would read as
-    // output of their own.
+    // A failed call explains itself over several lines. Without indentation they would
+    // look like separate output.
     [Fact]
     public async Task A_failure_over_several_lines_stays_indented_under_its_audience()
     {

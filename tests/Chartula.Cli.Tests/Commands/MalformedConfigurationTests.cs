@@ -1,9 +1,9 @@
 namespace Chartula.Cli.Tests.Commands;
 
 /// <summary>
-/// Runs the built CLI from a checkout whose <c>chartula.yaml</c> is indented the way
-/// #237 was found. The run used to end in an unhandled exception with a stack trace and
-/// a core dump; it has to end in a configuration error that names the place.
+/// Runs the built CLI from a checkout whose <c>chartula.yaml</c> is indented as in #237.
+/// The run used to end in an unhandled exception with a stack trace and a core dump.
+/// It must end in a configuration error that names the location.
 /// </summary>
 public sealed class MalformedConfigurationTests : IDisposable
 {

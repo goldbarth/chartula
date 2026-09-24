@@ -1,9 +1,9 @@
 namespace Chartula.Cli.Tests.Commands;
 
 /// <summary>
-/// Runs the built CLI with a GitHub endpoint that would carry the token in cleartext
-/// to another machine. The run has to stop before its first request, which is why
-/// the host does not exist: reaching it would fail differently.
+/// Runs the built CLI with a GitHub endpoint that would send the token in cleartext to
+/// another machine. The run must stop before its first request. The host does not
+/// exist on purpose: reaching it would fail with a different error.
 /// </summary>
 public sealed class InsecureEndpointTests : IDisposable
 {
