@@ -33,9 +33,9 @@ public sealed class RuleBasedFaithfulnessCheckerTests
         Assert.Contains(report.UnsupportedClaims, c => c.Contains("TurboSync"));
     }
 
-    // Breaking-change claims are the thorough check's job, not this one's: the
-    // output is free prose, and a regex on the word cannot tell an assertion from
-    // a mention. Both cases below are output this checker must leave alone.
+    // Breaking-change claims are the thorough check's job. The output is free prose,
+    // and a regex on the word cannot tell an assertion from a mention.
+    // This checker must not flag either case below.
     [Fact]
     public void Does_not_flag_prose_that_merely_mentions_breaking_changes()
     {
@@ -78,8 +78,8 @@ public sealed class RuleBasedFaithfulnessCheckerTests
     [Fact]
     public void Runs_without_any_model_dependency()
     {
-        // Constructed with no arguments: there is no IChangelogModel to call, so
-        // the check costs zero tokens. It is also deterministic.
+        // No constructor arguments: there is no IChangelogModel to call, so the check
+        // costs zero tokens. It is also deterministic.
         RuleBasedFaithfulnessChecker checker = new();
 
         FaithfulnessReport first = checker.Check("Added 3 things.", Facts());
