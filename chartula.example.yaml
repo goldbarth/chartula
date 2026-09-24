@@ -100,5 +100,6 @@
 #   thinking: disabled
 
 # Review mode - present generated texts for sign-off before writing.
+# Not available yet: enabled: true is refused.
 # review:
 #   enabled: false
