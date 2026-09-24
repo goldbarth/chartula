@@ -32,19 +32,19 @@ public enum FaithfulnessCheckStatus
 /// </remarks>
 /// <param name="Status">How the check ended.</param>
 /// <param name="UnsupportedClaims">
-/// Claims found in the output that the facts do not back. Always empty unless
-/// <see cref="Status"/> is <see cref="FaithfulnessCheckStatus.Checked"/>.
+/// Claims found in the output that the facts do not back, each with the fact it names.
+/// Always empty unless <see cref="Status"/> is <see cref="FaithfulnessCheckStatus.Checked"/>.
 /// </param>
 /// <param name="Reason">
 /// Why the check could not be evaluated; null for every other status.
 /// </param>
 public sealed record FaithfulnessReport(
     FaithfulnessCheckStatus Status,
-    IReadOnlyList<string> UnsupportedClaims,
+    IReadOnlyList<FaithfulnessFlag> UnsupportedClaims,
     string? Reason = null)
 {
     /// <summary>The check ran; these are its findings, empty when the output is clean.</summary>
-    public static FaithfulnessReport Checked(IReadOnlyList<string> unsupportedClaims)
+    public static FaithfulnessReport Checked(IReadOnlyList<FaithfulnessFlag> unsupportedClaims)
         => new(FaithfulnessCheckStatus.Checked, unsupportedClaims);
 
     /// <summary>The check ran but could not be read. <paramref name="reason"/> says why.</summary>

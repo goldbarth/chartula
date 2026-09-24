@@ -59,8 +59,8 @@ public sealed partial class RuleBasedFaithfulnessChecker : IRuleBasedFaithfulnes
             }
         }
 
-        List<string> distinct = findings.Distinct().ToList();
-        return FaithfulnessReport.Checked(distinct);
+        // A finding here is a token no fact contains, so it names no fact.
+        return FaithfulnessReport.Checked([.. findings.Distinct().Select(static finding => new FaithfulnessFlag(finding))]);
     }
 
     private static string BuildHaystack(FactBase factBase)

@@ -47,7 +47,7 @@ The file is UTF-8, indented JSON.
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `schemaVersion` | integer | The format version. Bumped only on a breaking change. Currently `1`. |
+| `schemaVersion` | integer | The format version. Bumped only on a breaking change. Currently `2`. |
 | `recordedAt` | string | When the run was recorded, ISO 8601 in UTC, to the second. |
 | `tag` | string | The release tag the run was for. |
 | `repository` | string | The repository, as `owner/name`. |
@@ -62,10 +62,25 @@ The file is UTF-8, indented JSON.
 | --- | --- | --- |
 | `audience` | string | `technical`, `customer` or `product`. |
 | `rendered` | boolean | Whether the audience rendered. |
-| `flags` | array of strings | What the faithfulness checks flagged. Present when the audience rendered, empty when nothing was flagged. |
+| `flags` | array of objects | What the faithfulness checks flagged (see below). Present when the audience rendered, empty when nothing was flagged. |
 | `error` | string | Why the audience failed. Present only when it did. |
 
 A failed audience has no `flags`: it was never checked, and an empty list would read as a clean check.
+
+### Flag
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `text` | string | What was flagged, and why. |
+| `pullRequest` | integer | The pull request whose fact the flagged passage rephrases. Absent when the flag concerns no single fact. |
+
+The thorough check names the pull request, and Chartula keeps the number only when the release has that pull request among its facts.
+A number the release does not have, such as an issue a title mentions, stays in the flag's text as the check's lead, not as its `pullRequest`.
+A number the release does have is still the check's reading: Chartula verifies that the fact exists, not that the check picked the right one.
+The rule-based check's flags never have one: they name a number or a name that no fact contains.
+Neither does a claim about the release as a whole, a fact that came from a commit without a pull request, or a thorough check that could not be evaluated.
+
+Flags from several runs group by `pullRequest`, so a finding that repeats is found by the fact it concerns rather than by how alike its wording is.
 
 ### Metrics
 
@@ -92,11 +107,14 @@ Both operations are always present, with zeros when they made no call, so any tw
 - `schemaVersion` is the contract, as for [`changelog.json`](changelog-json.md#stability).
 - New optional fields may be added without bumping it; removing or renaming a field, or changing its meaning, bumps it.
 
+Version 2 turned each flag from a string into an object with `text` and `pullRequest`.
+A version 1 record holds the same text as a plain string in `flags`, and nothing else changed.
+
 ## Example
 
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "recordedAt": "2026-09-22T12:30:15+00:00",
   "tag": "v1.2.0",
   "repository": "owner/repo",
@@ -120,7 +138,13 @@ Both operations are always present, with zeros when they made no call, so any tw
       "audience": "customer",
       "rendered": true,
       "flags": [
-        "The text mentions 'faster', which no fact supports."
+        {
+          "text": "'Search is now faster' is a claim of degree the facts do not back.",
+          "pullRequest": 412
+        },
+        {
+          "text": "The number '3' is not supported by the facts."
+        }
       ]
     }
   ],
@@ -147,8 +171,8 @@ Both operations are always present, with zeros when they made no call, so any tw
     },
     "ruleBasedCheck": {
       "runs": 2,
-      "runsWithFindings": 0,
-      "flags": 0
+      "runsWithFindings": 1,
+      "flags": 1
     },
     "thoroughCheck": {
       "runs": 2,

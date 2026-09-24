@@ -12,8 +12,11 @@ namespace Chartula.Core.Serialization;
 /// </summary>
 public static class RunRecordJsonSerializer
 {
-    /// <summary>The current on-disk schema version.</summary>
-    public const int SchemaVersion = 1;
+    /// <summary>
+    /// The current on-disk schema version.
+    /// Version 2 turned each flag from a string into an object that names its pull request.
+    /// </summary>
+    public const int SchemaVersion = 2;
 
     public static string Serialize(RunRecord record, DateTimeOffset recordedAt, RunProvenance? provenance = null)
     {
@@ -31,7 +34,9 @@ public static class RunRecordJsonSerializer
             [.. record.Audiences.Select(static audience => new RunRecordAudience(
                 audience.Audience.ToString().ToLowerInvariant(),
                 audience.Success,
-                audience.Success ? audience.Flags : null,
+                audience.Success
+                    ? [.. audience.Flags.Select(static flag => new RunRecordFlag(flag.Text, flag.PullRequest))]
+                    : null,
                 audience.Success ? null : audience.Error))],
             new RunRecordMetrics(
                 Usage(metrics.UsageOf(LlmOperation.Rephrase)),

@@ -238,12 +238,26 @@ public sealed partial class ChangelogPromptBuilder
 
     private const string AudienceFallbackFormat = "Audience: {0}.";
 
+    /// <summary>
+    /// The instructions of the thorough check.
+    /// Each claim names its fact by pull request number (the sentences from "A fact from a
+    /// pull request" on). Before they existed, 5 of 38 flags over five runs of one release
+    /// named a pull request, and the reviewer had to search the facts for the other 33.
+    /// The number is taken from one fixed place only, because titles and descriptions
+    /// mention issue numbers, which read like pull requests. Code still checks it against
+    /// the fact base.
+    /// </summary>
     private const string FaithfulnessSystem =
         "You verify a changelog against the established facts. Flag any claim in " +
         "the output that the facts do not support - including meaning-level " +
         "distortions where the wording overstates or changes what happened (for " +
         "example, a bug fix described as a security fix). Report each unsupported " +
-        "claim; if every claim is supported, report none.";
+        "claim; if every claim is supported, report none. " +
+        "A fact from a pull request opens on its number in brackets, such as [#12]. " +
+        "With each claim, give the number of the pull request whose fact the claim " +
+        "rephrases, taken from those brackets and never from elsewhere in a fact. Give " +
+        "none when the claim rephrases no single fact, such as a sentence about the " +
+        "release as a whole.";
 
     private const string FaithfulnessUserFormat = "Facts:\n{0}\n\nOutput:\n{1}";
 }

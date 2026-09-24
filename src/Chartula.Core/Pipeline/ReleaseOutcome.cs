@@ -13,7 +13,7 @@ public sealed record AudienceOutcome(
     Audience Audience,
     bool Success,
     string? Text,
-    IReadOnlyList<string> Flags,
+    IReadOnlyList<FaithfulnessFlag> Flags,
     string? Error)
 {
     /// <summary>
