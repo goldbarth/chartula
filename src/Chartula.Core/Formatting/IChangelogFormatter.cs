@@ -2,8 +2,8 @@ namespace Chartula.Core.Formatting;
 
 /// <summary>
 /// Normalizes a rendered changelog so its formatting is consistent within the
-/// document, regardless of what the model returned. Tone normalization is the
-/// prompt's job; this guarantees the mechanical formatting.
+/// document, whatever the model returned.
+/// This guarantees the mechanical formatting. Consistent tone is the prompt's job.
 /// </summary>
 public interface IChangelogFormatter
 {

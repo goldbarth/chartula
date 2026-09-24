@@ -3,10 +3,10 @@
 #
 #   curl -fsSL https://raw.githubusercontent.com/goldbarth/chartula/main/install.sh | sh
 #
-# It picks the binary for this machine - glibc or musl (Alpine) on Linux - checks
-# it against the release's SHA256SUMS, and puts it on the PATH as `chartula`.
-# Nothing else on the system is changed: a missing library or a missing PATH entry
-# is named with the line that fixes it, never fixed by the script.
+# It picks the binary for this machine (glibc or musl/Alpine on Linux), checks it
+# against the release's SHA256SUMS, and puts it on the PATH as `chartula`.
+# Nothing else on the system changes. For a missing library or PATH entry, the
+# script prints the line that fixes it, but never fixes it itself.
 #
 # Settings, all optional:
 #   CHARTULA_VERSION      a release tag such as v0.1.0-preview.1 (default: the latest release)
@@ -55,14 +55,14 @@ platform() {
         *) fail "Chartula has no binary for the $(uname -m) processor. Build it from source: https://github.com/$REPO#installation" ;;
     esac
 
-    # A shell running under Rosetta reports x86_64 on Apple silicon; the native
-    # binary is the one to install there.
+    # A shell running under Rosetta reports x86_64 on Apple silicon. Install the
+    # native binary there.
     if [ "$os" = osx ] && [ "$arch" = x64 ] && [ "$(sysctl -n hw.optional.arm64 2>/dev/null || true)" = 1 ]; then
         arch=arm64
     fi
 
-    # A glibc binary does not start on musl, and the shell then only says
-    # "not found". The loader is the test: ldd is not on every musl system.
+    # A glibc binary does not start on musl, and the shell then only says "not found".
+    # Detect musl by its loader, because ldd is not on every musl system.
     if [ "$os" = linux ] && is_musl; then
         os=linux-musl
     fi
@@ -77,9 +77,9 @@ is_musl() {
     ldd --version 2>&1 | grep -qi musl
 }
 
-# The musl binary needs the C++ runtime (libstdc++, which brings libgcc), which a
-# glibc system always has and Alpine does not. Checked before the download, so a
-# run without it changes nothing; installing it is left to the user.
+# The musl binary needs the C++ runtime (libstdc++, which brings libgcc). A glibc
+# system always has it, Alpine does not. Checked before the download, so a run
+# without it changes nothing. Installing it is left to the user.
 require_libstdcxx() {
     for dir in /usr/lib /lib /usr/local/lib /usr/lib64 /lib64; do
         [ -e "$dir/libstdc++.so.6" ] && return 0
@@ -98,8 +98,8 @@ then run this again. Nothing was installed."
 }
 
 newest_tag() {
-    # Only for the message: the download itself goes through /releases/latest,
-    # a plain web redirect that, unlike the API, has no hourly request limit.
+    # Only for the message. The download itself uses /releases/latest, a plain web
+    # redirect without the API's hourly request limit.
     if command -v curl >/dev/null 2>&1; then
         curl -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/$REPO/releases/latest" 2>/dev/null \
             | sed -n 's|.*/releases/tag/||p'
@@ -117,8 +117,7 @@ sha256() {
 }
 
 # The shell the user typed the install line into. $SHELL is unset in most
-# containers; the script's parent is that shell under `curl | sh`, and /proc says
-# which one it is.
+# containers. Under `curl | sh` the script's parent is that shell, and /proc names it.
 user_shell() {
     if [ -n "${SHELL:-}" ]; then
         basename "$SHELL"
@@ -128,10 +127,9 @@ user_shell() {
 }
 
 path_hint() {
-    # The file each shell reads when a new terminal opens. An interactive bash that
-    # is not a login shell - a terminal on Linux, `docker run -it ... bash` - reads
-    # ~/.bashrc and never ~/.profile, so ~/.profile is only for the shells that read
-    # nothing else.
+    # The file each shell reads when a new terminal opens. An interactive bash that is
+    # not a login shell (a terminal on Linux, `docker run -it ... bash`) reads ~/.bashrc
+    # and never ~/.profile. So ~/.profile is only for shells that read nothing else.
     case "$(user_shell)" in
         zsh) rc="$HOME/.zshrc" ;;
         bash) if [ "$(uname -s)" = Darwin ]; then rc="$HOME/.bash_profile"; else rc="$HOME/.bashrc"; fi ;;

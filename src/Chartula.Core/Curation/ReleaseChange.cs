@@ -1,9 +1,9 @@
 namespace Chartula.Core.Curation;
 
 /// <summary>
-/// One change in a release, resolved from the best available source (a merged
-/// pull request when possible, otherwise commit data). This is the degraded-but-
-/// useful input the curation and fact-base steps build on.
+/// One change in a release, resolved from the best available source: a merged pull
+/// request when possible, otherwise commit data.
+/// The curation and fact-base steps build on this record, even when the source is thin.
 /// </summary>
 /// <param name="Title">The best available human-readable title for the change.</param>
 /// <param name="Description">The change body, when a source provides one.</param>

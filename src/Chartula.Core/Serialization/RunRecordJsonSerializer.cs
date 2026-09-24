@@ -6,9 +6,9 @@ using Chartula.Core.Pipeline;
 namespace Chartula.Core.Serialization;
 
 /// <summary>
-/// Serializes a <see cref="RunRecord"/> to its documented format. Pure: the time
-/// of the run and its provenance are passed in, so the same run always reads the
-/// same. Source-generated, like <see cref="ChangelogJsonSerializer"/>.
+/// Serializes a <see cref="RunRecord"/> to its documented format.
+/// Pure: the run's time and provenance are passed in, so the same run always
+/// serializes the same way. Source-generated, like <see cref="ChangelogJsonSerializer"/>.
 /// </summary>
 public static class RunRecordJsonSerializer
 {
@@ -22,7 +22,7 @@ public static class RunRecordJsonSerializer
         RunReport metrics = record.Metrics;
         RunRecordDocument document = new(
             SchemaVersion,
-            // Whole seconds in UTC: the time orders runs, the fraction only adds noise.
+            // Whole seconds in UTC: the time only orders runs, and fractions add noise.
             DateTimeOffset.FromUnixTimeSeconds(recordedAt.ToUnixTimeSeconds()),
             record.Tag,
             $"{record.Repository.Owner}/{record.Repository.Name}",
@@ -57,7 +57,7 @@ public static class RunRecordJsonSerializer
         => JsonSerializer.Deserialize(json, RunRecordJsonContext.Default.RunRecordDocument)
            ?? throw new InvalidOperationException("The run record deserialized to null.");
 
-    // The command line's own words, so a record reads as the command that made it.
+    // Use the CLI's own words, so the record names the command that produced it.
     private static string ModeName(PipelineMode mode) => mode switch
     {
         PipelineMode.Preview => "preview",
@@ -79,7 +79,7 @@ public static class RunRecordJsonSerializer
             usage.CachedInputTokens,
             usage.ReasoningTokens);
 
-    // Milliseconds are the finest a model call is worth measuring in.
+    // Round to milliseconds: finer precision is meaningless for a model call.
     private static double Seconds(TimeSpan duration) => Math.Round(duration.TotalSeconds, 3);
 }
 

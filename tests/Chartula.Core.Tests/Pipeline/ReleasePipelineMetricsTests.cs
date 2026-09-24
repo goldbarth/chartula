@@ -69,7 +69,7 @@ public sealed class ReleasePipelineMetricsTests
         ReleaseOutcome outcome = await BuildPipeline(new FindingThoroughChecker("invented a claim"), metrics)
             .RunAsync(Request(), PipelineMode.Preview);
 
-        // The rule-based check finds nothing here, so every thorough finding is its own.
+        // The rule-based check finds nothing here, so every thorough finding counts as thorough-only.
         Assert.Equal(0, outcome.Metrics.RuleBased.Flags);
         Assert.Equal(3, outcome.Metrics.Thorough.Flags);
         Assert.Equal(3, outcome.Metrics.Thorough.RunsWithFindings);
@@ -84,7 +84,7 @@ public sealed class ReleasePipelineMetricsTests
         ReleaseOutcome outcome = await BuildPipeline(new FindingThoroughChecker("invented a claim"), metrics)
             .RunAsync(Request(), PipelineMode.Preview);
 
-        // Measurement is a side channel: it must not change what the run produces.
+        // Metrics must not change what the run produces.
         Assert.All(outcome.Renderings, rendering => Assert.Contains("invented a claim", rendering.Flags));
     }
 
@@ -98,7 +98,7 @@ public sealed class ReleasePipelineMetricsTests
         Assert.Equal(RunReport.Empty, outcome.Metrics);
     }
 
-    // #128: the whole run's time, so a slow run shows as one before its calls are read.
+    // #128: the whole run's duration, so a slow run is visible before reading its calls.
     [Fact]
     public async Task A_run_records_how_long_it_took()
     {
@@ -110,7 +110,7 @@ public sealed class ReleasePipelineMetricsTests
         Assert.NotNull(outcome.Metrics.Duration);
     }
 
-    // The context for the run's token counts: how much release it read, and how much
+    // The context for the run's token counts: the size of the release, and how much
     // description text the model got beyond the titles.
     [Fact]
     public async Task A_run_records_how_much_release_it_worked_on()

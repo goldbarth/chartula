@@ -19,7 +19,7 @@ public sealed class RenderingComposerTests
             new PlannedEntry(2, "Added", false, null),
             new PlannedEntry(3, "Fixed", false, null));
 
-        // The answer's own order is not the rendering's: the plan decides.
+        // The plan decides the order, not the order of the model's answer.
         string text = RenderingComposer.Compose(
             plan, Answer(new RenderedEntry(3, "Three"), new(1, "One"), new(2, "Two")), Audience.Product);
 
@@ -81,7 +81,7 @@ public sealed class RenderingComposerTests
             new PlannedEntry(2, "Other", false, null),
             new PlannedEntry(3, "Other", false, null));
 
-        // A fact with no entry would vanish from the rendering without a trace.
+        // A fact without an entry would silently vanish from the rendering.
         string? mismatch = RenderingComposer.FindMismatch(plan, Answer(new RenderedEntry(1, "One"), new(3, "  ")));
 
         Assert.NotNull(mismatch);

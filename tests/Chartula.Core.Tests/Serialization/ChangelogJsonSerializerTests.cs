@@ -59,7 +59,7 @@ public sealed class ChangelogJsonSerializerTests
     {
         string json = ChangelogJsonSerializer.Serialize(Sample());
 
-        // Parses without throwing - it is valid JSON.
+        // Parses without throwing, so it is valid JSON.
         using JsonDocument parsed = JsonDocument.Parse(json);
         Assert.Equal(JsonValueKind.Object, parsed.RootElement.ValueKind);
     }
@@ -103,9 +103,9 @@ public sealed class ChangelogJsonSerializerTests
         Assert.Equal(JsonValueKind.Null, change.GetProperty("description").ValueKind);
         Assert.Equal(0, change.GetProperty("linkedIssues").GetArrayLength());
 
-        // A change with no labels carries an empty array, never null: absent labels
-        // are a fact about the source, and a reader of the file should not have to
-        // tell "no labels" from "field missing".
+        // A change without labels has an empty array, never null. Having no labels is a
+        // fact about the source, and a reader of the file should not have to tell
+        // "no labels" from "field missing".
         Assert.Equal(0, change.GetProperty("labels").GetArrayLength());
     }
 

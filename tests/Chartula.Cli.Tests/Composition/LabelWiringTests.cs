@@ -8,9 +8,9 @@ namespace Chartula.Cli.Tests.Composition;
 
 /// <summary>
 /// The label names are a repository's own convention, so they live in
-/// <c>chartula.yaml</c> rather than in the tool. This is the seam where that is
-/// either true or quietly not: a name the composition root forgets to pass on is a
-/// rule that is configured, read, and then ignored.
+/// <c>chartula.yaml</c>, not in the tool.
+/// The composition root must pass every configured name on. A name it forgets is a
+/// rule that is configured and read, but silently ignored.
 /// </summary>
 public sealed class LabelWiringTests
 {
@@ -32,7 +32,7 @@ public sealed class LabelWiringTests
               userFacing: [visibility:user-facing]
             """);
 
-        // A set, so membership is the claim - the order they were written in is not.
+        // A set: the test checks membership, not the order the labels were written in.
         Assert.Contains("visibility:internal", rules.InternalLabels);
         Assert.Contains("no-changelog", rules.InternalLabels);
         Assert.Contains("visibility:user-facing", rules.UserFacingLabels);

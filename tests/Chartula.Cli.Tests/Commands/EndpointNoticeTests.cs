@@ -42,8 +42,8 @@ public sealed class EndpointNoticeTests
         Assert.DoesNotContain("secret", notice);
     }
 
-    // #87: what the run asked the model for, resolved to the name the provenance
-    // records, so the terminal and the files agree.
+    // #87: the thinking mode the run requested, in the name the provenance records, so
+    // the terminal and the files agree.
     [Theory]
     [InlineData(null, "provider-default")]
     [InlineData("off", "disabled")]

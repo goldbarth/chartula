@@ -5,8 +5,8 @@ using Chartula.Core.Pipeline;
 namespace Chartula.Cli.Tests.Commands;
 
 /// <summary>
-/// The parser is tiny, but a flag that is read as a value - or a value that is read
-/// as a flag - would silently change what a run does.
+/// The parser is tiny, but a flag read as a value, or a value read as a flag, would
+/// silently change what a run does.
 /// </summary>
 public sealed class CommandLineArgumentsTests
 {
@@ -28,7 +28,7 @@ public sealed class CommandLineArgumentsTests
     [Fact]
     public void A_trailing_flag_does_not_swallow_the_option_before_it()
     {
-        // --no-publish takes no value, so the options around it must still read.
+        // --no-publish takes no value, so the options around it must still be read correctly.
         Assert.Equal("v1.0.0", CommandLineArguments.GetOption(Generate, "--tag"));
         Assert.Equal("octo/repo", CommandLineArguments.GetOption(Generate, "--repo"));
     }
@@ -49,7 +49,7 @@ public sealed class CommandLineArgumentsTests
     [Fact]
     public void Preview_stays_a_preview_with_or_without_the_flag()
     {
-        // Preview already publishes nothing, so the flag has nothing left to drop.
+        // Preview publishes nothing anyway, so --no-publish changes nothing.
         Assert.Equal(PipelineMode.Preview, Program.ParseMode("preview", ["preview", "--tag", "v1.0.0"]));
         Assert.Equal(PipelineMode.Preview, Program.ParseMode("preview", ["preview", "--no-publish"]));
     }

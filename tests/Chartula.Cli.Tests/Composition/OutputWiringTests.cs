@@ -9,14 +9,14 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Chartula.Cli.Tests.Composition;
 
 /// <summary>
-/// Where a run's files come from. The pipeline asks for ports; an output the
-/// composition root forgets to bind is a run that fails on the last step, after
-/// everything it costs has already been spent.
+/// Where a run's files come from. The pipeline asks for ports.
+/// If the composition root forgets to bind an output, the run fails on the last step,
+/// after all its cost has been spent.
 /// </summary>
 public sealed class OutputWiringTests
 {
-    // The LLM options are registered by AddChartulaLlm in a real run; changelog.json
-    // records the model from them.
+    // In a real run AddChartulaLlm registers the LLM options, and changelog.json records
+    // the model from them.
     private static ServiceProvider Build()
         => new ServiceCollection().AddSingleton(new LlmOptions())
             .AddChartulaOutputs(new ConfigurationBuilder().Build())

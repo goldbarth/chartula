@@ -68,7 +68,7 @@ public sealed class GitHubPullRequestReaderTests
         Assert.Equal(7, Assert.Single(pulls).Number); // still a single, de-duplicated PR
     }
 
-    // A revert that names commits is paired with pull requests through these (#206).
+    // RevertPairing matches a revert that names commits to pull requests through these commits (#206).
     [Fact]
     public async Task Records_every_commit_of_the_range_that_belongs_to_a_pull_request()
     {
@@ -128,8 +128,8 @@ public sealed class GitHubPullRequestReaderTests
             () => reader.GetMergedPullRequestsAsync(Repo, RangeWith("abc123")));
     }
 
-    // #149: a --repo that does not exist, or that the request cannot see, is a 404
-    // on the first request - reported as the repository, not as a commit.
+    // #149: a --repo that does not exist, or that the request cannot see, returns 404
+    // on the first request. The error names the repository, not a commit.
     [Fact]
     public async Task Names_the_repository_and_the_missing_token_for_a_404_on_the_first_request()
     {
@@ -172,8 +172,8 @@ public sealed class GitHubPullRequestReaderTests
         Assert.Contains("lacks the Pull requests (read) permission", ex.Message);
     }
 
-    // After the first request succeeded the repository is readable, so a later 404
-    // is about that commit and is reported as one.
+    // After a successful first request the repository is readable, so a later 404 is
+    // about that commit, and the error names the commit.
     [Fact]
     public async Task Reports_a_later_404_against_its_commit_in_GitHubs_words()
     {
@@ -221,7 +221,7 @@ public sealed class GitHubPullRequestReaderTests
             ex.Message);
     }
 
-    // A spent budget is a 403 too, and is not a permission problem.
+    // An exhausted rate limit also returns 403, but is not a permission problem.
     [Fact]
     public async Task Reports_a_spent_rate_limit_as_such_rather_than_as_missing_access()
     {

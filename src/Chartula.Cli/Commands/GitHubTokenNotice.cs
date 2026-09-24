@@ -5,11 +5,13 @@ using Microsoft.Extensions.Configuration;
 namespace Chartula.Cli.Commands;
 
 /// <summary>
-/// The warning a run starts with when no GitHub token is configured. A token is
-/// optional and a small release fits the unauthenticated budget, so the run is not
-/// refused - but the budget is spent per pull request, and when it runs out the
-/// failure lands mid-release as a 403 that names a commit rather than the cause.
-/// Saying so before the work starts turns that into something the caller decided.
+/// The warning a run starts with when no GitHub token is configured.
+/// A token is optional, and a small release fits the unauthenticated rate limit, so
+/// the run continues.
+/// But the run spends roughly one request per pull request. When the limit runs out,
+/// the run fails mid-release with a 403 that names a commit instead of the cause.
+/// The warning comes before the work, so continuing without a token is the caller's
+/// informed decision.
 /// </summary>
 internal static class GitHubTokenNotice
 {
@@ -20,16 +22,17 @@ internal static class GitHubTokenNotice
     private const int AuthenticatedRequestsPerHour = 5000;
 
     /// <summary>
-    /// Where a fine-grained token is created. Named rather than <c>gh auth token</c>,
-    /// which is the user's broadest credential - read and write to every repository
-    /// they can reach - handed to a process that reads repository content.
+    /// Where a fine-grained token is created.
+    /// The notice names this instead of <c>gh auth token</c>. That token is the user's
+    /// broadest credential, with read and write access to every repository they can
+    /// reach, and would be handed to a process that reads repository content.
     /// </summary>
     private const string NewTokenUrl = "https://github.com/settings/personal-access-tokens/new";
 
     /// <summary>
-    /// The notice for a run configured this way, or <c>null</c> when a token is
-    /// present and there is nothing to warn about. The environment variable is
-    /// named as configured, so the message stays true when it was renamed.
+    /// The notice for this configuration, or <c>null</c> when a token is present.
+    /// It names the environment variable as configured, so the message stays correct
+    /// when the variable was renamed.
     /// </summary>
     public static string? For(IConfiguration configuration)
     {

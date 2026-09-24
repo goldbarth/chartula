@@ -71,8 +71,8 @@ public sealed class ReleasePipelineTests
         Assert.Equal(0, _releaseNotes.Calls);
     }
 
-    // #219: publishing is the last write, so a refusal there leaves the files written;
-    // the outcome has to carry both, not trade the list for the error.
+    // #219: publishing is the last write, so a refusal there leaves the files written.
+    // The outcome must carry both the written files and the error.
     [Fact]
     public async Task A_refused_publication_keeps_the_files_the_run_wrote()
     {
@@ -140,8 +140,8 @@ public sealed class ReleasePipelineTests
         ReleaseOutcome outcome =
             await BuildPipeline().RunAsync(Request(), PipelineMode.GenerateWithoutPublishing);
 
-        // The release the run did not touch has to be readable from the outcome,
-        // otherwise "wrote two of three outputs" looks like a complete run.
+        // The outcome must show the skipped release notes. Otherwise "wrote two of three
+        // outputs" looks like a complete run.
         Assert.Equal("Release notes for v1.0.0 in octo/repo", Assert.Single(outcome.SkippedOutputs));
     }
 }

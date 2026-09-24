@@ -75,8 +75,8 @@ public sealed class LabelRulePolicyTests
             internalLabels: ["visibility:internal"],
             userFacingLabels: ["visibility:user-facing"]));
 
-        // Not false: silence is not an answer, and the caller falls back rather than
-        // treating an unlabelled change as internal.
+        // null, not false: no label is no answer. The caller falls back to the category
+        // instead of treating an unlabelled change as internal.
         Assert.Null(policy.Evaluate(Change("area:cli")).UserVisible);
         Assert.Null(policy.Evaluate(Change()).UserVisible);
     }
@@ -88,8 +88,8 @@ public sealed class LabelRulePolicyTests
             internalLabels: ["visibility:internal"],
             userFacingLabels: ["visibility:user-facing"]));
 
-        // A contradiction a person wrote. The reading that cannot put an internal
-        // change in front of a reader is the one that wins.
+        // Contradicting labels. Internal wins, because it never shows an internal change
+        // to users.
         Assert.False(policy.Evaluate(Change("visibility:user-facing", "visibility:internal")).UserVisible);
     }
 

@@ -40,8 +40,8 @@ public sealed class RunRecordJsonSerializerTests
         Assert.Equal(new RunRecordThoroughCheck(1, 1, 2, 1, 0), metrics.ThoroughCheck);
     }
 
-    // An operation that never ran is a zero, not an absence: "no thorough check
-    // calls" is what a run with the check off looks like, and it has to compare.
+    // An operation that never ran is written as zero, not left out. "No thorough check
+    // calls" is what a run with the check off looks like, and it must be comparable.
     [Fact]
     public void An_operation_without_calls_is_written_as_zero()
     {
@@ -105,7 +105,7 @@ public sealed class RunRecordJsonSerializerTests
         Assert.False(parsed.RootElement.TryGetProperty("provenance", out _));
     }
 
-    // #128: the time of each operation and of the run, and the retries where they
+    // #128: the duration of each operation and of the run, and the retries where they
     // could be counted.
     [Fact]
     public void Writes_time_failed_calls_and_retries()
@@ -122,7 +122,7 @@ public sealed class RunRecordJsonSerializerTests
         Assert.Equal(64.5, written.DurationSeconds);
     }
 
-    // Unknown is left out, so a record never claims a count of zero it did not see.
+    // Unknown values are left out, so a record never claims a zero count it did not observe.
     [Fact]
     public void Retries_that_were_not_observed_are_left_out()
     {

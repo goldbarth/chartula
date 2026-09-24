@@ -5,10 +5,10 @@ namespace Chartula.Cli.Configuration;
 
 /// <summary>
 /// A run's configuration: <c>chartula.yaml</c>, overridden by <c>Chartula__</c>
-/// environment variables, plus the credentials those settings name. The environment
-/// is not loaded whole: any setting that names a variable could otherwise read every
-/// variable of the operator's shell, so only the credential variables Chartula
-/// actually uses are let in, by name.
+/// environment variables, plus the credentials those settings name.
+/// The environment is not loaded whole. Otherwise any setting that names a variable
+/// could read every variable of the operator's shell. Only the credential variables
+/// Chartula actually uses are loaded, by name.
 /// </summary>
 internal static class ChartulaConfiguration
 {
@@ -24,12 +24,12 @@ internal static class ChartulaConfiguration
         => Build(new ConfigurationBuilder().AddChartulaYaml(directory), Environment.GetEnvironmentVariables());
 
     /// <summary>
-    /// The configuration from a file source and an environment, which is what
-    /// <see cref="Build(string)"/> reads from the process.
+    /// The configuration from a file source and an environment.
+    /// <see cref="Build(string)"/> passes the process environment.
     /// </summary>
     public static IConfiguration Build(IConfigurationBuilder file, IDictionary environment)
     {
-        // Settings first, because they decide which credentials are read.
+        // Build the settings first, because they decide which credentials are read.
         IConfiguration settings = file
             .AddInMemoryCollection(Settings(environment))
             .Build();
@@ -56,8 +56,8 @@ internal static class ChartulaConfiguration
         }
     }
 
-    // Both providers' default key names are let in whichever provider runs: which
-    // one applies is decided later, and neither is a secret Chartula does not use.
+    // Load the default key variables of both providers, whichever provider runs. Which
+    // one applies is decided later, and Chartula uses both.
     private static IEnumerable<KeyValuePair<string, string?>> Credentials(IConfiguration settings, IDictionary environment)
     {
         HashSet<string> names = new(NameComparer)

@@ -75,8 +75,8 @@ public sealed class GitCliCommitReaderTests
         Assert.Contains("v9.9.9", ex.Message);
     }
 
-    // #146: the likely cause is a run started in the wrong place, so the message
-    // names the checkout it read and what that checkout holds.
+    // #146: the likely cause is a run started in the wrong place, so the message names
+    // the checkout it read and what that checkout contains.
     [Fact]
     public async Task An_unknown_tag_names_the_checkout_and_its_latest_tags()
     {
@@ -148,7 +148,7 @@ public sealed class GitCliCommitReaderTests
 
         CommitRange range = await new GitCliCommitReader(GitExecutable.FromPath(), repo.Path).ReadReleaseCommitsAsync("v1.0.0");
 
-        // A lightweight tag creator-dates to its commit, which is today's run.
+        // A lightweight tag's creatordate is its commit date, which is today in this test.
         Assert.Equal(DateOnly.FromDateTime(DateTime.Now), range.TaggedAt);
     }
 
@@ -229,8 +229,8 @@ public sealed class GitCliCommitReaderTests
         Assert.Contains("not an ancestor of 'v1.0.0'", error.Message);
     }
 
-    // #243: a shallow clone, the default checkout in CI, ends its history where a
-    // first tag's would, so without a check it read as one.
+    // #243: a shallow clone, the default checkout in CI, ends its history like a first
+    // tag's history. Without a check, it was read as a first tag.
     [Fact]
     public async Task A_shallow_clone_is_refused_rather_than_read_as_a_first_tag()
     {
@@ -303,8 +303,8 @@ public sealed class GitCliCommitReaderTests
         Assert.Contains("git fetch --unshallow --tags", error.Message);
     }
 
-    // The start is connected to the tag along main, but the merged branch is cut off
-    // at the fetch depth: F1 is part of the release and missing from the clone.
+    // The start connects to the tag along main, but the merged branch is cut off at the
+    // fetch depth: F1 is part of the release but missing from the clone.
     [Fact]
     public async Task A_range_the_shallow_clone_cuts_off_inside_is_refused()
     {

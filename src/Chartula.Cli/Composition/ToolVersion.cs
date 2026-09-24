@@ -3,15 +3,16 @@ using System.Reflection;
 namespace Chartula.Cli.Composition;
 
 /// <summary>
-/// The Chartula version, read from the assembly so that the <c>Version</c> in the
-/// csproj is the only place it is written. The release workflow refuses a tag that
-/// does not match it, so a binary, its tag and what it reports cannot drift apart.
+/// The Chartula version, read from the assembly, so the <c>Version</c> in the csproj
+/// is the only place it is written.
+/// The release workflow refuses a tag that does not match it, so a binary, its tag and
+/// the version it reports cannot drift apart.
 /// </summary>
 internal static class ToolVersion
 {
     /// <summary>
-    /// The version with the commit it was built from after a <c>+</c>, which the SDK
-    /// appends; <c>changelog.json</c> records this form, so a file names its build.
+    /// The version followed by <c>+</c> and the commit it was built from, as the SDK appends it.
+    /// <c>changelog.json</c> records this form, so each file names the build that wrote it.
     /// </summary>
     public static string? Informational { get; } = typeof(ToolVersion).Assembly
         .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;

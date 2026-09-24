@@ -2,13 +2,13 @@ name: Release
 
 # A pushed preview tag becomes a draft GitHub release with one self-contained
 # binary per platform, SHA256SUMS and a build provenance attestation per binary.
-# It stays a draft so `chartula generate` can write its notes before a person
-# publishes it: the tool that writes changelogs writes its own.
+# The release stays a draft, so `chartula generate` can write its release notes
+# before a person publishes it. Chartula writes its own changelog.
 #
-# A pull request that changes what the binaries are built from runs the binary
-# jobs too, without releasing, so a broken platform shows up before a tag does.
+# A pull request that changes what the binaries are built from also runs the binary
+# jobs, without releasing, so a broken platform shows up before a tag does.
 # How a binary is built and smoke-tested lives in binaries.yml, which install.yml
-# calls as well.
+# also calls.
 on:
   push:
     tags: ['v*-preview*']
@@ -51,8 +51,8 @@ jobs:
             exit 0
           fi
 
-          # The csproj is the one place the version is written; a tag that says
-          # otherwise would ship binaries that report a different version.
+          # The csproj is the only place the version is written. A tag with another
+          # version would ship binaries that report a different version.
           if [ "${GITHUB_REF_NAME#v}" != "$declared" ]; then
             echo "::error::Tag $GITHUB_REF_NAME does not match <Version>$declared</Version> in src/Chartula.Cli/Chartula.Cli.csproj."
             exit 1
@@ -94,9 +94,9 @@ jobs:
       - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-path: dist/chartula-*
-      # Not marked as a pre-release: the -preview.N in the version says that already,
-      # and only a release GitHub counts as latest is reachable through
-      # /releases/latest/download, the link install.sh uses without the rate-limited API.
+      # Not marked as a pre-release: the -preview.N in the version already says so.
+      # Also, only the release GitHub counts as latest is reachable through
+      # /releases/latest/download, the link install.sh uses to avoid the rate-limited API.
       - name: Create the draft release
         env:
           GH_TOKEN: ${{ github.token }}

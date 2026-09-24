@@ -1,17 +1,18 @@
 namespace Chartula.Cli.Configuration;
 
 /// <summary>
-/// The hosts known to serve one provider's API, checked against the provider a run
-/// is configured for. A base URL for <c>anthropic</c> exists for proxies and gateways,
-/// so an unknown host cannot be refused; but a host that belongs to another provider
-/// is never a gateway for this one, and the key sent to it has reached a third party
-/// and has to be rotated. The run header names the mismatch, and nothing stopped a
-/// run on it until this check - which is why it refuses rather than warns.
+/// The hosts known to serve one provider's API, checked against the configured provider.
+/// A base URL for <c>anthropic</c> exists for proxies and gateways, so an unknown host
+/// cannot be refused.
+/// But a host that belongs to another provider is never a gateway for this one. A key
+/// sent there has reached a third party and must be rotated.
+/// The run header showed the mismatch, but nothing stopped the run before this check.
+/// That is why it refuses instead of warning.
 /// </summary>
 /// <remarks>
-/// Only hosts whose owner is certain and that serve no other provider's dialect are
-/// listed. Several hosted endpoints serve both dialects under one host, so a longer
-/// list would refuse working setups.
+/// The list holds only hosts with a certain owner that serve no other provider's dialect.
+/// Several hosted endpoints serve both dialects under one host, so a longer list would
+/// refuse working setups.
 /// </remarks>
 internal static class ProviderHost
 {
@@ -24,9 +25,10 @@ internal static class ProviderHost
 
     /// <summary>
     /// Throws when <paramref name="baseUrl"/> is a host known to belong to a provider
-    /// other than <paramref name="provider"/>. <paramref name="providerConfigured"/>
-    /// says whether <c>llm.provider</c> was set at all: an endpoint set without it is
-    /// how the mismatch happens, because the provider silently stays on its default.
+    /// other than <paramref name="provider"/>.
+    /// <paramref name="providerConfigured"/> says whether <c>llm.provider</c> was set at all.
+    /// The mismatch typically happens when an endpoint is set without it, because the
+    /// provider silently keeps its default.
     /// </summary>
     public static void RequireOwnedBy(
         LlmProvider provider,

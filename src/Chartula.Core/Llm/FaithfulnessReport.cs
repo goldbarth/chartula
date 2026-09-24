@@ -4,14 +4,15 @@ namespace Chartula.Core.Llm;
 public enum FaithfulnessCheckStatus
 {
     /// <summary>
-    /// The check ran and produced a verdict. <see cref="FaithfulnessReport.UnsupportedClaims"/>
-    /// carries it, and an empty list here means the output is clean.
+    /// The check ran and produced a verdict, carried in
+    /// <see cref="FaithfulnessReport.UnsupportedClaims"/>.
+    /// With this status, an empty list means the output is clean.
     /// </summary>
     Checked,
 
     /// <summary>
-    /// The check ran but its answer could not be used, so nothing was verified. This is
-    /// not a clean result: it says the output is unchecked, not that it is faithful.
+    /// The check ran but its answer could not be used, so nothing was verified.
+    /// The output is unchecked, which is different from faithful.
     /// </summary>
     NotEvaluated,
 
@@ -24,9 +25,10 @@ public enum FaithfulnessCheckStatus
 /// do not back.
 /// </summary>
 /// <remarks>
-/// The status exists because "clean" and "could not be checked" are different answers
-/// that used to look the same. Keep them apart at every call site: a caller that reads
-/// only <see cref="UnsupportedClaims"/> reads an empty list in both cases.
+/// "Clean" and "could not be checked" are different answers that used to look the
+/// same, which is why <see cref="Status"/> exists.
+/// Keep them apart at every call site: <see cref="UnsupportedClaims"/> is an empty
+/// list in both cases.
 /// </remarks>
 /// <param name="Status">How the check ended.</param>
 /// <param name="UnsupportedClaims">

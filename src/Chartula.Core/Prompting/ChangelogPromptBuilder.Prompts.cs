@@ -1,16 +1,16 @@
 namespace Chartula.Core.Prompting;
 
 /// <summary>
-/// The prompt text for <see cref="ChangelogPromptBuilder"/>. This partial holds
-/// only the strings the model is shown - to change what the model is told, edit
-/// them here. The composition lives in <c>ChangelogPromptBuilder.cs</c>.
+/// The prompt text for <see cref="ChangelogPromptBuilder"/>.
+/// This partial holds only the strings the model sees. To change what the model is
+/// told, edit them here. The composition lives in <c>ChangelogPromptBuilder.cs</c>.
 /// <para>
-/// Nothing here describes the structure of a rendering. Headings, groups, order,
-/// markers and references are put around the model's entries by
-/// <see cref="Generation.RenderingComposer"/>: five renderings of one release on four
-/// models came back in five structures while the prompt still carried format rules,
-/// two of them from the same model - issue #96. What remains is how the text of one
-/// entry is written.
+/// Nothing here describes the structure of a rendering.
+/// <see cref="Generation.RenderingComposer"/> adds headings, groups, order, markers and
+/// references around the model's entries. The reason is #96: while the prompt still
+/// carried format rules, five renderings of one release on four models came back in
+/// five structures, two of them from the same model.
+/// The strings here only say how the text of one entry is written.
 /// </para>
 /// </summary>
 public sealed partial class ChangelogPromptBuilder
@@ -47,12 +47,13 @@ public sealed partial class ChangelogPromptBuilder
     /// <summary>
     /// How a technical entry is written: the judgement rules of Common Changelog, as
     /// adopted in <c>docs/output-format.md</c> of goldbarth/chartula-evals and judged by
-    /// <c>rubric/technical.md</c> there. The group, the breaking marker and the
-    /// reference are the rendering's, not the entry's.
+    /// <c>rubric/technical.md</c> there.
+    /// The group, the breaking marker and the reference belong to the rendering, not
+    /// to the entry.
     /// <para>
-    /// The format wants an author on every entry of a release with more than one
-    /// contributor. The fact base carries no author, so nothing here asks for one
-    /// rather than have the model guess.
+    /// The format requires an author on every entry of a release with more than one
+    /// contributor. The fact base carries no author, so the prompt does not ask for one.
+    /// Otherwise the model would guess.
     /// </para>
     /// </summary>
     private const string TechnicalFormat =
@@ -82,26 +83,29 @@ public sealed partial class ChangelogPromptBuilder
     /// <summary>
     /// How a customer entry is written. The rules implement the item axes of
     /// <c>rubric/customer.md</c> in goldbarth/chartula-evals, where they are measured.
-    /// A rule may be stricter than its axis - two sentences, a fixed order of parts -
-    /// but never contrary to it: a prompt that asks for what the rubric fails makes
-    /// every measurement a measurement of the contradiction.
+    /// A rule may be stricter than its axis, for example two sentences or a fixed order
+    /// of parts. It must never contradict its axis: if the prompt asks for what the
+    /// rubric fails, every measurement only measures that contradiction.
     /// <para>
-    /// Each rule answers a failure counted there over 53 entries and three renderings:
-    /// no outcome (19), an expression only a contributor would know (15), an opening on
-    /// the mechanism (8), an option with no place (8). Two clauses are tests rather
-    /// than lists, because a list of cases is never finished: what counts as an
-    /// outcome, and what counts as an expression the reader has already met.
+    /// Each rule addresses a failure counted there over 53 entries and three renderings:
+    /// <list type="bullet">
+    /// <item>no outcome (19),</item>
+    /// <item>an expression only a contributor would know (15),</item>
+    /// <item>an opening on the mechanism (8),</item>
+    /// <item>an option without its location (8).</item>
+    /// </list>
+    /// Two clauses are tests instead of lists, because a list of cases is never complete:
+    /// what counts as an outcome, and what counts as an expression the reader already knows.
     /// </para>
     /// <para>
-    /// The outcome rule first says where the outcome is taken from - the reader's side
-    /// of the change, and for a fix what they no longer have to do about it - and the
-    /// test follows as the check on what that produced, closing on two finished
-    /// entries with invented subjects. A test rejects a sentence and does not produce
-    /// one; see issue #122.
+    /// The outcome rule first says where the outcome comes from: the reader's side of
+    /// the change, and for a fix, what the reader no longer has to do about it.
+    /// Then the test checks the result, ending on two finished entries with invented
+    /// subjects. A test rejects a sentence but does not produce one (#122).
     /// </para>
     /// <para>
     /// No category is named here. A category reaches the model under its configured
-    /// display name - <c>categories.names</c> - so a rule naming one would break for
+    /// display name (<c>categories.names</c>), so a rule naming one would break for
     /// anyone who renamed it.
     /// </para>
     /// </summary>
@@ -174,14 +178,15 @@ public sealed partial class ChangelogPromptBuilder
         """;
 
     /// <summary>
-    /// The opening sentence of a published customer page. It is a rephrasing of facts
-    /// already in front of the model, so it is asked for in the same call as the
-    /// entries rather than paid for in a second one, and goes through the faithfulness
-    /// check on the same footing as everything else the model writes.
+    /// The opening sentence of a published customer page.
+    /// It rephrases facts the model already has, so it is requested in the same call as
+    /// the entries instead of a second, paid call. It goes through the faithfulness
+    /// check like everything else the model writes.
     /// <para>
-    /// Why it may be empty: a field with no source is omitted, never emitted empty and
-    /// never filled with a placeholder. And why it is not simply the first entry: the
-    /// description says what the release is about, an entry says what one change is.
+    /// It may be empty, because a field with no source is omitted: never emitted empty,
+    /// never filled with a placeholder.
+    /// It is not simply the first entry: the description says what the release is about,
+    /// an entry says what one change is.
     /// </para>
     /// </summary>
     private const string CustomerDescription =
@@ -197,12 +202,12 @@ public sealed partial class ChangelogPromptBuilder
     /// <summary>
     /// How a product entry is written: <c>product/thematic</c> in
     /// <c>docs/output-format.md</c> of goldbarth/chartula-evals, judged by
-    /// <c>rubric/product.md</c> there. That rubric has no labelled corpus yet, so
-    /// nothing here answers a counted failure. The theme an entry stands under is the
-    /// rendering's, not the entry's.
+    /// <c>rubric/product.md</c> there.
+    /// That rubric has no labelled corpus yet, so no rule here addresses a counted failure.
+    /// The theme of an entry belongs to the rendering, not to the entry.
     /// <para>
-    /// Why a change matters is left out when nothing in its facts says, the same way
-    /// the customer outcome is. The rubric fails such an entry, and that is the honest
+    /// When the facts do not say why a change matters, the entry leaves it out, like
+    /// the customer outcome. The rubric fails such an entry, and that is the correct
     /// result: the alternative is a benefit no fact stated.
     /// </para>
     /// </summary>

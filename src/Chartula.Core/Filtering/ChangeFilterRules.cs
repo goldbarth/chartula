@@ -3,9 +3,9 @@ using Chartula.Core.Categorization;
 namespace Chartula.Core.Filtering;
 
 /// <summary>
-/// Which categories are dropped from the changelog. By default internal work is
-/// excluded so the changelog stays relevant to its audience. Overridable from
-/// config: an explicit (possibly empty) set replaces the default.
+/// Which categories are dropped from the changelog.
+/// By default internal work is excluded, so the changelog stays relevant to its audience.
+/// A set from config replaces the default, even an empty one.
 /// </summary>
 public sealed class ChangeFilterRules
 {

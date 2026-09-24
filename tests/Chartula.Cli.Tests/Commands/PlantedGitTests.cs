@@ -1,11 +1,11 @@
 namespace Chartula.Cli.Tests.Commands;
 
 /// <summary>
-/// Runs the built CLI the way a user does, from a checkout that carries its own
-/// <c>git</c>. The run is started without <c>--tag</c> and <c>--repo</c> in a
-/// checkout with a remote and no tag, so it stops at "no tag is reachable" before
-/// any network call - which only the real git can get it to. A planted git that
-/// ran instead would leave the remote unreadable and stop one message earlier.
+/// Runs the built CLI the way a user does, from a checkout that contains its own <c>git</c>.
+/// The run starts without <c>--tag</c> and <c>--repo</c>, in a checkout with a remote
+/// and no tag. With the real git, it stops at "no tag is reachable" before any network call.
+/// If the planted git ran instead, the remote would be unreadable, and the run would
+/// stop one message earlier.
 /// </summary>
 public sealed class PlantedGitTests : IDisposable
 {
@@ -29,9 +29,9 @@ public sealed class PlantedGitTests : IDisposable
     public void Dispose() => TestDirectory.Delete(_checkout);
 
     /// <summary>
-    /// Plants a git in the checkout and returns the file it leaves behind when run.
-    /// Windows starts only <c>git.exe</c> by bare name, so there it is a copy of a
-    /// system binary that leaves no file but fails every git command it is given.
+    /// Plants a git in the checkout and returns the file the planted git creates when run.
+    /// Windows starts only <c>git.exe</c> by bare name. So on Windows the plant is a copy
+    /// of a system binary that creates no file but fails every git command.
     /// </summary>
     private string Plant()
     {
@@ -55,13 +55,13 @@ public sealed class PlantedGitTests : IDisposable
             _checkout,
             new Dictionary<string, string?>
             {
-                // Past the refusal of a run without a key, which comes before git is reached.
+                // A dummy key, so the run passes the missing-key refusal, which comes before git.
                 ["ANTHROPIC_API_KEY"] = "sk-test-not-used",
                 ["GITHUB_TOKEN"] = null,
             },
             arguments);
 
-    // The test's own git by bare name is fine: it runs from the test's directory,
+    // Calling the test's own git by bare name is safe: it runs from the test's directory,
     // before the plant exists.
     private async Task GitAsync(params string[] arguments)
     {

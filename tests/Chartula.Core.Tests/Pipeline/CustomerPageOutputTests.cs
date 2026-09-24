@@ -14,9 +14,9 @@ using Chartula.Core.Serialization;
 namespace Chartula.Core.Tests.Pipeline;
 
 /// <summary>
-/// The customer rendering leaving a run as a file of its own. Until it did, the
-/// audience the tool exists for had no output a person could publish - it lived
-/// only as a field inside changelog.json.
+/// The customer rendering is written as its own file. Before that, the customer
+/// audience had no output a person could publish: it existed only as a field inside
+/// changelog.json.
 /// </summary>
 public sealed class CustomerPageOutputTests
 {
@@ -87,8 +87,8 @@ public sealed class CustomerPageOutputTests
     [Fact]
     public async Task No_tags_reach_the_page_while_no_labels_reach_the_fact_base()
     {
-        // Issue #98. The format says an absent field is the correct output here,
-        // so the page carries none rather than something stood in for them.
+        // #98. The format says an absent field is the correct output here, so the page
+        // has no tags instead of placeholder tags.
         await BuildPipeline().RunAsync(Request(), PipelineMode.Generate);
 
         Assert.Empty(_customerPage.LastPage!.Tags);
@@ -97,7 +97,7 @@ public sealed class CustomerPageOutputTests
     [Fact]
     public async Task The_page_is_written_under_no_publish_like_the_other_local_outputs()
     {
-        // Writing a file a person could publish is not publishing it.
+        // Writing a file a person can publish does not publish it.
         ReleaseOutcome outcome =
             await BuildPipeline().RunAsync(Request(), PipelineMode.GenerateWithoutPublishing);
 
@@ -132,8 +132,7 @@ public sealed class CustomerPageOutputTests
                 thorough)
             .RunAsync(Request(), PipelineMode.Generate);
 
-        // A sentence the model wrote is a sentence the check has to be able to
-        // answer for, whichever field carries it out of the run.
+        // The check must see every sentence the model wrote, whichever field carries it.
         Assert.Contains(thorough.Checked, text => text.Contains("A release about finding things."));
     }
 

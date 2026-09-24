@@ -14,7 +14,7 @@ internal sealed class StubPipeline(ReleaseOutcome outcome) : IReleasePipeline
         => Task.FromResult(outcome);
 }
 
-/// <summary>Every run prints what it did and what it cost, so the numbers are there to read.</summary>
+/// <summary>Every run prints what it did and what it cost.</summary>
 public sealed class ReleaseCommandMetricsTests
 {
     private static async Task<string> RunAsync(PipelineMode mode, string? runRecord = null)

@@ -1,9 +1,10 @@
 namespace Chartula.Cli.Configuration;
 
 /// <summary>
-/// How the GitHub API is reached. As with the LLM key, the token is never stored
-/// here, only the name of the environment variable to read it from. The base URL
-/// is configurable for GitHub Enterprise.
+/// How the GitHub API is reached.
+/// As with the LLM key, the token is never stored here, only the name of the
+/// environment variable it is read from.
+/// The base URL is configurable for GitHub Enterprise.
 /// </summary>
 public sealed class GitHubOptions
 {

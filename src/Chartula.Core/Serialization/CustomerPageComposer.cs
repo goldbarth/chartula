@@ -5,15 +5,17 @@ namespace Chartula.Core.Serialization;
 
 /// <summary>
 /// Composes a <see cref="CustomerPage"/> into the published serialisation: YAML
-/// front matter, then the rendered body. Pure and deterministic; the file I/O
-/// lives in the writer.
+/// front matter, then the rendered body.
+/// Pure and deterministic. The file I/O lives in the writer.
 /// <para>
-/// Every field has a source, and a field whose source has nothing to give is left
-/// out rather than emitted empty: <c>publishedAt</c> when the tag date could not
-/// be read, <c>description</c> when the model could not write one from the facts,
-/// <c>tags</c> when there are no labels. An empty field would read as a fact
-/// about the release - that it has no subject, that it was never dated - which is
-/// not what an absent source means.
+/// Every field has a source. A field whose source is empty is left out, not emitted empty:
+/// <list type="bullet">
+/// <item><c>publishedAt</c> when the tag date could not be read,</item>
+/// <item><c>description</c> when the model could not write one from the facts,</item>
+/// <item><c>tags</c> when there are no labels.</item>
+/// </list>
+/// An empty field would read as a fact about the release, for example that it has
+/// no subject or was never dated. An absent source means neither.
 /// </para>
 /// </summary>
 public static class CustomerPageComposer
@@ -64,9 +66,9 @@ public static class CustomerPageComposer
     }
 
     /// <summary>
-    /// The page title for a tag. A leading <c>v</c> is a repository convention and
-    /// not part of the version a reader is shown, so <c>v0.1.0</c> titles a page
-    /// "Release 0.1.0" - which is the shape the format document specifies.
+    /// The page title for a tag.
+    /// A leading <c>v</c> is a repository convention, not part of the version the
+    /// reader sees. So <c>v0.1.0</c> becomes "Release 0.1.0", as the format document specifies.
     /// </summary>
     public static string TitleFor(string tag)
     {
@@ -81,11 +83,11 @@ public static class CustomerPageComposer
     }
 
     /// <summary>
-    /// A YAML scalar: written plainly where that reads back unchanged, and
-    /// double-quoted where it would not. A description is a sentence written by a
-    /// model, so it can hold a colon or open with a character YAML gives a meaning
-    /// to; quoting only where needed keeps the common case as readable as the
-    /// format document's example.
+    /// A YAML scalar: plain when it reads back unchanged, double-quoted otherwise.
+    /// A description is a sentence written by a model, so it can contain a colon or
+    /// start with a character that has a meaning in YAML.
+    /// Quoting only when needed keeps the common case as readable as the format
+    /// document's example.
     /// </summary>
     private static string Scalar(string value)
         => NeedsQuoting(value)

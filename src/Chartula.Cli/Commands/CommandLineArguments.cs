@@ -21,9 +21,9 @@ internal static class CommandLineArguments
     }
 
     /// <summary>
-    /// Every value given for <paramref name="name"/>, whether it was repeated or
-    /// written once with commas between the values. Both spellings appear in the
-    /// wild and neither is worth making a person remember, so both are read.
+    /// Every value given for <paramref name="name"/>, whether the option was repeated
+    /// or given once with comma-separated values.
+    /// Both styles are common, and neither is worth making a person remember.
     /// </summary>
     public static IReadOnlyList<string> GetOptions(IReadOnlyList<string> args, string name)
     {

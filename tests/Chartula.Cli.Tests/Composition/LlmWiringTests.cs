@@ -9,10 +9,10 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Chartula.Cli.Tests.Composition;
 
 /// <summary>
-/// What the LLM section resolves to, per provider. None of these tests reach an
-/// endpoint: they check the wiring the CLI does before the first request, which is
-/// where a missing key or a guessed default would otherwise turn into a confusing
-/// error much later.
+/// What the LLM section resolves to, per provider.
+/// None of these tests reach an endpoint. They check the wiring the CLI does before the
+/// first request. Without these checks, a missing key or a guessed default would turn
+/// into a confusing error much later.
 /// </summary>
 public sealed class LlmWiringTests
 {
@@ -87,8 +87,8 @@ public sealed class LlmWiringTests
         Assert.Equal("claude-sonnet-5", options.Model);
         Assert.Equal("ANTHROPIC_API_KEY", options.ApiKeyEnvironmentVariable);
 
-        // Null, not a URL: the Anthropic client knows its own API, and repeating the
-        // address here would pin a value the SDK is free to change.
+        // Null, not a URL: the Anthropic client knows its own endpoint, and repeating it
+        // here would pin a value the SDK may change.
         Assert.Null(options.BaseUrl);
     }
 
@@ -109,8 +109,8 @@ public sealed class LlmWiringTests
         Assert.Equal("http://localhost:11434/v1", options.BaseUrl);
     }
 
-    // An Anthropic model id against a local server is not a smaller mistake than no
-    // model at all - it is a 404 from an endpoint that never heard of it.
+    // An Anthropic model id against a local server is as wrong as no model at all: the
+    // endpoint answers 404 because it does not know the model.
     [Fact]
     public void The_openai_compatible_provider_requires_a_model()
     {
@@ -126,8 +126,8 @@ public sealed class LlmWiringTests
     }
 
     // This provider exists so release data can stay on the user's machine. A default
-    // endpoint would be a hosted one, and configuring only the model would then send
-    // the data off the machine without anyone saying so.
+    // endpoint would be a hosted one, and configuring only the model would then
+    // silently send the data off the machine.
     [Fact]
     public void The_openai_compatible_provider_requires_an_endpoint()
     {
@@ -159,7 +159,7 @@ public sealed class LlmWiringTests
     }
 
     // Refused at startup for either provider: a proxy in front of the Anthropic API
-    // receives the key as much as an OpenAI-compatible endpoint does.
+    // receives the key just like an OpenAI-compatible endpoint does.
     [Theory]
     [InlineData("anthropic")]
     [InlineData("openai-compatible")]
@@ -177,9 +177,9 @@ public sealed class LlmWiringTests
         Assert.Contains("cleartext", error.Message);
     }
 
-    // The endpoints this provider exists for need no key at all. Refusing to build a
-    // client without one would make them unreachable, so the run starts and whatever
-    // the endpoint thinks of the request is the endpoint's answer to give.
+    // The local endpoints this provider exists for need no key. Refusing to build a
+    // client without one would make them unreachable. So the run starts, and the
+    // endpoint decides whether to accept the request.
     [Fact]
     public void A_missing_api_key_still_builds_a_client()
     {
@@ -221,7 +221,7 @@ public sealed class LlmWiringTests
         Assert.Equal(expected, options.Reasoning?.Effort);
     }
 
-    // The model check runs while the section is read, not on the first request.
+    // The model check runs when the section is read, not on the first request.
     [Fact]
     public void A_thinking_mode_the_anthropic_model_rejects_is_refused_at_config_load()
     {
@@ -247,7 +247,7 @@ public sealed class LlmWiringTests
             """,
            environment: LocalEndpoint).GetRequiredService<ChatModelOptions>();
 
-        // Nothing is added to the request, which leaves the endpoint on its own default.
+        // Nothing is added to the request, so the endpoint uses its own default.
         Assert.Null(options.Reasoning);
     }
 
@@ -260,8 +260,8 @@ public sealed class LlmWiringTests
         Assert.Contains("ollama", error.Message);
     }
 
-    // #233: how the mismatch happens - the endpoint came from the environment, the
-    // provider from a chartula.yaml that was not there.
+    // #233: how the mismatch happens: the endpoint came from the environment, and the
+    // provider was expected from a chartula.yaml that did not exist.
     [Fact]
     public void An_anthropic_key_is_never_sent_to_openai_when_the_provider_is_not_set()
     {
@@ -278,7 +278,7 @@ public sealed class LlmWiringTests
     [Theory]
     [InlineData("anthropic", "https://api.openai.com/v1", "OpenAI", "ANTHROPIC_API_KEY")]
     [InlineData("openai-compatible", "https://api.anthropic.com/v1", "Anthropic", "OPENAI_API_KEY")]
-    // The same host, spelled the ways a URL may spell it.
+    // The same host, in different spellings a URL allows.
     [InlineData("anthropic", "https://API.OpenAI.com./v1", "OpenAI", "ANTHROPIC_API_KEY")]
     public void A_provider_s_key_is_never_sent_to_another_provider_s_host(
         string provider, string baseUrl, string owner, string keyVariable)
@@ -295,7 +295,7 @@ public sealed class LlmWiringTests
         Assert.Contains($"the key in {keyVariable} would be sent to {owner}", error.Message);
     }
 
-    // Named in the refusal as the variable in force, not the default.
+    // The refusal names the configured key variable, not the default.
     [Fact]
     public void A_renamed_key_variable_is_the_one_named_when_the_host_is_foreign()
     {
@@ -310,7 +310,7 @@ public sealed class LlmWiringTests
         Assert.Contains("the key in CLAUDE_KEY would be sent to OpenAI", error.Message);
     }
 
-    // A base URL for anthropic exists for proxies and gateways; only a host known to
+    // A base URL for anthropic exists for proxies and gateways. Only a host known to
     // belong to another provider is refused.
     [Theory]
     [InlineData("anthropic", "https://llm-gateway.example.com/anthropic")]

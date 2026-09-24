@@ -6,9 +6,10 @@ namespace Chartula.Infrastructure.Serialization;
 
 /// <summary>
 /// An <see cref="IChangelogJsonWriter"/> that writes <c>changelog.json</c> to a
-/// directory on disk. The serialization format lives in
-/// <see cref="ChangelogJsonSerializer"/>; this adapter only handles the file I/O.
-/// It writes a single file - the audience texts go inside it, never as separate
+/// directory on disk.
+/// The serialization format lives in <see cref="ChangelogJsonSerializer"/>. This
+/// adapter only handles the file I/O.
+/// It writes a single file: the audience texts go inside it, never into separate
 /// marketing files.
 /// </summary>
 public sealed class FileChangelogJsonWriter(string outputDirectory, RunProvenance? provenance = null) : IChangelogJsonWriter

@@ -6,32 +6,38 @@ using Chartula.Core.Llm;
 namespace Chartula.Core.Generation;
 
 /// <summary>
-/// Turns a fact base into the plan of one audience's rendering: which changes it
-/// carries, in which order, under which heading, and the fact statements the model
-/// rephrases. Pure and deterministic; the same base feeds every audience, so the
-/// renderings cannot contradict each other.
+/// Turns a fact base into the <see cref="RenderPlan"/> of one audience's rendering:
+/// which changes it carries, in which order, under which heading, and the fact
+/// statements the model rephrases.
+/// Pure and deterministic. The same fact base feeds every audience, so the renderings
+/// cannot contradict each other.
 /// <para>
-/// Whatever an audience's template decides rather than words is decided here and
-/// never left to a model: which changes reach the rendering, the group of every
-/// entry and its order, a technical entry's reference, a product entry's theme. The
-/// templates are in <c>docs/output-format.md</c> of goldbarth/chartula-evals.
+/// Everything in an audience's template except the wording is decided here, never by
+/// a model:
+/// <list type="bullet">
+/// <item>which changes reach the rendering,</item>
+/// <item>the group and order of every entry,</item>
+/// <item>a technical entry's reference,</item>
+/// <item>a product entry's theme.</item>
+/// </list>
+/// The templates are in <c>docs/output-format.md</c> of goldbarth/chartula-evals.
 /// </para>
 /// </summary>
 public static class GroundedFactsFactory
 {
-    // Common Changelog's order: what a reader already depends on before what is new
-    // to them. Its Removed group is not here because nothing in the fact base marks
-    // a change as a removal, and a group with no source is never assigned.
+    // Common Changelog's order: changes to what the reader already depends on come
+    // before what is new. Common Changelog's Removed group is missing, because nothing
+    // in the fact base marks a change as a removal, and a group with no source is never assigned.
     private static readonly string[] TechnicalGroupOrder = ["Changed", "Added", "Fixed"];
 
-    // The customer template's order: whatever the reader has to act on first, so no
-    // entry that asks something stands below one that does not.
+    // The customer template's order: changes the reader has to act on come first,
+    // above every entry that needs no action.
     private const string NeedsAction = "What needs action";
     private static readonly string[] CustomerGroupOrder = [NeedsAction, "What's New", "What's Changed", "Bug Fixes"];
 
-    // A theme comes from an allow-listed label. No allowlist exists yet, and the
-    // format says that with none every entry stands under this one theme rather
-    // than under an invented taxonomy.
+    // A product theme comes from an allow-listed label. No allowlist exists yet.
+    // Without one, the output format puts every entry under this single theme
+    // instead of an invented taxonomy.
     private const string ProductFallbackTheme = "Other";
 
     private static readonly IReadOnlySet<string> NoLabels = new HashSet<string>();
@@ -48,8 +54,9 @@ public static class GroundedFactsFactory
         IReadOnlySet<string> actionLabels = actionRequiredLabels ?? NoLabels;
         IEnumerable<ChangeFact> selected = factBase.Changes.Where(change => Reaches(change, audience));
 
-        // Technical and customer: by group, breaking first within it, as both
-        // templates fix. Product has one theme, so the configured order decides.
+        // Technical and customer: order by group, then breaking changes first within a
+        // group, as both templates require. Product has one theme, so the configured
+        // category order decides.
         IEnumerable<ChangeFact> ordered = audience switch
         {
             Audience.Technical => selected
@@ -79,8 +86,8 @@ public static class GroundedFactsFactory
             }
             else if (audience == Audience.Customer && RequiresAction(change, actionLabels))
             {
-                // The customer entry's fourth part is what the reader has to do, so
-                // the model has to know there is something, not only where it stands.
+                // The fourth part of a customer entry says what the reader has to do.
+                // The model has to know that an action exists, not only where the entry stands.
                 statement.Append(" (action required)");
             }
 
@@ -101,10 +108,10 @@ public static class GroundedFactsFactory
         return new RenderPlan(new GroundedFacts(statements), entries);
     }
 
-    // The customer rendering follows visibility, labels included. The technical and
-    // product renderings follow the categorical default, which a label can widen but
-    // not narrow: an internal label says a user cannot meet a change, not that a
-    // developer or a product manager cannot.
+    // The customer rendering follows IsUserVisible, which includes the visibility labels.
+    // The technical and product renderings follow the category-based default. A label
+    // can widen that default but not narrow it: an internal label says users cannot
+    // meet a change, not that developers or product managers cannot.
     private static bool Reaches(ChangeFact change, Audience audience) => audience switch
     {
         Audience.Customer => change.IsUserVisible,
@@ -122,7 +129,7 @@ public static class GroundedFactsFactory
         };
 
     // New functionality is Added and a repair is Fixed. Everything else that reaches
-    // this reader changed what already existed.
+    // the technical rendering changed something that already existed.
     private static string TechnicalGroup(ChangeCategory category) => category switch
     {
         ChangeCategory.Feature => "Added",
@@ -130,9 +137,9 @@ public static class GroundedFactsFactory
         _ => "Changed",
     };
 
-    // A breaking change always asks something of the reader. Anything else asks only
-    // when a label says so: whether a change costs the reader their setup is known to
-    // whoever wrote it, and a category cannot tell.
+    // A breaking change always requires action from the reader. Any other change
+    // requires action only when an action-required label says so. The PR author knows
+    // whether the change breaks the reader's setup; a category cannot tell.
     private static string CustomerGroup(ChangeFact change, IReadOnlySet<string> actionLabels)
         => RequiresAction(change, actionLabels)
             ? NeedsAction

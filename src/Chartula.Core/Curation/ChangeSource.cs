@@ -1,9 +1,8 @@
 namespace Chartula.Core.Curation;
 
 /// <summary>
-/// Where a resolved change's information came from. When PR discipline is
-/// imperfect, Chartula degrades from the richer pull-request source to raw
-/// commit data rather than failing.
+/// Where a resolved change's information came from.
+/// Without usable pull requests, Chartula falls back to raw commit data instead of failing.
 /// </summary>
 public enum ChangeSource
 {

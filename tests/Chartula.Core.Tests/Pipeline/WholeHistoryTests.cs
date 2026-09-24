@@ -15,9 +15,10 @@ using Chartula.Core.Review;
 namespace Chartula.Core.Tests.Pipeline;
 
 /// <summary>
-/// A first tag's range is all history. Where the release starts is the operator's
-/// decision, so a run without one stops - and it stops before GitHub and the model
-/// are reached, which the unreachable stand-ins below enforce rather than assume.
+/// A first tag's range is all history. The operator decides where the release starts,
+/// so a run without that decision stops.
+/// It stops before GitHub and the model are reached. The unreachable stand-ins below
+/// enforce this instead of assuming it.
 /// </summary>
 public sealed class WholeHistoryTests
 {

@@ -21,8 +21,8 @@ public sealed class ChangelogPromptBuilderTests
     [Fact]
     public void Passes_categories_and_breaking_flags_through_to_the_model_unchanged()
     {
-        // The generator embeds category and the breaking marker into each fact;
-        // the prompt carries them verbatim rather than deciding them.
+        // The generator embeds the category and the breaking marker in each fact.
+        // The prompt carries them verbatim instead of deciding them.
         ChangelogPrompt prompt = _builder.BuildRephrasePrompt(
             new GroundedFacts(["[1] Feature (breaking): remove the v1 endpoint"]), Audience.Technical);
 
@@ -74,8 +74,8 @@ public sealed class ChangelogPromptBuilderTests
     [Fact]
     public void Does_not_pad_a_thin_fact_base_with_invented_content()
     {
-        // A single, terse fact: the user prompt must carry that one line and
-        // nothing our code invented around it.
+        // A single, terse fact: the user prompt must contain that one line and nothing
+        // Chartula added around it.
         ChangelogPrompt prompt = _builder.BuildRephrasePrompt(
             new GroundedFacts(["[1] Fix: a bug"]), Audience.Customer);
 
@@ -114,9 +114,8 @@ public sealed class ChangelogPromptBuilderTests
         Assert.Contains(audience.ToString(), prompt.System);
     }
 
-    // Whitespace is collapsed so that a rule can be re-wrapped without breaking
-    // a test. What is asserted below is that the rule is in the prompt, never
-    // where its line breaks fall.
+    // Collapse whitespace, so a rule can be re-wrapped without breaking a test.
+    // The tests assert that a rule is in the prompt, never where its line breaks fall.
     private string SystemFor(Audience audience) => string.Join(
         ' ',
         _builder
@@ -125,9 +124,9 @@ public sealed class ChangelogPromptBuilderTests
 
     private string CustomerSystem() => SystemFor(Audience.Customer);
 
-    // Issue #96: five renderings of one release on four models came back in five
-    // structures while the prompt carried format rules. The structure is now put
-    // together in code, so the prompt asks for one text per fact and nothing else.
+    // #96: while the prompt carried format rules, five renderings of one release on
+    // four models came back in five structures. Code now builds the structure, so the
+    // prompt asks for one text per fact and nothing else.
 
     [Theory]
     [InlineData(Audience.Technical)]
@@ -159,14 +158,14 @@ public sealed class ChangelogPromptBuilderTests
         Assert.DoesNotContain("named by the theme", system);
     }
 
-    // The customer rules below are measured in goldbarth/chartula-evals; the counts
-    // in the comments are what the rule's absence cost over 53 labelled entries.
+    // The customer rules below are measured in goldbarth/chartula-evals. The counts in
+    // the comments are the failures each rule's absence caused over 53 labelled entries.
 
     [Fact]
     public void Asks_a_customer_entry_for_a_label_that_is_not_the_start_of_the_sentence()
     {
-        // The template's bold lead-in is a label. Code puts it in bold in front of
-        // the text, so the model supplies it as a field of its own.
+        // The template's bold lead-in is a label. Code puts it in bold before the text,
+        // so the model supplies it as a separate field.
         string system = CustomerSystem();
 
         Assert.Contains("Give it a label", system);
@@ -187,9 +186,9 @@ public sealed class ChangelogPromptBuilderTests
     [Fact]
     public void Forbids_opening_an_entry_on_the_work_that_was_done()
     {
-        // 8 of 53 entries opened on the mechanism: "Added a categories section
-        // to chartula.yaml...". The openings are named because naming the rule
-        // alone did not move them.
+        // 8 of 53 entries opened on the mechanism: "Added a categories section to
+        // chartula.yaml...". The prompt names these openings, because stating the rule
+        // alone did not change them.
         string system = CustomerSystem();
 
         Assert.Contains("never on the work that was done", system);
@@ -200,10 +199,10 @@ public sealed class ChangelogPromptBuilderTests
     [Fact]
     public void Keeps_the_outcome_slot_out_of_the_parts_an_entry_may_drop()
     {
-        // 7 of 20 entries on 2026-09-03 failed the outcome test, one of them
-        // with no outcome sentence at all. The format described an entry as
-        // four parts and then let any of the last three go, so an entry without
-        // an outcome was following the prompt rather than breaking it.
+        // 7 of 20 entries on 2026-09-03 failed the outcome test, one of them without
+        // any outcome sentence. The format described an entry as four parts but allowed
+        // dropping any of the last three. So an entry without an outcome followed the
+        // prompt instead of breaking it.
         string system = CustomerSystem();
 
         Assert.Contains("Leave out the second or the fourth", system);
@@ -213,8 +212,8 @@ public sealed class ChangelogPromptBuilderTests
     [Fact]
     public void Keeps_out_a_claim_of_degree_the_reader_cannot_check()
     {
-        // B3 rule 3. "defaults to a much higher value" passed the rule next to this
-        // one, which forbids superlatives and marketing language and is neither.
+        // B3 rule 3. "defaults to a much higher value" passed the neighbouring rule
+        // against superlatives and marketing language, because it is neither.
         string system = CustomerSystem();
 
         Assert.Contains("claim of degree", system);
@@ -224,10 +223,10 @@ public sealed class ChangelogPromptBuilderTests
     [Fact]
     public void Keeps_the_place_a_setting_is_reached_behind_the_outcome()
     {
-        // Five of ten outcome failures on 2026-09-04 were entries about a setting
-        // that ended on where it lives. The rule asking for the place was being
-        // followed, not broken: nothing said the place is the fourth part, so it
-        // was written where the outcome belongs.
+        // Five of ten outcome failures on 2026-09-04 were entries about a setting that
+        // ended with where the setting lives. The entries followed the rule asking for
+        // the place: nothing said the place is the fourth part, so the model wrote it
+        // where the outcome belongs.
         string system = CustomerSystem();
 
         Assert.Contains("That place is the fourth", system);
@@ -237,11 +236,11 @@ public sealed class ChangelogPromptBuilderTests
     [Fact]
     public void Says_where_an_outcome_is_taken_from_before_testing_the_one_written()
     {
-        // 10 of 24 entries on 2026-09-08 stated no outcome with the test below
-        // already in the prompt, nine of them failing nothing else. A test
-        // rejects a sentence and does not produce one, so the rule says where
-        // the sentence comes from first, and names the fix case, where "the
-        // fault is gone" is the opening restated - issue #122.
+        // 10 of 24 entries on 2026-09-08 stated no outcome, although the test below was
+        // already in the prompt. Nine of them failed nothing else.
+        // A test rejects a sentence but does not produce one. So the rule first says
+        // where the sentence comes from, and names the fix case, where "the fault is
+        // gone" only restates the opening (#122).
         string system = CustomerSystem();
 
         Assert.Contains("from their side of the change", system);
@@ -253,10 +252,10 @@ public sealed class ChangelogPromptBuilderTests
     [Fact]
     public void Shows_a_finished_outcome_for_a_fix_and_for_a_new_capability()
     {
-        // Every rule around the outcome says what to refuse, and entries kept
-        // failing it with those rules in the prompt - issue #122. The examples
-        // show the sentence instead, and say their subjects are invented, so
-        // nothing in them is taken for a fact of the release.
+        // Every rule about the outcome says what to refuse, and entries kept failing it
+        // with those rules in the prompt (#122). The examples show the sentence
+        // instead. They say their subjects are invented, so the model does not take
+        // anything in them for a fact of the release.
         string system = CustomerSystem();
 
         Assert.Contains("one for a fix and one for a new capability", system);
@@ -269,7 +268,7 @@ public sealed class ChangelogPromptBuilderTests
     public void Opens_each_change_type_on_what_the_reader_meets()
     {
         // C1 of rubric/customer.md: a fix opens on what went wrong as the reader
-        // ran into it, a feature on what they can now do, a breaking change on
+        // experienced it, a feature on what the reader can now do, a breaking change on
         // what no longer works.
         string system = CustomerSystem();
 
@@ -281,9 +280,9 @@ public sealed class ChangelogPromptBuilderTests
     [Fact]
     public void Leaves_out_an_outcome_the_facts_do_not_give_rather_than_invent_one()
     {
-        // An always-written outcome against rephrase-only is a contradiction
-        // whenever the facts carry none. The rubric's fact base implications
-        // settle it: an unknown slot is omitted, never filled.
+        // A mandatory outcome contradicts "rephrase only" whenever the facts contain no
+        // outcome. The rubric's fact base rules settle it: an unknown slot is omitted,
+        // never filled.
         string system = CustomerSystem();
 
         Assert.Contains("unless nothing in the facts of the change says what it was for", system);
@@ -293,8 +292,8 @@ public sealed class ChangelogPromptBuilderTests
     [Fact]
     public void Names_a_condition_only_when_the_facts_give_one()
     {
-        // C2 rules 3 and 4: "in some runs" gestures at a condition nobody can
-        // place themselves in, and an unknown condition is not written as a guess.
+        // C2 rules 3 and 4: "in some runs" hints at a condition no reader can check
+        // against their own situation, and an unknown condition is not guessed.
         string system = CustomerSystem();
 
         Assert.Contains("a condition they can place themselves inside or outside", system);
@@ -304,9 +303,9 @@ public sealed class ChangelogPromptBuilderTests
     [Fact]
     public void Gives_a_change_that_asks_something_an_action_and_the_outcome_after_it()
     {
-        // C4 rule 4 and C3 rule 5: a breaking change always has something to do,
-        // and its outcome is what the migration gets the reader. A change labelled
-        // as asking something arrives marked, so it gets the same fourth part.
+        // C4 rule 4 and C3 rule 5: a breaking change always requires action, and its
+        // outcome is what the migration gives the reader. A change with an
+        // action-required label arrives marked, so it gets the same fourth part.
         string system = CustomerSystem();
 
         Assert.Contains("\"(breaking)\" or \"(action required)\" always has something to do", system);
@@ -317,9 +316,9 @@ public sealed class ChangelogPromptBuilderTests
     [Fact]
     public void Carries_the_test_that_decides_whether_a_closing_clause_is_an_outcome()
     {
-        // The largest single failure, 19 of 53: "...so text completes properly"
-        // is the opening negated. Naming the slot was not enough; the prompt has
-        // to carry the test that decides the case.
+        // The largest single failure, 19 of 53: "...so text completes properly" only
+        // negates the opening. Naming the slot was not enough, so the prompt must carry
+        // the test that decides the case.
         string system = CustomerSystem();
 
         Assert.Contains("strike the opening clause", system);
@@ -332,9 +331,9 @@ public sealed class ChangelogPromptBuilderTests
     public void Decides_an_expression_by_how_the_reader_would_have_met_it()
     {
         // 15 of 53 named something only a contributor would know: `categories`,
-        // `chartula.yaml`, `docs/configuration.md`. This is a test rather than a
-        // list of forbidden kinds, because the list is never finished - the
-        // first expression outside it gets the wrong verdict.
+        // `chartula.yaml`, `docs/configuration.md`. This is a test instead of a list of
+        // forbidden kinds, because a list is never complete: the first expression
+        // outside it gets the wrong verdict.
         string system = CustomerSystem();
 
         Assert.Contains("ask how the reader would have met it", system);
@@ -346,17 +345,17 @@ public sealed class ChangelogPromptBuilderTests
     [Fact]
     public void Says_whose_knowledge_counts()
     {
-        // Without this the test above has no anchor: what is familiar to
-        // whoever wrote the code is not familiar to whoever uses it.
+        // This anchors the test above: what is familiar to the author of the code is
+        // not familiar to its user.
         Assert.Contains("never someone who worked on it", CustomerSystem());
     }
 
     [Fact]
     public void Stops_an_entry_once_its_outcome_is_stated()
     {
-        // Every rendering ran entries on past their outcome, at three to five
-        // sentences where two is the limit. The action is the fourth part and
-        // follows the outcome, so stopping at the outcome would cut it off.
+        // Every rendering continued entries past their outcome, to three to five
+        // sentences where two is the limit. The action is the fourth part and follows
+        // the outcome, so a rule to stop at the outcome would cut it off.
         string system = CustomerSystem();
 
         Assert.Contains("stop once the outcome and, where there is one, what they have to do are stated", system);
@@ -366,9 +365,9 @@ public sealed class ChangelogPromptBuilderTests
     [Fact]
     public void Requires_a_place_for_an_option_or_no_option_at_all()
     {
-        // 8 of 53 announced a setting with nowhere to act on it: "a configurable
-        // ceiling". The second half matters as much as the first - where the
-        // facts carry no place, the entry leaves the option out.
+        // 8 of 53 announced a setting without saying where to change it: "a
+        // configurable ceiling". The second half of the rule matters as much as the
+        // first: when the facts name no place, the entry leaves the option out.
         string system = CustomerSystem();
 
         Assert.Contains("say where it is set", system);
@@ -378,9 +377,9 @@ public sealed class ChangelogPromptBuilderTests
     [Fact]
     public void Names_no_category_because_a_category_reaches_the_model_renamed()
     {
-        // categories.names lets a user rename any category, and the fact
-        // statements carry the configured display name. A rule naming one would
-        // break for whoever renamed it.
+        // categories.names lets a user rename any category, and the fact statements
+        // carry the configured display name. A rule naming a category would break for
+        // anyone who renamed it.
         string system = CustomerSystem();
 
         Assert.DoesNotContain("a feature to", system);
@@ -398,15 +397,15 @@ public sealed class ChangelogPromptBuilderTests
         Assert.DoesNotContain("Give it a label", system);
     }
 
-    // The technical and product rules follow the templates and rubrics of the same
-    // name in goldbarth/chartula-evals. Neither has been measured against a
-    // rendering yet, so the tests pin that each rule is present, not a count.
+    // The technical and product rules follow the templates and rubrics of the same name
+    // in goldbarth/chartula-evals. Neither has been measured against a rendering yet,
+    // so the tests only pin that each rule is present, not a failure count.
 
     [Fact]
     public void Asks_for_one_imperative_statement_per_change()
     {
-        // C1 and C5 of rubric/technical.md: "Adds" is the shape every entry of
-        // sonnet-5-out opens on, and several changes in one line is opus-5-out.
+        // C1 and C5 of rubric/technical.md: every entry of sonnet-5-out opens with
+        // "Adds", and opus-5-out puts several changes in one line.
         string system = SystemFor(Audience.Technical);
 
         Assert.Contains("One statement about one change", system);
@@ -417,8 +416,8 @@ public sealed class ChangelogPromptBuilderTests
     [Fact]
     public void Keeps_the_title_and_the_verification_block_out_of_a_technical_entry()
     {
-        // C3 and B2: a carried-over title with its prefix, and the build and test
-        // report sonnet-5-out put into 28 of its entries.
+        // C3 and B2: a title copied with its prefix, and the build and test report that
+        // sonnet-5-out put into 28 of its entries.
         string system = SystemFor(Audience.Technical);
 
         Assert.Contains("never carry a title over word for word", system);
@@ -455,7 +454,7 @@ public sealed class ChangelogPromptBuilderTests
     [Fact]
     public void Keeps_checkable_claims_and_reader_vocabulary_in_the_product_rendering()
     {
-        // B3 and C3: a claim of impact needs a basis, and this reader never meets
+        // B3 and C3: a claim of impact needs a basis, and the product reader never sees
         // the source.
         string system = SystemFor(Audience.Product);
 
@@ -466,8 +465,7 @@ public sealed class ChangelogPromptBuilderTests
     [Fact]
     public void Keeps_the_content_rules_for_every_audience()
     {
-        // The format block is added to the customer audience, not swapped in for
-        // the rules that apply everywhere.
+        // The customer format block is added to the shared rules, not swapped in for them.
         string system = CustomerSystem();
 
         Assert.Contains("Rephrase only", system);
@@ -490,8 +488,8 @@ public sealed class ChangelogPromptBuilderTests
     [InlineData(Audience.Product)]
     public void No_other_audience_is_asked_for_a_description(Audience audience)
     {
-        // Nothing reads one back for them, so asking would spend tokens on a field
-        // no output uses.
+        // No output reads a description for these audiences, so requesting one would
+        // spend tokens on an unused field.
         Assert.DoesNotContain("write the description", SystemFor(audience));
     }
 }

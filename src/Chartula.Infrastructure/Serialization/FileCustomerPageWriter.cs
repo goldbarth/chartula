@@ -4,9 +4,9 @@ namespace Chartula.Infrastructure.Serialization;
 
 /// <summary>
 /// An <see cref="ICustomerPageWriter"/> that writes one file per release into a
-/// directory on disk. The serialisation lives in
-/// <see cref="CustomerPageComposer"/>; this adapter only names the file and
-/// writes it.
+/// directory on disk.
+/// The serialisation lives in <see cref="CustomerPageComposer"/>. This adapter only
+/// names the file and writes it.
 /// </summary>
 public sealed class FileCustomerPageWriter(string outputDirectory) : ICustomerPageWriter
 {
@@ -14,16 +14,17 @@ public sealed class FileCustomerPageWriter(string outputDirectory) : ICustomerPa
     public const string FileNamePrefix = "release-";
 
     /// <summary>
-    /// The file a release is written to. The tag identifies the release, so it
-    /// names the file; characters a file system cannot carry - a tag like
-    /// <c>release/1.0</c> is legal in git - become hyphens.
+    /// The file name for a release. The tag identifies the release, so the tag names
+    /// the file.
+    /// Characters a file system does not allow become hyphens. For example,
+    /// <c>release/1.0</c> is a legal git tag.
     /// </summary>
     public static string FileNameFor(string tag)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(tag);
 
-        // Both separators, not only the platform's: a tag written on one machine
-        // must land in the same file name on another.
+        // Replace both path separators, not only the platform's, so a tag gets the same
+        // file name on every machine.
         char[] invalid = [.. Path.GetInvalidFileNameChars(), '/', '\\'];
         string safe = new([.. tag.Trim().Select(c => Array.IndexOf(invalid, c) >= 0 ? '-' : c)]);
         return FileNamePrefix + safe + ".md";

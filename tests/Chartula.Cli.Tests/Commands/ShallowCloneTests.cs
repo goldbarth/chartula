@@ -1,18 +1,18 @@
 namespace Chartula.Cli.Tests.Commands;
 
 /// <summary>
-/// Runs the built CLI from a shallow clone, the checkout CI makes by default, whose
-/// release tag has a predecessor beyond the fetch depth. It has to stop before any
-/// request, which is why the repository named does not exist: reaching GitHub would
-/// fail differently.
+/// Runs the built CLI from a shallow clone, the default checkout in CI, whose release
+/// tag has a previous tag beyond the fetch depth.
+/// The run must stop before any request. The named repository does not exist on
+/// purpose: reaching GitHub would fail with a different error.
 /// </summary>
 public sealed class ShallowCloneTests : IDisposable
 {
     private readonly string _origin = Path.Combine(Path.GetTempPath(), "chartula-shallow-origin-" + Guid.NewGuid().ToString("N"));
     private readonly string _checkout = Path.Combine(Path.GetTempPath(), "chartula-shallow-" + Guid.NewGuid().ToString("N"));
 
-    // #243: --whole-history is refused as well, since the history it would render
-    // is not the whole history.
+    // #243: --whole-history is refused too, because in a shallow clone the history it
+    // would render is not the whole history.
     [Theory]
     [InlineData]
     [InlineData("--whole-history")]

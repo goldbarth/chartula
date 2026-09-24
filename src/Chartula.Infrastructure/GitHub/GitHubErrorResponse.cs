@@ -6,10 +6,13 @@ using System.Text.Json.Serialization;
 namespace Chartula.Infrastructure.GitHub;
 
 /// <summary>
-/// What an error response from the GitHub API says, read the same way by every
-/// GitHub adapter: GitHub's own message rather than the raw body, whether the
-/// request carried a token, the permission GitHub names as missing, and whether
-/// the rate limit rather than access was the reason.
+/// Reads an error response from the GitHub API, the same way for every GitHub adapter:
+/// <list type="bullet">
+/// <item>GitHub's own message instead of the raw body,</item>
+/// <item>whether the request carried a token,</item>
+/// <item>the permission GitHub names as missing,</item>
+/// <item>whether the rate limit was the reason, not access.</item>
+/// </list>
 /// </summary>
 internal sealed class GitHubErrorResponse
 {
@@ -21,7 +24,7 @@ internal sealed class GitHubErrorResponse
         Message = message;
         NeededPermission = Header(response, "x-accepted-github-permissions");
 
-        // A spent budget is a 403 or 429 and says nothing about access.
+        // An exhausted rate limit returns 403 or 429, but says nothing about access.
         RateLimited = response.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.TooManyRequests
                       && Header(response, "x-ratelimit-remaining") == "0";
     }
@@ -49,8 +52,8 @@ internal sealed class GitHubErrorResponse
     }
 
     /// <summary>
-    /// The sentence for a rejected token or a spent rate limit, which read the same
-    /// whatever the request was for, or <c>null</c> when the error is neither.
+    /// The message for a rejected token or an exhausted rate limit, or <c>null</c> when
+    /// the error is neither. Both messages are the same whatever the request was for.
     /// </summary>
     public string? DescribeCredentials(string tokenVariable)
     {
@@ -70,7 +73,7 @@ internal sealed class GitHubErrorResponse
         return null;
     }
 
-    /// <summary>Which token the request carried, as the line an error names it in.</summary>
+    /// <summary>The line in an error message that says which token the request carried.</summary>
     public string DescribeToken(string tokenVariable)
         => WithToken
             ? $"The request carried the token from {tokenVariable}."
@@ -90,7 +93,7 @@ internal sealed class GitHubErrorResponse
         }
         catch (JsonException)
         {
-            // Not JSON (a proxy's HTML page, say); the body is all there is.
+            // Not JSON, for example a proxy's HTML page. Fall back to the raw body.
         }
 
         return body.Length <= 200 ? body : body[..200] + "...";

@@ -1,8 +1,9 @@
 namespace Chartula.Core.Observability;
 
 /// <summary>
-/// An <see cref="IRunMetrics"/> that records nothing. Lets callers that do not care
-/// about measurement stay free of a sink, without any null checks at the call sites.
+/// An <see cref="IRunMetrics"/> that records nothing.
+/// Callers that do not need metrics use it instead of a real sink, so call sites need
+/// no null checks.
 /// </summary>
 public sealed class NullRunMetrics : IRunMetrics
 {

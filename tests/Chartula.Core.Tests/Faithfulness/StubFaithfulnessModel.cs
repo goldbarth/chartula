@@ -3,8 +3,8 @@ using Chartula.Core.Llm;
 namespace Chartula.Core.Tests.Faithfulness;
 
 /// <summary>
-/// A fake <see cref="IChangelogModel"/> for the thorough check: records whether
-/// the faithfulness pass was called and returns a canned report. No live provider.
+/// A fake <see cref="IChangelogModel"/> for the thorough check. It records whether the
+/// faithfulness pass was called and returns a canned report. No live provider.
 /// </summary>
 internal sealed class StubFaithfulnessModel(FaithfulnessReport report) : IChangelogModel
 {

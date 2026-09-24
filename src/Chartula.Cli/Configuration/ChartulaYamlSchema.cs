@@ -8,7 +8,7 @@ internal enum YamlValueKind
     /// <summary>A map of the keys listed with it.</summary>
     Section,
 
-    /// <summary>A single value; what it may be is checked where it is read.</summary>
+    /// <summary>A single value. Its allowed values are checked where it is read.</summary>
     Scalar,
 
     /// <summary><c>true</c> or <c>false</c>.</summary>
@@ -23,8 +23,9 @@ internal enum YamlValueKind
 
 /// <summary>A key <c>chartula.yaml</c> may hold, and the shape of its value.</summary>
 /// <param name="EnvironmentOnly">
-/// Known, but refused in the file: it is read from the environment only. Known so the
-/// refusal names the variable to use instead, never offered as a suggestion.
+/// A known key that is refused in the file, because it is read from the environment only.
+/// It is listed so the refusal can name the variable to use instead. It is never
+/// offered as a suggestion.
 /// </param>
 internal sealed record YamlKey(string Name, YamlValueKind Kind, IReadOnlyList<YamlKey> Keys, bool EnvironmentOnly = false)
 {
@@ -32,12 +33,13 @@ internal sealed record YamlKey(string Name, YamlValueKind Kind, IReadOnlyList<Ya
 }
 
 /// <summary>
-/// Every key <c>chartula.yaml</c> may hold. Configuration binding ignores a key it
-/// does not know, so a misspelled key, or a section indented under another one, was a
-/// setting silently not in force - <c>faithfulness: thorough: false</c> nested under
-/// <c>llm:</c> left the paid check on. Listed by hand rather than reflected from the
-/// options types, which a trimmed build cannot rely on; <c>ChartulaYamlSchemaTests</c>
-/// holds the list to those types.
+/// Every key <c>chartula.yaml</c> may hold.
+/// Configuration binding ignores unknown keys. So a misspelled key, or a section
+/// indented under another one, was silently not in effect. For example,
+/// <c>faithfulness: thorough: false</c> nested under <c>llm:</c> left the paid check on.
+/// The keys are listed by hand instead of reflected from the options types, because a
+/// trimmed build cannot rely on reflection. <c>ChartulaYamlSchemaTests</c> checks the
+/// list against those types.
 /// </summary>
 internal static class ChartulaYamlSchema
 {
@@ -95,7 +97,7 @@ internal static class ChartulaYamlSchema
 
     private static YamlKey Map(string name) => Leaf(name, YamlValueKind.Map);
 
-    // The file's spelling is camelCase; nameof gives the property's PascalCase.
+    // The file uses camelCase, and nameof gives the property's PascalCase.
     private static YamlKey Leaf(string name, YamlValueKind kind)
         => new(char.ToLowerInvariant(name[0]) + name[1..], kind, []);
 }

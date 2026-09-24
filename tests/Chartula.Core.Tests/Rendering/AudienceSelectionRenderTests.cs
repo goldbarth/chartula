@@ -7,9 +7,9 @@ using Chartula.Core.Rendering;
 namespace Chartula.Core.Tests.Rendering;
 
 /// <summary>
-/// A run renders the audiences it asks for. Each one is a rephrasing call and a
-/// faithfulness check of its own, so a run measuring one audience's wording pays
-/// for one rather than three.
+/// A run renders the audiences it requests. Each audience costs its own rephrasing call
+/// and faithfulness check, so a run measuring one audience's wording pays for one
+/// instead of three.
 /// </summary>
 public sealed class AudienceSelectionRenderTests
 {
@@ -54,8 +54,8 @@ public sealed class AudienceSelectionRenderTests
     [Fact]
     public async Task Keeps_its_own_order_whatever_order_it_was_asked_in()
     {
-        // Two runs asking for the same audiences make the same calls in the same
-        // order, so a figure from one is comparable with a figure from the other.
+        // Two runs requesting the same audiences make the same calls in the same order,
+        // so their numbers are comparable.
         CountingGenerator generator = new();
 
         await new ReleaseRenderer(generator).RenderAsync(Sample(), [Audience.Product, Audience.Technical]);

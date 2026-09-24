@@ -9,10 +9,10 @@ using Chartula.Core.PullRequests;
 namespace Chartula.Core.Facts;
 
 /// <summary>
-/// Default <see cref="IFactBaseBuilder"/>. It resolves changes (with the
-/// missing-PR fallback), drops filtered-out changes, and maps each surviving
-/// change to a <see cref="ChangeFact"/>. Category and flags come from the
-/// deterministic curation steps, never from an LLM.
+/// Default <see cref="IFactBaseBuilder"/>.
+/// It resolves changes (with the missing-PR fallback), drops filtered-out changes
+/// and maps each remaining change to a <see cref="ChangeFact"/>.
+/// Category and flags come from the deterministic curation steps, never from an LLM.
 /// </summary>
 public sealed partial class FactBaseBuilder(
     IReleaseChangeResolver resolver,
@@ -65,25 +65,23 @@ public sealed partial class FactBaseBuilder(
             IsUserVisible: IsUserVisible(category, classification.IsBreaking, label.UserVisible),
             IsBreaking: classification.IsBreaking,
             LinkedIssues: linkedIssues,
-            // Verbatim and unfiltered: which labels a rendering shows is decided
-            // there, and a fact the base drops cannot be recovered downstream.
+            // Keep labels verbatim and unfiltered. The rendering decides which labels
+            // it shows, and a fact the fact base drops cannot be recovered downstream.
             Labels: change.Labels,
             Description: string.IsNullOrEmpty(description) ? null : description);
     }
 
-    // Whether a reader can come into contact with the change. A breaking change
-    // always can, whatever a label says. Otherwise a label answers it, because
-    // whoever wrote the pull request knew the change; a category cannot, because it
-    // says what kind of change something is and a feature can be entirely internal.
-    // With no label the category is all there is, which is the behaviour of every
-    // repository that configures no visibility labels.
+    // A breaking change is always user-visible, whatever a label says.
+    // Otherwise a visibility label decides: the PR author knows whether users meet the change.
+    // A category cannot tell, because a feature can be entirely internal.
+    // Without a label the category decides, which is the default for repositories without visibility labels.
     private static bool IsUserVisible(ChangeCategory category, bool isBreaking, bool? labelled)
         => isBreaking || (labelled ?? IsOutwardFacingCategory(category));
 
-    // The fallback: outward-facing categories, with refactors, internal work and
-    // docs left out. It is also the default of the technical and product
-    // renderings, which read it directly because a visibility label may widen what
-    // reaches them but not narrow it.
+    // The fallback when no visibility label decides: outward-facing categories only.
+    // Refactors, internal work and docs are left out.
+    // The technical and product renderings also call this directly: a visibility
+    // label may widen what reaches them, but not narrow it.
     internal static bool IsOutwardFacingCategory(ChangeCategory category)
         => category is ChangeCategory.Feature
             or ChangeCategory.Fix

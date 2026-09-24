@@ -6,12 +6,12 @@ namespace Chartula.Core.Filtering;
 
 /// <summary>
 /// Default <see cref="IChangeFilter"/>. It combines label rules and deterministic
-/// categorization:
+/// categorization, in this order:
 /// <list type="number">
-///   <item>a label that excludes the change wins outright;</item>
-///   <item>a breaking change is never dropped;</item>
-///   <item>otherwise the change is dropped when its effective category (a
-///   label-forced one, else the deterministic one) is excluded.</item>
+///   <item>A label that excludes the change drops it, whatever else applies.</item>
+///   <item>A breaking change is never dropped.</item>
+///   <item>Otherwise the change is dropped when its category is excluded. A
+///   label-forced category takes precedence over the deterministic one.</item>
 /// </list>
 /// </summary>
 public sealed class ChangeFilter(

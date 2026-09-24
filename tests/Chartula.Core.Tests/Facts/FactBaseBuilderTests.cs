@@ -91,7 +91,7 @@ public sealed class FactBaseBuilderTests
     [Fact]
     public void Applies_a_label_forced_category_and_lets_it_rescue_a_chore()
     {
-        // "chore" is normally Internal (excluded); the label forces it to Fix.
+        // "chore" is normally Internal and excluded. The label forces it to Fix.
         FactBaseBuilder builder = Builder(labels: new LabelRules(
             categoryByLabel: new Dictionary<string, ChangeCategory> { ["security"] = ChangeCategory.Fix }));
 
@@ -104,8 +104,8 @@ public sealed class FactBaseBuilderTests
     [Fact]
     public void An_internal_label_keeps_a_feature_out_of_what_a_reader_can_meet()
     {
-        // The category says a feature. The label says nobody can come into contact
-        // with it, and the label is the one that was asked the question.
+        // The category is Feature, but the label marks the change as internal.
+        // The label decides visibility, not the category.
         FactBaseBuilder builder = Builder(labels: new LabelRules(
             internalLabels: ["visibility:internal"]));
 
@@ -179,8 +179,8 @@ public sealed class FactBaseBuilderTests
     [Fact]
     public void Carries_labels_the_curation_rules_acted_on_just_like_any_other()
     {
-        // The forced category is curation's business. The label itself is a fact
-        // about the pull request, so it reaches the base unfiltered all the same.
+        // Curation uses the label to force the category. The label itself is still a
+        // fact about the pull request, so it reaches the fact base unfiltered.
         FactBaseBuilder builder = Builder(labels: new LabelRules(
             categoryByLabel: new Dictionary<string, ChangeCategory> { ["security"] = ChangeCategory.Fix }));
 
@@ -216,9 +216,9 @@ public sealed class FactBaseBuilderTests
         Assert.Equal(ChangeCategory.Feature, change.Category);
     }
 
-    // The template's comments are where "Closes #123" and a breaking-change hint sit
-    // as examples. Read as facts they would link an issue nobody named and flag a
-    // change nobody called breaking.
+    // The template's comments hold examples such as "Closes #123" and a breaking-change
+    // hint. Read as facts, they would link an issue nobody named and flag a change
+    // nobody called breaking.
     [Fact]
     public void A_template_comment_links_no_issue_and_flags_nothing_as_breaking()
     {

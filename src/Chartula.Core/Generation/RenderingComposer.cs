@@ -5,9 +5,9 @@ using Chartula.Core.Llm;
 namespace Chartula.Core.Generation;
 
 /// <summary>
-/// Puts a rendering together from its plan and the texts the model wrote. Headings,
-/// order, markers and references all come from the plan, so the structure of a
-/// rendering is the same whichever model wrote its words - issue #96.
+/// Puts a rendering together from its plan and the texts the model wrote.
+/// Headings, order, markers and references all come from the plan, so a rendering
+/// has the same structure whichever model wrote its words (#96).
 /// </summary>
 public static partial class RenderingComposer
 {
@@ -15,10 +15,10 @@ public static partial class RenderingComposer
     private static partial Regex Whitespace();
 
     /// <summary>
-    /// What is wrong with an answer that does not map onto the plan one to one, or
-    /// <c>null</c> when every planned entry has exactly one text. A fact left without
-    /// an entry would be dropped from the rendering without a trace, so it is named
-    /// rather than skipped.
+    /// Describes what is wrong when the model's answer does not map onto the plan one
+    /// to one. <c>null</c> when every planned entry has exactly one text.
+    /// A fact without an entry would silently disappear from the rendering, so the
+    /// mismatch is reported instead of skipped.
     /// </summary>
     public static string? FindMismatch(RenderPlan plan, RenderedEntries rendered)
     {
@@ -100,7 +100,7 @@ public static partial class RenderingComposer
 
         string line = Whitespace().Replace(value, " ").Trim();
 
-        // A model that writes the bullet itself is still answering the question asked.
+        // Strip a bullet the model wrote itself: the answer is still valid.
         return line.StartsWith("- ", StringComparison.Ordinal) || line.StartsWith("* ", StringComparison.Ordinal)
             ? line[2..].TrimStart()
             : line;
@@ -108,10 +108,9 @@ public static partial class RenderingComposer
 
     /// <summary>
     /// Escapes every <c>&lt;</c> outside a code span, so a placeholder such as
-    /// <c>release-&lt;tag&gt;.md</c> is shown rather than read as HTML. GitHub drops
-    /// an unknown tag without a trace, and the words the model wrote go with it. A
-    /// code span shows its brackets literally already, and an escaped bracket is left
-    /// as it is.
+    /// <c>release-&lt;tag&gt;.md</c> is shown instead of read as HTML.
+    /// GitHub silently drops an unknown tag, together with the words the model wrote inside it.
+    /// Code spans already show brackets literally, and an escaped bracket stays as it is.
     /// </summary>
     public static string EscapeAngleBrackets(string value)
     {
@@ -205,7 +204,7 @@ public static partial class RenderingComposer
                 return (planned.IsBreaking ? Breaking : string.Empty) + body + reference;
 
             case Audience.Customer:
-                // The template gives a breaking change its marker as the label.
+                // For a breaking change the template uses the breaking marker as the label.
                 if (planned.IsBreaking)
                 {
                     return Breaking + body;

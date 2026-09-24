@@ -6,7 +6,7 @@ namespace Chartula.Core.Llm;
 /// <param name="Id">The id of the fact this entry rephrases.</param>
 /// <param name="Text">The entry itself, without any heading, marker or reference.</param>
 /// <param name="Label">
-/// A few words naming what the entry is about. Asked of the customer audience only,
-/// where it stands in bold in front of the text.
+/// A few words naming what the entry is about. Requested for the customer audience
+/// only, where it is shown in bold in front of the text.
 /// </param>
 public sealed record RenderedEntry(int Id, string Text, string? Label = null);

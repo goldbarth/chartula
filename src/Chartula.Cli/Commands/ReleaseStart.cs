@@ -2,9 +2,9 @@ namespace Chartula.Cli.Commands;
 
 /// <summary>
 /// Reads where a release starts: <c>--since &lt;ref&gt;</c>, or <c>--whole-history</c>
-/// to render a range that spans all history on purpose. Neither is needed for a tag
-/// with a previous tag; a first tag needs one, because where it starts is the
-/// operator's decision and not something to guess.
+/// to deliberately render a range that spans all history.
+/// A tag with a previous tag needs neither. A first tag needs one of them, because
+/// the operator decides where it starts, and Chartula does not guess.
 /// </summary>
 /// <param name="Since">The tag or commit the release starts after, or <c>null</c>.</param>
 /// <param name="WholeHistory">Whether a range over all history may be rendered.</param>
@@ -14,9 +14,9 @@ internal sealed record ReleaseStart(string? Since, bool WholeHistory)
     public const string WholeHistoryFlag = "--whole-history";
 
     /// <summary>
-    /// The start named on the command line. Returns false and fills
-    /// <paramref name="error"/> when <c>--since</c> has no value or both are given -
-    /// they answer the same question two ways.
+    /// The start named on the command line.
+    /// Returns false and fills <paramref name="error"/> when <c>--since</c> has no value,
+    /// or when both options are given: they answer the same question in two ways.
     /// </summary>
     public static bool TryParse(IReadOnlyList<string> args, out ReleaseStart start, out string? error)
     {

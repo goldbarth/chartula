@@ -8,14 +8,14 @@ namespace Chartula.Infrastructure.PullRequests;
 
 /// <summary>
 /// An <see cref="IReleasePullRequestReader"/> backed by the GitHub REST API over a
-/// plain <see cref="HttpClient"/>. Kept dependency-free (no SDK) to stay
-/// AOT-friendly; the client's base address, auth, and headers are configured by
-/// the composition root.
+/// plain <see cref="HttpClient"/>.
+/// It uses no SDK, so it stays AOT-friendly.
+/// The composition root configures the client's base address, auth and headers.
 /// </summary>
 /// <param name="httpClient">The configured GitHub client.</param>
 /// <param name="tokenVariable">
-/// The environment variable the token is read from, named in an error so the
-/// message points at what the caller can change.
+/// The environment variable the token is read from. Errors name it, so the message
+/// points at what the caller can change.
 /// </param>
 public sealed class GitHubPullRequestReader(HttpClient httpClient, string tokenVariable) : IReleasePullRequestReader
 {
@@ -27,8 +27,9 @@ public sealed class GitHubPullRequestReader(HttpClient httpClient, string tokenV
         ArgumentNullException.ThrowIfNull(repository);
         ArgumentNullException.ThrowIfNull(range);
 
-        // In the order first seen, with every commit of the range that belongs to each:
-        // a revert that names commits is paired with pull requests through them.
+        // Keep pull requests in the order first seen, each with every commit of the range
+        // that belongs to it. RevertPairing matches a revert that names commits to pull
+        // requests through these commits.
         List<GitHubPullRequestDto> merged = [];
         Dictionary<int, List<string>> commitsByPull = [];
 
@@ -114,10 +115,10 @@ public sealed class GitHubPullRequestReader(HttpClient httpClient, string tokenV
     }
 
     /// <summary>
-    /// Names the cause the caller can act on. GitHub answers every request here with
-    /// a status about one commit, but on the first request a 403 or 404 is about the
-    /// repository or the credentials - nothing has been read from it yet - so the
-    /// message says that instead of naming a commit.
+    /// Names a cause the caller can act on.
+    /// Every request here asks about one commit. But a 403 or 404 on the first request
+    /// is about the repository or the credentials, because nothing has been read from
+    /// the repository yet. So the message names those instead of a commit.
     /// </summary>
     private string Describe(GitHubErrorResponse error, RepositoryCoordinates repository, string sha, bool first)
     {
@@ -128,8 +129,8 @@ public sealed class GitHubPullRequestReader(HttpClient httpClient, string tokenV
             return credentials;
         }
 
-        // The endpoint reports a commit it does not know as 422, and so does a
-        // repository that exists but is not the one the history was read from.
+        // The endpoint returns 422 for an unknown commit. That includes a repository
+        // that exists but is not the one the history was read from.
         if (error.StatusCode == HttpStatusCode.UnprocessableEntity)
         {
             return $"""

@@ -2,8 +2,9 @@ namespace Chartula.Cli.Tests.Commands;
 
 /// <summary>
 /// Runs the built CLI from a checkout whose <c>chartula.yaml</c> points the GitHub
-/// reader at another host and names another variable as its token - one merged
-/// diff that would send any variable of the operator's environment anywhere.
+/// reader at another host and names another variable as its token.
+/// That single merged change would send any variable of the operator's environment
+/// to any host.
 /// </summary>
 public sealed class RepositoryConfigurationTests : IDisposable
 {

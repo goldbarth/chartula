@@ -1,11 +1,11 @@
 namespace Chartula.Cli.Tests.Commands;
 
 /// <summary>
-/// Runs the built CLI the way #233 was found: an OpenAI endpoint in the environment
-/// and no <c>llm.provider</c>, so the provider stays <c>anthropic</c>. The run has to
-/// stop at config load, before the history is read and before the key leaves the
-/// machine - which is why the GitHub endpoint does not exist: reaching it would fail
-/// differently.
+/// Runs the built CLI as in #233: an OpenAI endpoint in the environment and no
+/// <c>llm.provider</c>, so the provider stays <c>anthropic</c>.
+/// The run must stop at config load, before the history is read and before the key
+/// leaves the machine. The GitHub endpoint does not exist on purpose: reaching it would
+/// fail with a different error.
 /// </summary>
 public sealed class ForeignProviderHostTests : IDisposable
 {

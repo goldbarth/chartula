@@ -6,9 +6,9 @@ using Chartula.Core.Prompting;
 namespace Chartula.Core.Tests.Prompting;
 
 /// <summary>
-/// The prompt text Chartula sends, held against a copy in the repository. A prompt
-/// change moves output in ways no unit test catches, so it has to at least show in
-/// the diff: changing the text fails here until the snapshot is updated with it.
+/// Compares the prompt text Chartula sends with a copy in the repository.
+/// A prompt change moves output in ways no unit test catches, so it must at least show
+/// in the diff. Changing the text fails this test until the snapshot is updated too.
 /// <para>
 /// To accept a change, run the tests with <c>CHARTULA_UPDATE_SNAPSHOTS=1</c> and
 /// commit the rewritten files under <c>Snapshots/</c> next to the prompt change.
@@ -20,8 +20,8 @@ public sealed class PromptSnapshotTests
 
     private static readonly ChangelogPromptBuilder Builder = new();
 
-    // Stand-ins for the parts that are data, not instructions, so the snapshot shows
-    // where they go without depending on any release.
+    // Placeholders for the data parts of the prompt, so the snapshot shows where they
+    // go without depending on any release.
     private static readonly GroundedFacts Facts = new(["{fact}"]);
 
     public static TheoryData<string> Prompts => ["technical", "customer", "product", "thorough-system", "thorough-user", "prompt-hash"];
@@ -47,9 +47,9 @@ public sealed class PromptSnapshotTests
             + $"If the change is intended, run the tests with {UpdateVariable}=1 and commit the updated snapshot with it.");
     }
 
-    // The prompt a build sends must not depend on the platform it runs on: a "\r"
-    // would change what the model reads and the hash a run records. Only meaningful
-    // where Git checks sources out with CRLF, which is Windows.
+    // The prompt must not depend on the platform: a "\r" would change what the model
+    // reads and the hash a run records. Only meaningful where Git checks out sources
+    // with CRLF, which is Windows.
     [Theory]
     [MemberData(nameof(Prompts))]
     public void The_prompt_has_the_same_line_endings_on_every_platform(string name)
@@ -66,7 +66,7 @@ public sealed class PromptSnapshotTests
         _ => throw new ArgumentOutOfRangeException(nameof(name), name, null),
     };
 
-    // Git may check text out with CRLF on Windows; the prompt is the same text.
+    // Git may check out text with CRLF on Windows, but the prompt is the same text.
     private static string Normalize(string text) => text.Replace("\r\n", "\n");
 
     private static string FirstDifference(string expected, string actual)
@@ -86,8 +86,7 @@ public sealed class PromptSnapshotTests
         return string.Empty;
     }
 
-    // The source directory, not the build output: an update has to land in the files
-    // that are committed.
+    // The source directory, not the build output, so an update lands in the committed files.
     private static string SnapshotPath(string name, [CallerFilePath] string source = "")
         => Path.Combine(Path.GetDirectoryName(source)!, "Snapshots", name + ".txt");
 }

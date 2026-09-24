@@ -6,14 +6,18 @@ using Microsoft.Extensions.AI;
 namespace Chartula.Core.Llm;
 
 /// <summary>
-/// The single shipped <see cref="IChangelogModel"/>, backed by a
-/// provider-agnostic <see cref="IChatClient"/>. Which concrete provider (and
-/// model) the <see cref="IChatClient"/> talks to is decided in the composition
-/// root; this class knows nothing about it. The rephrase prompt is owned by the
-/// <see cref="IChangelogPromptBuilder"/>, so this type just wires it to the client.
-/// Every call is the only place that sees real token usage, so it reports that usage
-/// to <see cref="IRunMetrics"/>. Whether an answer counts is not decided here but in
-/// <see cref="CallValidity"/>, the same way for every call.
+/// The single shipped <see cref="IChangelogModel"/>, backed by a provider-agnostic
+/// <see cref="IChatClient"/>.
+/// <list type="bullet">
+/// <item>The composition root decides which provider and model the client talks to.
+/// This class knows nothing about it.</item>
+/// <item><see cref="IChangelogPromptBuilder"/> owns the prompts. This class only
+/// sends them to the client.</item>
+/// <item>Only here is the real token usage visible, so every call reports it to
+/// <see cref="IRunMetrics"/>.</item>
+/// <item><see cref="CallValidity"/> decides whether an answer counts, the same way
+/// for every call.</item>
+/// </list>
 /// </summary>
 public sealed class ChatModel(
     IChatClient chat,
@@ -27,8 +31,8 @@ public sealed class ChatModel(
     private readonly ChatModelOptions _options = options ?? new ChatModelOptions();
     private readonly IRunMetrics _metrics = metrics ?? NullRunMetrics.Instance;
 
-    // Fresh per call: the typed-response path clones and augments these, so a shared
-    // instance would leak one call's response format into the next.
+    // Create new options per call. The typed-response path clones and extends them,
+    // so a shared instance would leak one call's response format into the next.
     private ChatOptions RequestOptions(LlmOperation operation)
         => operation == LlmOperation.FaithfulnessCheck
             ? new()
@@ -56,7 +60,8 @@ public sealed class ChatModel(
             new(ChatRole.User, prompt.User),
         ];
 
-        // Recorded before it is judged: a call that does not count was still paid for.
+        // CallAsync records the call before CallValidity judges it: a call that does
+        // not count was still paid for.
         ChatResponse<RenderedEntries> response = await CallAsync(
             LlmOperation.Rephrase,
             () => _chat.GetResponseAsync<RenderedEntries>(messages, RequestOptions(LlmOperation.Rephrase), cancellationToken: cancellationToken));
@@ -83,9 +88,9 @@ public sealed class ChatModel(
     }
 
     /// <summary>
-    /// Makes one model call and records it whatever the outcome: the time and the
-    /// requests of a call that failed were spent too, and a run that was slow because
-    /// its calls were retried has to be able to say so.
+    /// Makes one model call and records it, whatever the outcome.
+    /// A failed call also spent time and requests, and a run that was slow because of
+    /// retries has to be able to show that.
     /// </summary>
     private async Task<TResponse> CallAsync<TResponse>(LlmOperation operation, Func<Task<TResponse>> call)
         where TResponse : ChatResponse
@@ -96,7 +101,7 @@ public sealed class ChatModel(
         {
             TResponse response = await call();
 
-            // Providers are not obliged to report usage; an unreported call is still a call.
+            // Record the call even without usage: providers are not obliged to report it.
             _metrics.RecordLlmCall(operation, new LlmCall(response.Usage?.InputTokenCount, response.Usage?.OutputTokenCount)
             {
                 CachedInputTokens = response.Usage?.CachedInputTokenCount,

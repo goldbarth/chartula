@@ -3,9 +3,8 @@ using System.Net;
 namespace Chartula.Infrastructure.Tests.PullRequests;
 
 /// <summary>
-/// A stand-in <see cref="HttpMessageHandler"/> that records requests and returns
-/// canned responses, so the reader is tested against mocked GitHub output with no
-/// network call.
+/// A stand-in <see cref="HttpMessageHandler"/> that records requests and returns canned
+/// responses, so the reader is tested against mocked GitHub output without a network call.
 /// </summary>
 internal sealed class StubHttpMessageHandler(
     Func<HttpRequestMessage, HttpResponseMessage> responder) : HttpMessageHandler

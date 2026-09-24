@@ -18,9 +18,9 @@ public sealed record PullRequestInfo(
     string Url)
 {
     /// <summary>
-    /// The commits in the release range that belong to this pull request, as full
-    /// hashes. It is how a revert that names commits is paired with the pull
-    /// requests it takes back; empty when the source did not say.
+    /// The commits in the release range that belong to this pull request, as full hashes.
+    /// RevertPairing uses them to match a revert that names commits to the pull
+    /// requests it takes back. Empty when the source does not provide them.
     /// </summary>
     public IReadOnlyList<string> CommitShas { get; init; } = [];
 }

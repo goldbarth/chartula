@@ -3,8 +3,8 @@ using System.Diagnostics;
 namespace Chartula.Infrastructure.Tests.History;
 
 /// <summary>
-/// A throwaway git repository on disk for exercising the real reader against real
-/// git output. Deterministic and offline; deleted on dispose.
+/// A throwaway git repository on disk, for testing the real reader against real git output.
+/// Deterministic and offline. Deleted on dispose.
 /// </summary>
 internal sealed class TempGitRepository : IDisposable
 {
@@ -78,7 +78,7 @@ internal sealed class TempGitRepository : IDisposable
         }
         catch
         {
-            // Best-effort cleanup; a leftover temp dir must not fail a test.
+            // Best-effort cleanup: a leftover temp directory must not fail a test.
         }
     }
 }

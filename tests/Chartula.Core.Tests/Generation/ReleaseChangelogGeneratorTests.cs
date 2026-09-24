@@ -76,8 +76,8 @@ public sealed class ReleaseChangelogGeneratorTests
     [Fact]
     public async Task Fails_the_audience_when_the_answer_leaves_a_fact_without_an_entry()
     {
-        // Skipping the fact would drop a change from the rendering without a trace,
-        // and filling it in would put a raw title in front of the reader.
+        // Skipping the fact would silently drop a change from the rendering, and filling
+        // it in would show the reader a raw title.
         FakeChangelogModel model = FakeChangelogModel.Answering(_ => new RenderedEntries([new RenderedEntry(1, "One")]));
         IReleaseChangelogGenerator generator = new ReleaseChangelogGenerator(model, new ChangelogFormatter());
 
@@ -123,8 +123,8 @@ public sealed class ReleaseChangelogGeneratorTests
 
         ChangelogGenerationResult result = await generator.GenerateAsync(Sample(), Audience.Customer);
 
-        // One call, two fields: the description is a rephrasing of the same facts,
-        // so it costs nothing beyond the call the entries already needed.
+        // One call, two fields: the description rephrases the same facts, so it costs
+        // no extra call.
         Assert.Equal(1, model.RephraseCallCount);
         Assert.Equal("A release about finding things.", result.Description);
     }

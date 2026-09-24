@@ -9,9 +9,9 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Chartula.Cli.Composition;
 
 /// <summary>
-/// Composition root for the LLM seam. This is the only place that knows which
-/// concrete provider backs <see cref="IChangelogModel"/>; swapping providers is
-/// a change here and nowhere else.
+/// Composition root for the LLM seam.
+/// This is the only place that knows which provider backs <see cref="IChangelogModel"/>,
+/// so swapping providers changes this file and nothing else.
 /// </summary>
 internal static class LlmServiceCollectionExtensions
 {
@@ -19,9 +19,8 @@ internal static class LlmServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // The provider is read first because it decides what the other keys default
-        // to. Reading it later would mean defaulting the model before knowing whose
-        // model it is.
+        // Read the provider first, because it decides the defaults of the other keys,
+        // for example the default model.
         LlmProvider provider = LlmProviderParser.Parse(configuration[$"{LlmOptions.SectionName}:Provider"]);
         LlmOptions options = ReadOptions(configuration, provider);
 
@@ -32,13 +31,13 @@ internal static class LlmServiceCollectionExtensions
         {
             MaxOutputTokens = options.MaxOutputTokens,
             Reasoning = Reasoning(provider, options.Model, ThinkingModeParser.Parse(options.Thinking)),
-            // Sent only when it differs: the client already asks the rendering model.
+            // Send the check model only when it differs: the client already uses the rendering model.
             CheckModelId = check.Model == options.Model ? null : check.Model,
             CheckReasoning = Reasoning(provider, check.Model, check.Thinking, check.ThinkingKey, check.ModelKey),
         });
 
-        // Last among the refusals: a setting that is wrong in chartula.yaml is named
-        // before the key, which may be missing only because the file was not fixed yet.
+        // Check the key last: report a wrong setting in chartula.yaml first, because the
+        // key may be missing only because the file is not fixed yet.
         RequireApiKey(provider, options, configuration);
         services.AddSingleton(sp => CreateChatClient(provider, options, configuration));
         services.AddSingleton<IChangelogPromptBuilder, ChangelogPromptBuilder>();
@@ -67,8 +66,8 @@ internal static class LlmServiceCollectionExtensions
                                 ?? defaults.ApiKeyEnvironmentVariable;
         string? baseUrl = ReadBaseUrl(configuration) ?? defaults.BaseUrl;
 
-        // Here rather than where the client is built: the options are read before the
-        // run starts, and a key that went out cannot be called back.
+        // Check here instead of where the client is built: the options are read before
+        // the run starts, and a key that was sent cannot be taken back.
         ProviderHost.RequireOwnedBy(
             provider,
             providerConfigured: !string.IsNullOrWhiteSpace(configuration[$"{LlmOptions.SectionName}:Provider"]),
@@ -86,8 +85,8 @@ internal static class LlmServiceCollectionExtensions
         };
     }
 
-    // Checked for both providers: a proxy in front of the Anthropic API receives the
-    // key just the same.
+    // Validate the base URL for both providers: a proxy in front of the Anthropic API
+    // also receives the key.
     private static string? ReadBaseUrl(IConfiguration configuration)
     {
         string? value = configuration[$"{LlmOptions.SectionName}:BaseUrl"];
@@ -100,11 +99,12 @@ internal static class LlmServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Refuses an Anthropic run without a key before any work starts. Without this the
-    /// run reads the history and spends a GitHub request per pull request, and only
-    /// then fails every audience on the provider's raw 401, which never names the
-    /// variable. An OpenAI-compatible endpoint is left alone: a local server needs no
-    /// key, and whether a hosted one does is the endpoint's to say.
+    /// Refuses an Anthropic run without a key before any work starts.
+    /// Otherwise the run reads the history, spends a GitHub request per pull request, and
+    /// only then fails every audience with the provider's raw 401, which never names the
+    /// variable.
+    /// An OpenAI-compatible run is not checked: a local server needs no key, and a
+    /// hosted endpoint decides for itself whether it needs one.
     /// </summary>
     private static void RequireApiKey(LlmProvider provider, LlmOptions options, IConfiguration configuration)
     {
@@ -121,8 +121,8 @@ internal static class LlmServiceCollectionExtensions
             "For an endpoint that needs no key, set llm.provider to openai-compatible.");
     }
 
-    // An unparsable or non-positive value would otherwise fall through to the
-    // provider default and truncate silently, so reject it loudly instead.
+    // Reject an unparsable or non-positive value loudly. Otherwise it would fall back
+    // to the provider default and silently truncate the output.
     private static int ReadMaxOutputTokens(IConfiguration configuration)
     {
         string? raw = configuration[$"{LlmOptions.SectionName}:MaxOutputTokens"];
@@ -141,9 +141,9 @@ internal static class LlmServiceCollectionExtensions
     }
 
     /// <summary>
-    /// The configured thinking mode as the provider-neutral request field. Both
-    /// adapters translate it themselves - Anthropic to thinking plus effort, OpenAI to
-    /// <c>reasoning_effort</c> - so the same value means the same thing on either.
+    /// The configured thinking mode as the provider-neutral request field.
+    /// Each adapter translates it: Anthropic to thinking plus effort, OpenAI to
+    /// <c>reasoning_effort</c>. So the same value means the same thing on either provider.
     /// </summary>
     private static ReasoningOptions? Reasoning(
         LlmProvider provider,
@@ -167,15 +167,14 @@ internal static class LlmServiceCollectionExtensions
             _ => null,
         };
 
-        // Provider default sends nothing at all: the absence is what leaves each model
-        // on its own behavior.
+        // provider-default sends nothing, so each model keeps its own default behaviour.
         return effort is null ? null : new ReasoningOptions { Effort = effort };
     }
 
     /// <summary>
-    /// The client a run's configuration builds, over <paramref name="transport"/> in
-    /// place of the network - the seam that lets a failed call be checked through the
-    /// real SDKs without an endpoint.
+    /// The client a run's configuration builds, with <paramref name="transport"/> instead
+    /// of the network.
+    /// This seam lets tests check a failed call through the real SDKs without an endpoint.
     /// </summary>
     internal static IChatClient CreateChatClient(IConfiguration configuration, HttpMessageHandler transport)
     {
@@ -189,8 +188,8 @@ internal static class LlmServiceCollectionExtensions
         IConfiguration configuration,
         HttpMessageHandler? transport = null)
     {
-        // Read the key by name; never hardcode it. An Anthropic run without one was
-        // refused at registration; an OpenAI-compatible endpoint may need none.
+        // Read the key by variable name, never hardcode it. An Anthropic run without a key
+        // was already refused at registration. An OpenAI-compatible endpoint may need none.
         string? apiKey = configuration[options.ApiKeyEnvironmentVariable];
 
         IChatClient client = provider switch
@@ -206,10 +205,10 @@ internal static class LlmServiceCollectionExtensions
 
     private static IChatClient CreateAnthropicClient(LlmOptions options, string? apiKey, HttpMessageHandler? transport)
     {
-        // Two initializers rather than an assignment: BaseUrl is init-only, and its
-        // own default is a real URL, so passing null through would blank it. Left
-        // alone unless configured - a base URL is only set here for a proxy or a
-        // gateway in front of the API.
+        // Two initializers instead of one: BaseUrl is init-only, and its default is a
+        // real URL, so passing null would blank it.
+        // Set BaseUrl only when configured, which is the case for a proxy or gateway in
+        // front of the API.
         HttpClient http = ModelRequestCountingHandler.CreateClient(transport);
         AnthropicClient client = string.IsNullOrWhiteSpace(options.BaseUrl)
             ? new AnthropicClient { ApiKey = apiKey, HttpClient = http }

@@ -19,7 +19,7 @@ public sealed class ChatModelMetricsTests
     [Fact]
     public async Task Rephrasing_records_its_call_and_tokens_under_the_rephrase_operation()
     {
-        // A count the prompt can have: below its characters / 8 would read as truncation.
+        // A plausible count for the prompt: below characters / 8 would count as truncation.
         StubChatClient chat = new(NoEntries, new UsageDetails { InputTokenCount = 1_200, OutputTokenCount = 34 });
         RunMetrics metrics = new();
 
@@ -45,7 +45,7 @@ public sealed class ChatModelMetricsTests
         RunReport report = metrics.Snapshot();
         Assert.Equal(1, report.UsageOf(LlmOperation.FaithfulnessCheck).TotalCalls);
         Assert.Equal(912, report.UsageOf(LlmOperation.FaithfulnessCheck).Tokens.TotalTokens);
-        // The check's cost stays separate from rephrasing, or it could not be judged.
+        // The check's cost stays separate from rephrasing, so it can be judged on its own.
         Assert.Equal(LlmUsage.None, report.UsageOf(LlmOperation.Rephrase));
     }
 

@@ -4,9 +4,9 @@ using Chartula.Core.Llm;
 namespace Chartula.Core.Serialization;
 
 /// <summary>
-/// Writes the fact base and the rendered audience texts to <c>changelog.json</c>
-/// as a durable record and a source for other outputs. The pipeline depends only
-/// on this port, not on where or how the file is written.
+/// Writes the fact base and the rendered audience texts to <c>changelog.json</c>,
+/// as a durable record and a source for other outputs.
+/// The pipeline depends only on this port, not on where or how the file is written.
 /// </summary>
 public interface IChangelogJsonWriter
 {

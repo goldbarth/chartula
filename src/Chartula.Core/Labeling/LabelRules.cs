@@ -3,10 +3,16 @@ using Chartula.Core.Categorization;
 namespace Chartula.Core.Labeling;
 
 /// <summary>
-/// Label-driven curation rules: which labels exclude a change, which labels force
-/// a category, which labels answer whether a reader can meet the change, which say
-/// the reader has to act on it, and whether only labeled changes are included. All optional - <see cref="None"/>
-/// means labels are ignored entirely and the tool works with no labels at all.
+/// Label-driven curation rules. They configure:
+/// <list type="bullet">
+/// <item>which labels exclude a change,</item>
+/// <item>which labels force a category,</item>
+/// <item>which labels mark a change as user-visible or internal,</item>
+/// <item>which labels say the reader has to act on the change,</item>
+/// <item>whether only labeled changes are included.</item>
+/// </list>
+/// Every rule is optional. With <see cref="None"/> labels are ignored entirely, so the
+/// tool works in repositories without labels.
 /// Label matching is case-insensitive.
 /// </summary>
 public sealed class LabelRules
@@ -49,18 +55,15 @@ public sealed class LabelRules
     /// <summary>When true, only changes carrying at least one label are included.</summary>
     public bool OnlyIncludeLabeled { get; }
 
-    /// <summary>
-    /// Labels saying no reader can come into contact with the change, whatever kind
-    /// of change it is.
-    /// </summary>
+    /// <summary>Labels saying users cannot meet the change, whatever its category.</summary>
     public IReadOnlySet<string> InternalLabels { get; }
 
-    /// <summary>Labels saying a reader can come into contact with the change.</summary>
+    /// <summary>Labels saying users can meet the change.</summary>
     public IReadOnlySet<string> UserFacingLabels { get; }
 
     /// <summary>
-    /// Labels saying the reader has to do something about the change although it is
-    /// not breaking. A breaking change needs none: it always asks something.
+    /// Labels saying the reader has to act on a change that is not breaking.
+    /// A breaking change needs no such label, because it always requires action.
     /// </summary>
     public IReadOnlySet<string> ActionRequiredLabels { get; }
 

@@ -5,16 +5,16 @@ namespace Chartula.Cli.Tests.Configuration;
 
 /// <summary>
 /// #237: a malformed <c>chartula.yaml</c> ended the run with an unhandled YamlDotNet
-/// exception, and a well-formed one with a key in the wrong place was read as if the key
-/// were not there. Every case is refused with the file, the line and the column.
+/// exception. A well-formed file with a key in the wrong place was read as if the key
+/// were missing. Now every case is refused with the file, the line and the column.
 /// </summary>
 public sealed class MalformedYamlTests
 {
     private static string Refusal(string yaml, string fileName = "chartula.yaml")
         => Assert.Throws<InvalidOperationException>(() => ChartulaYamlConfiguration.Flatten(yaml, fileName)).Message;
 
-    // The file as it was found: two keys indented 4 spaces under a key that has a value,
-    // and faithfulness nested under llm.
+    // The file from #237: two keys indented 4 spaces under a key that has a value, and
+    // faithfulness nested under llm.
     [Fact]
     public void A_key_indented_under_a_key_with_a_value_is_named_by_line_and_column()
     {
@@ -49,8 +49,8 @@ public sealed class MalformedYamlTests
         Assert.Contains("line 4 is indented 2 spaces, which lines up with no key above it (they are at 0 or 4)", message);
     }
 
-    // Once the indentation parses, faithfulness under llm is valid YAML - and was
-    // ignored, which left thorough: false without effect.
+    // Once the indentation parses, faithfulness under llm is valid YAML. It used to be
+    // ignored, so thorough: false had no effect.
     [Fact]
     public void A_section_nested_under_another_is_refused_pointing_at_the_indentation()
     {
@@ -68,7 +68,7 @@ public sealed class MalformedYamlTests
             message);
     }
 
-    // YamlDotNet names the start of the mapping, line 1, not the line with the tab.
+    // YamlDotNet reports the start of the mapping, line 1, not the line with the tab.
     [Fact]
     public void A_tab_is_named_on_its_own_line()
     {
@@ -106,7 +106,7 @@ public sealed class MalformedYamlTests
         Assert.Contains(expected, Refusal(yaml));
     }
 
-    // Environment-only keys are never offered as the key that was meant.
+    // Environment-only keys are never suggested as the intended key.
     [Fact]
     public void An_environment_only_key_is_not_suggested()
     {
@@ -143,7 +143,7 @@ public sealed class MalformedYamlTests
             message.Split('\n'));
     }
 
-    // The refusal that decides where credentials go comes first, as it did.
+    // The refusal of environment-only keys, which decide where credentials go, still comes first.
     [Fact]
     public void An_environment_only_key_is_refused_before_the_other_problems()
     {
@@ -172,7 +172,7 @@ public sealed class MalformedYamlTests
         }
     }
 
-    // What the file could always say keeps meaning what it meant.
+    // Everything the file could express before keeps its meaning.
     [Theory]
     [InlineData("")]
     [InlineData("# only a comment\n")]
@@ -194,7 +194,7 @@ public sealed class MalformedYamlTests
         Assert.Equal("False", config["Chartula:Faithfulness:Thorough"]);
     }
 
-    // The documented example and this repository's own file are what users copy.
+    // Users copy the documented example and this repository's own file, so both must read.
     [Fact]
     public void The_documented_example_and_the_repository_s_own_file_are_accepted()
     {

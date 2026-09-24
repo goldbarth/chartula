@@ -3,9 +3,8 @@ using System.Text;
 namespace Chartula.Core.Review;
 
 /// <summary>
-/// Formats a <see cref="ReviewItem"/> for a reviewer: the generated text followed
-/// by the flagged passages, so a maintainer can see what needs a closer look
-/// before approving.
+/// Formats a <see cref="ReviewItem"/> for a reviewer: the generated text, then the
+/// flagged passages. The maintainer sees what needs a closer look before approving.
 /// </summary>
 public static class ReviewPresentation
 {

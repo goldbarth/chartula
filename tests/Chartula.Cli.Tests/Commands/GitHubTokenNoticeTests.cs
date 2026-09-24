@@ -6,9 +6,8 @@ using Microsoft.Extensions.Configuration;
 namespace Chartula.Cli.Tests.Commands;
 
 /// <summary>
-/// A run without a GitHub token is warned before it starts, and the warning names
-/// the variable the run actually reads - not the default, when the default was
-/// renamed.
+/// A run without a GitHub token warns before it starts. The warning names the variable
+/// the run actually reads, not the default, when the variable was renamed.
 /// </summary>
 public sealed class GitHubTokenNoticeTests
 {

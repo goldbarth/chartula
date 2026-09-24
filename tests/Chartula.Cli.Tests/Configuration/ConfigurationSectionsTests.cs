@@ -31,8 +31,8 @@ public sealed class ConfigurationSectionsTests
     [Fact]
     public void Labels_section_carries_the_visibility_label_names()
     {
-        // The names are this repository's convention, not the tool's: another project
-        // writes "internal", "no-changelog", "chore". So they are configuration.
+        // The label names are this repository's convention, not the tool's. Another
+        // project uses "internal", "no-changelog", "chore". So they are configuration.
         LabelOptions labels = FromYaml(
             """
             labels:

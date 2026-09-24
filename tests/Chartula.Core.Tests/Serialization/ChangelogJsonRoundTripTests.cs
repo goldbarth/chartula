@@ -7,8 +7,8 @@ using Chartula.Core.Serialization;
 namespace Chartula.Core.Tests.Serialization;
 
 /// <summary>
-/// A written changelog.json reads back as the fact base it came from. That is what lets a
-/// real release be stored and replayed later.
+/// A written changelog.json reads back as the fact base it came from, so a real release
+/// can be stored and replayed later.
 /// </summary>
 public sealed class ChangelogJsonRoundTripTests
 {
@@ -45,10 +45,10 @@ public sealed class ChangelogJsonRoundTripTests
     public void A_document_written_before_labels_existed_still_reads_at_the_same_schema_version()
     {
         // Adding an optional field does not bump schemaVersion, so a file written by an
-        // earlier version has to keep reading - with no labels, not with a null the rest
-        // of the pipeline would have to guard against.
-        // Line endings differ per platform, so the field is cut by shape rather than
-        // by an exact string.
+        // earlier version must still read. It reads with an empty label list, not with a
+        // null the rest of the pipeline would have to guard against.
+        // Line endings differ per platform, so the field is removed by pattern instead
+        // of by an exact string.
         string json = Regex.Replace(
             ChangelogJsonSerializer.Serialize(Facts), @"\s*""labels"":\s*\[[^\]]*\],", string.Empty);
 

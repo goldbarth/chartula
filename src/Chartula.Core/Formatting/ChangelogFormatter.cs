@@ -1,16 +1,22 @@
 namespace Chartula.Core.Formatting;
 
 /// <summary>
-/// Default <see cref="IChangelogFormatter"/>. It applies conservative, structure-
-/// preserving rules so every rendering is internally consistent: normalized line
-/// endings, a single bullet marker, trimmed trailing whitespace, and no ragged
-/// blank lines. Non-bullet lines (headings, prose) are left intact.
+/// Default <see cref="IChangelogFormatter"/>.
+/// It applies conservative rules that keep the structure, so every rendering is
+/// internally consistent:
+/// <list type="bullet">
+/// <item>normalized line endings,</item>
+/// <item>a single bullet marker,</item>
+/// <item>no trailing whitespace,</item>
+/// <item>no leading, trailing or repeated blank lines.</item>
+/// </list>
+/// Lines that are not bullets (headings, prose) are left intact.
 /// </summary>
 public sealed class ChangelogFormatter : IChangelogFormatter
 {
-    // Markers we rewrite to a "- " bullet. A leading hyphen is normalized for
-    // spacing but is already the target marker.
-    private static readonly char[] BulletMarkers = ['*', '+', '•']; // '•'
+    // Markers rewritten to a "- " bullet. A leading hyphen is already the target
+    // marker, so only its spacing is normalized.
+    private static readonly char[] BulletMarkers = ['*', '+', '•'];
 
     public string Format(string rendered)
     {

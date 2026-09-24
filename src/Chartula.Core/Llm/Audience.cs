@@ -1,9 +1,9 @@
 namespace Chartula.Core.Llm;
 
 /// <summary>
-/// The audience a changelog entry is tailored for. Chartula renders the same
-/// grounded facts once per audience, so the wording differs but the underlying
-/// facts never can.
+/// The audience a changelog entry is tailored for.
+/// Chartula renders the same grounded facts once per audience, so only the wording
+/// differs, never the facts.
 /// </summary>
 public enum Audience
 {

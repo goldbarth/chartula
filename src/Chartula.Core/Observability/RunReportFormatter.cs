@@ -4,9 +4,9 @@ using System.Text;
 namespace Chartula.Core.Observability;
 
 /// <summary>
-/// Renders a <see cref="RunReport"/> as the run summary. It puts the thorough check's
-/// added value next to its token cost, so the question "does the thorough check earn its
-/// cost?" can be answered from a run's output alone.
+/// Renders a <see cref="RunReport"/> as the run summary.
+/// It shows the thorough check's added value next to its token cost, so a run's output
+/// alone answers whether the thorough check is worth its cost.
 /// </summary>
 public static class RunReportFormatter
 {
@@ -56,8 +56,8 @@ public static class RunReportFormatter
         return builder.ToString();
     }
 
-    // The time an operation's calls took, and the longest of them when there were
-    // several: one slow call and uniformly slow calls call for different fixes.
+    // The time an operation's calls took, plus the longest call when there were several.
+    // One slow call and uniformly slow calls need different fixes.
     private static string Time(LlmUsage usage)
     {
         int calls = usage.TotalCalls + usage.FailedCalls;
@@ -71,9 +71,9 @@ public static class RunReportFormatter
             : $", {Duration(usage.Duration)} (longest {Duration(usage.LongestCall)})";
     }
 
-    // What part of the tokens were cheaper (cached) or invisible (reasoning). Said
-    // as not reported where the provider does not break it out: a zero would claim
-    // the model did not reason.
+    // Which part of the tokens was cheaper (cached) or invisible (reasoning).
+    // Print "not reported" when the provider does not report a part: a zero would
+    // claim the model did not reason.
     private static void AppendTokenDetail(StringBuilder builder, LlmUsage usage)
     {
         if (usage.TotalCalls == 0)
@@ -94,7 +94,7 @@ public static class RunReportFormatter
         }
     }
 
-    // Not observed is said as such: zero would claim the calls went through first time.
+    // Print "not observed" instead of zero: zero would claim every call succeeded on the first try.
     private static string Retries(LlmUsage rephrase, LlmUsage check)
     {
         if (rephrase.Retries is null && check.Retries is null)
@@ -108,7 +108,7 @@ public static class RunReportFormatter
             return "none";
         }
 
-        // Only operations that made calls: one that never ran has nothing to observe.
+        // List only operations that made calls. An operation that never ran has nothing to observe.
         IEnumerable<string> parts = new[] { ("rephrasing", rephrase), ("thorough check", check) }
             .Where(static part => part.Item2.TotalCalls + part.Item2.FailedCalls > 0)
             .Select(static part => $"{part.Item1} {Observed(part.Item2.Retries)}");
@@ -122,8 +122,8 @@ public static class RunReportFormatter
             ? $"{duration.TotalSeconds.ToString("0.0", CultureInfo.InvariantCulture)} s"
             : $"{(int)duration.TotalMinutes} min {duration.Seconds} s";
 
-    // The context for every number below it: cost follows description length more
-    // than the count of pull requests.
+    // The context for every number below it: cost depends more on description length
+    // than on the number of pull requests.
     private static string Scope(ReleaseScope scope)
         => $"{Count(scope.Commits)} {(scope.Commits == 1 ? "commit" : "commits")}, "
            + $"{Count(scope.PullRequests)} {(scope.PullRequests == 1 ? "pull request" : "pull requests")}, "

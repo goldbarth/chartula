@@ -3,10 +3,10 @@ using Chartula.Core.Categorization;
 namespace Chartula.Core.Facts;
 
 /// <summary>
-/// The "index card" for one change: a single structured object holding the
-/// established facts behind it. This is the single source of truth the LLM may
-/// only rephrase from. Every field is a fact derived deterministically from the
-/// pull request or commit; nothing here is LLM-generated.
+/// The "index card" for one change: the established facts behind it in one object.
+/// The LLM only rephrases from this record, so it is the single source of truth.
+/// Every field is derived deterministically from the pull request or commit.
+/// Nothing here is LLM-generated.
 /// </summary>
 /// <param name="Title">The change title, verbatim from the source.</param>
 /// <param name="Number">The pull request number, or <c>null</c> for commit-based changes.</param>
@@ -16,9 +16,9 @@ namespace Chartula.Core.Facts;
 /// <param name="IsBreaking">Whether the change is a breaking change.</param>
 /// <param name="LinkedIssues">Numbers of issues linked to the change.</param>
 /// <param name="Labels">
-/// The labels on the pull request, verbatim and unfiltered; empty when the source
-/// carries none, as a commit-based change does. Which of them a rendering shows is
-/// a rendering's decision, not a fact.
+/// The labels on the pull request, verbatim and unfiltered.
+/// Empty when the source carries none, as with a commit-based change.
+/// Which labels a rendering shows is the rendering's decision, not a fact.
 /// </param>
 /// <param name="Description">
 /// The source description, when depth includes it; otherwise <c>null</c>.
@@ -34,10 +34,9 @@ public sealed record ChangeFact(
     IReadOnlyList<string> Labels,
     string? Description)
 {
-    // A record compares its properties with the default equality comparer, which for
-    // a list means reference identity. Two facts carrying the same linked issues in
-    // different list instances would then be unequal, which is not what a fact is: it
-    // is a value. Comparing the issues and labels by content is what makes it one.
+    // Compare LinkedIssues and Labels by content, because a fact is a value.
+    // The default record equality compares lists by reference, so two facts with the
+    // same linked issues in different list instances would be unequal.
     public bool Equals(ChangeFact? other)
         => other is not null
            && Title == other.Title

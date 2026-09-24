@@ -7,15 +7,18 @@ using Chartula.Core.Llm;
 namespace Chartula.Core.Generation;
 
 /// <summary>
-/// Default <see cref="IReleaseChangelogGenerator"/>. It plans the rendering from the
-/// fact base - which changes, in which order, under which heading - makes exactly
-/// one <see cref="IChangelogModel"/> call per release for the words of the entries,
-/// and puts the two together. An empty plan makes no call at all. Provider failures
-/// and answers that do not match the plan are returned as a failed result;
-/// cancellation propagates.
+/// Default <see cref="IReleaseChangelogGenerator"/>. It works in three steps:
+/// <list type="number">
+/// <item>Plan the rendering from the fact base: which changes, in which order, under which heading.</item>
+/// <item>Make exactly one <see cref="IChangelogModel"/> call per release for the wording of the entries.</item>
+/// <item>Combine plan and wording.</item>
+/// </list>
+/// An empty plan makes no call.
+/// Provider failures and answers that do not match the plan return a failed result.
+/// Cancellation propagates.
 /// <para>
-/// The customer rendering carries a one-sentence description of the release, asked
-/// for and returned in that same call as a field of its own.
+/// The customer rendering also carries a one-sentence description of the release.
+/// The same call requests and returns it as a separate field.
 /// </para>
 /// </summary>
 public sealed class ReleaseChangelogGenerator(
@@ -40,7 +43,7 @@ public sealed class ReleaseChangelogGenerator(
         RenderPlan plan = GroundedFactsFactory.Build(
             factBase, audience, _categorySettings, _labelRules.ActionRequiredLabels);
 
-        // Nothing to generate - skip the call entirely (keeps calls minimal).
+        // Nothing to generate: skip the model call.
         if (plan.Entries.Count == 0)
         {
             return ChangelogGenerationResult.Success(string.Empty);
@@ -59,8 +62,8 @@ public sealed class ReleaseChangelogGenerator(
 
             string text = _formatter.Format(RenderingComposer.Compose(plan, rendered, audience));
 
-            // Only the customer page has a description, so only that rendering is
-            // asked for one and only that one is read for it.
+            // Only the customer page has a description, so only the customer rendering
+            // requests one and reads it.
             string? description = audience == Audience.Customer
                 ? RenderingComposer.SingleLine(rendered.Description)
                 : null;

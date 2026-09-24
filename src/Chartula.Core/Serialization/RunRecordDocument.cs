@@ -3,10 +3,10 @@ using System.Text.Json.Serialization;
 namespace Chartula.Core.Serialization;
 
 /// <summary>
-/// The on-disk shape of a run record. Kept apart from the domain
-/// <c>RunRecord</c> for the same reason <see cref="ChangelogDocument"/> is: runs
-/// are compared across Chartula versions, so the file format changes only on
-/// purpose. Documented in <c>docs/run-record.md</c>.
+/// The on-disk shape of a run record.
+/// It is separate from the domain <c>RunRecord</c>, like <see cref="ChangelogDocument"/>:
+/// runs are compared across Chartula versions, so the file format changes only on purpose.
+/// Documented in <c>docs/run-record.md</c>.
 /// </summary>
 public sealed record RunRecordDocument(
     [property: JsonPropertyName("schemaVersion")] int SchemaVersion,
@@ -20,9 +20,10 @@ public sealed record RunRecordDocument(
     [property: JsonPropertyName("metrics")] RunRecordMetrics Metrics);
 
 /// <summary>
-/// One audience of the run. A rendered audience has flags and no error, a failed
-/// one the reverse: a failed audience was never checked, so it has no flags to
-/// report rather than an empty list that would read as a clean check.
+/// One audience of the run.
+/// A rendered audience has flags and no error. A failed audience has an error and no flags.
+/// A failed audience was never checked, so its flags are absent. An empty list would
+/// look like a clean check.
 /// </summary>
 public sealed record RunRecordAudience(
     [property: JsonPropertyName("audience")] string Audience,
@@ -33,8 +34,9 @@ public sealed record RunRecordAudience(
     string? Error);
 
 /// <summary>
-/// The run metrics as the summary prints them. Both operations are always
-/// present: an operation with no calls cost nothing, and that is a value.
+/// The run metrics as the summary prints them.
+/// Both operations are always present: an operation without calls cost nothing, and
+/// zero is a real value.
 /// </summary>
 public sealed record RunRecordMetrics(
     [property: JsonPropertyName("rephrase")] RunRecordLlmUsage Rephrase,
@@ -46,7 +48,7 @@ public sealed record RunRecordMetrics(
     [property: JsonPropertyName("release"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     RunRecordRelease? Release = null);
 
-/// <summary>How much release the run worked on - the context for its token counts.</summary>
+/// <summary>The size of the release the run worked on: the context for its token counts.</summary>
 public sealed record RunRecordRelease(
     [property: JsonPropertyName("commits")] int Commits,
     [property: JsonPropertyName("pullRequests")] int PullRequests,
@@ -55,9 +57,9 @@ public sealed record RunRecordRelease(
     [property: JsonPropertyName("descriptionCharacters")] long DescriptionCharacters);
 
 /// <summary>
-/// Calls, tokens and time of one LLM operation. The fields after the tokens were
-/// added under schema version 1; a record written before them reads with zeros and
-/// no retry count.
+/// Calls, tokens and time of one LLM operation.
+/// The fields after the tokens were added under schema version 1. A record written
+/// before them reads back with zeros and no retry count.
 /// </summary>
 public sealed record RunRecordLlmUsage(
     [property: JsonPropertyName("calls")] int Calls,
@@ -81,9 +83,9 @@ public sealed record RunRecordCheck(
     [property: JsonPropertyName("flags")] int Flags);
 
 /// <summary>
-/// How often the thorough check ran and what it found, with the two numbers that
-/// say whether it earned its tokens: what only it caught, and how often it came
-/// back unreadable.
+/// How often the thorough check ran and what it found.
+/// Two numbers show whether it was worth its tokens: what only it caught, and how
+/// often it came back unreadable.
 /// </summary>
 public sealed record RunRecordThoroughCheck(
     [property: JsonPropertyName("runs")] int Runs,

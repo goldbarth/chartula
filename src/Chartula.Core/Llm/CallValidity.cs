@@ -4,29 +4,33 @@ using Microsoft.Extensions.AI;
 namespace Chartula.Core.Llm;
 
 /// <summary>
-/// Whether a model's answer counts, decided in one place (#94). A readable answer is
-/// not evidence that the call behind it was sound: an endpoint that cut the prompt to
-/// fit its context window still answers, from the facts it kept (#85), and an
-/// endpoint that enforces the schema by constrained decoding returns a well-formed
-/// verdict from a model that never understood the task (#86). So every answer passes
-/// the same preconditions before it is read, in this order:
-/// <list type="number">
-/// <item>The whole prompt reached the model. Proof, not suspicion: see
-/// <see cref="EnsurePromptArrived"/>. Failing it fails the call - for a rendering and
-/// a verdict alike, since both would otherwise be built from facts the model never
-/// saw.</item>
-/// <item>The answer can be read as the shape that was asked for. A rendering that
-/// cannot be read fails; a verdict that cannot be read is reported as not evaluated
-/// (#76), because an empty claim list would read as a clean check.</item>
-/// <item>A verdict agrees with itself: "unfaithful" with no claims named is not a
-/// verdict either.</item>
+/// Decides in one place whether a model's answer counts (#94).
+/// A readable answer does not prove that the call behind it was sound:
+/// <list type="bullet">
+/// <item>An endpoint that cut the prompt to fit its context window still answers,
+/// from the facts it kept (#85).</item>
+/// <item>An endpoint that enforces the schema by constrained decoding returns a
+/// well-formed verdict from a model that never understood the task (#86).</item>
 /// </list>
-/// A new way for a call to verify nothing belongs here, as one more precondition.
+/// So every answer must pass the same preconditions before it is read, in this order:
+/// <list type="number">
+/// <item>The whole prompt reached the model. The check fails only on proof, not on
+/// suspicion (see <see cref="EnsurePromptArrived"/>). Failing it fails the call, for a
+/// rendering and a verdict alike: both would otherwise rest on facts the model never saw.</item>
+/// <item>The answer can be read in the requested shape. An unreadable rendering fails.
+/// An unreadable verdict is reported as not evaluated (#76), because an empty claim
+/// list would look like a clean check.</item>
+/// <item>A verdict is consistent: "unfaithful" without any named claim is not a verdict.</item>
+/// </list>
+/// Add any new way for a call to verify nothing here, as one more precondition.
 /// <para>
-/// What cannot be checked here, and is not pretended to be: an endpoint that reports
-/// the untruncated length whatever it processed, one that reports no usage at all,
-/// and - the case no precondition reaches - a model that saw every fact and judged
-/// badly. That last one is why the rule-based check exists and always runs.
+/// These cases cannot be checked here:
+/// <list type="bullet">
+/// <item>an endpoint that reports the untruncated length whatever it processed,</item>
+/// <item>an endpoint that reports no usage at all,</item>
+/// <item>a model that saw every fact and judged badly. No precondition catches this
+/// case, which is why the rule-based check exists and always runs.</item>
+/// </list>
 /// </para>
 /// </summary>
 internal static class CallValidity
@@ -41,9 +45,9 @@ internal static class CallValidity
     {
         EnsurePromptArrived(prompt, response.Usage);
 
-        // Unlike the thorough check, an unreadable answer has no honest partial form:
-        // without the entries there is no rendering. The generator turns this into a
-        // failed audience that says why.
+        // Unlike an unreadable verdict, an unreadable rendering cannot be reported
+        // partially: without the entries there is no rendering. The generator turns
+        // this exception into a failed audience that says why.
         if (!response.TryGetResult(out RenderedEntries? entries) || entries.Entries is null)
         {
             throw new InvalidOperationException("the model's answer did not match the expected entry format");
@@ -57,8 +61,8 @@ internal static class CallValidity
     {
         EnsurePromptArrived(prompt, response.Usage);
 
-        // A check we cannot read is not a check that passed. Both failures below leave
-        // the output unverified, and saying so is the only honest result.
+        // An unreadable check has not passed. Both failures below leave the output
+        // unverified, so they report it as not evaluated.
         if (!response.TryGetResult(out FaithfulnessVerdict? verdict))
         {
             return FaithfulnessReport.NotEvaluated("the response did not match the expected format");
@@ -75,9 +79,9 @@ internal static class CallValidity
 
     /// <summary>
     /// Fails when the endpoint reports fewer input tokens than the prompt Chartula sent
-    /// can have. It runs before the answer is inspected, since an answer from a cut
-    /// prompt is well-formed. A provider that reports no usage gives nothing to check,
-    /// and the call is let through.
+    /// must have. It runs before the answer is inspected, because an answer from a cut
+    /// prompt is still well-formed.
+    /// A provider that reports no usage gives nothing to check, so the call passes.
     /// </summary>
     private static void EnsurePromptArrived(ChangelogPrompt prompt, UsageDetails? usage)
     {

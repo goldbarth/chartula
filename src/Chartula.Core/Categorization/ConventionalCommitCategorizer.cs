@@ -4,10 +4,10 @@ using Chartula.Core.Curation;
 namespace Chartula.Core.Categorization;
 
 /// <summary>
-/// Categorizes changes from Conventional Commit conventions in the title
-/// (<c>type(scope)!: subject</c>) plus a <c>BREAKING CHANGE</c> note in the body.
-/// Pure and deterministic; no LLM. Unknown or prefix-less titles get
-/// <see cref="ChangeCategory.Other"/>.
+/// Categorizes changes from the Conventional Commit prefix in the title
+/// (<c>type(scope)!: subject</c>) and a <c>BREAKING CHANGE</c> note in the body.
+/// Pure and deterministic, no LLM.
+/// Unknown types and titles without a prefix get <see cref="ChangeCategory.Other"/>.
 /// </summary>
 public sealed partial class ConventionalCommitCategorizer : IChangeCategorizer
 {
@@ -16,9 +16,9 @@ public sealed partial class ConventionalCommitCategorizer : IChangeCategorizer
     private static partial Regex ConventionalPrefix();
 
     // The Conventional Commits breaking-change footer: uppercase, at the start of a
-    // line, terminated by a colon. Anchoring and case both matter - prose that merely
-    // discusses breaking changes ("...and breaking-change prominence...") is not a
-    // footer, and matching it loosely marks unrelated work as breaking.
+    // line, terminated by a colon. Anchoring and case both matter.
+    // Prose that merely discusses breaking changes ("...and breaking-change prominence...")
+    // is not a footer, and matching it loosely marks unrelated work as breaking.
     [GeneratedRegex(
         @"^BREAKING[ -]CHANGE:",
         RegexOptions.Multiline | RegexOptions.CultureInvariant)]
@@ -49,10 +49,10 @@ public sealed partial class ConventionalCommitCategorizer : IChangeCategorizer
         "refactor" => ChangeCategory.Refactor,
         "build" or "ci" or "chore" or "test" or "tests" or "style" => ChangeCategory.Internal,
 
-        // Not internal: a revert that survives pairing takes back something a reader
-        // may have met, and filtered away it would leave that change in the facts as
-        // shipped (#206). Other rather than a category of its own, which would change
-        // the documented values of changelog.json.
+        // A revert is Other, not Internal. A revert that RevertPairing keeps takes back
+        // something users may have met. Filtered out as Internal, it would leave the
+        // reverted change in the facts as shipped (#206).
+        // A new category for reverts would change the documented values of changelog.json.
         "revert" => ChangeCategory.Other,
         _ => ChangeCategory.Other,
     };

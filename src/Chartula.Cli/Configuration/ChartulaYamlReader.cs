@@ -5,11 +5,14 @@ using YamlDotNet.RepresentationModel;
 namespace Chartula.Cli.Configuration;
 
 /// <summary>
-/// Reads <c>chartula.yaml</c> against <see cref="ChartulaYamlSchema"/> and names
-/// everything it cannot read as meant by file, line and column. The file is written by
-/// hand, and indentation is its syntax: a key indented one level too deep either stops
-/// the parser, which used to end the run with an unhandled exception, or parses as a
-/// key of another section, which configuration binding ignores without a word (#237).
+/// Reads <c>chartula.yaml</c> against <see cref="ChartulaYamlSchema"/>, and reports
+/// everything it cannot read as intended by file, line and column.
+/// The file is written by hand, and indentation is its syntax. A key indented one
+/// level too deep either:
+/// <list type="bullet">
+/// <item>stops the parser, which used to end the run with an unhandled exception, or</item>
+/// <item>parses as a key of another section, which configuration binding silently ignores (#237).</item>
+/// </list>
 /// Both are refused here, before any work starts.
 /// </summary>
 internal static partial class ChartulaYamlReader
@@ -18,9 +21,9 @@ internal static partial class ChartulaYamlReader
         "Check the indentation: the keys of one section line up, indented under it with spaces.";
 
     /// <summary>
-    /// The configuration pairs <paramref name="yaml"/> holds under <paramref name="prefix"/>,
-    /// and a line per key or value it cannot use. A syntax error throws instead: nothing
-    /// after it can be read.
+    /// The configuration pairs in <paramref name="yaml"/> under <paramref name="prefix"/>,
+    /// and one problem line per key or value that cannot be used.
+    /// A syntax error throws instead, because nothing after it can be read.
     /// </summary>
     public static (IReadOnlyList<KeyValuePair<string, string?>> Pairs, IReadOnlyList<string> Problems) Read(
         string yaml, string fileName, string prefix)
@@ -62,10 +65,13 @@ internal static partial class ChartulaYamlReader
     }
 
     /// <summary>
-    /// A parser error with what it most likely means. YamlDotNet names a tab at the
-    /// start of the mapping it broke rather than on its own line, so the tab is looked
-    /// up here; and a line indented under a key that already has a value is the most
-    /// common way to break a hand-written file, so it is named as such.
+    /// A parser error with its most likely meaning:
+    /// <list type="bullet">
+    /// <item>YamlDotNet reports a tab at the start of the mapping it broke, not on the
+    /// tab's own line, so the tab is looked up here.</item>
+    /// <item>A line indented under a key that already has a value is the most common way
+    /// to break a hand-written file, so the message says exactly that.</item>
+    /// </list>
     /// </summary>
     private static string DescribeSyntaxError(string yaml, string fileName, YamlException ex)
     {
@@ -77,7 +83,7 @@ internal static partial class ChartulaYamlReader
             return $"{fileName}, line {line}, column {column}: this line is indented with a tab. YAML indents with spaces only.";
         }
 
-        // Not a syntax error in YAML's own terms, but the parser is what finds it.
+        // A duplicate key is not a YAML syntax error, but the parser is what detects it.
         if (reason.StartsWith("Duplicate key ", StringComparison.Ordinal))
         {
             return $"{Located(fileName, ex.Start)}: '{reason["Duplicate key ".Length..]}' is set a second time here; " +
@@ -117,7 +123,8 @@ internal static partial class ChartulaYamlReader
                    "so nothing can be nested under it. The keys of one section line up.";
         }
 
-        // Moving out to a level no key above it is at: neither in the section above nor out of it.
+        // A line indented to a level no key above it uses: it is neither inside the
+        // section above nor outside it.
         List<int> levels = [.. lines[..index].Where(IsContent).Select(IndentOf).Distinct().Order()];
         if (indent < aboveIndent && !levels.Contains(indent))
         {
@@ -155,7 +162,7 @@ internal static partial class ChartulaYamlReader
 
     private static string Located(string fileName, Mark mark) => $"{fileName}, line {mark.Line}, column {mark.Column}";
 
-    // YAML's null: an empty value, '~' or 'null'. It leaves the setting unset, as it always has.
+    // YAML's null: an empty value, '~' or 'null'. It leaves the setting unset, as before.
     private static bool IsNull(YamlNode node)
         => node is YamlScalarNode { Style: ScalarStyle.Plain or ScalarStyle.Any, Value: null or "" or "~" or "null" or "Null" or "NULL" };
 
@@ -166,7 +173,7 @@ internal static partial class ChartulaYamlReader
         _ => "keys nested under it",
     };
 
-    /// <summary>YamlDotNet's message begins with the location it also carries as data.</summary>
+    /// <summary>YamlDotNet's message starts with the location, which it also carries as data.</summary>
     [GeneratedRegex(@"^\(Line: \d+, Col: \d+, Idx: \d+\) - \(Line: \d+, Col: \d+, Idx: \d+\): ")]
     private static partial Regex ParserLocation();
 
@@ -195,8 +202,9 @@ internal static partial class ChartulaYamlReader
                     continue;
                 }
 
-                // The file's own spelling: configuration keys are case-insensitive, and the
-                // refusal of an environment-only key quotes the file back as written.
+                // Keep the file's own spelling in the configuration key. Configuration keys are
+                // case-insensitive, and the refusal of an environment-only key quotes the
+                // file as written.
                 Value(key, value, $"{prefix}:{name}", path is null ? key.Name : $"{path}.{key.Name}");
             }
         }
@@ -249,7 +257,7 @@ internal static partial class ChartulaYamlReader
                     break;
 
                 case YamlValueKind.Map when node is YamlMappingNode map:
-                    // The names are the user's own - labels, categories - so none is unknown.
+                    // The user chooses the names (labels, categories), so no name is unknown.
                     foreach ((YamlNode name, YamlNode value) in map.Children)
                     {
                         Single(value, $"{configKey}:{(name as YamlScalarNode)?.Value}", $"the values under '{path}'");
@@ -275,8 +283,8 @@ internal static partial class ChartulaYamlReader
         }
 
         /// <summary>
-        /// An unknown key, with what it most likely is: a section or a key of another
-        /// section, indented to the wrong level, or a misspelling.
+        /// An unknown key, with its most likely cause: a section or a key of another
+        /// section indented to the wrong level, or a misspelling.
         /// </summary>
         private static string Unknown(YamlKey section, string name, string? path)
         {
@@ -316,7 +324,8 @@ internal static partial class ChartulaYamlReader
                 .Select(candidate => candidate.Name)
                 .FirstOrDefault();
 
-        // Levenshtein: a transposed or dropped letter or two is a typo; more is another word.
+        // Levenshtein distance: one or two transposed or dropped letters are a typo,
+        // more is another word.
         private static int Distance(string a, string b)
         {
             int[] previous = [.. Enumerable.Range(0, b.Length + 1)];

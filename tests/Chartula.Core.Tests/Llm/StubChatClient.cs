@@ -4,9 +4,9 @@ namespace Chartula.Core.Tests.Llm;
 
 /// <summary>
 /// A stand-in <see cref="IChatClient"/> that records the messages it receives and
-/// returns a fixed response. It lets the tests prove the seam works over an
-/// arbitrary provider, with no live LLM call. A provider may or may not report token
-/// usage, so <paramref name="usage"/> is optional.
+/// returns a fixed response. The tests use it to prove the seam works with any provider,
+/// without a live LLM call.
+/// A provider may or may not report token usage, so <paramref name="usage"/> is optional.
 /// </summary>
 internal sealed class StubChatClient(string responseText, UsageDetails? usage = null) : IChatClient
 {

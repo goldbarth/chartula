@@ -28,7 +28,7 @@ public sealed class ChartulaYamlConfigurationTests
     [Fact]
     public void With_no_config_options_bind_to_their_defaults()
     {
-        // No YAML, no environment: every section is absent, so options are defaults.
+        // No YAML and no environment: every section is absent, so all options are defaults.
         IConfiguration config = new ConfigurationBuilder().Build();
 
         FilterOptions filter = config.GetSection(FilterOptions.SectionName).Get<FilterOptions>() ?? new FilterOptions();
@@ -98,8 +98,8 @@ public sealed class ChartulaYamlConfigurationTests
         }
     }
 
-    // Repository content may not decide where release data and credentials go. The
-    // refusal names the variable to use instead, so the fix is in the message.
+    // Repository content may not decide where release data and credentials go.
+    // The refusal names the variable to use instead, so the message contains the fix.
     [Theory]
     [InlineData("llm:\n  baseUrl: https://example.test/v1", "llm.baseUrl", "Chartula__Llm__BaseUrl")]
     [InlineData("llm:\n  apiKeyEnvironmentVariable: AWS_SECRET_ACCESS_KEY", "llm.apiKeyEnvironmentVariable", "Chartula__Llm__ApiKeyEnvironmentVariable")]

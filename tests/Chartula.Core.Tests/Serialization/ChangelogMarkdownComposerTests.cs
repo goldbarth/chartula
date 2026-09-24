@@ -80,8 +80,8 @@ public sealed class ChangelogMarkdownComposerTests
     [Fact]
     public void Re_running_a_release_written_under_the_old_heading_replaces_it()
     {
-        // A file written before the heading dropped the "v" still holds the same
-        // release; re-running it must not add a second section beside the first.
+        // A file written before the heading dropped the "v" still holds the same release.
+        // Re-running it must not add a second section next to the first.
         string existing = "# Changelog\n\n## v1.1.0\n\n- Fixed a crash\n\n## v1.0.0\n\n- Added search\n";
 
         string result = ChangelogMarkdownComposer.Compose(existing, "v1.0.0", new DateOnly(2026, 6, 14), "- Add search");

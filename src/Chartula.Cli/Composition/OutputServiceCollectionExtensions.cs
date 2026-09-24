@@ -31,8 +31,8 @@ internal static class OutputServiceCollectionExtensions
 
         services.AddSingleton<IChangelogJsonWriter>(
             sp => new FileChangelogJsonWriter(Directory.GetCurrentDirectory(), ProvenanceOf(sp)));
-        // The run record says what the run was made with in the same terms as the
-        // file it wrote, so the two can be matched without a second source.
+        // The run record uses the same provenance as changelog.json, so the two files
+        // can be matched without a second source.
         services.AddSingleton<IRunRecordWriter>(
             sp => new FileRunRecordWriter(Directory.GetCurrentDirectory(), ProvenanceOf(sp)));
         services.AddSingleton<IChangelogMarkdownWriter>(
@@ -42,11 +42,11 @@ internal static class OutputServiceCollectionExtensions
         return services;
     }
 
-    // Everything here is known before the run starts: what wrote the file, which
-    // instructions and model it rendered with, and the settings that move a run's
-    // cost and output most, so two files can be compared without anyone's memory.
-    // The check's model and thinking are recorded resolved - also when they only
-    // repeat the rendering's - so a file never needs the configuration to be read.
+    // Everything here is known before the run starts: the tool version, the prompt
+    // hash and model used for rendering, and the settings that affect a run's cost and
+    // output most. So two files can be compared without relying on anyone's memory.
+    // The check's model and thinking mode are recorded as resolved, even when they
+    // repeat the rendering's, so reading a file never requires the configuration.
     internal static RunProvenance Provenance(LlmOptions llm, FaithfulnessOptions faithfulness, FactBaseDepth depth)
     {
         ThoroughCheckModel? check = faithfulness.Thorough ? ThoroughCheckModel.Resolve(llm, faithfulness) : null;

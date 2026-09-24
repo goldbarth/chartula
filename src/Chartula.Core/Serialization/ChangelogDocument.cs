@@ -3,10 +3,10 @@ using System.Text.Json.Serialization;
 namespace Chartula.Core.Serialization;
 
 /// <summary>
-/// The stable on-disk shape of <c>changelog.json</c>. Kept separate from the
-/// domain <c>FactBase</c> so the domain can evolve without breaking the file
-/// format; <see cref="SchemaVersion"/> is bumped when the format changes in a
-/// breaking way. Documented in <c>docs/changelog-json.md</c>.
+/// The stable on-disk shape of <c>changelog.json</c>.
+/// It is separate from the domain <c>FactBase</c>, so the domain can change without
+/// breaking the file format. A breaking format change bumps <see cref="SchemaVersion"/>.
+/// Documented in <c>docs/changelog-json.md</c>.
 /// </summary>
 public sealed record ChangelogDocument(
     [property: JsonPropertyName("schemaVersion")] int SchemaVersion,
@@ -17,9 +17,9 @@ public sealed record ChangelogDocument(
     ChangelogProvenance? Provenance = null);
 
 /// <summary>
-/// How the file was made. Optional and additive under schema version 1: a file
-/// written without it, or before it existed, simply has none, and each value the
-/// run did not have is left out rather than written empty.
+/// How the file was made. An optional addition under schema version 1: a file
+/// written without it, or before it existed, has no provenance.
+/// Each value the run did not have is left out, not written empty.
 /// </summary>
 public sealed record ChangelogProvenance(
     [property: JsonPropertyName("toolVersion"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

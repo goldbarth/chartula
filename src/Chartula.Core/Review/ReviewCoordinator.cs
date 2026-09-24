@@ -1,10 +1,11 @@
 namespace Chartula.Core.Review;
 
 /// <summary>
-/// Default <see cref="IReviewCoordinator"/>. When review mode is off (the
-/// default), it approves the text as-is without consulting the reviewer, so
-/// review is never forced on a release. When on, it hands the item to the
-/// reviewer and returns their approve-or-edit decision.
+/// Default <see cref="IReviewCoordinator"/>.
+/// With review mode off, the default, it approves the text as-is without calling the
+/// reviewer, so review is never forced on a release.
+/// With review mode on, it hands the item to the reviewer and returns the reviewer's
+/// decision to approve or edit.
 /// </summary>
 public sealed class ReviewCoordinator(IReviewer reviewer, ReviewOptions options) : IReviewCoordinator
 {
@@ -15,7 +16,6 @@ public sealed class ReviewCoordinator(IReviewer reviewer, ReviewOptions options)
     {
         ArgumentNullException.ThrowIfNull(item);
 
-        // Opt-in: with review off, pass the text straight through.
         if (!_options.Enabled)
         {
             return ReviewDecision.Approve(item.Text);

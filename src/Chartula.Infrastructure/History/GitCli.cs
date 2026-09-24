@@ -3,8 +3,9 @@ using System.Diagnostics;
 namespace Chartula.Infrastructure.History;
 
 /// <summary>
-/// Runs the <c>git</c> CLI in a directory. Shared by every reader that shells out,
-/// so a git that cannot start fails with the same message wherever it is first needed.
+/// Runs the <c>git</c> CLI in a directory.
+/// Every reader that calls git uses it, so a git that cannot start fails with the same
+/// message wherever it is first needed.
 /// </summary>
 internal static class GitCli
 {

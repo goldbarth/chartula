@@ -25,8 +25,8 @@ public sealed class ProvenanceSerializationTests
         Assert.Equal("sha256:ff", provenance.GetProperty("promptHash").GetString());
     }
 
-    // #223: a boolean false is a value, not an absent one - "the check was off" must
-    // survive, where an unset setting is left out like any other.
+    // #223: false is a value, not an absence. "The check was off" must be written,
+    // while an unset setting is left out like any other.
     [Fact]
     public void Records_thinking_the_thorough_check_and_the_depth_and_reads_them_back()
     {
@@ -56,7 +56,7 @@ public sealed class ProvenanceSerializationTests
         Assert.False(provenance.TryGetProperty("factBaseDepth", out _));
     }
 
-    // An absent source is an absent field: an empty one would read as a fact about the run.
+    // An absent source produces an absent field. An empty field would read as a fact about the run.
     [Theory]
     [InlineData(null)]
     [InlineData("")]
