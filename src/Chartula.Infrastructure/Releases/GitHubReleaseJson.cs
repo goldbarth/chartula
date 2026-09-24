@@ -17,17 +17,18 @@ internal sealed class GitHubReleaseDto
 }
 
 /// <summary>
-/// Body for updating a release (PATCH). The tag goes in although it does not change:
-/// GitHub detaches a draft from its tag when a PATCH leaves the tag out, and the
-/// next run could no longer find it.
+/// Body for updating a release (PATCH).
+/// It includes the tag, although the tag does not change: GitHub detaches a draft from
+/// its tag when a PATCH leaves the tag out, and the next run could no longer find it.
 /// </summary>
 internal sealed record UpdateReleaseRequest(
     [property: JsonPropertyName("tag_name")] string TagName,
     [property: JsonPropertyName("body")] string Body);
 
 /// <summary>
-/// Body for creating a release (POST). Always a draft: generated notes are read by a
-/// person before they go public, and publishing is a click on GitHub.
+/// Body for creating a release (POST).
+/// Always a draft: a person reads generated notes before they go public, and
+/// publishing is one click on GitHub.
 /// </summary>
 internal sealed record CreateReleaseRequest(
     [property: JsonPropertyName("tag_name")] string TagName,

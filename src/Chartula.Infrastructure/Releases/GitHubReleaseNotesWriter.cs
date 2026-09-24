@@ -9,16 +9,19 @@ namespace Chartula.Infrastructure.Releases;
 
 /// <summary>
 /// An <see cref="IReleaseNotesWriter"/> backed by the GitHub REST API over a plain
-/// <see cref="HttpClient"/> (no SDK, so it stays AOT-friendly). It looks up the
-/// release by tag: an existing release is updated in place (PATCH), a missing one
-/// is created as a draft (POST). Generated notes are a draft a person reads before
-/// publishing, so nothing goes public on its own - and an update touches only the
-/// body, so a release someone already published stays published.
+/// <see cref="HttpClient"/>. It uses no SDK, so it stays AOT-friendly.
+/// It looks up the release by tag:
+/// <list type="bullet">
+/// <item>An existing release is updated in place (PATCH). The update touches only the
+/// body, so a release someone already published stays published.</item>
+/// <item>A missing release is created as a draft (POST). A person reads the draft
+/// before publishing, so nothing goes public on its own.</item>
+/// </list>
 /// </summary>
 /// <param name="httpClient">The configured GitHub client.</param>
 /// <param name="tokenVariable">
-/// The environment variable the token is read from, named in an error so the
-/// message points at what the caller can change.
+/// The environment variable the token is read from. Errors name it, so the message
+/// points at what the caller can change.
 /// </param>
 public sealed class GitHubReleaseNotesWriter(HttpClient httpClient, string tokenVariable) : IReleaseNotesWriter
 {
@@ -41,18 +44,20 @@ public sealed class GitHubReleaseNotesWriter(HttpClient httpClient, string token
             ? await UpdateAsync($"{basePath}/{existing.Id}", target, body, cancellationToken)
             : await CreateAsync(basePath, target, body, cancellationToken);
 
-        // A draft's link does not say it is one, and a reader who follows it expecting
-        // a public release would otherwise not know there is a step left.
+        // Mark a draft's link: the URL does not show it is a draft, and a reader who
+        // expects a public release would not know a step is left.
         string link = release.HtmlUrl ?? string.Empty;
         return release.Draft ? $"{link} (draft)" : link;
     }
 
     /// <summary>
-    /// A draft for the tag from an earlier run. GitHub's lookup by tag answers only
-    /// published releases, so without this every re-run would add another draft.
-    /// The list includes drafts for a token with push access, which writing needs anyway.
-    /// It lags a new release by a moment, so two runs for the same tag started within
-    /// seconds of each other can still leave two drafts; a run takes longer than that.
+    /// Finds a draft for the tag from an earlier run.
+    /// GitHub's lookup by tag finds only published releases, so without this every
+    /// re-run would add another draft.
+    /// The release list includes drafts for a token with push access, which writing
+    /// needs anyway.
+    /// The list shows a new release only after a moment. Two runs for the same tag
+    /// started within seconds can still leave two drafts, but a run takes longer than that.
     /// </summary>
     private async Task<GitHubReleaseDto?> FindDraftByTagAsync(string basePath, Target target, CancellationToken ct)
     {
@@ -146,9 +151,9 @@ public sealed class GitHubReleaseNotesWriter(HttpClient httpClient, string token
     }
 
     /// <summary>
-    /// Names the cause the caller can act on. The pull requests were read a moment
-    /// earlier, so a refusal here is about writing: the likeliest cause is the
-    /// read-only token the docs recommend until a run publishes.
+    /// Names a cause the caller can act on.
+    /// The pull requests were read a moment earlier, so a refusal here is about writing.
+    /// The likeliest cause is the read-only token the docs recommend until a run publishes.
     /// </summary>
     private string Describe(GitHubErrorResponse error, Target target)
     {
