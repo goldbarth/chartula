@@ -7,10 +7,11 @@ using Chartula.Core.PullRequests;
 namespace Chartula.Cli.Commands;
 
 /// <summary>
-/// Runs the release pipeline for the <c>generate</c> and <c>preview</c> commands
-/// and prints a clear summary. Preview shows what would be produced and writes
-/// nothing; generate writes the outputs and reports where they went, and names
-/// what it left out when a run was told not to publish.
+/// Runs the release pipeline for the <c>generate</c> and <c>preview</c> commands and
+/// prints a clear summary.
+/// Preview shows what would be produced and writes nothing.
+/// Generate writes the outputs and reports where they went. With <c>--no-publish</c>
+/// it also lists what it left out.
 /// </summary>
 internal static class ReleaseCommand
 {
@@ -26,10 +27,9 @@ internal static class ReleaseCommand
             ReleaseOutcome outcome = await pipeline.RunAsync(request, mode, cancellationToken);
             output.Write(Format(outcome));
 
-            // Every audience the run asked for is part of the result, and so is the
-            // publication generate was asked for. A script or a CI job reads the exit
-            // code, not the output, so a missing one has to show there; whatever did
-            // render is still written.
+            // Exit with 1 when a requested audience or the publication failed.
+            // Scripts and CI jobs read the exit code, not the output, so a failure must
+            // show there. Whatever did render is still written.
             return outcome.Renderings.All(audience => audience.Success) && outcome.PublishFailure is null ? 0 : 1;
         }
         catch (WholeHistoryException ex)
@@ -63,8 +63,9 @@ internal static class ReleaseCommand
         });
         builder.AppendLine();
 
-        // Two audiences failing the same way - one endpoint refusing one model - is one
-        // problem, and printing it twice reads as two.
+        // Print a repeated error only once. Two audiences failing the same way, for
+        // example one endpoint refusing one model, are one problem, and printing it
+        // twice reads as two.
         Dictionary<string, Audience> firstFailedWith = [];
         foreach (AudienceOutcome audience in outcome.Renderings)
         {
@@ -129,9 +130,10 @@ internal static class ReleaseCommand
     }
 
     /// <summary>
-    /// Appends <paramref name="text"/> after <paramref name="prefix"/>, its further lines
-    /// indented to where the first one's text starts. A failed model call explains itself
-    /// over several lines, and flush-left they would read as output of their own.
+    /// Appends <paramref name="text"/> after <paramref name="prefix"/>, with further lines
+    /// indented to align with the first line's text.
+    /// A failed model call explains itself over several lines. Without indentation they
+    /// would look like separate output.
     /// </summary>
     private static void AppendIndented(StringBuilder builder, string prefix, string text)
     {
@@ -145,8 +147,8 @@ internal static class ReleaseCommand
     }
 
     /// <summary>
-    /// Lists what the run produced and, below it, what it deliberately did not, so
-    /// a skipped publication is as visible as a written file.
+    /// Lists what the run produced and, below it, what it deliberately skipped, so a
+    /// skipped publication is as visible as a written file.
     /// </summary>
     private static void AppendOutputs(StringBuilder builder, ReleaseOutcome outcome)
     {
@@ -165,8 +167,8 @@ internal static class ReleaseCommand
 
         if (outcome.PublishFailure is { } failure)
         {
-            // What was written stays listed above, so the reader sees the run was not
-            // lost, and what a second run costs is said before they start one.
+            // The written files stay listed above, so the reader sees the run was not lost.
+            // The message also states what a re-run costs, before the reader starts one.
             builder.AppendLine("Not published: the release notes.");
             foreach (string line in failure.Split('\n'))
             {

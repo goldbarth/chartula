@@ -10,9 +10,9 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Chartula.Cli;
 
 /// <summary>
-/// Entry point for the Chartula CLI. Dispatches the <c>generate</c> and
-/// <c>preview</c> commands; both run the same pipeline, but preview writes nothing
-/// and <c>--no-publish</c> keeps generate to the local files.
+/// Entry point for the Chartula CLI. Dispatches the <c>generate</c> and <c>preview</c>
+/// commands. Both run the same pipeline. Preview writes nothing, and
+/// <c>--no-publish</c> limits generate to the local files.
 /// </summary>
 internal static class Program
 {
@@ -74,8 +74,8 @@ internal static class Program
                 return 1;
             }
 
-            // Notices about the run, not part of it: stderr keeps them out of the
-            // changelog when the output is redirected to a file.
+            // Write notices to stderr, so they stay out of the changelog when stdout is
+            // redirected to a file.
             Console.Error.WriteLine(EndpointNotice.For(configuration));
             if (GitHubTokenNotice.For(configuration) is { } notice)
             {
@@ -99,8 +99,8 @@ internal static class Program
     }
 
     /// <summary>
-    /// chartula.yaml refines behavior; environment variables override it. The tool
-    /// runs with sensible defaults when neither is present.
+    /// chartula.yaml refines the behaviour, and environment variables override it.
+    /// Without either, the tool runs with sensible defaults.
     /// </summary>
     private static IConfiguration BuildConfiguration()
         => ChartulaConfiguration.Build(Directory.GetCurrentDirectory());
@@ -127,10 +127,9 @@ internal static class Program
     }
 
     /// <summary>
-    /// Maps the command word and the flags onto a pipeline mode, or <c>null</c> for
-    /// an unknown command. Producing the record and announcing the release are
-    /// separable acts: <c>--no-publish</c> drops the second one and leaves
-    /// everything else as it was. Preview publishes nothing either way.
+    /// Maps the command and the flags to a pipeline mode, or <c>null</c> for an unknown command.
+    /// <c>--no-publish</c> skips only publishing the release notes and writes everything
+    /// else as usual. Preview publishes nothing either way.
     /// </summary>
     internal static PipelineMode? ParseMode(string command, IReadOnlyList<string> args)
         => command switch
@@ -146,8 +145,8 @@ internal static class Program
         => arg is "-h" or "--help" or "help";
 
     /// <summary>
-    /// The help text. It is a string rather than a series of writes so a test can
-    /// hold it to what the CLI actually accepts.
+    /// The help text. It is one string instead of a series of writes, so a test can
+    /// check it against what the CLI actually accepts.
     /// </summary>
     internal static string Usage =>
         """
