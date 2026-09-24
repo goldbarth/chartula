@@ -109,8 +109,8 @@ public sealed class GroundedFactsFactoryTests
 
         RenderPlan plan = GroundedFactsFactory.Build(facts, Audience.Customer, CategorySettings.Default);
 
-        // The customer template's groups and order: no entry that asks something
-        // stands below one that does not - B1 of the customer rubric.
+        // The customer template's groups and order: entries that require action come
+        // before all others (B1 of the customer rubric).
         Assert.Equal(["What needs action", "What's New", "What's Changed", "Bug Fixes"], Groups(plan));
         Assert.True(plan.Entries[0].IsBreaking);
     }
@@ -125,9 +125,9 @@ public sealed class GroundedFactsFactoryTests
 
         RenderPlan plan = GroundedFactsFactory.Build(facts, Audience.Customer, CategorySettings.Default, actionLabels);
 
-        // Not breaking, and still costs the reader their setup: a category cannot tell,
-        // whoever wrote the change can. The marker is how the model learns there is
-        // something to do, so the entry's fourth part gets written.
+        // Not breaking, but the reader still has to act. A category cannot tell that,
+        // the PR author can. The marker tells the model there is something to do, so it
+        // writes the entry's fourth part.
         Assert.Equal(["What needs action", "What's New"], Groups(plan));
         Assert.False(plan.Entries[0].IsBreaking);
         Assert.Contains("(action required)", plan.Facts.Statements[0]);
@@ -155,7 +155,7 @@ public sealed class GroundedFactsFactoryTests
 
         RenderPlan plan = GroundedFactsFactory.Build(facts, Audience.Technical, CategorySettings.Default);
 
-        // Changed, Added, Fixed: what a reader depends on before what is new to them.
+        // Changed, Added, Fixed: changes to what the reader depends on come before what is new.
         Assert.Equal(["Changed", "Added", "Fixed"], Groups(plan));
         Assert.StartsWith("[1] Performance", plan.Facts.Statements[0]);
     }
@@ -182,7 +182,7 @@ public sealed class GroundedFactsFactoryTests
 
         RenderPlan plan = GroundedFactsFactory.Build(facts, Audience.Technical, CategorySettings.Default);
 
-        // Written whole by code, so the model has nothing to copy or to get wrong.
+        // Code writes the whole reference, so the model has nothing to copy or get wrong.
         Assert.Equal("([#1](https://example/pull/1))", Assert.Single(plan.Entries).Reference);
         Assert.DoesNotContain("https://", Assert.Single(plan.Facts.Statements));
     }
@@ -210,8 +210,8 @@ public sealed class GroundedFactsFactoryTests
 
         RenderPlan plan = GroundedFactsFactory.Build(facts, audience, CategorySettings.Default);
 
-        // A label widens the categorical default and never narrows it: an internal
-        // label says a user cannot meet the change, not that this reader cannot.
+        // A label widens the category-based default but never narrows it: an internal
+        // label says users cannot meet the change, not that this reader cannot.
         Assert.Equal(2, plan.Entries.Count);
         Assert.DoesNotContain(plan.Facts.Statements, s => s.Contains("bump the build"));
     }

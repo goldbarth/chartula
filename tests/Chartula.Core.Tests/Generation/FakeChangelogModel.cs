@@ -3,8 +3,8 @@ using Chartula.Core.Llm;
 namespace Chartula.Core.Tests.Generation;
 
 /// <summary>
-/// A fake <see cref="IChangelogModel"/> for driving the generator without a live
-/// provider: records calls, answers from the request it was sent, or throws on demand.
+/// A fake <see cref="IChangelogModel"/> that drives the generator without a live provider.
+/// It records calls, answers from the request it received, or throws on demand.
 /// </summary>
 internal sealed class FakeChangelogModel : IChangelogModel
 {
