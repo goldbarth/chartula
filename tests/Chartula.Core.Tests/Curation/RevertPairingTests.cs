@@ -5,10 +5,10 @@ using Chartula.Core.PullRequests;
 namespace Chartula.Core.Tests.Curation;
 
 /// <summary>
-/// A revert and what it takes back, in one release, shipped nothing - so neither
-/// reaches the facts. Only a revert that names what it reverts in a form a machine
-/// reads without judgment is paired: commit hashes from the range, or GitHub's
-/// "Reverts owner/repo#N". Anything else keeps the revert as a fact of its own.
+/// A revert and the change it takes back, in the same release, shipped nothing, so
+/// neither reaches the facts.
+/// Only a revert that names its target unambiguously is paired: commit hashes from the
+/// range, or GitHub's "Reverts owner/repo#N". Any other revert stays as a fact of its own.
 /// </summary>
 public sealed class RevertPairingTests
 {
@@ -73,7 +73,7 @@ public sealed class RevertPairingTests
     [Fact]
     public void A_pull_request_number_in_prose_does_not_pair()
     {
-        // "#61" can be context as easily as a target; only hashes and GitHub's form count.
+        // "#61" can be context as easily as a target. Only hashes and GitHub's form count.
         PullRequestInfo revert = Pull(62, "revert: drop the waterfall", "The waterfall from #61 goes.", RevertSha);
 
         Assert.Equal([61, 62], Numbers(Range(Waterfall, RevertSha), TidewatchPulls[3], revert));
@@ -92,7 +92,7 @@ public sealed class RevertPairingTests
     [Fact]
     public void A_hash_that_is_ambiguous_in_the_range_pairs_nothing()
     {
-        // Two commits share the prefix: it cannot say which one it means.
+        // Two commits share the prefix, so the hash does not identify one commit.
         const string Twin = "d85a4b9ff1b2c3d4e5f60718293a4b5c6d7e8f90";
         PullRequestInfo other = Pull(64, "feat: another", null, Twin);
         PullRequestInfo revert = Pull(62, "revert: drop the waterfall", "Reverts d85a4b9.", RevertSha);

@@ -138,8 +138,8 @@ public sealed class ReleaseChangeResolverTests
         Assert.DoesNotContain("Closes #123", description);
     }
 
-    // A comment is invisible on GitHub: nobody reading the pull request sees it, so
-    // it is not something the author told a reader.
+    // GitHub does not render comments, so nobody reading the pull request sees them.
+    // A comment is not something the author told a reader.
     [Theory]
     [InlineData("Adds a theme.\n<!-- BREAKING CHANGE: not really -->", "Adds a theme.")]
     [InlineData("Adds a theme. <!-- inline --> Done.", "Adds a theme.  Done.")]
@@ -152,8 +152,8 @@ public sealed class ReleaseChangeResolverTests
     [Fact]
     public void Headings_and_checklists_stay_when_the_body_says_something_besides()
     {
-        // Only a body with nothing else in it is a template; otherwise the headings
-        // and boxes are part of what the author wrote, and curation does not edit it.
+        // Only a body with nothing but headings and checkboxes is a template. Otherwise
+        // they are part of what the author wrote, and curation does not edit it.
         string body = "## Summary\n\nAdds a theme.\n\n- [x] Tests";
 
         Assert.Equal(body, Assert.Single(_resolver.Resolve(Range(), [Pull(7, "feat: theme", body)])).Description);
