@@ -364,10 +364,11 @@ Every run reports what each check caught and what it cost - see [`run-metrics.md
 ### `review`
 
 Review mode - present generated texts for human sign-off before writing.
+Not available yet: no interactive reviewer exists, so `enabled: true` is refused with a configuration error instead of approving every text unseen.
 
 | Key | Default | Description |
 | --- | --- | --- |
-| `enabled` | `false` | Whether review mode is on. Opt-in; never forced. |
+| `enabled` | `false` | Whether review mode is on. Only `false` is accepted for now. |
 
 ## Example
 
