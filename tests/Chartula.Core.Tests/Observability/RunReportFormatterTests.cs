@@ -32,8 +32,8 @@ public sealed class RunReportFormatterTests
         Assert.Contains("3,840 tokens", text);
     }
 
-    // One call the provider accounted for, one it did not - the run whose token total
-    // cannot be taken at face value.
+    // One call with reported usage and one without: a run whose token total cannot be
+    // taken at face value.
     private static RunReport ReportWithAnUnreportedCall()
     {
         RunMetrics metrics = new();
@@ -48,8 +48,8 @@ public sealed class RunReportFormatterTests
     {
         string text = RunReportFormatter.Format(ReportWithAnUnreportedCall());
 
-        // Without this line the 1,800 read as the run's cost, when they are only the part
-        // a provider happened to account for.
+        // Without the "lower bound" line, 1,800 would read as the run's cost, although it
+        // is only the reported part.
         Assert.Contains("Total:            1,800 tokens", text);
         Assert.Contains("    lower bound, 1 of 2 calls unreported", text);
     }
@@ -59,7 +59,7 @@ public sealed class RunReportFormatterTests
     {
         string text = RunReportFormatter.Format(Report());
 
-        // A total that is exact must not be hedged - the note is a signal, not a disclaimer.
+        // An exact total gets no "lower bound" note: the note is a signal, not a disclaimer.
         Assert.DoesNotContain("lower bound", text);
     }
 
@@ -72,7 +72,7 @@ public sealed class RunReportFormatterTests
         Assert.Contains("0 tokens", text);
     }
 
-    // #128: which call took the time, whether it was sent again, how long the run was.
+    // #128: which call took the time, whether it was retried, and how long the run was.
     [Fact]
     public void The_summary_reports_time_per_operation_the_run_and_retries()
     {
@@ -132,8 +132,8 @@ public sealed class RunReportFormatterTests
         Assert.Contains("    of which 4,000 in cached, 250 out reasoning", RunReportFormatter.Format(metrics.Snapshot()));
     }
 
-    // A provider that folds reasoning into the output without a count: zero would
-    // claim the model did not reason.
+    // A provider that includes reasoning in the output without a separate count.
+    // Printing zero would claim the model did not reason.
     [Fact]
     public void What_the_provider_does_not_break_out_is_said_to_be_not_reported()
     {

@@ -45,8 +45,8 @@ public sealed class RunMetricsTests
 
         RunReport report = metrics.Snapshot();
 
-        // One missing side makes the call's usage incomplete, so it is not counted as
-        // accounted for. The side that did arrive is still added to the tokens.
+        // A call missing input or output usage counts as a call without usage.
+        // The reported side is still added to the tokens.
         Assert.Equal(1, report.UsageOf(LlmOperation.Rephrase).CallsWithoutUsage);
         Assert.Equal(new TokenUsage(100, 0), report.UsageOf(LlmOperation.Rephrase).Tokens);
         Assert.Equal(1, report.UsageOf(LlmOperation.FaithfulnessCheck).CallsWithoutUsage);
@@ -64,8 +64,8 @@ public sealed class RunMetricsTests
 
         LlmUsage usage = metrics.Snapshot().UsageOf(LlmOperation.Rephrase);
 
-        // 250 in / 50 out over three calls, one of which the provider never accounted for -
-        // without that count the total reads as cheaper than the run actually was.
+        // 250 in / 50 out over three calls, one of them without reported usage. Without
+        // that count, the total would look cheaper than the run actually was.
         Assert.Equal(3, usage.TotalCalls);
         Assert.Equal(1, usage.CallsWithoutUsage);
         Assert.Equal(new TokenUsage(250, 50), usage.Tokens);
@@ -95,7 +95,7 @@ public sealed class RunMetricsTests
         Assert.Equal(new CheckActivity(Runs: 3, RunsWithFindings: 1, Flags: 2), report.Thorough);
     }
 
-    // "No findings" and "could not be read" are both an empty flag list. Only the
+    // "No findings" and "could not be read" both produce an empty flag list. Only the
     // counter tells them apart, so the run summary can too.
     [Fact]
     public void A_thorough_check_that_could_not_be_read_is_counted_apart_from_a_clean_one()
@@ -136,7 +136,7 @@ public sealed class RunMetricsTests
 
         RunReport report = metrics.Snapshot();
 
-        // Nothing gained, 940 tokens spent - exactly the judgement the report must allow.
+        // Nothing gained for 940 tokens: exactly the judgement the report must allow.
         Assert.Equal(0, report.ThoroughOnlyFlags);
         Assert.Equal(940, report.UsageOf(LlmOperation.FaithfulnessCheck).Tokens.TotalTokens);
         Assert.Equal(0, report.UsageOf(LlmOperation.FaithfulnessCheck).CallsWithoutUsage);
@@ -161,7 +161,7 @@ public sealed class RunMetricsTests
 
         Parallel.For(0, 200, i =>
         {
-            // Every other call reports no usage, so both counters are under contention.
+            // Every second call reports no usage, so both counters are under contention.
             long? tokens = i % 2 == 0 ? 1 : null;
             metrics.RecordLlmCall(LlmOperation.Rephrase, new LlmCall(tokens, tokens));
             metrics.RecordFaithfulnessChecks(["a"], ["a", "b"], thoroughEvaluated: true);
@@ -223,8 +223,8 @@ public sealed class RunMetricsTests
         Assert.Equal(TimeSpan.FromSeconds(64), metrics.Snapshot().Duration);
     }
 
-    // Unknown until a call reports it; a later call that does not report leaves the
-    // known part as it was instead of making it unknown again.
+    // null until a call reports a value. A later call without a value leaves the known
+    // sum as it is instead of turning it back into null.
     [Fact]
     public void Cached_and_reasoning_tokens_sum_over_the_calls_that_reported_them()
     {
