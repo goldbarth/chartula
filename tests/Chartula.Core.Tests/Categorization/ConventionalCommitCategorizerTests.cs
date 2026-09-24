@@ -73,8 +73,8 @@ public sealed class ConventionalCommitCategorizerTests
     }
 
     // The footer is a Conventional Commits marker, not a phrase. A body that merely
-    // discusses breaking changes describes the work; it does not declare one. The
-    // first case is taken verbatim from a pull request this mislabelled.
+    // discusses breaking changes describes the work, but does not declare one.
+    // The first case is taken verbatim from a pull request this check once mislabelled.
     [Theory]
     [InlineData(
         "`CategorySettings` holds the category order, display names and breaking-change "
