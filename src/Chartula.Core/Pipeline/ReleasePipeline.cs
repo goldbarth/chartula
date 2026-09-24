@@ -126,7 +126,12 @@ public sealed class ReleasePipeline(
         if (mode != PipelineMode.Preview && runRecordWriter is not null)
         {
             runRecord = await runRecordWriter.WriteAsync(
-                new RunRecord(request.Tag, request.Repository, mode, outcomes, report), cancellationToken);
+                new RunRecord(request.Tag, request.Repository, mode, outcomes, report)
+                {
+                    Range = range,
+                    Since = string.IsNullOrWhiteSpace(request.Since) ? null : request.Since.Trim(),
+                },
+                cancellationToken);
         }
 
         IReadOnlyList<string> written = [];

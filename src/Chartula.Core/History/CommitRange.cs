@@ -27,4 +27,17 @@ public sealed record CommitRange(
 {
     /// <summary>True when nothing bounds the range and it is all history.</summary>
     public bool IsWholeHistory => From is null;
+
+    /// <summary>
+    /// The full hash of the commit <see cref="From"/> named when the range was read, or
+    /// <c>null</c> when the range spans all history or the hash was not read.
+    /// A name alone does not keep the range: a tag can be moved, a branch moves by itself.
+    /// </summary>
+    public string? FromCommit { get; init; }
+
+    /// <summary>
+    /// The full hash of the commit <see cref="ToTag"/> named when the range was read, or
+    /// <c>null</c> when it was not read.
+    /// </summary>
+    public string? ToCommit { get; init; }
 }

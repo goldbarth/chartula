@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Chartula.Core.History;
 using Chartula.Core.Observability;
 using Chartula.Core.Pipeline;
 
@@ -14,7 +15,8 @@ public static class RunRecordJsonSerializer
 {
     /// <summary>
     /// The current on-disk schema version.
-    /// Version 2 turned each flag from a string into an object that names its pull request.
+    /// Version 2 turned each flag from a string into an object that names its pull request,
+    /// and added the range the run read.
     /// </summary>
     public const int SchemaVersion = 2;
 
@@ -29,6 +31,9 @@ public static class RunRecordJsonSerializer
             DateTimeOffset.FromUnixTimeSeconds(recordedAt.ToUnixTimeSeconds()),
             record.Tag,
             $"{record.Repository.Owner}/{record.Repository.Name}",
+            record.Range is { } range
+                ? new RunRecordRange(StartName(range, record.Since), range.From, range.FromCommit, range.ToCommit)
+                : null,
             ModeName(record.Mode),
             ChangelogJsonSerializer.ToDocument(provenance),
             [.. record.Audiences.Select(static audience => new RunRecordAudience(
@@ -70,6 +75,13 @@ public static class RunRecordJsonSerializer
         PipelineMode.GenerateWithoutPublishing => "generate --no-publish",
         _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "Unknown pipeline mode."),
     };
+
+    // Named after the CLI's options. A named start is where the range begins whatever the
+    // tags say; without one, it begins after the previous tag, and without that, at the root.
+    private static string StartName(CommitRange range, string? since)
+        => since is not null ? "since"
+            : range.IsWholeHistory ? "whole-history"
+            : "previous-tag";
 
     private static RunRecordLlmUsage Usage(LlmUsage usage)
         => new(

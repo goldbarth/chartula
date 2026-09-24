@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Chartula.Core.History;
 using Chartula.Core.Llm;
 using Chartula.Core.Observability;
 using Chartula.Core.Pipeline;
@@ -95,6 +96,33 @@ public sealed class RunRecordJsonSerializerTests
         Assert.False(flags[0].TryGetProperty("pullRequest", out _));
         Assert.Equal("overstated", flags[1].GetProperty("text").GetString());
         Assert.Equal(12, flags[1].GetProperty("pullRequest").GetInt32());
+    }
+
+    // Where the range started, and the commits both ends named when the run read it.
+    [Theory]
+    [InlineData(null, "v0.9.0", "previous-tag")]
+    [InlineData("v0.8.0", "v0.8.0", "since")]
+    [InlineData(null, null, "whole-history")]
+    public void Writes_the_range_the_run_read(string? since, string? from, string start)
+    {
+        string? fromCommit = from is null ? null : new string('a', 40);
+        RunRecord record = Record() with
+        {
+            Range = new CommitRange("v1.0.0", from, []) { FromCommit = fromCommit, ToCommit = new string('b', 40) },
+            Since = since,
+        };
+
+        RunRecordRange? range = RunRecordJsonSerializer.Deserialize(RunRecordJsonSerializer.Serialize(record, At)).Range;
+
+        Assert.Equal(new RunRecordRange(start, from, fromCommit, new string('b', 40)), range);
+    }
+
+    [Fact]
+    public void A_range_the_run_does_not_know_is_left_out()
+    {
+        using JsonDocument parsed = JsonDocument.Parse(RunRecordJsonSerializer.Serialize(Record(), At));
+
+        Assert.False(parsed.RootElement.TryGetProperty("range", out _));
     }
 
     [Fact]

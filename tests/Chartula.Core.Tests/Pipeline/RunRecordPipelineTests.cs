@@ -63,6 +63,28 @@ public sealed class RunRecordPipelineTests
         Assert.Equal("chartula-runs/run.json", outcome.RunRecord);
     }
 
+    // Without the range, a run cannot be told apart from a wrong range: the same tag
+    // over other commits is another release.
+    [Fact]
+    public async Task The_record_keeps_the_range_the_run_read()
+    {
+        await BuildPipeline().RunAsync(Request(), PipelineMode.Generate);
+
+        RunRecord record = Assert.Single(_records.Records);
+        Assert.Equal("v0.9.0", record.Range?.From);
+        Assert.Null(record.Since);
+    }
+
+    [Fact]
+    public async Task The_record_keeps_the_start_the_operator_named()
+    {
+        await BuildPipeline().RunAsync(Request() with { Since = "v0.8.0" }, PipelineMode.Generate);
+
+        RunRecord record = Assert.Single(_records.Records);
+        Assert.Equal("v0.8.0", record.Since);
+        Assert.Equal("v0.8.0", record.Range?.From);
+    }
+
     [Fact]
     public async Task A_preview_records_nothing()
     {

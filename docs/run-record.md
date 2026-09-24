@@ -51,10 +51,24 @@ The file is UTF-8, indented JSON.
 | `recordedAt` | string | When the run was recorded, ISO 8601 in UTC, to the second. |
 | `tag` | string | The release tag the run was for. |
 | `repository` | string | The repository, as `owner/name`. |
+| `range` | object | The commits the run read (see below). Absent in a version 1 record. |
 | `mode` | string | `generate` or `generate --no-publish`. |
 | `provenance` | object | What the run was made with, in the same fields as [`changelog.json`'s provenance](changelog-json.md#provenance): tool version, provider, model, prompt hash, `thinking`, `thoroughCheck`, `factBaseDepth`, `checkModel` and `checkThinking`. |
 | `audiences` | array | One entry per audience the run asked for (see below). |
 | `metrics` | object | Calls, tokens and check activity (see below). |
+
+### Range
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `start` | string | Where the range started: `previous-tag` (found on its own), `since` (named with `--since`) or `whole-history` (`--whole-history`, no start at all). |
+| `from` | string | The tag or commit the range starts after, as named or found. Absent for `whole-history`. |
+| `fromCommit` | string | The full hash `from` pointed to when the run read the range. Absent for `whole-history`. |
+| `toCommit` | string | The full hash the release tag pointed to when the run read the range. |
+
+A run over a wrong range looks like any other run: the tag is the same, the facts and flags are not.
+The range tells the two apart, and `git log <fromCommit>..<toCommit>` lists the commits the run read, even after a tag has moved.
+Its size is `commits` under [`metrics.release`](#metrics).
 
 ### Audience entry
 
@@ -107,8 +121,8 @@ Both operations are always present, with zeros when they made no call, so any tw
 - `schemaVersion` is the contract, as for [`changelog.json`](changelog-json.md#stability).
 - New optional fields may be added without bumping it; removing or renaming a field, or changing its meaning, bumps it.
 
-Version 2 turned each flag from a string into an object with `text` and `pullRequest`.
-A version 1 record holds the same text as a plain string in `flags`, and nothing else changed.
+Version 2 turned each flag from a string into an object with `text` and `pullRequest`, and added `range`.
+A version 1 record holds the same text as a plain string in `flags` and has no `range`; nothing else changed.
 
 ## Example
 
@@ -118,6 +132,12 @@ A version 1 record holds the same text as a plain string in `flags`, and nothing
   "recordedAt": "2026-09-22T12:30:15+00:00",
   "tag": "v1.2.0",
   "repository": "owner/repo",
+  "range": {
+    "start": "previous-tag",
+    "from": "v1.1.0",
+    "fromCommit": "9f2e1c47b0a6d3e85c1f4a7b2d9e0c3f6a8b1d42",
+    "toCommit": "4c8a0d1e7f3b92a65e0d4c1b8f7a3e2d9c6b5a10"
+  },
   "mode": "generate --no-publish",
   "provenance": {
     "toolVersion": "0.1.0-preview.1+2c43772833e4ed32790e5549848f7f42bc0e4eee",

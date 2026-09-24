@@ -13,11 +13,29 @@ public sealed record RunRecordDocument(
     [property: JsonPropertyName("recordedAt")] DateTimeOffset RecordedAt,
     [property: JsonPropertyName("tag")] string Tag,
     [property: JsonPropertyName("repository")] string Repository,
+    [property: JsonPropertyName("range"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    RunRecordRange? Range,
     [property: JsonPropertyName("mode")] string Mode,
     [property: JsonPropertyName("provenance"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     ChangelogProvenance? Provenance,
     [property: JsonPropertyName("audiences")] IReadOnlyList<RunRecordAudience> Audiences,
     [property: JsonPropertyName("metrics")] RunRecordMetrics Metrics);
+
+/// <summary>
+/// The commits the run read, so a later look can tell a run from a wrong range.
+/// <c>start</c> says where the range began: after a start the operator named, after the
+/// previous tag, or at the beginning of history. The commits are what the names resolved
+/// to at the time, because a tag can be moved and a branch moves by itself.
+/// Added in schema version 2; a record written before has no range.
+/// </summary>
+public sealed record RunRecordRange(
+    [property: JsonPropertyName("start")] string Start,
+    [property: JsonPropertyName("from"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    string? From,
+    [property: JsonPropertyName("fromCommit"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    string? FromCommit,
+    [property: JsonPropertyName("toCommit"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    string? ToCommit);
 
 /// <summary>
 /// One audience of the run.
