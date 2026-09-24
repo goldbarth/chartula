@@ -73,7 +73,7 @@ internal static class CallValidity
         [
             .. (verdict.UnsupportedClaims ?? [])
                 .Where(static claim => !string.IsNullOrWhiteSpace(claim?.Claim))
-                .Select(static claim => new FaithfulnessFlag(claim.Claim, claim.PullRequest)),
+                .Select(static claim => new FaithfulnessFlag(FlagText(claim), claim.PullRequest)),
         ];
         if (!verdict.IsFaithful && claims.Count == 0)
         {
@@ -81,6 +81,19 @@ internal static class CallValidity
         }
 
         return FaithfulnessReport.Checked(claims);
+    }
+
+    // A flag reads as what was flagged and why, the same as a rule-based flag, so the
+    // reviewer sees both in one line. A claim without a reason still names a passage,
+    // which is worth more than dropping the finding.
+    // Models often quote the claim themselves, so their quotes are taken off before ours
+    // go on; otherwise the flag reads "“…”" in double quotes.
+    private static string FlagText(UnsupportedClaim claim)
+    {
+        string quoted = claim.Claim.Trim().Trim('"', '“', '”', '„').Trim();
+        return string.IsNullOrWhiteSpace(claim.Reason)
+            ? quoted
+            : $"\"{quoted}\" - {claim.Reason.Trim()}";
     }
 
     /// <summary>

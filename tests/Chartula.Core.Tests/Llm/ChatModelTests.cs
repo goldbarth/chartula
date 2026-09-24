@@ -76,7 +76,7 @@ public sealed class ChatModelTests
     public async Task CheckFaithfulnessAsync_parses_the_structured_report()
     {
         StubChatClient chat = new(
-            """{"isFaithful":false,"unsupportedClaims":[{"claim":"closed a security hole","pullRequest":7},{"claim":"about the release"}]}""");
+            """{"isFaithful":false,"unsupportedClaims":[{"claim":"closed a security hole","reason":"the fact is a parser bug fix","pullRequest":7},{"claim":"a faster release","reason":"no fact names a speed-up"}]}""");
         IChangelogModel model = Model(chat);
 
         FaithfulnessReport report = await model.CheckFaithfulnessAsync(
@@ -86,8 +86,39 @@ public sealed class ChatModelTests
 
         Assert.Equal(FaithfulnessCheckStatus.Checked, report.Status);
         Assert.Equal(
-            [new FaithfulnessFlag("closed a security hole", 7), new FaithfulnessFlag("about the release")],
+            [
+                new FaithfulnessFlag("\"closed a security hole\" - the fact is a parser bug fix", 7),
+                new FaithfulnessFlag("\"a faster release\" - no fact names a speed-up"),
+            ],
             report.UnsupportedClaims);
+    }
+
+    // Models quote the claim themselves more often than not.
+    [Fact]
+    public async Task CheckFaithfulnessAsync_does_not_quote_an_already_quoted_claim()
+    {
+        StubChatClient chat = new("""{"isFaithful":false,"unsupportedClaims":[{"claim":"“closed a security hole”","reason":"the fact is a parser bug fix","pullRequest":7}]}""");
+        IChangelogModel model = Model(chat);
+
+        FaithfulnessReport report = await model.CheckFaithfulnessAsync(
+            new FaithfulnessRequest("This release closed a security hole.", new GroundedFacts(["[#7] Fix: Fixed a bug in the parser"])));
+
+        Assert.Equal(
+            new FaithfulnessFlag("\"closed a security hole\" - the fact is a parser bug fix", 7),
+            Assert.Single(report.UnsupportedClaims));
+    }
+
+    // A claim without a reason still names a passage the reviewer can look at.
+    [Fact]
+    public async Task CheckFaithfulnessAsync_keeps_a_claim_without_a_reason()
+    {
+        StubChatClient chat = new("""{"isFaithful":false,"unsupportedClaims":[{"claim":"closed a security hole","reason":" ","pullRequest":7}]}""");
+        IChangelogModel model = Model(chat);
+
+        FaithfulnessReport report = await model.CheckFaithfulnessAsync(
+            new FaithfulnessRequest("This release closed a security hole.", new GroundedFacts(["[#7] Fix: Fixed a bug in the parser"])));
+
+        Assert.Equal(new FaithfulnessFlag("closed a security hole", 7), Assert.Single(report.UnsupportedClaims));
     }
 
     // A claim that names a fact but says nothing gives a reviewer nothing to read.

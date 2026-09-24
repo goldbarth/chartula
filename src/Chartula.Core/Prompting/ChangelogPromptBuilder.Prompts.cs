@@ -243,6 +243,9 @@ public sealed partial class ChangelogPromptBuilder
     /// Each claim names its fact by pull request number (the sentences from "A fact from a
     /// pull request" on). Before they existed, 5 of 38 flags over five runs of one release
     /// named a pull request, and the reviewer had to search the facts for the other 33.
+    /// The reason is asked for here as well as by its own field in the answer's schema:
+    /// with a claim field alone, the model quoted the passage and left out what was wrong
+    /// with it.
     /// The number is taken from one fixed place only, because titles and descriptions
     /// mention issue numbers, which read like pull requests. Code still checks it against
     /// the fact base.
@@ -253,6 +256,8 @@ public sealed partial class ChangelogPromptBuilder
         "distortions where the wording overstates or changes what happened (for " +
         "example, a bug fix described as a security fix). Report each unsupported " +
         "claim; if every claim is supported, report none. " +
+        "For each claim, quote the words of the output that make it, and give the " +
+        "reason: what the facts say instead, or that they say nothing about it. " +
         "A fact from a pull request opens on its number in brackets, such as [#12]. " +
         "With each claim, give the number of the pull request whose fact the claim " +
         "rephrases, taken from those brackets and never from elsewhere in a fact. Give " +
