@@ -3,9 +3,8 @@ using Chartula.Cli.Configuration;
 namespace Chartula.Cli.Tests.Configuration;
 
 /// <summary>
-/// The provider decides where release data is sent, so a value that is not
-/// understood has to stop the run rather than fall back to whatever was there
-/// before.
+/// The provider decides where release data is sent, so an unknown value must stop the
+/// run instead of falling back to a default.
 /// </summary>
 public sealed class LlmProviderTests
 {
@@ -28,8 +27,8 @@ public sealed class LlmProviderTests
         InvalidOperationException error =
             Assert.Throws<InvalidOperationException>(() => LlmProviderParser.Parse("openai"));
 
-        // 'openai' is the near miss to expect: it is not the dialect name, and the
-        // message has to say which names exist rather than only that this one does not.
+        // 'openai' is the likely near miss: it is not the dialect name. The message must
+        // list the valid names, not only reject this one.
         Assert.Contains("openai", error.Message);
         Assert.Contains("anthropic", error.Message);
         Assert.Contains("openai-compatible", error.Message);
@@ -42,13 +41,13 @@ public sealed class LlmProviderTests
     {
         Assert.Equal(expected, LlmProviderParser.ToConfigurationValue(provider));
 
-        // The spelling has to be one the parser accepts, or an error message would
-        // name a value that does not work when pasted into chartula.yaml.
+        // The parser must accept this spelling. Otherwise an error message would name a
+        // value that fails when pasted into chartula.yaml.
         Assert.Equal(provider, LlmProviderParser.Parse(expected));
     }
 
-    // The property initializers on LlmOptions and the defaults table are two places
-    // that state the same thing. This test is what keeps them from drifting apart.
+    // The property initializers on LlmOptions and the defaults table state the same
+    // defaults in two places. This test keeps them from drifting apart.
     [Fact]
     public void The_option_defaults_match_the_anthropic_defaults()
     {

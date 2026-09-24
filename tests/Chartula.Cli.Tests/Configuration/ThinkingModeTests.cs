@@ -13,9 +13,9 @@ using OpenAI;
 namespace Chartula.Cli.Tests.Configuration;
 
 /// <summary>
-/// Thinking is billed as output tokens and models disagree about their own default,
-/// so it has to be something a user can state rather than discover on an invoice -
-/// and state once, in words that mean the same on every provider (#87).
+/// Thinking is billed as output tokens, and models differ in their own default.
+/// So the user must be able to set it explicitly instead of discovering it on an invoice,
+/// and set it once, in values that mean the same on every provider (#87).
 /// </summary>
 public sealed class ThinkingModeTests
 {
@@ -37,9 +37,9 @@ public sealed class ThinkingModeTests
         Assert.Equal(expected, ThinkingModeParser.Parse(configured));
     }
 
-    // adaptive and on were the one way to turn thinking on before the effort levels.
-    // Adaptive thinking without an effort is high effort, so existing files keep
-    // asking for what they asked for.
+    // Before the effort levels, adaptive and on were the only way to enable thinking.
+    // Adaptive thinking without an effort is high effort, so existing files keep their
+    // meaning.
     [Theory]
     [InlineData("adaptive")]
     [InlineData("Adaptive")]
@@ -55,7 +55,7 @@ public sealed class ThinkingModeTests
         InvalidOperationException error =
             Assert.Throws<InvalidOperationException>(() => ThinkingModeParser.Parse("sometimes"));
 
-        // A typo must not fall through to a default and bill differently than asked.
+        // A typo must not fall back to a default and cost differently than requested.
         Assert.Contains("sometimes", error.Message);
         Assert.Contains("provider-default", error.Message);
     }
@@ -76,9 +76,9 @@ public sealed class ThinkingModeTests
         Assert.Equal(ThinkingMode.Disabled, ThinkingModeParser.Parse(llm.Thinking));
     }
 
-    // What actually leaves the machine, through the real adapters with only the
-    // network stubbed. The mapping lives in the provider packages, so a package update
-    // that changed it would otherwise show up only on the invoice.
+    // Checks what actually leaves the machine, through the real adapters with only the
+    // network stubbed. The mapping lives in the provider packages. Without this test,
+    // a package update that changed it would show up only on the invoice.
     [Theory]
     [InlineData("provider-default", null, null, null)]
     [InlineData("disabled", """{"type":"disabled"}""", null, "none")]
@@ -111,13 +111,13 @@ public sealed class ThinkingModeTests
         Assert.Equal(anthropicEffort, anthropic.Field("output_config", "effort"));
         Assert.Equal(openAiEffort, openAi.Field("reasoning_effort"));
 
-        // The request keeps its model and ceiling: nothing replaces the ordinary path.
+        // The request keeps its model and output limit: the reasoning setting replaces nothing.
         Assert.Equal("claude-sonnet-5", anthropic.Field("model"));
         Assert.Equal("2000", anthropic.Field("max_tokens"));
     }
 
-    // The API rejects these combinations on the first request. Refused here instead,
-    // so the run fails before it fetches anything rather than after.
+    // The API rejects these combinations on the first request. Chartula refuses them
+    // earlier, so the run fails before it fetches anything.
     [Theory]
     [InlineData(ThinkingMode.High, "claude-haiku-4-5")]
     [InlineData(ThinkingMode.Low, "claude-haiku-4-5-20251001")]
@@ -137,7 +137,7 @@ public sealed class ThinkingModeTests
         Assert.Contains(model, error.Message);
     }
 
-    // An id this cannot read is left to the API: refusing it would block gateway
+    // An unrecognised model id is left to the API: refusing it would block gateway
     // aliases and models released after this list.
     [Theory]
     [InlineData(ThinkingMode.High, "claude-opus-4-6")]

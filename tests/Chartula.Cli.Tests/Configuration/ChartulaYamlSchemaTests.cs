@@ -5,8 +5,8 @@ using Chartula.Core.Review;
 namespace Chartula.Cli.Tests.Configuration;
 
 /// <summary>
-/// The schema is listed by hand, so an option added to a type and not to the list would
-/// be refused as an unknown key. This holds the two together.
+/// The schema is listed by hand, so an option added to a type but not to the list would
+/// be refused as an unknown key. This test keeps the two in sync.
 /// </summary>
 public sealed class ChartulaYamlSchemaTests
 {

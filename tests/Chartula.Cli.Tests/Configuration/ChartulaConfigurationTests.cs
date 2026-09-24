@@ -5,8 +5,8 @@ using Microsoft.Extensions.Configuration;
 namespace Chartula.Cli.Tests.Configuration;
 
 /// <summary>
-/// What a run reads from the environment: <c>Chartula__</c> settings, and the
-/// credentials Chartula uses by name - never the rest of the operator's shell.
+/// What a run reads from the environment: <c>Chartula__</c> settings and the credential
+/// variables Chartula uses, by name. Never the rest of the operator's shell.
 /// </summary>
 public sealed class ChartulaConfigurationTests
 {
