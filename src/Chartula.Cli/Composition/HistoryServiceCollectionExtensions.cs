@@ -12,7 +12,7 @@ internal static class HistoryServiceCollectionExtensions
 {
     public static IServiceCollection AddChartulaHistory(this IServiceCollection services)
     {
-        // Resolved now rather than on first use: a machine without git is refused
+        // Resolve git now instead of on first use: a machine without git is refused
         // before any work starts, and every reader runs the same binary.
         GitExecutable git = GitExecutable.FromPath();
         string checkout = Directory.GetCurrentDirectory();

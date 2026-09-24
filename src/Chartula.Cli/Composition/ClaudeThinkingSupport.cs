@@ -4,23 +4,22 @@ using Chartula.Cli.Configuration;
 namespace Chartula.Cli.Composition;
 
 /// <summary>
-/// The thinking modes a Claude model is known to reject. The request itself is
-/// provider-neutral (<see cref="Microsoft.Extensions.AI.ReasoningOptions"/>); this is
-/// only the part of the translation that can be checked before the first call, so a
-/// run that was never going to work fails before it fetches anything.
+/// The thinking modes a Claude model is known to reject.
+/// The request itself is provider-neutral (<see cref="Microsoft.Extensions.AI.ReasoningOptions"/>).
+/// This class covers only the part that can be checked before the first call, so a
+/// run that cannot work fails before it fetches anything.
 /// </summary>
 /// <remarks>
-/// No other provider has a check here: OpenAI-compatible endpoints serve models
-/// whose ids say nothing reliable about what they accept, so their refusal comes
-/// from the endpoint, on the first call.
+/// No other provider has a check here. The model ids of OpenAI-compatible endpoints say
+/// nothing reliable about what the models accept, so the endpoint refuses on the first call.
 /// </remarks>
 internal static partial class ClaudeThinkingSupport
 {
     /// <summary>
-    /// Refuses the combinations the API is known to reject. A model id this cannot
-    /// read passes through: gateways and new releases name models in ways no list here
-    /// anticipates, and refusing those would block runs that work. The API still
-    /// rejects a bad combination there, just later.
+    /// Refuses the combinations the API is known to reject.
+    /// An unrecognised model id passes: gateways and new releases name models in ways
+    /// no list here anticipates, and refusing them would block runs that work. The API
+    /// still rejects a bad combination for such an id, only later.
     /// </summary>
     /// <exception cref="InvalidOperationException">The model is known to reject the mode.</exception>
     /// <param name="mode">The thinking mode asked for.</param>
@@ -42,8 +41,8 @@ internal static partial class ClaudeThinkingSupport
         (int, int) version = (major, minor);
         string name = ThinkingModeParser.Name(mode);
 
-        // Every effort level is sent as adaptive thinking with that effort, and
-        // adaptive thinking arrived with Claude 4.6.
+        // Every effort level is sent as adaptive thinking with that effort, and adaptive
+        // thinking requires Claude 4.6 or newer.
         if (mode is ThinkingMode.Low or ThinkingMode.Medium or ThinkingMode.High or ThinkingMode.ExtraHigh
             && version.CompareTo((4, 6)) < 0)
         {
@@ -67,10 +66,11 @@ internal static partial class ClaudeThinkingSupport
         }
     }
 
-    // Both id shapes Anthropic has used: claude-haiku-4-5 (family first) and
-    // claude-3-5-haiku (version first). The minor version is one or two digits so a
-    // date suffix (claude-opus-4-20250514) is not read as one. Unanchored, because
-    // gateways prefix the id (us.anthropic.claude-...).
+    // Matches both id shapes Anthropic has used: claude-haiku-4-5 (family first) and
+    // claude-3-5-haiku (version first).
+    // The minor version has one or two digits, so a date suffix (claude-opus-4-20250514)
+    // is not read as a minor version.
+    // Unanchored, because gateways prefix the id (us.anthropic.claude-...).
     [GeneratedRegex(
         @"claude-(?:(?<family>[a-z]+)-(?<major>\d+)(?:-(?<minor>\d{1,2})(?!\d))?|(?<major>\d+)(?:-(?<minor>\d{1,2})(?!\d))?-(?<family>[a-z]+))",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]

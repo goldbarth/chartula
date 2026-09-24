@@ -5,9 +5,9 @@ using Microsoft.Extensions.Configuration;
 namespace Chartula.Cli.Composition;
 
 /// <summary>
-/// Builds the configured GitHub REST <see cref="HttpClient"/> (base URL, headers,
-/// bearer token by env-var name). Shared by every GitHub adapter so the HTTP setup
-/// lives in one place.
+/// Builds the configured GitHub REST <see cref="HttpClient"/>: base URL, headers, and
+/// the bearer token read from the named environment variable.
+/// Every GitHub adapter uses it, so the HTTP setup lives in one place.
 /// </summary>
 internal static class GitHubHttpClientFactory
 {
@@ -31,8 +31,8 @@ internal static class GitHubHttpClientFactory
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
         client.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
 
-        // Read the token by name; never hardcode it. Optional - unauthenticated
-        // requests work for public repos, subject to lower rate limits.
+        // Read the token by variable name, never hardcode it. The token is optional:
+        // unauthenticated requests work for public repositories, with lower rate limits.
         string? token = configuration[options.TokenEnvironmentVariable];
         if (!string.IsNullOrWhiteSpace(token))
         {

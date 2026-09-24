@@ -4,12 +4,12 @@ using System.Text.Json;
 namespace Chartula.Cli.Composition;
 
 /// <summary>
-/// An error response a model endpoint sent, as it came off the wire. Both provider
-/// SDKs turn one into an exception of their own type and in their own words -
-/// <c>Status Code: NotFound</c> from one, <c>HTTP 404 (...)</c> from the other - and
-/// neither names the address it asked. Read below both SDKs, the address, the status
-/// and the endpoint's own message come out the same way for either, and no provider
-/// type is named.
+/// An error response from a model endpoint, as received on the wire.
+/// Each provider SDK turns it into its own exception type with its own wording:
+/// <c>Status Code: NotFound</c> from one, <c>HTTP 404 (...)</c> from the other.
+/// Neither names the address it called.
+/// Read below both SDKs, the address, the status and the endpoint's message come out
+/// the same way for either provider, without naming a provider type.
 /// </summary>
 /// <param name="Endpoint">The address the request went to, without query or credentials.</param>
 /// <param name="StatusCode">The status, for deciding what it means.</param>
@@ -23,7 +23,7 @@ internal sealed record ModelErrorResponse(string Endpoint, HttpStatusCode Status
     public static async Task<ModelErrorResponse> ReadAsync(
         HttpRequestMessage request, HttpResponseMessage response, CancellationToken cancellationToken)
     {
-        // Buffered first: the SDK reads the body after this, and a stream read twice is empty.
+        // Buffer the body first: the SDK reads it afterwards, and a stream read twice is empty.
         await response.Content.LoadIntoBufferAsync(cancellationToken);
         string body = await response.Content.ReadAsStringAsync(cancellationToken);
 
@@ -35,14 +35,14 @@ internal sealed record ModelErrorResponse(string Endpoint, HttpStatusCode Status
             MessageOf(body));
     }
 
-    // Scheme, host and path only: a query string can carry a key (some providers take
-    // one there), and so can user info.
+    // Scheme, host and path only: the query string and the user info can both carry a
+    // key (some providers take it in the query).
     private static string EndpointOf(Uri? uri)
         => uri is null ? "an unknown address" : $"{uri.Scheme}://{uri.Authority}{uri.AbsolutePath}";
 
     /// <summary>
-    /// The message in the body. Anthropic and OpenAI both put it at <c>error.message</c>;
-    /// the other shapes are what servers speaking the OpenAI dialect send instead.
+    /// The message in the body. Anthropic and OpenAI both put it at <c>error.message</c>.
+    /// The other shapes come from servers that speak the OpenAI dialect.
     /// </summary>
     private static string? MessageOf(string body)
     {
@@ -61,7 +61,7 @@ internal sealed record ModelErrorResponse(string Endpoint, HttpStatusCode Status
         }
         catch (JsonException)
         {
-            // Not JSON (a proxy's HTML page, say); the body is all there is.
+            // Not JSON, for example a proxy's HTML page. Fall back to the raw body.
         }
 
         return SingleLine(body);

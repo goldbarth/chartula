@@ -8,30 +8,31 @@ namespace Chartula.Cli.Composition;
 
 /// <summary>
 /// Builds the <see cref="IChatClient"/> for an endpoint speaking the OpenAI
-/// chat-completions dialect. This is the only place the OpenAI package is named,
-/// which is what keeps it out of the domain.
+/// chat-completions dialect.
+/// This is the only place that names the OpenAI package, which keeps it out of the domain.
 /// </summary>
 internal static class OpenAiCompatibleChatClient
 {
     /// <summary>
-    /// Stands in for an absent key. The endpoints this provider exists for - Ollama,
-    /// LM Studio, llama.cpp, vLLM without <c>--api-key</c> - never read the
-    /// Authorization header, but the credential type rejects an empty string in its
-    /// constructor, which would turn "no key needed" into a crash before a single
-    /// request went out. A hosted endpoint sees this value and answers 401, which is
-    /// the intended outcome: the refusal comes from the endpoint, not from us.
+    /// Stands in for an absent key.
+    /// The endpoints this provider exists for (Ollama, LM Studio, llama.cpp, vLLM without
+    /// <c>--api-key</c>) never read the Authorization header. But the credential type
+    /// rejects an empty string in its constructor, so "no key needed" would crash before
+    /// the first request.
+    /// A hosted endpoint receives this value and answers 401. That is intended: the
+    /// refusal comes from the endpoint, not from Chartula.
     /// </summary>
     private const string AbsentApiKeyPlaceholder = "no-api-key-configured";
 
     /// <summary>
-    /// How long a single call may take before the client gives up. The SDK default is
-    /// 100 seconds, which suits a hosted API and fails the case this provider exists
-    /// for: a model running on the user's own machine, where one call over a full
-    /// changelog takes minutes, and where the retry that follows the timeout only
-    /// spends the time again. Measured on 2026-08-03: qwen2.5:14b on a 16 GB GPU
-    /// exceeded 100 seconds on two of three audience texts and lost both.
-    /// Generous rather than tuned - a hung endpoint should still end the run, but the
-    /// ceiling has to be far above a slow answer, not near it.
+    /// How long a single call may take before the client gives up.
+    /// The SDK default of 100 seconds suits a hosted API. It fails the main case of this
+    /// provider: a model on the user's own machine, where one call over a full changelog
+    /// takes minutes, and the retry after the timeout only spends the time again.
+    /// Measured on 2026-08-03: qwen2.5:14b on a 16 GB GPU exceeded 100 seconds on two of
+    /// three audience texts and lost both.
+    /// The value is generous, not tuned. A hung endpoint should still end the run, but
+    /// the limit must be far above a slow answer, not close to it.
     /// </summary>
     private static readonly TimeSpan LocalEndpointTimeout = TimeSpan.FromMinutes(10);
 
@@ -47,7 +48,7 @@ internal static class OpenAiCompatibleChatClient
                 "for example http://localhost:11434/v1 for Ollama, http://localhost:1234/v1 for LM Studio.");
         }
 
-        // Checked again rather than trusted: options can be built without reading them.
+        // Check the URL again instead of trusting it: options can be built without ReadOptions.
         Uri endpoint = EndpointUrl.Require(LlmOptions.BaseUrlVariable, options.BaseUrl);
 
         ApiKeyCredential credential = new(
