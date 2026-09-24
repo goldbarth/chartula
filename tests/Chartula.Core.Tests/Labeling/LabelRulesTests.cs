@@ -13,7 +13,7 @@ public sealed class LabelRulesTests
             categoryByLabel: new Dictionary<string, string> { ["security"] = "fix" },
             onlyIncludeLabeled: false);
 
-        // Value parsed regardless of case, key matched case-insensitively.
+        // The category value is parsed case-insensitively, and the label key matches case-insensitively.
         Assert.True(rules.CategoryByLabel.TryGetValue("SECURITY", out ChangeCategory category));
         Assert.Equal(ChangeCategory.Fix, category);
     }
