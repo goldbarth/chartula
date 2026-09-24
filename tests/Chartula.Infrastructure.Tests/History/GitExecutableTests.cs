@@ -23,11 +23,11 @@ public sealed class GitExecutableTests : IDisposable
     [Fact]
     public void Skips_relative_path_entries_even_when_they_hold_a_git()
     {
-        // "." and an empty entry both mean the current directory, which is the
-        // checkout a run reads - the one place a git must never come from.
-        // The plant sits under the current directory and is named relative to it: a
-        // relative path to the temp root is not possible on Windows when the two are
-        // on different drives.
+        // "." and an empty entry both mean the current directory. That is the checkout a
+        // run reads, the one place git must never come from.
+        // The planted git lives under the current directory and is named relative to it.
+        // On Windows, a relative path to the temp root is impossible when the two are on
+        // different drives.
         string relative = "chartula-planted-" + Guid.NewGuid().ToString("N");
         string planted = System.IO.Path.GetFullPath(relative);
         System.IO.Directory.CreateDirectory(planted);
