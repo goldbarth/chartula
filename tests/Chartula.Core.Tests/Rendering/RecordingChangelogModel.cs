@@ -4,9 +4,8 @@ using Chartula.Core.Tests.Generation;
 namespace Chartula.Core.Tests.Rendering;
 
 /// <summary>
-/// A fake <see cref="IChangelogModel"/> that records every rephrase request keyed
-/// by audience, so a test can inspect what each audience was actually sent. No
-/// live provider is involved.
+/// A fake <see cref="IChangelogModel"/> that records every rephrase request by audience,
+/// so a test can inspect what each audience was actually sent. No live provider.
 /// </summary>
 internal sealed class RecordingChangelogModel : IChangelogModel
 {

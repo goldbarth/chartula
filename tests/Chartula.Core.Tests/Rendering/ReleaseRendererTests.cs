@@ -52,9 +52,9 @@ public sealed class ReleaseRendererTests
 
         IReadOnlyDictionary<Audience, ChangelogGenerationResult> renderings = await renderer.RenderAsync(Sample());
 
-        // A1 of the technical rubric: a restructuring with identical behaviour does
-        // not reach this reader either, so only the feature is handed over. Its link
-        // is put on the entry by code rather than sent to the model.
+        // A1 of the technical rubric: a refactoring with identical behaviour does not
+        // reach the technical reader either, so only the feature is sent. Code adds the
+        // feature's link to the entry instead of sending it to the model.
         Assert.Single(model.StatementsFor(Audience.Technical));
         Assert.Contains("([#7](https://example/pull/7))", renderings[Audience.Technical].Text);
     }
@@ -80,8 +80,8 @@ public sealed class ReleaseRendererTests
 
         IReadOnlyDictionary<Audience, ChangelogGenerationResult> renderings = await renderer.RenderAsync(Sample());
 
-        // Product sees what could move a decision, which an unlabelled refactor
-        // does not, and every entry stands under the theme code gave it.
+        // Product sees what could affect a decision, which an unlabelled refactor does
+        // not. Every entry stands under the theme the code assigned.
         Assert.Single(model.StatementsFor(Audience.Product));
         Assert.StartsWith("### Other", renderings[Audience.Product].Text);
     }
