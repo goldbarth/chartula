@@ -1,3 +1,4 @@
+using Chartula.Core.History;
 using Chartula.Core.Pipeline;
 using Chartula.Core.PullRequests;
 
@@ -19,4 +20,18 @@ public sealed record RunRecord(
     RepositoryCoordinates Repository,
     PipelineMode Mode,
     IReadOnlyList<AudienceOutcome> Audiences,
-    RunReport Metrics);
+    RunReport Metrics)
+{
+    /// <summary>
+    /// The commits the run read, or <c>null</c> when they are not known.
+    /// Without it, a run cannot be told apart from a wrong range: the same tag over other
+    /// commits is another release, with other facts and other flags.
+    /// </summary>
+    public CommitRange? Range { get; init; }
+
+    /// <summary>
+    /// The start the operator named, or <c>null</c> when none was named.
+    /// It says whether <see cref="CommitRange.From"/> was named or found as the previous tag.
+    /// </summary>
+    public string? Since { get; init; }
+}

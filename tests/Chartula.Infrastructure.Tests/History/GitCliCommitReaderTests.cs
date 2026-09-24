@@ -29,6 +29,25 @@ public sealed class GitCliCommitReaderTests
         Assert.DoesNotContain("B", subjects);
     }
 
+    // The names a range was read with can move later, so it keeps the commits they named.
+    // An annotated tag names a tag object; the range keeps the commit it points to.
+    [Fact]
+    public async Task Keeps_the_commits_both_ends_of_the_range_named()
+    {
+        using TempGitRepository repo = new();
+        repo.Commit("A");
+        repo.Tag("v1.0.0");
+        repo.Commit("B");
+        repo.Run("tag", "-a", "v2.0.0", "-m", "v2.0.0");
+
+        CommitRange range = await new GitCliCommitReader(GitExecutable.FromPath(), repo.Path)
+            .ReadReleaseCommitsAsync("v2.0.0");
+
+        Assert.Equal(repo.Run("rev-parse", "v1.0.0^{commit}"), range.FromCommit);
+        Assert.Equal(repo.Run("rev-parse", "v2.0.0^{commit}"), range.ToCommit);
+        Assert.Equal(40, range.ToCommit?.Length);
+    }
+
     [Fact]
     public async Task Falls_back_to_all_history_when_there_is_no_previous_tag()
     {
@@ -41,6 +60,8 @@ public sealed class GitCliCommitReaderTests
             .ReadReleaseCommitsAsync("v1.0.0");
 
         Assert.Null(range.From);
+        Assert.Null(range.FromCommit);
+        Assert.Equal(repo.Run("rev-parse", "v1.0.0"), range.ToCommit);
         Assert.True(range.IsWholeHistory);
         Assert.Equal(["B", "A"], range.Commits.Select(c => c.Subject).ToArray());
     }
@@ -198,6 +219,7 @@ public sealed class GitCliCommitReaderTests
             .ReadReleaseCommitsAsync("v2.0.0", since: "v2.0.0~1");
 
         Assert.Equal("v2.0.0~1", range.From);
+        Assert.Equal(repo.Run("rev-parse", "v2.0.0~1"), range.FromCommit);
         Assert.Equal(["feat: C"], range.Commits.Select(c => c.Subject));
     }
 

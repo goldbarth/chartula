@@ -54,6 +54,7 @@ public sealed class GitCliCommitReader(GitExecutable git, string repositoryPath)
         string? from = string.IsNullOrWhiteSpace(since)
             ? await ReadPreviousTagAsync(tag, cancellationToken)
             : await VerifyStartAsync(since.Trim(), tag, shallow, cancellationToken);
+        string? fromCommit = from is null ? null : await ResolveCommitAsync(from, cancellationToken);
 
         string range = from is null ? tag : $"{from}..{tag}";
         GitResult log = await RunGitAsync(
@@ -65,7 +66,12 @@ public sealed class GitCliCommitReader(GitExecutable git, string repositoryPath)
         }
 
         DateOnly? taggedAt = await ReadTagDateAsync(tag, cancellationToken);
-        return new CommitRange(tag, from, ParseCommits(log.StandardOutput), taggedAt);
+        return new CommitRange(tag, from, ParseCommits(log.StandardOutput), taggedAt)
+        {
+            FromCommit = fromCommit,
+            // rev-parse --verify prints the commit it resolved.
+            ToCommit = verify.StandardOutput.Trim(),
+        };
     }
 
     /// <summary>
@@ -111,6 +117,21 @@ public sealed class GitCliCommitReader(GitExecutable git, string repositoryPath)
         return previous.ExitCode == 0 && previous.StandardOutput.Trim() is { Length: > 0 } prev
             ? prev
             : null;
+    }
+
+    // The commit a tag or ref names at this moment, so the range can be read again later
+    // even after the name has moved.
+    private async Task<string> ResolveCommitAsync(string reference, CancellationToken cancellationToken)
+    {
+        GitResult resolved = await RunGitAsync(
+            ["rev-parse", "--verify", "--quiet", $"{reference}^{{commit}}"], cancellationToken);
+        if (resolved.ExitCode != 0)
+        {
+            throw new InvalidOperationException(
+                $"Failed to resolve '{reference}' to a commit: {resolved.StandardError.Trim()}");
+        }
+
+        return resolved.StandardOutput.Trim();
     }
 
     // Refuse a start that is not an ancestor of the tag: its range would hold commits
