@@ -4,8 +4,8 @@ using Chartula.Core.Facts;
 namespace Chartula.Core.Tests.Facts;
 
 /// <summary>
-/// Facts are values: two fact bases holding the same facts are the same fact base,
-/// whatever list instances happen to carry them.
+/// Facts are values: two fact bases with the same facts are equal, whatever list
+/// instances hold them.
 /// </summary>
 public sealed class FactEqualityTests
 {
