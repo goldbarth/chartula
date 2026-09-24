@@ -14,8 +14,8 @@ using Chartula.Core.Review;
 namespace Chartula.Core.Tests.Pipeline;
 
 /// <summary>
-/// #224: a run that writes keeps what it cost in a local record, so runs can be
-/// compared without their terminal output.
+/// #224: a run that writes keeps its cost in a local record, so runs can be compared
+/// without their terminal output.
 /// </summary>
 public sealed class RunRecordPipelineTests
 {
@@ -72,8 +72,8 @@ public sealed class RunRecordPipelineTests
         Assert.Null(outcome.RunRecord);
     }
 
-    // The tokens of a run in which nothing rendered were spent all the same; only
-    // changelog.json is held back, so an earlier good run's file survives.
+    // A run in which nothing rendered still spent tokens, so the record is written.
+    // Only changelog.json is held back, so an earlier good run's file survives.
     [Fact]
     public async Task A_run_in_which_no_audience_rendered_is_still_recorded()
     {

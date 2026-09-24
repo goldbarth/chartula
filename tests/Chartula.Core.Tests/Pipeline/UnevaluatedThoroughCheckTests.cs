@@ -15,9 +15,10 @@ using Chartula.Core.Tests.Llm;
 namespace Chartula.Core.Tests.Pipeline;
 
 /// <summary>
-/// A whole run whose thorough check answers with something that is not a verdict. Only
-/// the chat client is a stand-in; the model, the checker and the pipeline are the real
-/// ones, because the bug this pins was invisible at every level above the parse.
+/// A whole run whose thorough check answers with something that is not a verdict.
+/// Only the chat client is a stand-in. The model, the checker and the pipeline are the
+/// production types, because the bug this test pins was invisible at every level above
+/// the parsing.
 /// </summary>
 public sealed class UnevaluatedThoroughCheckTests
 {
@@ -67,8 +68,8 @@ public sealed class UnevaluatedThoroughCheckTests
     {
         ReleaseOutcome outcome = await RunAsync("Sorry, I cannot produce JSON here.");
 
-        // Three runs that verified nothing. Counting them as "0 with findings" is what
-        // made a failed check read as a clean one.
+        // Three runs that verified nothing. Counting them as "0 with findings" made a
+        // failed check look like a clean one.
         Assert.Equal(3, outcome.Metrics.Thorough.Runs);
         Assert.Equal(3, outcome.Metrics.ThoroughNotEvaluated);
         Assert.Equal(0, outcome.Metrics.Thorough.RunsWithFindings);

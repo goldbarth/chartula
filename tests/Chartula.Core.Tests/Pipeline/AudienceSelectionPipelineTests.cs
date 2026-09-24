@@ -14,10 +14,9 @@ using Chartula.Core.Serialization;
 namespace Chartula.Core.Tests.Pipeline;
 
 /// <summary>
-/// A run renders the audiences it was asked for, and writes only the outputs
-/// those renderings are made of. Nothing here is a special case: the pipeline
-/// already writes each output only when its rendering is present, so leaving an
-/// audience out leaves its file out.
+/// A run renders the requested audiences and writes only the outputs built from them.
+/// This needs no special case: the pipeline writes each output only when its rendering
+/// is present, so leaving an audience out leaves its file out.
 /// </summary>
 public sealed class AudienceSelectionPipelineTests
 {
@@ -74,8 +73,8 @@ public sealed class AudienceSelectionPipelineTests
     [Fact]
     public async Task An_output_whose_audience_was_not_rendered_is_not_written()
     {
-        // CHANGELOG.md is made of the technical rendering. Without it there is
-        // nothing to write, and writing the file empty would replace a good one.
+        // CHANGELOG.md is built from the technical rendering. Without it there is
+        // nothing to write, and an empty file would replace a good one.
         await BuildPipeline().RunAsync(Request(Audience.Customer), PipelineMode.Generate);
 
         Assert.Equal(0, _markdown.Calls);

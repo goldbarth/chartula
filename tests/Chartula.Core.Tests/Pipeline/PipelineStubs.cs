@@ -23,8 +23,8 @@ internal sealed class StubCommitReader(DateOnly? taggedAt = null) : IReleaseComm
     public string? Since { get; private set; }
 
     /// <summary>
-    /// A range bounded by a previous tag, as for any release after the first; a test
-    /// about the first one sets <see cref="WholeHistory"/>.
+    /// A range bounded by a previous tag, as for any release after the first.
+    /// A test about the first release sets <see cref="WholeHistory"/>.
     /// </summary>
     public bool WholeHistory { get; init; }
 
@@ -63,9 +63,9 @@ internal sealed class StubRenderer : IReleaseRenderer
             [Audience.Product] = ChangelogGenerationResult.Success("- Search shipped."),
         };
 
-        // The real renderer returns only what it was asked for, and outputs are
-        // written from what came back, so a stub that returned everything would
-        // hide the behaviour under test.
+        // Return only the requested audiences, like the real renderer. Outputs are
+        // written from what comes back, so a stub that returned everything would hide
+        // the behaviour under test.
         return Task.FromResult<IReadOnlyDictionary<Audience, ChangelogGenerationResult>>(
             audiences is null ? all : all.Where(e => audiences.Contains(e.Key)).ToDictionary());
     }
@@ -117,7 +117,7 @@ internal sealed class SpyReleaseNotesWriter : IReleaseNotesWriter
     }
 }
 
-/// <summary>A release notes writer that is refused, as a read-only token is.</summary>
+/// <summary>A release notes writer that fails like a refused read-only token.</summary>
 internal sealed class RefusingReleaseNotesWriter(string message) : IReleaseNotesWriter
 {
     public Task<string> WriteAsync(
