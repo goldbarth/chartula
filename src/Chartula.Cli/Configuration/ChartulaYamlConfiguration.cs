@@ -3,21 +3,20 @@ using Microsoft.Extensions.Configuration;
 namespace Chartula.Cli.Configuration;
 
 /// <summary>
-/// Loads <c>chartula.yaml</c> into configuration under the <c>Chartula:</c> prefix,
-/// so a present file refines behavior while the tool still runs with sensible
-/// defaults when it is absent. YAML is flattened into
-/// <c>Microsoft.Extensions.Configuration</c> keys (nested maps become
-/// <c>a:b</c>, sequences become <c>a:0</c>); config keys are case-insensitive, so
-/// the YAML's own casing is preserved.
+/// Loads <c>chartula.yaml</c> into configuration under the <c>Chartula:</c> prefix.
+/// A present file refines the behaviour, and without it the tool runs with sensible defaults.
+/// The YAML is flattened into <c>Microsoft.Extensions.Configuration</c> keys: nested
+/// maps become <c>a:b</c>, sequences become <c>a:0</c>. Configuration keys are
+/// case-insensitive, so the YAML's own casing is kept.
 /// </summary>
 /// <remarks>
-/// The file is repository content, written by anyone whose pull request is merged,
-/// so it may not set where data and credentials are sent: the endpoints, and the
-/// names of the environment variables whose values go to them. One YAML value
-/// could otherwise send any variable of the operator's environment to any host, or
-/// point the reader at an API that fabricates the fact base. Those keys come from
-/// the environment only, and a file that sets one is refused rather than ignored,
-/// so nobody believes a setting is in force that is not.
+/// The file is repository content, written by anyone whose pull request is merged.
+/// So it may not set where data and credentials are sent: the endpoints, and the names
+/// of the environment variables whose values are sent to them.
+/// Otherwise one YAML value could send any variable of the operator's environment to
+/// any host, or point the reader at an API that fabricates the fact base.
+/// These keys come from the environment only. A file that sets one is refused, not
+/// ignored, so nobody believes a setting is in effect when it is not.
 /// </remarks>
 internal static class ChartulaYamlConfiguration
 {
@@ -33,8 +32,8 @@ internal static class ChartulaYamlConfiguration
     };
 
     /// <summary>
-    /// Adds <c>chartula.yaml</c> (or <c>chartula.yml</c>) from
-    /// <paramref name="directory"/> if present; a no-op when neither exists.
+    /// Adds <c>chartula.yaml</c> (or <c>chartula.yml</c>) from <paramref name="directory"/>
+    /// if present. Does nothing when neither exists.
     /// </summary>
     public static IConfigurationBuilder AddChartulaYaml(this IConfigurationBuilder builder, string directory)
     {
@@ -48,17 +47,21 @@ internal static class ChartulaYamlConfiguration
     }
 
     /// <summary>
-    /// Flattens a YAML document into prefixed configuration key/value pairs. Throws
-    /// when the document sets a key that only the environment may set, and when it is
-    /// not valid YAML or holds a key or a value <see cref="ChartulaYamlSchema"/> does
-    /// not allow - each named by <paramref name="fileName"/>, line and column.
+    /// Flattens a YAML document into prefixed configuration key/value pairs.
+    /// Throws when the document:
+    /// <list type="bullet">
+    /// <item>sets a key that only the environment may set,</item>
+    /// <item>is not valid YAML,</item>
+    /// <item>holds a key or a value that <see cref="ChartulaYamlSchema"/> does not allow.</item>
+    /// </list>
+    /// Each problem names <paramref name="fileName"/>, line and column.
     /// </summary>
     public static IReadOnlyList<KeyValuePair<string, string?>> Flatten(string yaml, string fileName = "chartula.yaml")
     {
         (IReadOnlyList<KeyValuePair<string, string?>> pairs, IReadOnlyList<string> problems) =
             ChartulaYamlReader.Read(yaml, fileName, RootKey);
 
-        // First: it is the refusal that decides where credentials go.
+        // Refuse environment-only keys first, because they decide where credentials go.
         RefuseEnvironmentOnlyKeys(pairs);
         if (problems.Count > 0)
         {

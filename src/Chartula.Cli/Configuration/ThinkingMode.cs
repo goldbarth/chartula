@@ -1,19 +1,18 @@
 namespace Chartula.Cli.Configuration;
 
 /// <summary>
-/// How much the model reasons before it answers, in one vocabulary for every
-/// provider. Each adapter translates it to its own mechanism - Anthropic's thinking
-/// and effort, OpenAI's <c>reasoning_effort</c> - so the same value in
-/// <c>chartula.yaml</c> asks for the same thing whichever provider serves it.
-/// Reasoning is billed as output tokens, so this is a cost knob as much as a
-/// quality one.
+/// How much the model reasons before it answers, in one vocabulary for every provider.
+/// Each adapter translates it to its own mechanism: Anthropic's thinking and effort,
+/// OpenAI's <c>reasoning_effort</c>. So the same value in <c>chartula.yaml</c> requests
+/// the same thing from either provider.
+/// Reasoning is billed as output tokens, so this setting affects cost as much as quality.
 /// </summary>
 public enum ThinkingMode
 {
     /// <summary>
-    /// Send nothing, and let each model apply its own default. Models disagree about
-    /// what that means - some reason, some do not - so this is the only mode whose
-    /// behavior depends on the configured model.
+    /// Send nothing and let each model apply its own default.
+    /// Some models reason by default and some do not, so this is the only mode whose
+    /// behaviour depends on the configured model.
     /// </summary>
     ProviderDefault,
 
@@ -27,8 +26,8 @@ public enum ThinkingMode
     Medium,
 
     /// <summary>
-    /// Reasoning at high effort. What Anthropic's adaptive thinking does when no
-    /// effort is given, so <c>adaptive</c> reads as this.
+    /// Reasoning at high effort. Anthropic's adaptive thinking uses high effort when no
+    /// effort is given, so <c>adaptive</c> maps to this mode.
     /// </summary>
     High,
 
@@ -37,8 +36,8 @@ public enum ThinkingMode
 }
 
 /// <summary>
-/// Parses the configured thinking mode, defaulting to the provider's own behavior
-/// when it is not set.
+/// Parses the configured thinking mode. When it is not set, the provider's own
+/// behaviour applies.
 /// </summary>
 public static class ThinkingModeParser
 {
@@ -64,7 +63,7 @@ public static class ThinkingModeParser
             "disabled" or "off" or "false" or "none" => ThinkingMode.Disabled,
             "low" => ThinkingMode.Low,
             "medium" => ThinkingMode.Medium,
-            // adaptive and on predate the effort levels; both meant thinking at the
+            // adaptive and on are older than the effort levels. Both meant thinking at the
             // provider's default depth, which is high.
             "high" or "adaptive" or "on" or "true" => ThinkingMode.High,
             "xhigh" or "extrahigh" => ThinkingMode.ExtraHigh,

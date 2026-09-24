@@ -1,12 +1,14 @@
 namespace Chartula.Cli.Configuration;
 
 /// <summary>
-/// The check every configured endpoint passes where it is read, before any work
-/// starts. A key or token travels to it in a header, so plain http to another
-/// machine hands it to anyone on the path - a typo or a downgraded URL is enough.
-/// http is kept for loopback only, which is where the local model servers live.
-/// A server elsewhere on the network needs https too: the stricter rule is also the
-/// simpler one, and a private-range exception would leave the same path open.
+/// Checks every configured endpoint where it is read, before any work starts.
+/// A key or token travels to the endpoint in a header. Over plain http to another
+/// machine, anyone on the network path can read it, and a typo or a downgraded URL is
+/// enough for that.
+/// http is allowed for loopback only, where the local model servers run.
+/// A server elsewhere on the local network also needs https. The stricter rule is also
+/// the simpler one, and an exception for private address ranges would leave the same
+/// path open.
 /// </summary>
 internal static class EndpointUrl
 {
@@ -16,10 +18,9 @@ internal static class EndpointUrl
     /// </summary>
     public static Uri Require(string setting, string value)
     {
-        // The scheme is checked, not just the parse: 'localhost:11434' parses as an
-        // absolute URI whose scheme is 'localhost' and whose path is '11434', so a
-        // forgotten http:// would otherwise be accepted here and fail much later,
-        // somewhere that no longer mentions the setting that caused it.
+        // Check the scheme, not only the parse. 'localhost:11434' parses as an absolute
+        // URI with scheme 'localhost' and path '11434'. A forgotten http:// would pass
+        // here and fail much later, in a place that no longer names the setting.
         if (!Uri.TryCreate(value, UriKind.Absolute, out Uri? endpoint)
             || (endpoint.Scheme != Uri.UriSchemeHttps && endpoint.Scheme != Uri.UriSchemeHttp))
         {

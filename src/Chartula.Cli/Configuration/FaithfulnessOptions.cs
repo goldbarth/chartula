@@ -14,10 +14,10 @@ public sealed class FaithfulnessOptions
     public bool Thorough { get; init; } = true;
 
     /// <summary>
-    /// The model the thorough check asks, at the same provider and endpoint as the
-    /// rendering. Unset uses <c>llm.model</c>. Rendering and checking are different
-    /// jobs - writing prose versus comparing claims with facts - so a cheaper model
-    /// can do one and a stronger one the other.
+    /// The model for the thorough check, at the same provider and endpoint as the rendering.
+    /// Unset uses <c>llm.model</c>.
+    /// Rendering writes prose, checking compares claims with facts. These are different
+    /// jobs, so a cheaper model can do one and a stronger model the other.
     /// </summary>
     public string? Model { get; init; }
 

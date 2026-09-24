@@ -16,6 +16,6 @@ public sealed class CategoryOptions
     /// <summary>Map of category name to display name.</summary>
     public Dictionary<string, string> Names { get; init; } = [];
 
-    /// <summary>Whether breaking changes float to the top. Defaults to on.</summary>
+    /// <summary>Whether breaking changes move to the top. Defaults to on.</summary>
     public bool BreakingProminent { get; init; } = true;
 }
