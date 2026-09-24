@@ -45,7 +45,7 @@ public sealed class ChatModelTests
     }
 
     // There is no partial rendering to fall back on, so an answer that is not entries
-    // has to fail loudly - the generator reports it as a failed audience.
+    // must fail loudly. The generator reports it as a failed audience.
     [Fact]
     public async Task RephraseAsync_throws_when_the_answer_is_not_entries()
     {
@@ -103,8 +103,8 @@ public sealed class ChatModelTests
         Assert.Empty(report.UnsupportedClaims);
     }
 
-    // An answer we cannot read used to arrive as an empty claim list, which every caller
-    // reads as "nothing found". These two say the opposite: nothing was checked.
+    // An unreadable answer used to arrive as an empty claim list, which every caller
+    // reads as "nothing found". These two tests require "nothing was checked" instead.
     [Fact]
     public async Task CheckFaithfulnessAsync_reports_an_unreadable_answer_as_not_evaluated()
     {
@@ -119,8 +119,8 @@ public sealed class ChatModelTests
         Assert.NotNull(report.Reason);
     }
 
-    // "Unfaithful, and here is nothing" says something is wrong without saying what.
-    // Passing it on as a clean check would hide the same failure a second way.
+    // "Unfaithful" without any claim says something is wrong without saying what.
+    // Passing it on as a clean check would hide the failure.
     [Fact]
     public async Task CheckFaithfulnessAsync_reports_a_verdict_without_claims_as_not_evaluated()
     {
@@ -133,11 +133,11 @@ public sealed class ChatModelTests
         Assert.Equal(FaithfulnessCheckStatus.NotEvaluated, report.Status);
     }
 
-    // A well-formed, even a clean, verdict is worthless if the endpoint cut the prompt
-    // to fit its context window before the model ever saw the facts (#85, #86). The
-    // characters Chartula sent bound the token count from below; a reported count under
-    // that bound is proof of truncation, not a guess, so the run fails outright rather
-    // than reporting a check that never happened.
+    // A well-formed verdict, even a clean one, is worthless if the endpoint cut the
+    // prompt to fit its context window before the model saw the facts (#85, #86).
+    // The characters Chartula sent set a minimum token count. A reported count below it
+    // proves truncation, so the run fails outright instead of reporting a check that
+    // never happened.
     [Fact]
     public async Task CheckFaithfulnessAsync_fails_when_reported_tokens_cannot_fit_the_prompt_sent()
     {
@@ -155,9 +155,9 @@ public sealed class ChatModelTests
         Assert.Contains("context window", exception.Message);
     }
 
-    // The same proof applies to rephrasing (#85): an endpoint that cut the facts to fit
-    // its context window still answers, with entries for the facts it kept, and a
-    // changelog written from a third of the release reads as if it were all of it.
+    // The same proof applies to rephrasing (#85). An endpoint that cut the facts to fit
+    // its context window still answers, with entries for the facts it kept. A changelog
+    // written from a third of the release then reads as if it covered all of it.
     [Fact]
     public async Task RephraseAsync_fails_when_reported_tokens_cannot_fit_the_prompt_sent()
     {
@@ -186,8 +186,8 @@ public sealed class ChatModelTests
         Assert.Single(entries.Entries);
     }
 
-    // A provider that reports no usage at all gives nothing to check this way - that
-    // gap is real, and the check backs off rather than guessing.
+    // A provider that reports no usage gives nothing to check. That gap is real, and
+    // the check passes the call instead of guessing.
     [Fact]
     public async Task CheckFaithfulnessAsync_cannot_detect_truncation_without_reported_usage()
     {
@@ -201,8 +201,8 @@ public sealed class ChatModelTests
         Assert.Equal(FaithfulnessCheckStatus.Checked, report.Status);
     }
 
-    // If ChatModel drops the reasoning setting, it silently does nothing and the only
-    // symptom is the invoice.
+    // If ChatModel drops the reasoning setting, the setting silently has no effect, and
+    // the only symptom is the invoice.
     [Fact]
     public async Task RephraseAsync_passes_the_reasoning_setting_through()
     {
@@ -217,8 +217,8 @@ public sealed class ChatModelTests
         Assert.Equal(ReasoningEffort.Low, chat.LastOptions!.Reasoning?.Effort);
     }
 
-    // Providers require an output ceiling and quietly substitute a small default when
-    // one is absent, which truncates a changelog mid-sentence. Every call must carry it.
+    // Providers require an output limit and silently use a small default without one,
+    // which cuts a changelog off mid-sentence. Every call must send it.
     [Fact]
     public async Task RephraseAsync_sends_the_configured_output_ceiling()
     {
@@ -260,10 +260,10 @@ public sealed class ChatModelTests
     [Fact]
     public void Leaves_the_model_room_to_write_after_it_has_finished_thinking()
     {
-        // Thinking comes out of this same ceiling and goes first. At 16,000 the
-        // customer call spent the whole allowance thinking and was cut off before
-        // it wrote a character: stop_reason max_tokens, a thinking block and no
-        // text block, on four of five renders of 2026-09-04.
+        // Thinking counts against the same limit, and it comes first. At 16,000, the
+        // customer call spent the whole limit on thinking and was cut off before it
+        // wrote a character: stop_reason max_tokens, a thinking block and no text block,
+        // on four of five renders of 2026-09-04.
         Assert.True(new ChatModelOptions().MaxOutputTokens >= 32_000);
     }
 }

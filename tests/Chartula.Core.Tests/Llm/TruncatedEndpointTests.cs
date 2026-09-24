@@ -15,9 +15,9 @@ using Microsoft.Extensions.AI;
 namespace Chartula.Core.Tests.Llm;
 
 /// <summary>
-/// The run as #85 met it: an endpoint whose context window is smaller than the
-/// prompt, which cuts it silently and reports its own limit as the input. Every
-/// component but the chat client is the production one.
+/// The run as #85 hit it: an endpoint whose context window is smaller than the prompt.
+/// It silently cuts the prompt and reports its own limit as the input token count.
+/// Every component except the chat client is the production type.
 /// </summary>
 public sealed class TruncatedEndpointTests
 {

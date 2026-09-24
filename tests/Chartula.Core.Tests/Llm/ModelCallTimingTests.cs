@@ -7,8 +7,8 @@ using Microsoft.Extensions.AI;
 namespace Chartula.Core.Tests.Llm;
 
 /// <summary>
-/// #128: a slow run has to be explainable from the run itself - which call took the
-/// time, whether it failed, whether it was sent more than once.
+/// #128: a slow run must be explainable from the run itself: which call took the time,
+/// whether it failed, and whether it was sent more than once.
 /// </summary>
 public sealed class ModelCallTimingTests
 {
@@ -30,8 +30,8 @@ public sealed class ModelCallTimingTests
         Assert.Equal(usage.Duration, usage.LongestCall);
     }
 
-    // A client with no counting transport under it reports no requests: that is not
-    // the same as a call that went through first time, and must not read as one.
+    // A client without the counting handler reports no requests. That must not look
+    // like a call that succeeded on the first try.
     [Fact]
     public async Task Without_a_counting_transport_retries_are_not_observed()
     {
@@ -43,7 +43,7 @@ public sealed class ModelCallTimingTests
         Assert.Null(metrics.Snapshot().UsageOf(LlmOperation.Rephrase).Retries);
     }
 
-    // What a transport handler does for every request it sends.
+    // Simulates the transport handler, which records every request it sends.
     [Fact]
     public async Task Requests_the_transport_reports_during_a_call_become_its_retries()
     {
@@ -70,7 +70,7 @@ public sealed class ModelCallTimingTests
         Assert.True(usage.Duration >= TimeSpan.FromMilliseconds(40), $"recorded {usage.Duration}");
     }
 
-    // Outside a model call a request is not attributed to anything.
+    // Outside a model call, a request is not counted for any call.
     [Fact]
     public void A_request_outside_a_model_call_is_ignored()
     {
