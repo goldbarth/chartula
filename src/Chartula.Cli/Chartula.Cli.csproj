@@ -14,12 +14,12 @@
     <Version>0.1.0-preview.2</Version>
 
     <!-- Released as one self-contained file per platform, so a user needs no .NET.
-         Set here rather than on the publish command line: the single-file analyzer
-         brings in Microsoft.NET.ILLink.Tasks, and only a property the project always
-         carries keeps that reference in packages.lock.json for a locked restore. -->
+         Set here, not on the publish command line: the single-file analyzer brings in
+         Microsoft.NET.ILLink.Tasks, and only a property the project always sets keeps
+         that reference in packages.lock.json for a locked restore. -->
     <PublishSingleFile>true</PublishSingleFile>
-    <!-- Halves the download (88 to 44 MB) for about 60 ms more at startup, next to
-         a run that waits seconds on a model. -->
+    <!-- Halves the download (88 to 44 MB) for about 60 ms more startup time, which is
+         negligible next to a run that waits seconds on a model. -->
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <!-- No ICU: a slim container image (Debian, Ubuntu, Fedora, Alpine) has none,
          and the runtime ends the process at startup when it is missing. Chartula
@@ -41,8 +41,8 @@
 
   <ItemGroup>
     <PackageReference Include="Anthropic" Version="12.49.0" />
-    <!-- Pinned to the Microsoft.Extensions.AI version Chartula.Core references, so
-         the shared abstractions package is not lifted from underneath the domain. -->
+    <!-- Pinned to the Microsoft.Extensions.AI version Chartula.Core references, so this
+         package does not upgrade the shared abstractions package under the domain. -->
     <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="10.10.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.12" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.12" />
