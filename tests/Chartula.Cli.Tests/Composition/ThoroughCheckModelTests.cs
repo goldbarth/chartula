@@ -19,8 +19,8 @@ using OpenAI;
 namespace Chartula.Cli.Tests.Composition;
 
 /// <summary>
-/// The thorough check can run on its own model and thinking mode: rendering writes
-/// prose, the check compares claims with facts, and the two need not cost the same.
+/// The thorough check can use its own model and thinking mode. Rendering writes prose,
+/// the check compares claims with facts, and the two jobs need not cost the same.
 /// </summary>
 public sealed class ThoroughCheckModelTests
 {
@@ -60,7 +60,7 @@ public sealed class ThoroughCheckModelTests
         Assert.Equal(ReasoningEffort.High, options.CheckReasoning?.Effort);
     }
 
-    // A refusal names the setting in force, not the one the user did not write.
+    // A refusal names the setting in effect, not a setting the user did not write.
     [Fact]
     public void A_mode_the_check_model_rejects_is_refused_by_its_own_keys()
     {
@@ -78,7 +78,7 @@ public sealed class ThoroughCheckModelTests
     }
 
     // On the wire, through both real adapters: the check's request carries the check
-    // model and effort, the rendering's does not.
+    // model and effort, the rendering's request does not.
     [Theory]
     [InlineData("anthropic")]
     [InlineData("openai")]

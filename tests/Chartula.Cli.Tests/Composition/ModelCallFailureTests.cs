@@ -12,9 +12,9 @@ using Microsoft.Extensions.Configuration;
 namespace Chartula.Cli.Tests.Composition;
 
 /// <summary>
-/// #234: a failed model call reported only <c>Status Code: NotFound</c>. Checked here
-/// through the client a run's configuration builds - the real SDKs, with only the
-/// network stubbed - so what each SDK puts in its exception cannot leak through.
+/// #234: a failed model call reported only <c>Status Code: NotFound</c>.
+/// Checked through the client a run's configuration builds: the real SDKs, with only
+/// the network stubbed. So whatever each SDK puts in its exception cannot slip past the tests.
 /// </summary>
 public sealed class ModelCallFailureTests
 {
@@ -52,7 +52,7 @@ public sealed class ModelCallFailureTests
         Assert.DoesNotContain("Status Code", message);
     }
 
-    // Without a base URL the endpoint is Anthropic's own, so it cannot be the wrong one.
+    // Without a base URL the endpoint is Anthropic's own, so the endpoint cannot be wrong.
     [Fact]
     public async Task A_404_from_the_default_endpoint_names_only_the_model()
     {
@@ -76,7 +76,7 @@ public sealed class ModelCallFailureTests
         Assert.Contains("The endpoint said: invalid key", message);
     }
 
-    // An OpenAI-compatible run starts without a key, so a 401 may mean there is none.
+    // An OpenAI-compatible run starts without a key, so a 401 may mean the key is missing.
     [Fact]
     public async Task A_401_without_a_key_says_the_variable_is_not_set()
     {
@@ -97,8 +97,8 @@ public sealed class ModelCallFailureTests
         Assert.Contains($"The key in {variable} is not allowed to make this request", message);
     }
 
-    // The thorough check may ask a model of its own; the failure names that one, and
-    // the key it is set under.
+    // The thorough check may use its own model. The failure names that model and the
+    // setting it comes from.
     [Theory]
     [MemberData(nameof(Providers))]
     public async Task A_failed_check_names_the_check_s_model_and_its_key(string provider, string requested)
@@ -123,8 +123,8 @@ public sealed class ModelCallFailureTests
         Assert.DoesNotContain("The endpoint said", message);
     }
 
-    // No response at all: the endpoint is the configured one, and the transport's own
-    // words say why - not the SDK's wrapper around them.
+    // No response at all: the message names the configured endpoint, and gives the
+    // transport's own reason instead of the SDK's wrapper.
     [Theory]
     [InlineData("anthropic")]
     [InlineData("openai-compatible")]
@@ -163,7 +163,7 @@ public sealed class ModelCallFailureTests
             ["Chartula__Llm__Provider"] = provider,
             ["Chartula__Llm__Model"] = "some-model",
         };
-        // Empty stands for the provider's local stub, null for no base URL at all.
+        // Empty means the provider's local stub URL, null means no base URL at all.
         if (baseUrl is not null)
         {
             environment["Chartula__Llm__BaseUrl"] = baseUrl.Length > 0 ? baseUrl : BaseUrlOf(provider);
@@ -183,7 +183,7 @@ public sealed class ModelCallFailureTests
         return LlmServiceCollectionExtensions.CreateChatClient(configuration, transport);
     }
 
-    /// <summary>Answers every request with one status and body, as an endpoint that refuses does.</summary>
+    /// <summary>Answers every request with one status and body, like a refusing endpoint.</summary>
     private sealed class Answering(HttpStatusCode status, string body) : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)

@@ -22,8 +22,8 @@ public sealed class ProvenanceWiringTests
         Assert.Equal(ChangelogPromptBuilder.PromptHash, provenance.PromptHash);
     }
 
-    // #223: the settings that move a run's cost, in the spelling the configuration
-    // uses, so a file answers what a measurement was taken with.
+    // #223: the settings that affect a run's cost, spelled as in the configuration, so
+    // a file shows which settings a measurement was taken with.
     [Fact]
     public void A_run_records_thinking_the_thorough_check_and_the_fact_base_depth()
     {
@@ -37,7 +37,7 @@ public sealed class ProvenanceWiringTests
         Assert.Equal("title-only", provenance.FactBaseDepth);
     }
 
-    // Unset is recorded as what it means, not left out: the model's own behavior.
+    // An unset thinking mode is recorded as what it means (provider-default), not left out.
     [Fact]
     public void An_unset_thinking_mode_is_recorded_as_the_provider_default()
     {

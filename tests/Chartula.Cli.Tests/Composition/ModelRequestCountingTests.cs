@@ -13,9 +13,9 @@ using OpenAI;
 namespace Chartula.Cli.Tests.Composition;
 
 /// <summary>
-/// #128: both provider SDKs retry on their own. The handler under their clients is
-/// what turns those retries into a number the run can report - checked here against
-/// the real SDKs, with only the network stubbed.
+/// #128: both provider SDKs retry on their own. The handler under their clients turns
+/// those retries into a number the run can report.
+/// Checked here against the real SDKs, with only the network stubbed.
 /// </summary>
 public sealed class ModelRequestCountingTests
 {
@@ -61,8 +61,8 @@ public sealed class ModelRequestCountingTests
         Assert.Equal(0, (await RephraseAsync(chat)).Retries);
     }
 
-    // The SDKs enforce their own timeout; the HttpClient default of 100 seconds
-    // would cut a long thinking call off before it.
+    // The SDKs enforce their own timeout. The HttpClient default of 100 seconds would
+    // cut off a long thinking call first.
     [Fact]
     public void The_client_leaves_timeouts_to_the_sdk()
     {

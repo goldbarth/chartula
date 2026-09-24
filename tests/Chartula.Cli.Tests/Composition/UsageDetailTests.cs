@@ -12,9 +12,10 @@ using OpenAI;
 namespace Chartula.Cli.Tests.Composition;
 
 /// <summary>
-/// Which part of a call's tokens came from the provider's cache and which the model
-/// spent reasoning, read through the real adapters. Providers break these out
-/// differently, so what one does not report must stay unknown rather than zero.
+/// Which part of a call's tokens came from the provider's cache, and which part the
+/// model spent reasoning, read through the real adapters.
+/// Providers report these differently, so a value a provider does not report must stay
+/// unknown, not zero.
 /// </summary>
 public sealed class UsageDetailTests
 {
@@ -28,7 +29,7 @@ public sealed class UsageDetailTests
 
         LlmUsage usage = await RephraseAsync(chat);
 
-        // Cache reads are part of the input, as the adapter counts them.
+        // The adapter counts cache reads as part of the input.
         Assert.Equal(5_000, usage.Tokens.InputTokens);
         Assert.Equal(4_000, usage.CachedInputTokens);
         Assert.Null(usage.ReasoningTokens);
