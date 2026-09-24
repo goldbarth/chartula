@@ -1,10 +1,10 @@
 name: Install
 
-# Installs Chartula the way a user does and runs it the way a user does: install.sh
-# in fresh containers of every mainstream Linux and on macOS, install.ps1 on Windows,
-# then a real `chartula preview` (see .github/scripts/check-install.sh). A pull
-# request installs the binaries it builds; a published release installs itself, so a
-# release that cannot be installed or does not run shows up at once.
+# Installs and runs Chartula the way a user does: install.sh in fresh containers of
+# every mainstream Linux and on macOS, install.ps1 on Windows, then a real
+# `chartula preview` (see .github/scripts/check-install.sh).
+# A pull request installs the binaries it builds. A published release installs itself,
+# so a release that cannot be installed or does not run shows up at once.
 on:
   pull_request:
     paths:
@@ -52,10 +52,10 @@ jobs:
         exclude:
           # Arch publishes no arm64 image.
           - { image: 'archlinux:latest', arch: arm64 }
-        # git and ca-certificates only, as in a CI image; Alpine's libstdc++ is left
-        # to check-install.sh, which first checks that install.sh asks for it. Ubuntu
-        # and Debian also get curl: they ship neither curl nor wget, and the install
-        # line is `curl ... | sh`.
+        # Only git and ca-certificates, as in a CI image. check-install.sh installs
+        # Alpine's libstdc++ after checking that install.sh asks for it.
+        # Ubuntu and Debian also get curl: they ship neither curl nor wget, and the
+        # install line is `curl ... | sh`.
         include:
           - { image: 'ubuntu:22.04', packages: 'apt-get update && apt-get install -y --no-install-recommends git ca-certificates curl' }
           - { image: 'ubuntu:24.04', packages: 'apt-get update && apt-get install -y --no-install-recommends git ca-certificates curl' }
@@ -82,7 +82,7 @@ jobs:
           CHARTULA_VERSION: ${{ github.event.release.tag_name }}
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          # Served the way a release serves them, so install.sh runs unchanged.
+          # Serve the binaries like a release does, so install.sh runs unchanged.
           if [ -z "$CHARTULA_VERSION" ]; then
             (cd "$RUNNER_TEMP/dist" && sha256sum chartula-* > SHA256SUMS)
             python3 -m http.server 8000 --bind 127.0.0.1 --directory "$RUNNER_TEMP/dist" > /dev/null 2>&1 &
@@ -166,12 +166,12 @@ jobs:
         env:
           CHARTULA_VERSION: ${{ github.event.release.tag_name }}
         # The script never exits (under `irm | iex` that would close the user's window),
-        # so success is read from what it leaves behind.
+        # so success is checked from what it leaves behind.
         run: |
           Get-Content install.ps1 -Raw | Invoke-Expression
           if (-not (Test-Path "$env:LOCALAPPDATA\Programs\chartula\chartula.exe")) { exit 1 }
-      # The same run as check-install.sh: a 401 from the model endpoint means git, the
-      # GitHub API over TLS and the model call all worked, for no tokens.
+      # The same run as check-install.sh. A 401 from the model endpoint means git, the
+      # GitHub API over TLS and the model call all worked, without spending tokens.
       - name: Run chartula from the user PATH in a new process
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -184,8 +184,8 @@ jobs:
           $work = Join-Path $env:RUNNER_TEMP 'chartula-check'
           git clone --quiet https://github.com/goldbarth/chartula $work
           Set-Location $work
-          # Chartula writes its notices to stderr; Windows PowerShell would turn the
-          # first line into a terminating error under the runner's 'Stop'.
+          # Chartula writes its notices to stderr. Under the runner's 'Stop', Windows
+          # PowerShell would turn the first stderr line into a terminating error.
           $ErrorActionPreference = 'Continue'
           $output = chartula preview --tag v0.1.0-preview.1 --since 4bc57c8 2>&1 | Out-String
           $code = $LASTEXITCODE

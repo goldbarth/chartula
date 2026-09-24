@@ -1,9 +1,10 @@
 #!/bin/sh
 # Installs Chartula with install.sh the way a user does, then runs a real
 # `chartula preview` on a clone of this repository against OpenAI with a dummy key.
-# Pass is the endpoint's 401: git read the history, the GitHub API answered over
-# TLS and the model call went out - for no tokens. install.yml runs it in fresh
-# containers and on the macOS runners; it runs locally too, e.g.
+# The check passes on the endpoint's 401: git read the history, the GitHub API
+# answered over TLS, and the model call went out, without spending tokens.
+# install.yml runs it in fresh containers and on the macOS runners. It also runs
+# locally, e.g.
 #
 #   docker run --rm -v "$PWD:/src:ro" -e PACKAGES='apk add --no-cache git ca-certificates' \
 #     alpine:latest /src/.github/scripts/check-install.sh
@@ -25,8 +26,8 @@ if [ -n "${PACKAGES:-}" ]; then
     sh -c "$PACKAGES" > "$work/packages.txt" 2>&1 || { cat "$work/packages.txt"; fail "installing the packages failed."; }
 fi
 
-# Alpine has no C++ runtime, which the musl binary needs. install.sh has to say so
-# with the line that installs it, and install nothing itself.
+# Alpine has no C++ runtime, which the musl binary needs. install.sh must print the
+# line that installs it, and install nothing itself.
 if [ -e /etc/alpine-release ]; then
     if sh "$src/install.sh" > "$work/hint.txt" 2>&1; then
         cat "$work/hint.txt"
@@ -38,15 +39,15 @@ if [ -e /etc/alpine-release ]; then
     apk add --no-cache libstdc++ > /dev/null
 fi
 
-# Not piped into tee: a pipeline's status is its last command's, and a failed
-# install would read as a passed one.
+# Not piped into tee: a pipeline's exit status is its last command's, so a failed
+# install would look like a passed one.
 if ! sh "$src/install.sh" > "$work/install.txt" 2>&1; then
     cat "$work/install.txt"
     fail "install.sh failed."
 fi
 cat "$work/install.txt"
 
-# The line the PATH hint prints for this terminal has to be the one that works in it.
+# The PATH hint must print a line that works in this terminal.
 if ! command -v chartula > /dev/null 2>&1; then
     line=$(grep '^  export PATH=' "$work/install.txt") || fail "install.sh printed no PATH line for this terminal."
     eval "$line"

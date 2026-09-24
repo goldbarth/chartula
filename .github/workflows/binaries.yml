@@ -1,8 +1,8 @@
 name: Binaries
 
-# One self-contained binary per platform, built and smoke-tested, each uploaded as
-# the artifact binary-<rid>. release.yml releases them; install.yml installs them
-# the way a user does before they are released.
+# Builds and smoke-tests one self-contained binary per platform, and uploads each as
+# the artifact binary-<rid>. release.yml releases them. install.yml installs them the
+# way a user does, before they are released.
 on:
   workflow_call:
 
@@ -21,9 +21,9 @@ jobs:
       # Let every platform finish, so one failure does not hide another.
       fail-fast: false
       matrix:
-        # A Linux binary is smoke-tested in a slim container rather than on the runner,
-        # which has ICU and every library a user's image may lack. The musl ones run
-        # in Alpine with the one package install.sh asks for.
+        # A Linux binary is smoke-tested in a slim container, not on the runner: the
+        # runner has ICU and every library a user's image may lack. The musl binaries
+        # run in Alpine with the one package install.sh asks for.
         include:
           - { rid: linux-x64, runner: ubuntu-latest, ext: '', container: 'debian:12-slim' }
           - { rid: linux-arm64, runner: ubuntu-24.04-arm, ext: '', container: 'debian:12-slim' }
@@ -38,8 +38,8 @@ jobs:
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           global-json-file: global.json
-      # A musl binary is published from the glibc runner: self-contained and not
-      # native AOT, it needs only the musl runtime pack, which the restore brings.
+      # A musl binary is published from the glibc runner. It is self-contained and not
+      # native AOT, so it needs only the musl runtime pack, which the restore fetches.
       - name: Publish
         shell: bash
         run: |
@@ -47,9 +47,9 @@ jobs:
             -p:RestoreLockedMode=true -warnaserror -o "$RUNNER_TEMP/publish"
           mkdir -p "$RUNNER_TEMP/dist"
           cp "$RUNNER_TEMP/publish/chartula${{ matrix.ext }}" "$RUNNER_TEMP/dist/chartula-${{ matrix.rid }}${{ matrix.ext }}"
-      # Each binary runs on its own platform, outside the checkout, with no key: it
-      # must start, print its usage, and end a run with the hint that names the
-      # missing key. A crash here is one a user would otherwise hit first.
+      # Each binary runs on its own platform, outside the checkout, without a key. It
+      # must start, print its usage, and end a run with the hint that names the missing
+      # key. A crash here would otherwise hit a user first.
       - name: Smoke test
         shell: bash
         working-directory: ${{ runner.temp }}
