@@ -79,7 +79,7 @@ public sealed class GitHubReleaseNotesWriterTests
 
         string written = await writer.WriteAsync(Repo, "v1.0.0", "- Added search");
 
-        // Generated text is a draft a person reads before it goes public.
+        // Generated text is created as a draft that a person reads before it goes public.
         Assert.Contains("\"draft\":true", handler.LastBodyByMethod[HttpMethod.Post]);
         Assert.Equal("https://github.com/octo/repo/releases/tag/untagged-1 (draft)", written);
     }
@@ -87,8 +87,8 @@ public sealed class GitHubReleaseNotesWriterTests
     [Fact]
     public async Task Updates_an_existing_draft_rather_than_creating_another()
     {
-        // GitHub's lookup by tag answers only published releases, so a draft from an
-        // earlier run has to be found in the release list.
+        // GitHub's lookup by tag finds only published releases, so a draft from an
+        // earlier run must be found in the release list.
         RoutingHandler handler = new(request => request.Method == HttpMethod.Get
             ? request.RequestUri!.AbsolutePath.EndsWith("/releases")
                 ? Json(HttpStatusCode.OK, """[{"id":5,"tag_name":"v0.9.0","draft":false},{"id":7,"tag_name":"v1.0.0","draft":true,"html_url":"https://github.com/octo/repo/releases/tag/untagged-7"}]""")
@@ -151,8 +151,8 @@ public sealed class GitHubReleaseNotesWriterTests
         await Assert.ThrowsAsync<ArgumentException>(() => writer.WriteAsync(Repo, "  ", "- x"));
     }
 
-    // #219: reading needs no write access, so the first request that needs it -
-    // creating the draft - is where a read-only token is refused.
+    // #219: reading needs no write access. So a read-only token is first refused when
+    // creating the draft, the first request that needs write access.
     private static RoutingHandler RefusingCreate(HttpStatusCode status, string? neededPermission = null)
         => new(request =>
         {
