@@ -21,7 +21,7 @@ public sealed class RuleBasedFaithfulnessCheckerTests
         FaithfulnessReport report = _checker.Check("Added 3 new endpoints.", Facts());
 
         Assert.True(report.HasFindings);
-        Assert.Contains(report.UnsupportedClaims, c => c.Contains("3"));
+        Assert.Contains(report.UnsupportedClaims, c => c.Text.Contains("3"));
     }
 
     [Fact]
@@ -30,7 +30,7 @@ public sealed class RuleBasedFaithfulnessCheckerTests
         FaithfulnessReport report = _checker.Check("Introduces the `TurboSync` API.", Facts());
 
         Assert.True(report.HasFindings);
-        Assert.Contains(report.UnsupportedClaims, c => c.Contains("TurboSync"));
+        Assert.Contains(report.UnsupportedClaims, c => c.Text.Contains("TurboSync"));
     }
 
     // Breaking-change claims are the thorough check's job. The output is free prose,

@@ -17,7 +17,7 @@ internal sealed class FindingThoroughChecker(params string[] findings) : IThorou
 {
     public Task<FaithfulnessReport> CheckAsync(
         string output, FactBase factBase, CancellationToken cancellationToken = default)
-        => Task.FromResult(FaithfulnessReport.Checked(findings));
+        => Task.FromResult(FaithfulnessReport.Checked([.. findings.Select(static finding => new FaithfulnessFlag(finding))]));
 }
 
 public sealed class ReleasePipelineMetricsTests
@@ -85,7 +85,7 @@ public sealed class ReleasePipelineMetricsTests
             .RunAsync(Request(), PipelineMode.Preview);
 
         // Metrics must not change what the run produces.
-        Assert.All(outcome.Renderings, rendering => Assert.Contains("invented a claim", rendering.Flags));
+        Assert.All(outcome.Renderings, rendering => Assert.Contains(new FaithfulnessFlag("invented a claim"), rendering.Flags));
     }
 
     [Fact]

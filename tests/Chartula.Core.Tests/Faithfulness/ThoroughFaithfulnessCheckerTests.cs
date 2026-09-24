@@ -16,14 +16,14 @@ public sealed class ThoroughFaithfulnessCheckerTests
     public async Task Runs_a_second_pass_and_flags_unsupported_claims_when_enabled()
     {
         StubFaithfulnessModel model = new(
-            FaithfulnessReport.Checked(["'security hole' is not supported: the fact is a parser bug fix"]));
+            FaithfulnessReport.Checked([new FaithfulnessFlag("'security hole' is not supported: the fact is a parser bug fix")]));
         IThoroughFaithfulnessChecker checker = new ThoroughFaithfulnessChecker(
             model, new ThoroughFaithfulnessOptions(Enabled: true));
 
         FaithfulnessReport report = await checker.CheckAsync("This release closed a security hole.", Facts());
 
         Assert.True(report.HasFindings);
-        Assert.Contains(report.UnsupportedClaims, c => c.Contains("security hole"));
+        Assert.Contains(report.UnsupportedClaims, c => c.Text.Contains("security hole"));
         Assert.Equal(1, model.CheckCallCount); // the second pass ran
     }
 
@@ -40,6 +40,8 @@ public sealed class ThoroughFaithfulnessCheckerTests
         Assert.Contains(model.LastRequest.Facts.Statements, s => s.Contains("off-by-one"));
     }
 
+    // The number opens the fact, where the check takes it from, and with the link it is
+    // also the reference the composer adds to a technical entry.
     [Fact]
     public async Task Grounds_the_pull_request_reference_a_rendering_carries()
     {
@@ -49,8 +51,39 @@ public sealed class ThoroughFaithfulnessCheckerTests
 
         await checker.CheckAsync("Fixed a parser bug. ([#7](https://example/pull/7))", Facts());
 
-        string statement = Assert.Single(model.LastRequest!.Facts.Statements);
-        Assert.Contains("pull request #7, https://example/pull/7", statement, StringComparison.Ordinal);
+        Assert.Equal(
+            "[#7] Fix: fix: correct an off-by-one in the parser (https://example/pull/7) - Fixes a parser bug.",
+            Assert.Single(model.LastRequest!.Facts.Statements));
+    }
+
+    [Fact]
+    public async Task A_flag_keeps_the_pull_request_the_fact_base_has()
+    {
+        StubFaithfulnessModel model = new(FaithfulnessReport.Checked([new FaithfulnessFlag("overstates the fix", 7)]));
+        IThoroughFaithfulnessChecker checker = new ThoroughFaithfulnessChecker(
+            model, new ThoroughFaithfulnessOptions(Enabled: true));
+
+        FaithfulnessReport report = await checker.CheckAsync("Fixed every parser bug.", Facts());
+
+        Assert.Equal(new FaithfulnessFlag("overstates the fix", 7), Assert.Single(report.UnsupportedClaims));
+    }
+
+    // The model named a number no fact has, such as the issue a title mentions. It is no
+    // fact of the release, so the flag loses it as its fact but keeps the model's lead.
+    [Fact]
+    public async Task A_flag_loses_a_pull_request_the_fact_base_does_not_have()
+    {
+        StubFaithfulnessModel model = new(FaithfulnessReport.Checked([new FaithfulnessFlag("overstates the fix", 243)]));
+        IThoroughFaithfulnessChecker checker = new ThoroughFaithfulnessChecker(
+            model, new ThoroughFaithfulnessOptions(Enabled: true));
+
+        FaithfulnessReport report = await checker.CheckAsync("Fixed every parser bug.", Facts());
+
+        FaithfulnessFlag flag = Assert.Single(report.UnsupportedClaims);
+        Assert.Null(flag.PullRequest);
+        Assert.Equal(
+            "overstates the fix (The check named #243, which is not a pull request of this release.)",
+            flag.Text);
     }
 
     [Fact]
@@ -72,7 +105,7 @@ public sealed class ThoroughFaithfulnessCheckerTests
     [Fact]
     public async Task Makes_no_call_and_reports_faithful_when_disabled()
     {
-        StubFaithfulnessModel model = new(FaithfulnessReport.Checked(["should not be used"]));
+        StubFaithfulnessModel model = new(FaithfulnessReport.Checked([new FaithfulnessFlag("should not be used")]));
         IThoroughFaithfulnessChecker checker = new ThoroughFaithfulnessChecker(
             model, new ThoroughFaithfulnessOptions(Enabled: false));
 

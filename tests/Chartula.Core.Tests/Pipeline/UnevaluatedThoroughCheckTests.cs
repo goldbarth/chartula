@@ -60,7 +60,7 @@ public sealed class UnevaluatedThoroughCheckTests
         ReleaseOutcome outcome = await RunAsync("Sorry, I cannot produce JSON here.");
 
         Assert.All(outcome.Renderings, audience =>
-            Assert.Contains(audience.Flags, flag => flag.Contains("could not be evaluated")));
+            Assert.Contains(audience.Flags, flag => flag.Text.Contains("could not be evaluated")));
     }
 
     [Fact]

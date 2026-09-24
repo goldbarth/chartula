@@ -6,7 +6,7 @@ namespace Chartula.Core.Tests.Review;
 public sealed class ReviewCoordinatorTests
 {
     private static ReviewItem Item(string text = "Dark mode is here.", params string[] flags)
-        => new(Audience.Customer, text, flags);
+        => new(Audience.Customer, text, [.. flags.Select(static flag => new FaithfulnessFlag(flag))]);
 
     private sealed class StubReviewer(ReviewDecision decision) : IReviewer
     {

@@ -11,4 +11,12 @@ namespace Chartula.Core.Llm;
 /// </remarks>
 /// <param name="IsFaithful">The model's verdict: true when it found every claim supported.</param>
 /// <param name="UnsupportedClaims">The claims it found unsupported. May be absent.</param>
-public sealed record FaithfulnessVerdict(bool IsFaithful, IReadOnlyList<string>? UnsupportedClaims);
+public sealed record FaithfulnessVerdict(bool IsFaithful, IReadOnlyList<UnsupportedClaim>? UnsupportedClaims);
+
+/// <summary>One claim the model found unsupported, and the fact it names for it.</summary>
+/// <param name="Claim">The claim and why the facts do not back it.</param>
+/// <param name="PullRequest">
+/// The pull request number of the fact the claim rephrases, as the model read it.
+/// Unverified: the model can name a number no fact has, such as an issue a title mentions.
+/// </param>
+public sealed record UnsupportedClaim(string Claim, int? PullRequest = null);

@@ -95,9 +95,9 @@ internal static class ReleaseCommand
                 if (audience.Flags.Count > 0)
                 {
                     builder.AppendLine("  Flagged for review:");
-                    foreach (string flag in audience.Flags)
+                    foreach (FaithfulnessFlag flag in audience.Flags)
                     {
-                        AppendIndented(builder, "    ! ", flag);
+                        AppendIndented(builder, "    ! ", flag.ToString());
                     }
                 }
             }

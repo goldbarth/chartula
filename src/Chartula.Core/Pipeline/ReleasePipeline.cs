@@ -100,7 +100,7 @@ public sealed class ReleasePipeline(
 
             // Check the description together with its text. The model wrote it from the
             // same facts, so its claims need the same check as any other.
-            IReadOnlyList<string> flags =
+            IReadOnlyList<FaithfulnessFlag> flags =
                 await CollectFlagsAsync(Checkable(result), factBase, cancellationToken);
 
             ReviewDecision decision =
@@ -149,25 +149,28 @@ public sealed class ReleasePipeline(
         };
     }
 
-    private async Task<IReadOnlyList<string>> CollectFlagsAsync(
+    private async Task<IReadOnlyList<FaithfulnessFlag>> CollectFlagsAsync(
         string text, FactBase factBase, CancellationToken cancellationToken)
     {
-        IReadOnlyList<string> ruleBased = ruleBasedChecker.Check(text, factBase).UnsupportedClaims;
+        IReadOnlyList<FaithfulnessFlag> ruleBased = ruleBasedChecker.Check(text, factBase).UnsupportedClaims;
         FaithfulnessReport thorough = await thoroughChecker.CheckAsync(text, factBase, cancellationToken);
 
         // Record both findings together, so the report can tell what the paid check
         // caught beyond the free one.
         bool thoroughEvaluated = thorough.Status != FaithfulnessCheckStatus.NotEvaluated;
-        _metrics.RecordFaithfulnessChecks(ruleBased, thorough.UnsupportedClaims, thoroughEvaluated);
+        _metrics.RecordFaithfulnessChecks(
+            [.. ruleBased.Select(static flag => flag.Text)],
+            [.. thorough.UnsupportedClaims.Select(static flag => flag.Text)],
+            thoroughEvaluated);
 
-        List<string> flags = [.. ruleBased, .. thorough.UnsupportedClaims];
+        List<FaithfulnessFlag> flags = [.. ruleBased, .. thorough.UnsupportedClaims];
 
         // An unreadable thorough check leaves the text unverified. Without its own flag,
         // it would look like a check that found nothing.
         if (!thoroughEvaluated)
         {
             // Trim the period: a reason from a failed model call may already end with one.
-            flags.Add($"The thorough check could not be evaluated: {thorough.Reason?.TrimEnd('.')}.");
+            flags.Add(new FaithfulnessFlag($"The thorough check could not be evaluated: {thorough.Reason?.TrimEnd('.')}."));
         }
 
         return flags;

@@ -9,7 +9,10 @@ public sealed class ReviewPresentationTests
     public void Presents_the_text_and_highlights_the_flagged_passages()
     {
         ReviewItem item = new(Audience.Technical, "- Added dark mode",
-            ["The number '3' is not supported by the facts.", "'TurboSync' is not supported by the facts."]);
+        [
+            new FaithfulnessFlag("The number '3' is not supported by the facts."),
+            new FaithfulnessFlag("'TurboSync' is not supported by the facts."),
+        ]);
 
         string presented = ReviewPresentation.Format(item);
 
@@ -18,6 +21,16 @@ public sealed class ReviewPresentationTests
         Assert.Contains("Flagged for review:", presented);
         Assert.Contains("! The number '3' is not supported by the facts.", presented);
         Assert.Contains("! 'TurboSync' is not supported by the facts.", presented);
+    }
+
+    // The reviewer goes straight to the fact instead of searching the release for it.
+    [Fact]
+    public void A_flag_opens_on_the_pull_request_it_concerns()
+    {
+        ReviewItem item = new(Audience.Customer, "- Dark mode is here.",
+            [new FaithfulnessFlag("\"is here\" overstates a preview.", 12)]);
+
+        Assert.Contains("  ! #12: \"is here\" overstates a preview.", ReviewPresentation.Format(item));
     }
 
     [Fact]

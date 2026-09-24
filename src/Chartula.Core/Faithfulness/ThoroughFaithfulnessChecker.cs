@@ -11,6 +11,10 @@ namespace Chartula.Core.Faithfulness;
 /// returns a faithful report without any LLM call. A call that fails leaves the text
 /// unverified, which is what <see cref="FaithfulnessCheckStatus.NotEvaluated"/> says;
 /// it does not take the rendering with it, which has already been paid for.
+/// <para>
+/// The model names the pull request each claim is about. Whether that number is a fact
+/// of the release is decided here, against the fact base, not taken from the model.
+/// </para>
 /// </summary>
 public sealed class ThoroughFaithfulnessChecker(
     IChangelogModel model,
@@ -36,9 +40,10 @@ public sealed class ThoroughFaithfulnessChecker(
         }
 
         GroundedFacts facts = ToGroundedFacts(factBase);
+        FaithfulnessReport report;
         try
         {
-            return await _model.CheckFaithfulnessAsync(new FaithfulnessRequest(output, facts), cancellationToken);
+            report = await _model.CheckFaithfulnessAsync(new FaithfulnessRequest(output, facts), cancellationToken);
         }
         catch (OperationCanceledException)
         {
@@ -51,7 +56,22 @@ public sealed class ThoroughFaithfulnessChecker(
             // differ from the rendering's model).
             return FaithfulnessReport.NotEvaluated(ex.Message);
         }
+
+        HashSet<int> pullRequests = [.. factBase.Changes.Select(static change => change.Number).OfType<int>()];
+        return report with
+        {
+            UnsupportedClaims = [.. report.UnsupportedClaims.Select(flag => Established(flag, pullRequests))],
+        };
     }
+
+    // A number the fact base does not have is no fact of this release, whatever the model
+    // read it as: an issue a title mentions reads like a pull request. The flag keeps the
+    // number in its text, so the reviewer still has the model's lead, but not as its fact.
+    private static FaithfulnessFlag Established(FaithfulnessFlag flag, HashSet<int> pullRequests)
+        => flag.PullRequest is not { } number || pullRequests.Contains(number)
+            ? flag
+            : new FaithfulnessFlag(
+                $"{flag.Text} (The check named #{number}, which is not a pull request of this release.)");
 
     // The full fact base as grounded statements, so the check compares the output
     // against every established fact.
@@ -61,6 +81,18 @@ public sealed class ThoroughFaithfulnessChecker(
         foreach (ChangeFact change in factBase.Changes)
         {
             StringBuilder statement = new();
+
+            // Open on the pull request number, so the check names each claim's fact by it.
+            // Its place is fixed because the title and description mention other numbers,
+            // issues and earlier pull requests among them.
+            // The number and the link are also the reference the composer adds to the
+            // technical rendering after the model has written. Without them here, the
+            // check reads every reference as invented and flags every entry.
+            if (change.Number is { } number)
+            {
+                statement.Append("[#").Append(number).Append("] ");
+            }
+
             statement.Append(change.Category);
             if (change.IsBreaking)
             {
@@ -68,19 +100,9 @@ public sealed class ThoroughFaithfulnessChecker(
             }
 
             statement.Append(": ").Append(change.Title);
-
-            // Include the pull request reference. The composer adds it to the technical
-            // rendering after the model has written. Without it here, the check reads
-            // every reference as invented and flags every entry.
             if (change.Url is not null)
             {
-                statement.Append(" (");
-                if (change.Number is { } number)
-                {
-                    statement.Append("pull request #").Append(number).Append(", ");
-                }
-
-                statement.Append(change.Url).Append(')');
+                statement.Append(" (").Append(change.Url).Append(')');
             }
 
             if (!string.IsNullOrEmpty(change.Description))

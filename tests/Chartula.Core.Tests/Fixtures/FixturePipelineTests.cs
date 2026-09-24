@@ -99,7 +99,7 @@ public sealed partial class FixturePipelineTests
 
         // Proves the fixtures exercise the checks for real, not just clean input.
         Assert.All(outcome.Renderings, rendering => Assert.Contains(
-            rendering.Flags, flag => flag.Contains("9,001") || flag.Contains("QuantumScheduler")));
+            rendering.Flags, flag => flag.Text.Contains("9,001") || flag.Text.Contains("QuantumScheduler")));
     }
 
     [Theory]

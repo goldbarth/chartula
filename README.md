@@ -48,10 +48,10 @@ And what the run reported next to it:
 
 ```text
 Flagged for review:
-  ! The claim that the database environment variable was "renamed" and that users who set it
-    themselves need to update it to match the new name is not supported by the facts, which only
-    state that the environment variable for the database connection was updated, not that it was
-    specifically renamed.
+  ! #180: The claim that the database environment variable was "renamed" and that users who set
+    it themselves need to update it to match the new name is not supported by the facts, which
+    only state that the environment variable for the database connection was updated, not that
+    it was specifically renamed.
 ```
 
 The fact says the variable was updated.
@@ -71,7 +71,7 @@ The model writes exactly one entry per fact it is given; a rendering with an ent
 
 **It reports what it could not verify.**
 Two checks read every rendering against the facts: a rule-based one that costs nothing, and a thorough one that asks the model again.
-What they cannot back is listed under "Flagged for review" instead of being dropped silently.
+What they cannot back is listed under "Flagged for review" instead of being dropped silently, with the pull request it concerns where there is one.
 
 **It does not make your pull requests true.**
 The facts are what your pull requests say.

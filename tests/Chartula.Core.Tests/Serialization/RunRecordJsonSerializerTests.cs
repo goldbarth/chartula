@@ -23,7 +23,7 @@ public sealed class RunRecordJsonSerializerTests
             new RepositoryCoordinates("octo", "repo"),
             mode,
             [
-                new AudienceOutcome(Audience.Technical, Success: true, "- Added search", ["shared"], Error: null),
+                new AudienceOutcome(Audience.Technical, Success: true, "- Added search", [new FaithfulnessFlag("shared"), new FaithfulnessFlag("overstated", 12)], Error: null),
                 new AudienceOutcome(Audience.Customer, Success: false, Text: null, [], "Status Code: Unauthorized"),
             ],
             metrics.Snapshot());
@@ -60,7 +60,7 @@ public sealed class RunRecordJsonSerializerTests
         JsonElement technical = parsed.RootElement.GetProperty("audiences")[0];
         Assert.Equal("technical", technical.GetProperty("audience").GetString());
         Assert.True(technical.GetProperty("rendered").GetBoolean());
-        Assert.Equal("shared", technical.GetProperty("flags")[0].GetString());
+        Assert.Equal(2, technical.GetProperty("flags").GetArrayLength());
         Assert.False(technical.TryGetProperty("error", out _));
 
         // A failed audience was never checked, so it has no flags, not an empty list.
@@ -76,12 +76,25 @@ public sealed class RunRecordJsonSerializerTests
         RunRecordDocument document = RunRecordJsonSerializer.Deserialize(
             RunRecordJsonSerializer.Serialize(Record(PipelineMode.GenerateWithoutPublishing), At));
 
-        Assert.Equal(1, document.SchemaVersion);
+        Assert.Equal(2, document.SchemaVersion);
         Assert.Equal(new DateTimeOffset(2026, 9, 22, 10, 30, 15, TimeSpan.Zero), document.RecordedAt);
         Assert.Equal(TimeSpan.Zero, document.RecordedAt.Offset);
         Assert.Equal("v1.0.0", document.Tag);
         Assert.Equal("octo/repo", document.Repository);
         Assert.Equal("generate --no-publish", document.Mode);
+    }
+
+    // Flags from many runs group by the fact they concern, without parsing their text.
+    [Fact]
+    public void Each_flag_names_its_pull_request_and_one_about_no_fact_names_none()
+    {
+        using JsonDocument parsed = JsonDocument.Parse(RunRecordJsonSerializer.Serialize(Record(), At));
+        JsonElement flags = parsed.RootElement.GetProperty("audiences")[0].GetProperty("flags");
+
+        Assert.Equal("shared", flags[0].GetProperty("text").GetString());
+        Assert.False(flags[0].TryGetProperty("pullRequest", out _));
+        Assert.Equal("overstated", flags[1].GetProperty("text").GetString());
+        Assert.Equal(12, flags[1].GetProperty("pullRequest").GetInt32());
     }
 
     [Fact]

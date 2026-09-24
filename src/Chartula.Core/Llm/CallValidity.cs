@@ -68,7 +68,13 @@ internal static class CallValidity
             return FaithfulnessReport.NotEvaluated("the response did not match the expected format");
         }
 
-        IReadOnlyList<string> claims = verdict.UnsupportedClaims ?? [];
+        // A claim without text names nothing a reviewer can look at, whatever fact it names.
+        List<FaithfulnessFlag> claims =
+        [
+            .. (verdict.UnsupportedClaims ?? [])
+                .Where(static claim => !string.IsNullOrWhiteSpace(claim?.Claim))
+                .Select(static claim => new FaithfulnessFlag(claim.Claim, claim.PullRequest)),
+        ];
         if (!verdict.IsFaithful && claims.Count == 0)
         {
             return FaithfulnessReport.NotEvaluated("the model called the output unfaithful but listed no claims");

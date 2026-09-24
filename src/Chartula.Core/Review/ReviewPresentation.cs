@@ -1,4 +1,5 @@
 using System.Text;
+using Chartula.Core.Llm;
 
 namespace Chartula.Core.Review;
 
@@ -20,9 +21,9 @@ public static class ReviewPresentation
         {
             builder.AppendLine();
             builder.AppendLine("Flagged for review:");
-            foreach (string flag in item.Flags)
+            foreach (FaithfulnessFlag flag in item.Flags)
             {
-                builder.Append("  ! ").AppendLine(flag);
+                builder.Append("  ! ").AppendLine(flag.ToString());
             }
         }
 

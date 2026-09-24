@@ -29,9 +29,20 @@ public sealed record RunRecordAudience(
     [property: JsonPropertyName("audience")] string Audience,
     [property: JsonPropertyName("rendered")] bool Rendered,
     [property: JsonPropertyName("flags"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    IReadOnlyList<string>? Flags,
+    IReadOnlyList<RunRecordFlag>? Flags,
     [property: JsonPropertyName("error"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     string? Error);
+
+/// <summary>
+/// One flag, with the pull request whose fact it concerns.
+/// An object rather than the plain string of schema version 1, so flags from many runs
+/// group by <c>pullRequest</c> without parsing their text.
+/// A flag about no single fact has no <c>pullRequest</c>.
+/// </summary>
+public sealed record RunRecordFlag(
+    [property: JsonPropertyName("text")] string Text,
+    [property: JsonPropertyName("pullRequest"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    int? PullRequest = null);
 
 /// <summary>
 /// The run metrics as the summary prints them.

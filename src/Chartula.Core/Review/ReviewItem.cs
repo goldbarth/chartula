@@ -9,4 +9,4 @@ namespace Chartula.Core.Review;
 /// <param name="Audience">The audience this rendering is for.</param>
 /// <param name="Text">The generated changelog text.</param>
 /// <param name="Flags">Findings from the faithfulness checks, empty if clean.</param>
-public sealed record ReviewItem(Audience Audience, string Text, IReadOnlyList<string> Flags);
+public sealed record ReviewItem(Audience Audience, string Text, IReadOnlyList<FaithfulnessFlag> Flags);

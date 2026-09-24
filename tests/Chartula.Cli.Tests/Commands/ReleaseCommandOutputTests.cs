@@ -243,7 +243,7 @@ public sealed class ReleaseCommandOutputTests
         string text = await FormatAsync(
             Failed(Audience.Technical, "answered 401 Unauthorized.\nThe endpoint rejected the key in ANTHROPIC_API_KEY."),
             new AudienceOutcome(
-                Audience.Customer, Success: true, "- Added search", ["The thorough check could not be evaluated: answered 404.\nThe endpoint said: no."], Error: null));
+                Audience.Customer, Success: true, "- Added search", [new FaithfulnessFlag("The thorough check could not be evaluated: answered 404.\nThe endpoint said: no.")], Error: null));
 
         Assert.Contains("  (failed) answered 401 Unauthorized.\n           The endpoint rejected the key in ANTHROPIC_API_KEY.\n", text);
         Assert.Contains("    ! The thorough check could not be evaluated: answered 404.\n      The endpoint said: no.\n", text);
