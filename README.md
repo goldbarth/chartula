@@ -189,7 +189,7 @@ llm:
 $ export Chartula__Llm__BaseUrl=http://localhost:11434/v1
 ```
 
-[Running against your own endpoint](docs/configuration.md#running-against-your-own-endpoint) shows a hosted endpoint as well, and what a local server needs before a real release.
+[Providers](docs/providers.md) has a recipe for Anthropic, OpenAI, a hosted endpoint and a local server.
 
 GitHub is read with `GITHUB_TOKEN`.
 A run starts without one and says so, because a small release still fits: GitHub allows 60 API requests an hour per IP address unauthenticated.
@@ -232,7 +232,7 @@ Measured on three repositories with the defaults (`claude-sonnet-5`, technical a
 | port-tidewatch `v1.3.0` | 10 | 12,371 | 3,591 | about $0.07 |
 | ServiceDeskLite `v1.9.0` | 10 | 53,129 | 24,017 | about $0.20 |
 
-The dollar figures are the token counts at the [documented rate](docs/configuration.md#choosing-a-model), not billed amounts.
+The dollar figures are the token counts at that rate, not billed amounts.
 Cost follows the length of your pull request descriptions more than their number: ServiceDeskLite's ten descriptions come to about 22,500 characters, Ingestor's to about 230.
 Each audience you render is one rephrasing call and one thorough check more.
 `faithfulness.thorough: false` drops the thorough check, and with it what only that check finds - like the example above.
@@ -266,7 +266,7 @@ A `chartula.yaml` in your repository root refines the defaults, and every settin
 Every option is documented in [Configuration](docs/configuration.md).
 
 `llm.thinking` is one setting for every provider: `disabled`, or an effort of `low`, `medium`, `high` or `xhigh`, which Chartula sends in a provider-neutral form that Anthropic reads as adaptive thinking at that effort and OpenAI-compatible endpoints as `reasoning_effort`.
-Left unset, each model keeps its own default, and models differ - see [`thinking`](docs/configuration.md#thinking).
+Left unset, each model keeps its own default, and models differ - see [`thinking`](docs/providers.md#thinking).
 
 ---
 
@@ -275,6 +275,7 @@ Left unset, each model keeps its own default, and models differ - see [`thinking
 | Document | What it covers |
 | --- | --- |
 | [Install](docs/install.md) | Platforms, the install scripts and their settings, a download by hand, building from source, updating and uninstalling. |
+| [Providers](docs/providers.md) | Setting up Anthropic, OpenAI, a hosted endpoint or a local server, choosing a model, and `thinking`. |
 | [CLI](docs/cli.md) | Every command, option and environment variable the `chartula` binary accepts. |
 | [Configuration](docs/configuration.md) | Every `chartula.yaml` section and its defaults. |
 | [`changelog.json` format](docs/changelog-json.md) | The stable output schema other tools build on. |
