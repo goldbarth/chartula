@@ -56,7 +56,8 @@
 # as a clean check, so you find out rather than being told the text passed.
 
 # The GitHub API is reached at https://api.github.com/ with the token in
-# GITHUB_TOKEN. For GitHub Enterprise, set Chartula__GitHub__ApiBaseUrl.
+# GITHUB_TOKEN. For GitHub Enterprise, set Chartula__GitHub__ApiBaseUrl. See
+# docs/github.md.
 
 # Steer curation with GitHub labels. With no rules, labels are ignored.
 # labels:
