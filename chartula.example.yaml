@@ -1,106 +1,45 @@
-# Chartula configuration - copy to chartula.yaml to use.
-#
-# Chartula runs with sensible defaults, so this file is optional and only exists
-# to refine that default behavior. Everything below is commented out; uncomment
-# and change only what you need. Full options are documented in
-# docs/configuration.md.
-#
-# Every setting can also be given as an environment variable, which overrides
-# this file: Chartula__Section__Key, for example Chartula__Faithfulness__Thorough.
-#
-# API keys and tokens are never read from this file, and neither are the
-# endpoints or the names of the variables holding the keys: those decide where
-# release data and credentials go, so they come from the environment only
-# (Chartula__Llm__BaseUrl, Chartula__Llm__ApiKeyEnvironmentVariable,
-# Chartula__GitHub__ApiBaseUrl, Chartula__GitHub__TokenEnvironmentVariable).
-# A file that sets one is refused. See docs/configuration.md,
-# "Environment-only settings".
+# Chartula configuration: copy to chartula.yaml and uncomment what you need.
+# Every key, its default and its valid values: docs/configuration.md
+# Environment variables override this file (Chartula__Section__Key).
+# Endpoints and key variable names are environment-only and refused here:
+# docs/configuration.md, "Environment-only settings".
 
-# The model provider and which model to use. maxOutputTokens caps what the model
-# may produce per call; raise it for releases whose changelog runs long.
-# The default is claude-sonnet-5; another model is a config change, not a code
-# change - claude-haiku-4-5 is cheaper, claude-opus-5 the top tier. See
-# docs/providers.md, "Choosing a model".
+# The model. Setup per provider: docs/providers.md
 # llm:
-#   provider: anthropic
-#   model: claude-sonnet-5
-#   maxOutputTokens: 32000
-# thinking is provider-default, disabled, low, medium, high or xhigh, and means the
-# same on every provider. The default sends nothing and lets each model decide, and
-# models decide differently - thinking bills as output tokens, so set it explicitly
-# if you want the same behavior on every model.
-#   thinking: provider-default
+#   provider: anthropic              # anthropic or openai-compatible
+#   model: claude-sonnet-5           # required with openai-compatible
+#   maxOutputTokens: 32000           # per call, thinking included
+#   thinking: provider-default       # docs/providers.md, "thinking"
 
-# provider: openai-compatible reaches anything speaking the OpenAI chat-completions
-# dialect at the URL in Chartula__Llm__BaseUrl. See docs/providers.md for a
-# recipe per provider. Neither the model nor the endpoint has a default there, so
-# both are required.
-#
-# Your own machine, where the release data never leaves it (Ollama here; LM Studio
-# is http://localhost:1234/v1). No API key is involved - local servers do not read
-# the Authorization header.
-# llm:
-#   provider: openai-compatible
-#   model: qwen3:8b
-# with: export Chartula__Llm__BaseUrl=http://localhost:11434/v1
-#
-# A hosted endpoint instead, which does need a key:
-# llm:
-#   provider: openai-compatible
-#   model: llama-3.3-70b-versatile
-# with: export Chartula__Llm__BaseUrl=https://api.groq.com/openai/v1
-#       export Chartula__Llm__ApiKeyEnvironmentVariable=GROQ_API_KEY
-#
-# Watch the thorough faithfulness check here: an endpoint may accept the request and
-# ignore the JSON schema. An unreadable verdict is reported as not evaluated, never
-# as a clean check, so you find out rather than being told the text passed.
+# GitHub has no keys here: docs/github.md
 
-# The GitHub API is reached at https://api.github.com/ with the token in
-# GITHUB_TOKEN. For GitHub Enterprise, set Chartula__GitHub__ApiBaseUrl. See
-# docs/github.md.
-
-# Steer curation with GitHub labels. With no rules, labels are ignored.
+# Label rules: docs/what-goes-into-a-release.md
 # labels:
-#   exclude: [wontfix, duplicate]
+#   exclude: [wontfix, duplicate]    # drop these pull requests
 #   category:
-#     security: Fix
-#   onlyIncludeLabeled: false
-# Which changes a reader can come into contact with. The names are your
-# convention, not the tool's. A breaking change is always user-facing, and a
-# change carrying neither label falls back to its category - so labelling
-# nothing leaves the customer changelog exactly as it is.
-#   internal: [visibility:internal]
+#     security: Fix                  # force a category by label
+#   onlyIncludeLabeled: false        # true drops unlabeled changes
+#   internal: [visibility:internal]  # kept out of the customer rendering
 #   userFacing: [visibility:user-facing]
+#   actionRequired: [needs-migration]
 
-# Which categories are dropped from the changelog. An explicit list replaces
-# the default.
 # filter:
-#   excludeCategories: [Internal]
+#   excludeCategories: [Internal]    # a list replaces the default
 
-# How much source material feeds the fact base.
-# One of: title-only, title-and-description, title-description-and-issues.
 # factBase:
-#   depth: title-and-description
+#   depth: title-and-description     # title-only, title-and-description, title-description-and-issues
 
-# How categories are presented in the output.
 # categories:
 #   order: [Feature, Fix, Performance, Documentation, Refactor, Other, Internal]
 #   names:
-#     Fix: Bug Fixes
-#   breakingProminent: true
+#     Fix: Bug Fix                   # the name the model is given, not a heading
+#   breakingProminent: true          # product rendering only
 
-# The faithfulness checks. The rule-based check always runs and is not
-# configurable. See docs/run-metrics.md for judging whether the thorough
-# check earns its tokens.
+# The checks: docs/run-metrics.md
 # faithfulness:
 #   thorough: true
-# The thorough check can ask its own model, at the same provider and endpoint -
-# render with a cheaper model and check with a stronger one, or the reverse.
-# thinking takes the values of llm.thinking. Both default to what llm says.
-#   model: claude-opus-5
-#   thinking: disabled
+#   model: claude-sonnet-5           # defaults to llm.model
+#   thinking: disabled               # defaults to llm.thinking
 
-# Review mode - present generated texts for sign-off before writing.
-# Not available yet: enabled: true is refused.
 # review:
-#   enabled: false
+#   enabled: false                   # only false is accepted
