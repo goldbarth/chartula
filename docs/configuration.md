@@ -271,8 +271,9 @@ What it does show is which way to look first: the free check was the more useful
 How the GitHub API is reached. Both of its settings, the API base URL and the name of the token variable, are [environment-only](#environment-only-settings), so the section has no keys of its own in `chartula.yaml`.
 
 The token is optional and the run says at startup when it is missing, naming whichever variable it looked in.
-It is worth setting all the same: unauthenticated GitHub allows 60 requests an hour per IP address, a run spends roughly one per pull request, and the budget is shared with every other unauthenticated request from that address.
-When it runs out the run fails partway through with a 403 that names a commit rather than the cause.
+It is worth setting all the same: unauthenticated GitHub allows 60 requests an hour per IP address, and the budget is shared with every other unauthenticated request from that address.
+A run spends one request per commit in the range, not per pull request, so a pull request merged with a merge commit costs one request for the merge commit and one for each commit on its branch.
+When the budget runs out, the run stops partway through with a message that names the rate limit.
 A token raises the limit to 5000 an hour.
 
 ### `labels`

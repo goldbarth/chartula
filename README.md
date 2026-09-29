@@ -182,7 +182,7 @@ It takes the nearest tag as the release and the `origin` remote as the GitHub re
 ```bash
 cd my-repo
 
-# Show what would be produced, without writing anything
+# Show what would be produced, without writing anything (same model calls and cost as generate)
 chartula preview
 
 # Produce the outputs and write them
@@ -207,21 +207,12 @@ Every option is in [CLI](docs/cli.md).
 ### In CI
 
 Chartula reads the release from the checkout's history, so a CI job has to fetch all of it.
-A shallow clone - the default of `actions/checkout` and of GitLab CI - is refused, because it cannot tell where the release starts.
-
-GitHub Actions:
+A shallow clone - the default of `actions/checkout` - is refused, because it cannot tell where the release starts.
 
 ```yaml
 - uses: actions/checkout@v7
   with:
     fetch-depth: 0   # full history and tags
-```
-
-GitLab CI:
-
-```yaml
-variables:
-  GIT_DEPTH: 0   # full history and tags
 ```
 
 In a clone that is already shallow, `git fetch --unshallow --tags` fetches the rest.
@@ -254,7 +245,10 @@ $ export Chartula__Llm__BaseUrl=http://localhost:11434/v1
 [Running against your own endpoint](docs/configuration.md#running-against-your-own-endpoint) shows a hosted endpoint as well, and what a local server needs before a real release.
 
 GitHub is read with `GITHUB_TOKEN`.
-A run starts without one and says so, because a small release still fits: GitHub allows 60 API requests an hour per IP address unauthenticated, and a run spends roughly one per pull request.
+A run starts without one and says so, because a small release still fits: GitHub allows 60 API requests an hour per IP address unauthenticated.
+A run spends one request per commit in the release, not per pull request, because it asks GitHub which pull request each commit belongs to.
+A pull request merged with a merge commit costs one request for the merge commit and one for each commit on its branch.
+Ten squash-merged pull requests take ten requests; ten pull requests of five commits each, merged with merge commits, take sixty.
 A token raises the limit to 5000 an hour.
 Use a fine-grained token scoped to the repository, with Contents and Pull requests read-only, and Contents read and write once you publish release notes - see [A GitHub token](docs/cli.md#a-github-token).
 
@@ -265,7 +259,7 @@ Use a fine-grained token scoped to the repository, with Contents and Pull reques
 - **`CHANGELOG.md`** - the technical rendering, prepended to your existing file.
 - **`release-<tag>.md`** - the customer rendering as a page you can publish: YAML front matter with the release title, its date and a one-sentence description, then the entries.
 - **`changelog.json`** - every audience text plus the fact base behind them, in a [documented, stable format](docs/changelog-json.md).
-- **GitHub release notes** - the technical rendering, as a draft release for the tag. Nothing goes public until you publish it on GitHub.
+- **GitHub release notes** - the technical rendering, as a draft release when the tag has no release yet. A release that already exists keeps its state and gets its notes replaced, so a published release shows the new notes at once.
 
 Without `--audience` a run renders `technical` and `customer`; `product` renders only when named.
 An output whose audience was not rendered is not written, and the run lists what it skipped next to what it wrote.
@@ -301,6 +295,8 @@ These are known and left for after the alpha, because its output is a draft a pe
 - **Flags appear in the terminal only.** Nothing in the written files marks a flagged entry, and a run with flags still exits with `0`.
 - **Only the release notes are a draft.** The customer page and `CHANGELOG.md` are written directly.
 - **Two pull requests with the same change become two entries.**
+- **A published release's notes are replaced unasked.** `generate` on a tag whose release is already published replaces its notes in public, with no draft in between ([#249](https://github.com/goldbarth/chartula/issues/249)). `--no-publish` leaves the release alone.
+- **GitHub is the only source.** Chartula reads pull requests from GitHub or GitHub Enterprise, and from no other host.
 - **No GitHub Action yet.**
 - **The binaries are not code-signed.** Downloaded through a browser, macOS Gatekeeper and Windows SmartScreen warn on first start; the install scripts avoid that.
 - **No package manager.** No Homebrew, Scoop or winget; the install scripts or a download.

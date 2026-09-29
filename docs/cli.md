@@ -48,7 +48,8 @@ $ chartula preview [--tag <release-tag>] [--repo <owner/name>]
 
 Runs the full pipeline - curation, filtering, labeling, categorization, then one rephrasing and one faithfulness check per audience - and prints the result to stdout.
 Nothing is written to disk and nothing is published.
-Use it to see what a release would look like, to check token cost before committing to a real run, or to try a configuration change without touching `CHANGELOG.md`.
+Use it to see what a release would look like, or to try a configuration change without touching `CHANGELOG.md`.
+It makes the same model calls as `generate` and costs the same.
 
 ## `chartula generate`
 
@@ -196,8 +197,16 @@ $ chartula preview
 Configuration error: No Anthropic API key found in ANTHROPIC_API_KEY. Set one with: export ANTHROPIC_API_KEY=<your key> (create one at https://console.anthropic.com/settings/keys). For an endpoint that needs no key, set llm.provider to openai-compatible.
 ```
 
-A run starts without `GITHUB_TOKEN` and prints a warning to stderr rather than refusing - a small release fits inside GitHub's unauthenticated budget of 60 requests an hour per IP address, and a run spends roughly one request per pull request.
-Beyond that the run fails partway through with a 403 that names a commit rather than the cause.
+A run starts without `GITHUB_TOKEN` and prints a warning to stderr rather than refusing, because a small release fits inside GitHub's unauthenticated budget of 60 requests an hour per IP address.
+A run spends one request per commit in the range, not per pull request, because it asks GitHub which pull request each commit belongs to.
+A pull request merged with a merge commit costs one request for the merge commit and one for each commit on its branch.
+When the budget runs out, the run stops partway through and names the rate limit:
+
+```console
+$ chartula preview
+Error: GitHub's rate limit is spent (403 Forbidden). A token in GITHUB_TOKEN raises it; see the warning at the start of the run.
+```
+
 A token raises the limit to 5000 an hour.
 
 ### A GitHub token
