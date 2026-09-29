@@ -16,7 +16,7 @@ graph LR
 | `Chartula.Cli` | The command surface and the composition root that wires the two together. |
 
 `Chartula.Core` references no project at all, and that is the rule worth protecting.
-It is why the pipeline can be tested end to end without a network, a repository, or a model - see [Test fixtures](test-fixtures.md).
+It is why the pipeline can be tested end to end without a network, a repository, or a model - see [Test fixtures](testing.md).
 
 Where a decision is made says a lot about it.
 Which model provider is used, which token is read, where files land: all of that is decided in `Chartula.Cli`, in one `Add*` extension per seam, and nowhere else.
@@ -43,7 +43,7 @@ The model never decides what happened, so it cannot invent a change; it can only
 
 **Two checks, different costs.** The rule-based check is pure and free and always runs.
 The thorough check is a second model pass and can be turned off.
-Whether it earns its tokens is a question the run itself answers - see [Run metrics](run-metrics.md).
+Whether it earns its tokens is a question the run itself answers - see [Run metrics](../run-metrics.md).
 
 **Preview and generate are the same run.** They differ in the last step only: preview writes nothing.
 Writing and publishing are separable there too: `--no-publish` writes `changelog.json`, `CHANGELOG.md` and the customer page and leaves the release notes untouched, because producing a record is not the same act as announcing a release.
