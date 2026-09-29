@@ -187,7 +187,7 @@ Three environment variables carry credentials, and none is ever read from `chart
 | --- | --- |
 | `ANTHROPIC_API_KEY` | The model that rephrases the facts, with `llm.provider: anthropic` (the default). |
 | `OPENAI_API_KEY` | The model that rephrases the facts, with `llm.provider: openai-compatible`, when the endpoint needs a key. `Chartula__Llm__ApiKeyEnvironmentVariable` names another variable instead. |
-| `GITHUB_TOKEN` | Reading pull requests and writing release notes. |
+| `GITHUB_TOKEN` | Reading pull requests and writing release notes. [GitHub](github.md) covers its permissions and the rate limit. |
 
 A run without `ANTHROPIC_API_KEY` is refused before it reads anything, naming the variable, because every audience would fail on it.
 The `openai-compatible` provider is exempt: a local server needs no key.
@@ -197,40 +197,10 @@ $ chartula preview
 Configuration error: No Anthropic API key found in ANTHROPIC_API_KEY. Set one with: export ANTHROPIC_API_KEY=<your key> (create one at https://console.anthropic.com/settings/keys). For an endpoint that needs no key, set llm.provider to openai-compatible.
 ```
 
-A run starts without `GITHUB_TOKEN` and prints a warning to stderr rather than refusing, because a small release fits inside GitHub's unauthenticated budget of 60 requests an hour per IP address.
-A run spends one request per commit in the range, not per pull request, because it asks GitHub which pull request each commit belongs to.
-A pull request merged with a merge commit costs one request for the merge commit and one for each commit on its branch, so a release merged with merge commits costs more requests than the same release squashed.
-When the budget runs out, the run stops partway through and names the rate limit:
+A run starts without `GITHUB_TOKEN` and prints a warning to stderr rather than refusing, because a small release of a public repository fits GitHub's unauthenticated rate limit.
+[GitHub](github.md) says when you need a token, which permissions it takes, and what a run spends of the rate limit.
 
-```console
-$ chartula preview
-Error: GitHub's rate limit is spent (403 Forbidden). A token in GITHUB_TOKEN raises it; see the warning at the start of the run.
-```
-
-A token raises the limit to 5000 an hour.
-
-### A GitHub token
-
-Use a [fine-grained personal access token](https://github.com/settings/personal-access-tokens/new) scoped to the one repository you generate changelogs for.
-Chartula makes two kinds of request, and the token needs exactly the permissions they take:
-
-| Permission | Access | Used for |
-| --- | --- | --- |
-| Contents | Read-only | `preview` and `generate --no-publish`: finding the pull requests behind each commit. |
-| Contents | Read and write | `generate`: creating and updating the draft release. |
-| Pull requests | Read-only | Reading the pull requests themselves. |
-| Metadata | Read-only | Required by GitHub for every fine-grained token; selected automatically. |
-
-A token for `preview` only never needs write access, so a read-only token is the safer default until you publish.
-
-```console
-$ export GITHUB_TOKEN=<your fine-grained token>
-```
-
-`export GITHUB_TOKEN=$(gh auth token)` works too, but hands Chartula the GitHub CLI's own OAuth token: typically `repo` scope, which is read and write access to every repository you can reach.
-It is a shortcut for a quick local try, not for a machine that runs Chartula regularly.
-
-The variable names above are the defaults; both can be renamed, in the environment only - see [Environment-only settings](configuration.md#environment-only-settings).
+The variable names above are the defaults; all three can be renamed, in the environment only - see [Environment-only settings](configuration.md#environment-only-settings).
 
 ## Configuration file
 

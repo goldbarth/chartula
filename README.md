@@ -192,12 +192,8 @@ $ export Chartula__Llm__BaseUrl=http://localhost:11434/v1
 [Providers](docs/providers.md) has a recipe for Anthropic, OpenAI, a hosted endpoint and a local server.
 
 GitHub is read with `GITHUB_TOKEN`.
-A run starts without one and says so, because a small release still fits: GitHub allows 60 API requests an hour per IP address unauthenticated.
-A run spends one request per commit in the release, not per pull request, because it asks GitHub which pull request each commit belongs to.
-A pull request merged with a merge commit costs one request for the merge commit and one for each commit on its branch, so a release merged with merge commits costs more requests than the same release squashed.
-Ten squash-merged pull requests take ten requests; ten pull requests of five commits each, merged with merge commits, take sixty.
-A token raises the limit to 5000 an hour.
-Use a fine-grained token scoped to the repository, with Contents and Pull requests read-only, and Contents read and write once you publish release notes - see [A GitHub token](docs/cli.md#a-github-token).
+A run starts without one for a small public release and says so.
+[GitHub](docs/github.md) says when you need a token, which permissions it takes, and what a run spends of GitHub's rate limit.
 
 ### Outputs
 
@@ -276,6 +272,7 @@ Left unset, each model keeps its own default, and models differ - see [`thinking
 | --- | --- |
 | [Install](docs/install.md) | Platforms, the install scripts and their settings, a download by hand, building from source, updating and uninstalling. |
 | [Providers](docs/providers.md) | Setting up Anthropic, OpenAI, a hosted endpoint or a local server, choosing a model, and `thinking`. |
+| [GitHub](docs/github.md) | The token and its permissions, the rate limit, GitHub Enterprise, and what a run writes to GitHub. |
 | [CLI](docs/cli.md) | Every command, option and environment variable the `chartula` binary accepts. |
 | [Configuration](docs/configuration.md) | Every `chartula.yaml` section and its defaults. |
 | [`changelog.json` format](docs/changelog-json.md) | The stable output schema other tools build on. |

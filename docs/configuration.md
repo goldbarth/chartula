@@ -35,7 +35,7 @@ The file is repository content that anyone whose pull request is merged can chan
 | --- | --- | --- |
 | `Chartula__Llm__BaseUrl` | per provider | The endpoint the model provider is reached at. See [Providers](providers.md). |
 | `Chartula__Llm__ApiKeyEnvironmentVariable` | per provider | Name of the environment variable holding the API key. |
-| `Chartula__GitHub__ApiBaseUrl` | `https://api.github.com/` | REST API base URL (override for GitHub Enterprise). |
+| `Chartula__GitHub__ApiBaseUrl` | `https://api.github.com/` | REST API base URL (override for GitHub Enterprise, see [GitHub Enterprise](github.md#github-enterprise)). |
 | `Chartula__GitHub__TokenEnvironmentVariable` | `GITHUB_TOKEN` | Name of the environment variable holding the API token. |
 
 Both endpoints must use `https`.
@@ -89,12 +89,7 @@ A ceiling that is too low truncates the generated text mid-sentence rather than 
 
 How the GitHub API is reached. Both of its settings, the API base URL and the name of the token variable, are [environment-only](#environment-only-settings), so the section has no keys of its own in `chartula.yaml`.
 
-The token is optional and the run says at startup when it is missing, naming whichever variable it looked in.
-It is worth setting all the same: unauthenticated GitHub allows 60 requests an hour per IP address, and the budget is shared with every other unauthenticated request from that address.
-A run spends one request per commit in the range, not per pull request.
-A pull request merged with a merge commit costs one request for the merge commit and one for each commit on its branch, so a release merged with merge commits costs more requests than the same release squashed.
-When the budget runs out, the run stops partway through with a message that names the rate limit.
-A token raises the limit to 5000 an hour.
+[GitHub](github.md) covers the token, its permissions, the rate limit and GitHub Enterprise.
 
 ### `labels`
 
