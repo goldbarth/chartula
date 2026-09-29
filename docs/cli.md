@@ -134,50 +134,15 @@ Invalid option --repo 'name-only'. Expected <owner/name>.
 
 ### Where a release starts
 
-A release is everything after the previous tag up to the release tag.
-A first tag has no previous tag, so its range is the whole history - and rendered as it is, that reads as a development log: intermediate states stand next to the changes that replaced them.
-Where a release starts is a decision about facts, so Chartula does not guess it.
-A first tag stops the run before any GitHub request or model call, and asks:
-
-```console
-$ chartula preview --tag v0.1.0
-Error: v0.1.0 is the first tag, so its range is the whole history (69 commits).
-  Rendered as it is, that reads as a development log rather than a release.
-  --since <ref>     start the release after a tag or commit (e.g. the last state you shipped)
-  --whole-history   render all of it, e.g. for a project whose history is the release
-```
+A release starts after the previous tag.
+A first tag stops the run and asks where the release starts, and a shallow clone stops it because its history is cut off.
 
 | Option | Value | Effect |
 | --- | --- | --- |
-| `--since` | `<tag-or-commit>` | The release starts after this ref instead of the previous tag. It has to be an ancestor of the release tag. Works on any tag, not only the first. |
-| `--whole-history` | - | Render a range that spans all history. For a project whose history is its first release. |
+| `--since` | `<tag-or-commit>` | The release starts after this ref instead of the previous tag. It has to be an ancestor of the release tag. |
+| `--whole-history` | - | Render a range that spans all history. |
 
-Passing both is refused, since they answer the same question two ways.
-Adopting Chartula on a project with a long history usually means `--since` on the first run, pointing at the last state that was already shipped; every later tag starts after its predecessor on its own.
-
-### A shallow clone
-
-A shallow clone ends its history at the fetch depth, which looks the same as a first tag's history ending at the first commit.
-It is what `actions/checkout` makes by default (`fetch-depth: 1`), and GitLab CI with its default `GIT_DEPTH`.
-So a run in a shallow clone stops before any GitHub request or model call, `--whole-history` included, since the history it would render is not the whole history:
-
-```console
-$ chartula preview --tag v0.2.0
-Error: The checkout is a shallow clone: its history ends at the fetch depth, not where 'v0.2.0' starts, so neither the previous tag nor the whole history can be read from it.
-  Fetch the full history and tags: git fetch --unshallow --tags
-  In GitHub Actions, check out with fetch-depth: 0; in GitLab CI, set GIT_DEPTH: 0.
-```
-
-`--since <ref>` still runs in a shallow clone when the ref was fetched along with the tag and everything between them was too, so a deliberately limited fetch is not blocked.
-A ref outside the fetched history, one the fetched history does not connect to the tag, or a range the fetch depth cuts off inside - a merged branch older than the depth - is refused with the same way out.
-
-A revert that names what it takes back is paired with it: when both are in the same range, neither is rendered, since the change never shipped.
-It counts as named when the revert's title or description has a commit hash of at least seven characters that matches exactly one commit in the range (`This reverts commit ...`, `Reverts d85a4b9, bc826ba`), or GitHub's `Reverts owner/repo#N`.
-A revert that names anything outside the range, or nothing recognisable, takes back what it could match and stays as an entry of its own, so a removal a reader may have met is never hidden.
-A pull request number in prose (`the waterfall from #61`) does not count: it is as often context as a target.
-
-Beyond that, a change that a later change in the same range replaced without reverting it is still rendered as an entry of its own.
-Chartula cannot tell that one pull request supersedes another without reading their meaning, which would put a fact decision into the model.
+[What goes into a release](what-goes-into-a-release.md#1-the-range) explains the range, the first tag, a shallow clone, and which changes of the range appear.
 
 ## Environment
 

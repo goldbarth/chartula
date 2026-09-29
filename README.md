@@ -266,6 +266,7 @@ Left unset, each model keeps its own default, and models differ - see [`thinking
 | [Providers](docs/providers.md) | Setting up Anthropic, OpenAI, a hosted endpoint or a local server, choosing a model, and `thinking`. |
 | [GitHub](docs/github.md) | The token and its permissions, the rate limit, GitHub Enterprise, and what a run writes to GitHub. |
 | [CI](docs/ci.md) | A complete GitHub Actions job, what happens to its draft, and an Alpine variant. |
+| [What goes into a release](docs/what-goes-into-a-release.md) | The range, pull requests and commits, reverts, categories, breaking changes, filters, and which audience a change reaches. |
 | [CLI](docs/cli.md) | Every command, option and environment variable the `chartula` binary accepts. |
 | [Configuration](docs/configuration.md) | Every `chartula.yaml` section and its defaults. |
 | [`changelog.json` format](docs/changelog-json.md) | The stable output schema other tools build on. |

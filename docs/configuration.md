@@ -108,19 +108,7 @@ The label names are yours. `visibility:internal` is one convention; `internal`,
 `no-changelog` and `chore` are others, which is why the names are configured here
 rather than built into the tool.
 
-**What decides whether a reader can meet a change.** A breaking change always can,
-whatever its labels say. Otherwise a visibility label answers it, because whoever
-wrote the pull request knew the change. With no such label the category decides, as
-it always has: `Feature`, `Fix`, `Performance` and `Other` count as something a
-reader can meet, and `Documentation`, `Refactor` and `Internal` do not.
-
-That fallback is why labelling nothing costs nothing. A category says what kind of
-change something is, not whether a reader can meet it - a feature can be entirely
-internal, a serialisation format or an output file's layout - so a label raises the
-ceiling where the category cannot, without being a condition for the tool to work.
-A change carrying both an `internal` and a `userFacing` label is treated as
-internal: the two together are a contradiction, and that reading cannot put an
-internal change in front of a reader.
+[What goes into a release](what-goes-into-a-release.md) explains in which order the label rules, the category and the filter decide, and which audience a change reaches.
 
 ### `filter`
 
