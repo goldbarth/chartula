@@ -153,16 +153,8 @@ Every option is in [CLI](docs/cli.md).
 
 ### In CI
 
-Chartula reads the release from the checkout's history, so a CI job has to fetch all of it.
-A shallow clone - the default of `actions/checkout` - is refused, because it cannot tell where the release starts.
-
-```yaml
-- uses: actions/checkout@v7
-  with:
-    fetch-depth: 0   # full history and tags
-```
-
-In a clone that is already shallow, `git fetch --unshallow --tags` fetches the rest.
+Chartula reads the release from the checkout's history, so a CI job has to fetch all of it with `fetch-depth: 0`.
+[CI](docs/ci.md) has a complete GitHub Actions job that writes the release notes for every release tag.
 
 ### Credentials
 
@@ -273,6 +265,7 @@ Left unset, each model keeps its own default, and models differ - see [`thinking
 | [Install](docs/install.md) | Platforms, the install scripts and their settings, a download by hand, building from source, updating and uninstalling. |
 | [Providers](docs/providers.md) | Setting up Anthropic, OpenAI, a hosted endpoint or a local server, choosing a model, and `thinking`. |
 | [GitHub](docs/github.md) | The token and its permissions, the rate limit, GitHub Enterprise, and what a run writes to GitHub. |
+| [CI](docs/ci.md) | A complete GitHub Actions job, what happens to its draft, and an Alpine variant. |
 | [CLI](docs/cli.md) | Every command, option and environment variable the `chartula` binary accepts. |
 | [Configuration](docs/configuration.md) | Every `chartula.yaml` section and its defaults. |
 | [`changelog.json` format](docs/changelog-json.md) | The stable output schema other tools build on. |
