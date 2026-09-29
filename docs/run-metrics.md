@@ -82,7 +82,7 @@ Rendering is exposed to it the same way: a cut prompt still yields entries, writ
 
 Chartula catches the cases where usage is reported, for every model call - rendering and thorough check alike: the characters sent bound the token count from below, so a reported `prompt_tokens` far under that bound is proof the prompt was cut, not suspicion.
 A cut rendering fails its audience, and a cut check fails the run, each with an error naming the endpoint's context window as the cause.
-See ["The context window is the first thing to get right"](configuration.md#the-context-window-is-the-first-thing-to-get-right) for the fix.
+See ["The context window is the first thing to get right"](providers.md#the-context-window-is-the-first-thing-to-get-right) for the fix.
 
 An endpoint that reports the untruncated length regardless of what it actually processed, or reports no usage at all, gives nothing to detect this way - that gap is real, not closed by this check.
 Neither is a model that saw every fact and judged badly: no property of the call shows that, which is why the rule-based check always runs.

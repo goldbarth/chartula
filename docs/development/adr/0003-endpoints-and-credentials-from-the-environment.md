@@ -24,6 +24,6 @@ When the file could set them, one merged change could point the GitHub endpoint 
 
 - No repository content can redirect a credential; only whoever controls the environment can.
 - Pointing Chartula at another endpoint takes an environment variable, not a line in the config file.
-  [Running against your own endpoint](../../configuration.md#running-against-your-own-endpoint) shows how.
+  [Providers](../../providers.md) shows how.
 - A new setting that decides where data or credentials go belongs in the environment-only list, not in `chartula.yaml`.
 - A new credential variable has to be added to what `ChartulaConfiguration` reads, or the run will not see it.

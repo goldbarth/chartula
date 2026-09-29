@@ -117,7 +117,7 @@ internal static class CallValidity
                 $"the endpoint reported {reported} input tokens for a prompt of {characters} characters, "
                 + $"which no tokenizer produces fewer than {minimumTokens} tokens for - the endpoint's "
                 + "context window is too small for what Chartula sends. See \"The context window is the "
-                + "first thing to get right\" in docs/configuration.md.");
+                + "first thing to get right\" in docs/providers.md.");
         }
     }
 }
