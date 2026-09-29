@@ -46,20 +46,20 @@ If you are planning anything beyond a small fix, please **open an issue first** 
 This saves you from duplicated effort and helps make sure a change fits where the project is heading.
 Small fixes (typos, obvious bugs) can go straight to a pull request.
 
-Worth reading before a first code change: [Architecture](docs/architecture.md).
+Worth reading before a first code change: [Architecture](docs/development/architecture.md).
 It explains the layering, why facts are established before an LLM ever sees them, and which dependency choices exist to keep a native-AOT build reachable.
 
-Decisions that already stand, and why, are recorded in [`docs/adr/`](docs/adr/):
+Decisions that already stand, and why, are recorded in [`docs/development/adr/`](docs/development/adr/):
 
-- [Facts are established first, then rephrased](docs/adr/0001-facts-first-then-rephrase.md)
-- [The git CLI and `HttpClient`, not LibGit2Sharp and Octokit](docs/adr/0002-git-cli-and-httpclient.md)
-- [Endpoints and credential names come from the environment only](docs/adr/0003-endpoints-and-credentials-from-the-environment.md)
+- [Facts are established first, then rephrased](docs/development/adr/0001-facts-first-then-rephrase.md)
+- [The git CLI and `HttpClient`, not LibGit2Sharp and Octokit](docs/development/adr/0002-git-cli-and-httpclient.md)
+- [Endpoints and credential names come from the environment only](docs/development/adr/0003-endpoints-and-credentials-from-the-environment.md)
 
 A change that goes against one of them starts as an issue, not a pull request.
 
-Step-by-step guides for common extensions are in [`docs/recipes/`](docs/recipes/):
+Step-by-step guides for common extensions are in [`docs/development/recipes/`](docs/development/recipes/):
 
-- [Adding a field to the fact base](docs/recipes/new-fact-field.md)
+- [Adding a field to the fact base](docs/development/recipes/new-fact-field.md)
 
 ---
 
@@ -106,8 +106,8 @@ It only checks and never changes or stages a file, and it adds about ten seconds
 To commit once without it, use `git commit --no-verify`.
 
 The suite needs no API key, no network and no tokens: the pipeline is tested by replaying stored fact bases, so you can run it as often as you like.
-[Test fixtures](docs/test-fixtures.md) explains how that works and how to add a case.
-A change to the prompt text also fails the suite until its snapshot is updated; [Prompt snapshots](docs/test-fixtures.md#prompt-snapshots) says how.
+[Test fixtures](docs/development/testing.md) explains how that works and how to add a case.
+A change to the prompt text also fails the suite until its snapshot is updated; [Prompt snapshots](docs/development/testing.md#prompt-snapshots) says how.
 
 ---
 
