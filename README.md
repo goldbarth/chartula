@@ -96,30 +96,13 @@ What comes next, and in which order, is in the [Roadmap](ROADMAP.md).
 
 ## Install
 
-One command installs the latest release.
-It picks the binary for your machine, checks it against the release's checksums, and puts it where your terminal finds it.
-No .NET is needed.
-What it does need:
-
-- Linux with glibc or musl, on x64 or arm64 - on Alpine, `apk add libstdc++` first; macOS, Intel or Apple silicon; or Windows, x64 or arm64.
-- git, which Chartula reads the release's history with.
+One command installs the latest release and checks it against the release's checksums.
+No .NET is needed, only git.
 
 **Linux and macOS**, in a terminal:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/goldbarth/chartula/main/install.sh | sh
-```
-
-It installs to `~/.local/bin/chartula`, picking the musl binary on Alpine.
-If that folder is not on your `PATH` yet, the script prints the line that makes `chartula` work in this terminal and the one that keeps it for new ones, and changes no file of yours on its own.
-The same goes for a missing library: on Alpine without `libstdc++` it prints `apk add libstdc++` and installs nothing.
-
-**In a CI job or a Docker image based on Alpine**, which has neither git nor curl:
-
-```sh
-apk add --no-cache git libstdc++
-wget -qO- https://raw.githubusercontent.com/goldbarth/chartula/main/install.sh | sh
-export PATH="$HOME/.local/bin:$PATH"
 ```
 
 **Windows**, in PowerShell:
@@ -128,49 +111,13 @@ export PATH="$HOME/.local/bin:$PATH"
 irm https://raw.githubusercontent.com/goldbarth/chartula/main/install.ps1 | iex
 ```
 
-It installs to `%LOCALAPPDATA%\Programs\chartula` and adds that folder to your user `PATH`.
-
 Then check that it runs:
 
 ```bash
 chartula --help
 ```
 
-Running the same command again updates to the latest release.
-To read a script before running it, open its link in a browser: [install.sh](install.sh), [install.ps1](install.ps1).
-
-### Download by hand
-
-Every [release](https://github.com/goldbarth/chartula/releases/latest) carries one file per platform (`chartula-linux-x64`, `chartula-linux-arm64`, `chartula-linux-musl-x64`, `chartula-linux-musl-arm64`, `chartula-osx-x64`, `chartula-osx-arm64`, `chartula-win-x64.exe`, `chartula-win-arm64.exe`), a `SHA256SUMS` file, and a build provenance attestation per binary.
-On Linux and macOS, make the file executable, rename it to `chartula` and move it to a folder on your `PATH`:
-
-```bash
-sha256sum -c SHA256SUMS --ignore-missing   # macOS: grep chartula-osx-arm64 SHA256SUMS | shasum -a 256 -c
-chmod +x chartula-linux-x64
-mv chartula-linux-x64 ~/.local/bin/chartula
-gh attestation verify ~/.local/bin/chartula --repo goldbarth/chartula   # optional
-```
-
-A file downloaded through a browser is not code-signed, so macOS Gatekeeper blocks its first start (`xattr -d com.apple.quarantine chartula` clears it) and Windows SmartScreen warns ("More info", then "Run anyway").
-The install scripts do not trigger either.
-
-### Build from source
-
-The second way, for contributors or a platform without a binary.
-You need the [.NET 10 SDK](https://dotnet.microsoft.com/download).
-
-```bash
-git clone https://github.com/goldbarth/chartula.git
-cd chartula
-dotnet build Chartula.slnx -c Release
-```
-
-The CLI is then at `src/Chartula.Cli/bin/Release/net10.0/chartula`.
-To call it as `chartula` from anywhere, link it into a folder on your `PATH`:
-
-```bash
-ln -sf "$PWD/src/Chartula.Cli/bin/Release/net10.0/chartula" ~/.local/bin/chartula
-```
+[Install](docs/install.md) covers the platforms and what each needs, Alpine and Docker, a pinned version, a download by hand, building from source, updating and uninstalling.
 
 ---
 
@@ -327,6 +274,7 @@ Left unset, each model keeps its own default, and models differ - see [`thinking
 
 | Document | What it covers |
 | --- | --- |
+| [Install](docs/install.md) | Platforms, the install scripts and their settings, a download by hand, building from source, updating and uninstalling. |
 | [CLI](docs/cli.md) | Every command, option and environment variable the `chartula` binary accepts. |
 | [Configuration](docs/configuration.md) | Every `chartula.yaml` section and its defaults. |
 | [`changelog.json` format](docs/changelog-json.md) | The stable output schema other tools build on. |
