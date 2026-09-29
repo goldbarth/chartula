@@ -67,7 +67,7 @@ Those runs get a line of their own:
 ```
 
 Read it as tokens spent for no verification, not as a clean bill of health.
-The same runs are flagged on each affected audience text, so review mode shows them too.
+The same runs are flagged on each affected audience text.
 
 The likeliest cause is a model that does not hold to the requested response format, which is worth knowing before trusting a provider or a smaller model with the check.
 Without this line the run would report `0 with findings`, which is what a genuinely clean check looks like.
