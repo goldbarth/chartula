@@ -199,7 +199,7 @@ Configuration error: No Anthropic API key found in ANTHROPIC_API_KEY. Set one wi
 
 A run starts without `GITHUB_TOKEN` and prints a warning to stderr rather than refusing, because a small release fits inside GitHub's unauthenticated budget of 60 requests an hour per IP address.
 A run spends one request per commit in the range, not per pull request, because it asks GitHub which pull request each commit belongs to.
-A pull request merged with a merge commit costs one request for the merge commit and one for each commit on its branch.
+A pull request merged with a merge commit costs one request for the merge commit and one for each commit on its branch, so a release merged with merge commits costs more requests than the same release squashed.
 When the budget runs out, the run stops partway through and names the rate limit:
 
 ```console

@@ -272,7 +272,8 @@ How the GitHub API is reached. Both of its settings, the API base URL and the na
 
 The token is optional and the run says at startup when it is missing, naming whichever variable it looked in.
 It is worth setting all the same: unauthenticated GitHub allows 60 requests an hour per IP address, and the budget is shared with every other unauthenticated request from that address.
-A run spends one request per commit in the range, not per pull request, so a pull request merged with a merge commit costs one request for the merge commit and one for each commit on its branch.
+A run spends one request per commit in the range, not per pull request.
+A pull request merged with a merge commit costs one request for the merge commit and one for each commit on its branch, so a release merged with merge commits costs more requests than the same release squashed.
 When the budget runs out, the run stops partway through with a message that names the rate limit.
 A token raises the limit to 5000 an hour.
 

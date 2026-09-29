@@ -247,7 +247,7 @@ $ export Chartula__Llm__BaseUrl=http://localhost:11434/v1
 GitHub is read with `GITHUB_TOKEN`.
 A run starts without one and says so, because a small release still fits: GitHub allows 60 API requests an hour per IP address unauthenticated.
 A run spends one request per commit in the release, not per pull request, because it asks GitHub which pull request each commit belongs to.
-A pull request merged with a merge commit costs one request for the merge commit and one for each commit on its branch.
+A pull request merged with a merge commit costs one request for the merge commit and one for each commit on its branch, so a release merged with merge commits costs more requests than the same release squashed.
 Ten squash-merged pull requests take ten requests; ten pull requests of five commits each, merged with merge commits, take sixty.
 A token raises the limit to 5000 an hour.
 Use a fine-grained token scoped to the repository, with Contents and Pull requests read-only, and Contents read and write once you publish release notes - see [A GitHub token](docs/cli.md#a-github-token).
