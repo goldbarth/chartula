@@ -24,7 +24,7 @@
 # llm:
 #   provider: anthropic
 #   model: claude-sonnet-5
-#   maxOutputTokens: 16000
+#   maxOutputTokens: 32000
 # thinking is provider-default, disabled, low, medium, high or xhigh, and means the
 # same on every provider. The default sends nothing and lets each model decide, and
 # models decide differently - thinking bills as output tokens, so set it explicitly
@@ -32,9 +32,9 @@
 #   thinking: provider-default
 
 # provider: openai-compatible reaches anything speaking the OpenAI chat-completions
-# dialect at the URL in Chartula__Llm__BaseUrl. Experimental - see
-# docs/configuration.md, "Running against your own endpoint". Neither the model
-# nor the endpoint has a default there, so both are required.
+# dialect at the URL in Chartula__Llm__BaseUrl. See docs/configuration.md,
+# "Running against your own endpoint". Neither the model nor the endpoint has a
+# default there, so both are required.
 #
 # Your own machine, where the release data never leaves it (Ollama here; LM Studio
 # is http://localhost:1234/v1). No API key is involved - local servers do not read

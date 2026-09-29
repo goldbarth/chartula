@@ -180,11 +180,12 @@ Chartula cannot tell that one pull request supersedes another without reading th
 
 ## Environment
 
-Two environment variables carry credentials, and neither is ever read from `chartula.yaml`:
+Three environment variables carry credentials, and none is ever read from `chartula.yaml`:
 
 | Variable | Used for |
 | --- | --- |
-| `ANTHROPIC_API_KEY` | The model that rephrases the facts. |
+| `ANTHROPIC_API_KEY` | The model that rephrases the facts, with `llm.provider: anthropic` (the default). |
+| `OPENAI_API_KEY` | The model that rephrases the facts, with `llm.provider: openai-compatible`, when the endpoint needs a key. `Chartula__Llm__ApiKeyEnvironmentVariable` names another variable instead. |
 | `GITHUB_TOKEN` | Reading pull requests and writing release notes. |
 
 A run without `ANTHROPIC_API_KEY` is refused before it reads anything, naming the variable, because every audience would fail on it.
