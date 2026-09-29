@@ -234,10 +234,24 @@ Which ones depends on the provider:
 | Provider | Model key | Notes |
 | --- | --- | --- |
 | `anthropic` (default) | `ANTHROPIC_API_KEY` | Anthropic's API. |
-| `openai-compatible` | `OPENAI_API_KEY`, or any variable you name | Any endpoint speaking the OpenAI chat-completions dialect: a hosted alternative, or Ollama, LM Studio, llama.cpp or vLLM on your own machine. **Experimental.** |
+| `openai-compatible` | `OPENAI_API_KEY`, or any variable you name | Any endpoint speaking the OpenAI chat-completions dialect: a hosted alternative, or Ollama, LM Studio, llama.cpp or vLLM on your own machine. |
 | `openai-compatible`, local server | none | A local server needs no key, and release data never leaves your machine. |
 
-Setup and current limits of the second provider are in [Running against your own endpoint](docs/configuration.md#running-against-your-own-endpoint).
+A provider other than `anthropic` needs `llm.provider` and `llm.model` in `chartula.yaml`, and its endpoint in `Chartula__Llm__BaseUrl` in the environment.
+Neither the model nor the endpoint has a default there, because both depend on the endpoint you choose.
+For Ollama on your own machine:
+
+```yaml
+llm:
+  provider: openai-compatible
+  model: qwen3:8b
+```
+
+```console
+$ export Chartula__Llm__BaseUrl=http://localhost:11434/v1
+```
+
+[Running against your own endpoint](docs/configuration.md#running-against-your-own-endpoint) shows a hosted endpoint as well, and what a local server needs before a real release.
 
 GitHub is read with `GITHUB_TOKEN`.
 A run starts without one and says so, because a small release still fits: GitHub allows 60 API requests an hour per IP address unauthenticated, and a run spends roughly one per pull request.
@@ -287,7 +301,6 @@ These are known and left for after the alpha, because its output is a draft a pe
 - **Flags appear in the terminal only.** Nothing in the written files marks a flagged entry, and a run with flags still exits with `0`.
 - **Only the release notes are a draft.** The customer page and `CHANGELOG.md` are written directly.
 - **Two pull requests with the same change become two entries.**
-- **Anthropic is the only supported provider.** `openai-compatible` works, but is experimental.
 - **No GitHub Action yet.**
 - **The binaries are not code-signed.** Downloaded through a browser, macOS Gatekeeper and Windows SmartScreen warn on first start; the install scripts avoid that.
 - **No package manager.** No Homebrew, Scoop or winget; the install scripts or a download.

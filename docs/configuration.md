@@ -69,7 +69,7 @@ The model provider and which model to use. The endpoint and the name of the key 
 
 | Key | Default | Description |
 | --- | --- | --- |
-| `provider` | `anthropic` | The LLM provider: `anthropic` or `openai-compatible` (**experimental**, see below). Any other value fails the run. |
+| `provider` | `anthropic` | The LLM provider: `anthropic` or `openai-compatible` (see [Running against your own endpoint](#running-against-your-own-endpoint)). Any other value fails the run. |
 | `model` | per provider | The model id passed to the provider. See [Choosing a model](#choosing-a-model). |
 | `maxOutputTokens` | `32000` | Ceiling on the tokens the model may produce per call, thinking included. Thinking is produced first, so a ceiling that only fits it leaves no text. |
 | `thinking` | `provider-default` | How much the model reasons before answering. One of `provider-default`, `disabled`, `low`, `medium`, `high`, `xhigh`, the same for every provider. |
@@ -175,7 +175,7 @@ Set a value explicitly to make the behavior the same on every model rather than 
 
 #### Running against your own endpoint
 
-**Experimental.** This provider is exercised end to end far less than `anthropic` and its interaction with the faithfulness checks is the newest part of Chartula - read [The context window is the first thing to get right](#the-context-window-is-the-first-thing-to-get-right) before relying on it for a real release.
+Before a real release on this provider, read [The context window is the first thing to get right](#the-context-window-is-the-first-thing-to-get-right).
 
 `provider: openai-compatible` reaches anything that speaks the OpenAI chat-completions dialect at the URL you give it.
 That is one setting for two quite different situations: hosted endpoints that are cheaper than a first-party API, and a server on your own machine, where the release data never leaves it.

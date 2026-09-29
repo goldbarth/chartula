@@ -19,10 +19,8 @@ Before Chartula is announced, a first run has to work for someone new to it: err
 4. Reading `.github/release.yml`.
 5. `render` from a stored `changelog.json`, and a demo that needs no key.
 6. Telling what an author claims apart from what is established, then an author-supplied outcome as a fact source.
-7. `openai-compatible` out of experimental.
-   [Milestone: Providers](https://github.com/goldbarth/chartula/milestone/7)
-8. A Homebrew tap and Scoop; code signing for macOS and Windows.
-9. A native-AOT build.
+7. A Homebrew tap and Scoop; code signing for macOS and Windows.
+8. A native-AOT build.
    [Milestone: Native AOT](https://github.com/goldbarth/chartula/milestone/8)
 
 ## Parked
