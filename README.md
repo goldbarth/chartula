@@ -329,8 +329,8 @@ Left unset, each model keeps its own default, and models differ - see [`thinking
 | [`changelog.json` format](docs/changelog-json.md) | The stable output schema other tools build on. |
 | [Run metrics](docs/run-metrics.md) | Reading a run's cost, and judging whether the thorough check earns it. |
 | [Run record](docs/run-record.md) | The local file each `generate` run keeps, for comparing runs. |
-| [Architecture](docs/architecture.md) | The layering, the pipeline, and the choices behind them. |
-| [Test fixtures](docs/test-fixtures.md) | How the pipeline is tested without spending tokens. |
+| [Architecture](docs/development/architecture.md) | The layering, the pipeline, and the choices behind them. |
+| [Test fixtures](docs/development/testing.md) | How the pipeline is tested without spending tokens. |
 | [Contributing](CONTRIBUTING.md) | Working on Chartula. |
 
 A prompt change moves the output in ways no unit test catches.

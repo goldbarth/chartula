@@ -22,7 +22,7 @@ Two checks then read each rendering against the facts, and what they cannot back
 
 - The model cannot add or drop a change; it can only phrase one badly, which is what the checks look for.
 - All audiences render from the same fact base, so they cannot disagree on what happened.
-- The fact base is testable without a model: the suite replays stored fact bases at no token cost ([Test fixtures](../test-fixtures.md)).
+- The fact base is testable without a model: the suite replays stored fact bases at no token cost ([Test fixtures](../testing.md)).
 - A classification, category, flag or link decision never moves into a prompt, even when a prompt would be the quicker change.
 - A rendering concern never strips a fact out of the fact base: a fact dropped there cannot be recovered downstream.
   Labels, for example, are carried verbatim, and each rendering decides which it shows.

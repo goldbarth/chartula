@@ -32,7 +32,7 @@ Which part of it an output shows is that output's decision, and a fact dropped h
 - Add the property to `ChangelogChange` (`Core/Serialization/ChangelogDocument.cs`).
 - Write it in `ChangelogJsonSerializer.Serialize` and read it back in `DeserializeFactBase`.
   A file written before the field existed does not carry it; read that as absent (`change.Labels ?? []`), never as a failure.
-- Document it in [`changelog-json.md`](../changelog-json.md): the field table and the example.
+- Document it in [`changelog-json.md`](../../changelog-json.md): the field table and the example.
 
 A new field is additive and keeps `schemaVersion: 1`.
 Renaming or removing a field, or changing what one means, bumps it - see "Stability" there.
@@ -45,7 +45,7 @@ A field on the fact does not reach the prompt by itself.
 - **If the field changes structure** (which group an entry stands under, its order, a marker): decide it in code in `GroundedFactsFactory` or `RenderingComposer`, as `Labels` decide "action required". Do not describe it to the model and hope.
 - **If the model should be able to mention it:** add it to the statement, and add its text to `BuildHaystack` in `Core/Faithfulness/RuleBasedFaithfulnessChecker.cs`.
   Otherwise the rule-based check flags every number or name the model takes from the new field as unsupported.
-- **If it needs a word in the system prompt:** that lives in `Core/Prompting/ChangelogPromptBuilder.Prompts.cs`, and changing it fails `PromptSnapshotTests` until the snapshot is updated (see [Prompt snapshots](../test-fixtures.md#prompt-snapshots)).
+- **If it needs a word in the system prompt:** that lives in `Core/Prompting/ChangelogPromptBuilder.Prompts.cs`, and changing it fails `PromptSnapshotTests` until the snapshot is updated (see [Prompt snapshots](../testing.md#prompt-snapshots)).
   A prompt change moves the output in ways the suite cannot judge; say in the pull request how you checked it.
 
 Leaving the model out is a valid answer: `Labels` are never sent as text; they only decide, in code, which customer entries are marked as requiring action.
@@ -58,7 +58,7 @@ After step 3 it fails for every fixture, which is the point: the files no longer
 There is no update switch.
 Add the field to each change of each fixture by hand, at the position the writer emits it, with a value that fits the case the fixture stands for: a commit-based change in `commits-only-release.json` has no pull request to take it from.
 The failing test shows the expected text, so the diff tells you exactly where it goes.
-If the field opens a case none of the five fixtures covers, add a fixture as [Test fixtures](../test-fixtures.md) describes.
+If the field opens a case none of the five fixtures covers, add a fixture as [Test fixtures](../testing.md) describes.
 
 ## 6. Test it
 
