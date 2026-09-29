@@ -5,7 +5,7 @@ The suite can run as often as you like at no token cost, so tests are never some
 
 ## The fixtures are ordinary `changelog.json` files
 
-A fixture is exactly what a run writes - the format in [`changelog-json.md`](changelog-json.md), nothing else.
+A fixture is exactly what a run writes - the format in [`changelog-json.md`](../changelog-json.md), nothing else.
 That means a real release can be frozen into a fixture by copying the `changelog.json` a run produced into the fixtures folder.
 
 `FactBaseFixtureTests` re-serializes every fixture and compares it to the file on disk.
