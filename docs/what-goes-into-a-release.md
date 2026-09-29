@@ -1,0 +1,190 @@
+# What goes into a release
+
+Chartula decides what a release contains before any model sees it, with fixed rules and no guessing.
+So you can predict from this page which changes of a release appear, under which category, and for which audience.
+The steps below run in this order.
+
+## 1. The range
+
+A release is every commit after the previous tag, up to the release tag.
+Chartula reads that range with `git` from the checkout the run starts in.
+For `v1.3.0` with `v1.2.0` before it, the release is `v1.2.0..v1.3.0`.
+
+### A first tag
+
+A first tag has no previous tag, so its range is the whole history.
+Rendered as it is, that reads as a development log: intermediate states stand next to the changes that replaced them.
+Where a release starts is a decision about facts, so Chartula does not guess it.
+A first tag stops the run before any GitHub request or model call, and asks:
+
+```console
+$ chartula preview --tag v0.1.0
+Error: v0.1.0 is the first tag, so its range is the whole history (69 commits).
+  Rendered as it is, that reads as a development log rather than a release.
+  --since <ref>     start the release after a tag or commit (e.g. the last state you shipped)
+  --whole-history   render all of it, e.g. for a project whose history is the release
+```
+
+`--since <ref>` starts the release after a tag or commit you name, which has to be an ancestor of the release tag.
+It works on any tag, not only the first.
+`--whole-history` renders the whole history, for a project whose history is its first release.
+Passing both is refused, since they answer the same question two ways.
+Adopting Chartula on a project with a long history usually means `--since` on the first run, pointing at the last state that was already shipped; every later tag starts after its predecessor on its own.
+
+### A shallow clone
+
+A shallow clone ends its history at the fetch depth, which looks the same as a first tag's history ending at the first commit.
+`actions/checkout` makes one by default (`fetch-depth: 1`).
+So a run in a shallow clone stops before any GitHub request or model call, `--whole-history` included, since the history it would render is not the whole history:
+
+```console
+$ chartula preview --tag v0.2.0
+Error: The checkout is a shallow clone: its history ends at the fetch depth, not where 'v0.2.0' starts, so neither the previous tag nor the whole history can be read from it.
+  Fetch the full history and tags: git fetch --unshallow --tags
+  In GitHub Actions, check out with fetch-depth: 0; in GitLab CI, set GIT_DEPTH: 0.
+```
+
+`--since <ref>` still runs in a shallow clone when the ref was fetched along with the tag and everything between them was too, so a deliberately limited fetch is not blocked.
+A ref outside the fetched history, one the fetched history does not connect to the tag, or a range the fetch depth cuts off inside - a merged branch older than the depth - is refused with the same way out.
+
+## 2. Pull requests, or commits
+
+For every commit in the range, Chartula asks GitHub which pull request it belongs to.
+That costs one request per commit, which [GitHub](github.md#the-rate-limit) counts against its rate limit.
+
+Merged pull requests are the source of the release, because their title and description say what changed in words meant for a reader.
+Each pull request becomes one change, however many commits it has.
+
+A commit that belongs to no merged pull request, such as a direct push to the main branch, is left out when the release has at least one merged pull request ([#257](https://github.com/goldbarth/chartula/issues/257)).
+So in a repository that mixes pull requests and direct pushes, a direct push appears in no rendering.
+
+A release with no merged pull request at all falls back to its commits.
+Each commit becomes one change, with its subject line as the title, no description and no labels.
+
+### The title and the description
+
+The title of a change is the pull request title.
+When that title says nothing - it is empty, starts with `Merge `, or is exactly `wip`, `update`, `updates`, `misc`, `changes`, `fix`, `fixes` or `cleanup` - the first informative line of the description takes its place, or `PR #<n>` when there is none.
+
+The description is the pull request body without its HTML comments, because GitHub does not show them to a reader.
+A body left with nothing but headings and checklist items is an unfilled template, and counts as no description.
+So a pull request template's placeholders never become facts.
+
+## 3. Reverts
+
+A revert that names what it takes back is paired with it.
+When both are in the same range, neither appears, since the change never shipped.
+
+A pull request counts as a revert when its title starts with `revert:`, `revert(scope):` or GitHub's `Revert "..."`.
+It names its target when its title or description has a commit hash of at least seven characters that matches exactly one commit in the range (`This reverts commit ...`, `Reverts d85a4b9, bc826ba`), or GitHub's `Reverts owner/repo#N` and `Reverts #N`.
+A pull request number in prose (`the waterfall from #61`) does not count, because it is as often context as a target.
+
+A revert that names anything outside the range, or nothing recognisable, takes back what it could match and stays as an entry of its own, so a removal a reader may have met is never hidden.
+A revert that a later revert in the same range takes back removes nothing, so what it reverted stays.
+
+A change that a later change in the same range replaced without reverting it still appears as an entry of its own.
+Chartula cannot tell that one pull request supersedes another without reading their meaning, which would put a fact decision into the model.
+
+A release that falls back to commits pairs no reverts.
+
+## 4. The category
+
+The category comes from the [Conventional Commits](https://www.conventionalcommits.org/) prefix of the title: a type, an optional scope in parentheses, an optional `!`, and a colon, as in `feat(cli)!: add --since`.
+
+| Prefix | Category |
+| --- | --- |
+| `feat`, `feature` | `Feature` |
+| `fix`, `bugfix` | `Fix` |
+| `perf` | `Performance` |
+| `docs`, `doc` | `Documentation` |
+| `refactor` | `Refactor` |
+| `build`, `ci`, `chore`, `test`, `tests`, `style` | `Internal` |
+| `revert` | `Other` |
+| any other type, or no prefix | `Other` |
+
+Case does not matter, so `Feat:` is a `Feature`.
+A title without a prefix is `Other`, so a repository without Conventional Commits gets every change as `Other` and none of its internal work filtered out.
+
+A revert that stays in the release is `Other`, not `Internal`, because it takes back something a reader may have met.
+
+The `labels.category` setting overrides the prefix: the first of a pull request's labels that it maps forces that category.
+
+```yaml
+labels:
+  category:
+    security: Fix
+```
+
+## 5. Breaking changes
+
+A change is breaking when any of these holds:
+
+- a `!` before the colon of the prefix, as in `feat!:` or `feat(api)!:`;
+- the type `breaking`, as in `breaking: drop the v1 endpoint`;
+- a line in the description that starts with `BREAKING CHANGE:` or `BREAKING-CHANGE:`, in capitals.
+
+The footer has to start its line and be written in capitals, so prose that only discusses breaking changes does not mark a change as breaking.
+Chartula reads the description for this whatever `factBase.depth` says, so a breaking change stays breaking at `title-only` too.
+
+## 6. What is dropped
+
+Chartula drops a change in this order:
+
+1. A label listed in `labels.exclude` drops it, whatever else applies.
+2. With `labels.onlyIncludeLabeled: true`, a change without labels is dropped. A commit carries no labels, so a release that falls back to commits keeps nothing.
+3. A breaking change is kept from here on, whatever its category.
+4. A change whose category is in `filter.excludeCategories` is dropped. The default list is `[Internal]`.
+
+A forced category from `labels.category` counts in step 4, not the one from the prefix.
+Everything that survives is a fact, and appears in `changelog.json`.
+
+```yaml
+labels:
+  exclude: [no-changelog]
+filter:
+  excludeCategories: [Internal, Documentation]
+```
+
+## 7. Who can meet a change
+
+Each fact says whether a reader can come into contact with the change (`userVisible` in `changelog.json`):
+
+- A breaking change always can, whatever its labels say.
+- Otherwise a visibility label decides, because whoever wrote the pull request knows whether users meet the change. A label in `labels.userFacing` says yes, one in `labels.internal` says no, and both together count as internal, because that reading never shows an internal change to a reader.
+- With no visibility label, the category decides: `Feature`, `Fix`, `Performance` and `Other` count as something a reader can meet, and `Documentation`, `Refactor` and `Internal` do not.
+
+That fallback is why labelling nothing costs nothing.
+A category says what kind of change something is, not whether a reader can meet it - a feature can be entirely internal, such as a serialisation format - so a label decides where the category cannot.
+
+The audiences read this differently:
+
+| The change | technical | customer | product |
+| --- | --- | --- | --- |
+| a reader can meet it | yes | yes | yes |
+| an `internal` label on a `Feature`, `Fix`, `Performance` or `Other` change | yes | no | yes |
+| none of the above | no | no | no |
+
+An `internal` label keeps a change away from customers, not from developers or product managers, so it narrows the customer rendering only.
+A change that reaches no rendering is still a fact in `changelog.json`.
+
+```yaml
+labels:
+  internal: [visibility:internal]
+  userFacing: [visibility:user-facing]
+```
+
+## 8. How much of each change the model reads
+
+`factBase.depth` decides how much of each change reaches the model:
+
+| `factBase.depth` | The model reads | `linkedIssues` |
+| --- | --- | --- |
+| `title-only` | the title | empty |
+| `title-and-description` (default) | the title and the description | empty |
+| `title-description-and-issues` | the title and the description | the issue numbers they close |
+
+`title-only` sends far less text, so a run costs less and the model has less to overstate, but it also has less to say.
+The issue numbers are the numbers after `close`, `closes`, `closed`, `fix`, `fixes`, `fixed`, `resolve`, `resolves` or `resolved` and a `#`, as in `closes #12`.
+Chartula reads no issue, so the number is all a fact knows about it ([#258](https://github.com/goldbarth/chartula/issues/258)).
+
+The title fallback and the breaking footer read the description at every depth, because they decide facts, not wording.
