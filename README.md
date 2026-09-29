@@ -14,10 +14,12 @@
 
 </div>
 
-Chartula reads the pull requests merged into a release, establishes what changed from them without a model, and only then lets a model write release notes from those facts: a technical changelog, a customer page, and optionally a product summary.
-Every generated entry is checked against the facts it was written from, and anything the facts do not back is flagged for you before it ships.
+Chartula reads the pull requests merged into a release.
+It establishes what changed from them without a model.
+Only then does a model write release notes from those facts: a technical changelog, a customer page, and optionally a product summary.
+Chartula checks every generated entry against the facts it was written from, and flags anything the facts do not back before it ships.
 
-It is a single binary for Linux, macOS and Windows.
+Chartula is a single binary for Linux, macOS and Windows.
 It runs from a checkout of your repository with your own model key, and needs no hosting and no subscription.
 
 > *Chartula* (Latin) - "a small document, a little note". Which is exactly what a changelog entry is.
@@ -80,7 +82,8 @@ See [Known limitations](#known-limitations).
 
 **No hosting, no subscription.**
 Chartula runs on your machine or your CI runner.
-You pay your model provider for the tokens a run uses - see [What a run costs](#what-a-run-costs) - or nothing, against a model on your own machine.
+You pay your model provider for the tokens a run uses, or nothing, against a model on your own machine.
+Every run ends with a summary of its tokens ([Run metrics](docs/run-metrics.md)).
 
 ---
 
@@ -94,136 +97,51 @@ What comes next, and in which order, is in the [Roadmap](ROADMAP.md).
 
 ---
 
-## Install
+## Quick start
 
-One command installs the latest release and checks it against the release's checksums.
-No .NET is needed, only git.
-
-**Linux and macOS**, in a terminal:
+Install Chartula on Linux or macOS:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/goldbarth/chartula/main/install.sh | sh
 ```
 
-**Windows**, in PowerShell:
+On Windows, in PowerShell:
 
 ```powershell
 irm https://raw.githubusercontent.com/goldbarth/chartula/main/install.ps1 | iex
 ```
 
-Then check that it runs:
+Set a model key and a GitHub token:
 
 ```bash
-chartula --help
+export ANTHROPIC_API_KEY=<your key>
+export GITHUB_TOKEN=<your fine-grained token>
 ```
 
-[Install](docs/install.md) covers the platforms and what each needs, Alpine and Docker, a pinned version, a download by hand, building from source, updating and uninstalling.
+`generate` needs the token to create the draft release; [GitHub](docs/github.md#the-token) lists the permissions it takes.
 
----
-
-## Usage
-
-Run Chartula from a checkout of your repository.
-It takes the nearest tag as the release and the `origin` remote as the GitHub repository, says which it picked, and `--tag` and `--repo` choose others.
+Run it from a checkout of your repository, which knows the release tag and the GitHub repository:
 
 ```bash
 cd my-repo
-
-# Show what would be produced, without writing anything (same model calls and cost as generate)
-chartula preview
-
-# Produce the outputs and write them
-chartula generate
-
-# Write the files, but publish no release notes
-chartula generate --no-publish
-
-# Render one audience instead of the default two (technical and customer)
-chartula generate --audience customer
-
-# An earlier release
-chartula preview --tag v1.2.0
-
-# A first tag: say where the release starts, or render the whole history on purpose
-chartula preview --since <last-shipped-commit>
-chartula preview --whole-history
+chartula preview     # print the release notes for the nearest tag, write nothing
+chartula generate    # write them, and create a draft release on GitHub
 ```
 
-Every option is in [CLI](docs/cli.md).
-
-### In CI
-
-Chartula reads the release from the checkout's history, so a CI job has to fetch all of it with `fetch-depth: 0`.
-[CI](docs/ci.md) has a complete GitHub Actions job that writes the release notes for every release tag.
-
-### Credentials
-
-Credentials are read from environment variables, never from a config file.
-Which ones depends on the provider:
-
-| Provider | Model key | Notes |
-| --- | --- | --- |
-| `anthropic` (default) | `ANTHROPIC_API_KEY` | Anthropic's API. |
-| `openai-compatible` | `OPENAI_API_KEY`, or any variable you name | Any endpoint speaking the OpenAI chat-completions dialect: a hosted alternative, or Ollama, LM Studio, llama.cpp or vLLM on your own machine. |
-| `openai-compatible`, local server | none | A local server needs no key, and release data never leaves your machine. |
-
-A provider other than `anthropic` needs `llm.provider` and `llm.model` in `chartula.yaml`, and its endpoint in `Chartula__Llm__BaseUrl` in the environment.
-Neither the model nor the endpoint has a default there, because both depend on the endpoint you choose.
-For Ollama on your own machine:
-
-```yaml
-llm:
-  provider: openai-compatible
-  model: qwen3:8b
-```
-
-```console
-$ export Chartula__Llm__BaseUrl=http://localhost:11434/v1
-```
-
-[Providers](docs/providers.md) has a recipe for Anthropic, OpenAI, a hosted endpoint and a local server.
-
-GitHub is read with `GITHUB_TOKEN`.
-A run starts without one for a small public release and says so.
-[GitHub](docs/github.md) says when you need a token, which permissions it takes, and what a run spends of GitHub's rate limit.
-
-### Outputs
-
-`generate` writes four outputs:
-
-- **`CHANGELOG.md`** - the technical rendering, prepended to your existing file.
-- **`release-<tag>.md`** - the customer rendering as a page you can publish: YAML front matter with the release title, its date and a one-sentence description, then the entries.
-- **`changelog.json`** - every audience text plus the fact base behind them, in a [documented, stable format](docs/changelog-json.md).
-- **GitHub release notes** - the technical rendering, as a draft release when the tag has no release yet. A release that already exists keeps its state and gets its notes replaced, so a published release shows the new notes at once.
-
-Without `--audience` a run renders `technical` and `customer`; `product` renders only when named.
-An output whose audience was not rendered is not written, and the run lists what it skipped next to what it wrote.
-
-`generate` also creates `chartula-runs/`, with one [run record](docs/run-record.md) per run: its settings, token counts and faithfulness flags.
-The folder is a local log, not release content, so add it to your `.gitignore`:
-
-```gitignore
-/chartula-runs/
-```
+`preview` makes the same model calls as `generate` and costs the same.
+`generate` writes `CHANGELOG.md`, `release-<tag>.md`, `changelog.json` and a draft release, and keeps a local run record in `chartula-runs/`, which belongs in your `.gitignore`.
+A first tag has no previous tag to start from, so Chartula asks where the release starts ([What goes into a release](docs/what-goes-into-a-release.md#a-first-tag)).
 
 ---
 
-## What a run costs
+## Providers
 
-Every run ends with a summary of the tokens it used - see [Run metrics](docs/run-metrics.md).
-`generate` also keeps it in a local [run record](docs/run-record.md), so two runs can be compared from their files.
-Measured on three repositories with the defaults (`claude-sonnet-5`, technical and customer, thorough check on):
+- **Anthropic**, the default: `ANTHROPIC_API_KEY`, and `claude-sonnet-5` unless you choose another model.
+- **OpenAI**: `llm.provider: openai-compatible`, a model id, `https://api.openai.com/v1` as the endpoint, and `OPENAI_API_KEY`.
+- **A hosted endpoint** that speaks OpenAI's dialect: the same, with its own URL, model id and key variable.
+- **A local server** such as Ollama or LM Studio: the same, with no key, and no release data leaves your machine.
 
-| Release | Pull requests | Tokens | Of which thorough check | At $2 / $10 per MTok |
-| --- | --- | --- | --- | --- |
-| Ingestor `v3.2.0` | 10 | 11,167 | 3,256 | about $0.06 |
-| port-tidewatch `v1.3.0` | 10 | 12,371 | 3,591 | about $0.07 |
-| ServiceDeskLite `v1.9.0` | 10 | 53,129 | 24,017 | about $0.20 |
-
-The dollar figures are the token counts at that rate, not billed amounts.
-Cost follows the length of your pull request descriptions more than their number: ServiceDeskLite's ten descriptions come to about 22,500 characters, Ingestor's to about 230.
-Each audience you render is one rephrasing call and one thorough check more.
-`faithfulness.thorough: false` drops the thorough check, and with it what only that check finds - like the example above.
+[Providers](docs/providers.md) has a recipe for each, and the models Chartula has been compared on.
 
 ---
 
@@ -245,20 +163,9 @@ These are known and left for after the alpha, because its output is a draft a pe
 
 ---
 
-## Configuration
-
-Chartula runs without a configuration file.
-A `chartula.yaml` in your repository root refines the defaults, and every setting can also be given as an environment variable.
-
-[`chartula.example.yaml`](chartula.example.yaml) is a commented starting point - copy it and uncomment only what you need.
-Every option is documented in [Configuration](docs/configuration.md).
-
-`llm.thinking` is one setting for every provider: `disabled`, or an effort of `low`, `medium`, `high` or `xhigh`, which Chartula sends in a provider-neutral form that Anthropic reads as adaptive thinking at that effort and OpenAI-compatible endpoints as `reasoning_effort`.
-Left unset, each model keeps its own default, and models differ - see [`thinking`](docs/providers.md#thinking).
-
----
-
 ## Documentation
+
+**Setting it up**
 
 | Document | What it covers |
 | --- | --- |
@@ -266,16 +173,33 @@ Left unset, each model keeps its own default, and models differ - see [`thinking
 | [Providers](docs/providers.md) | Setting up Anthropic, OpenAI, a hosted endpoint or a local server, choosing a model, and `thinking`. |
 | [GitHub](docs/github.md) | The token and its permissions, the rate limit, GitHub Enterprise, and what a run writes to GitHub. |
 | [CI](docs/ci.md) | A complete GitHub Actions job, what happens to its draft, and an Alpine variant. |
+
+**Understanding the output**
+
+| Document | What it covers |
+| --- | --- |
 | [What goes into a release](docs/what-goes-into-a-release.md) | The range, pull requests and commits, reverts, categories, breaking changes, filters, and which audience a change reaches. |
 | [Writing pull requests](docs/writing-pull-requests.md) | What to ask of your authors, level by level, what each level changes in the output, and a CI check for the title. |
-| [CLI](docs/cli.md) | Every command, option and environment variable the `chartula` binary accepts. |
-| [Configuration](docs/configuration.md) | Every `chartula.yaml` section and its defaults. |
-| [`changelog.json` format](docs/changelog-json.md) | The stable output schema other tools build on. |
 | [Run metrics](docs/run-metrics.md) | Reading a run's cost, and judging whether the thorough check earns it. |
+
+**Reference**
+
+| Document | What it covers |
+| --- | --- |
+| [CLI](docs/cli.md) | Every command, option and environment variable, the outputs of `generate`, and the exit status. |
+| [Configuration](docs/configuration.md) | Every `chartula.yaml` key with its default and valid values, and settings as environment variables. |
+| [`changelog.json` format](docs/changelog-json.md) | The stable output schema other tools build on. |
 | [Run record](docs/run-record.md) | The local file each `generate` run keeps, for comparing runs. |
+| [Versioning](docs/versioning.md) | The version scheme, and what may change before and after 1.0. |
+
+**Working on Chartula**
+
+| Document | What it covers |
+| --- | --- |
+| [Contributing](CONTRIBUTING.md) | The workflow, the setup and the conventions. |
 | [Architecture](docs/development/architecture.md) | The layering, the pipeline, and the choices behind them. |
 | [Test fixtures](docs/development/testing.md) | How the pipeline is tested without spending tokens. |
-| [Contributing](CONTRIBUTING.md) | Working on Chartula. |
+| [Roadmap](ROADMAP.md) | What comes next, in order. |
 
 A prompt change moves the output in ways no unit test catches.
 Everything that compares runs against each other lives in a separate repository, [chartula-evals](https://github.com/goldbarth/chartula-evals).
