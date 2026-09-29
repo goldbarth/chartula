@@ -46,13 +46,13 @@ platform() {
         MINGW* | MSYS* | CYGWIN*)
             fail "this is the installer for Linux and macOS. On Windows, run in PowerShell:
   irm https://raw.githubusercontent.com/$REPO/main/install.ps1 | iex" ;;
-        *) fail "Chartula has no binary for $(uname -s). Build it from source: https://github.com/$REPO#installation" ;;
+        *) fail "Chartula has no binary for $(uname -s). Build it from source: https://github.com/$REPO/blob/main/docs/install.md#build-from-source" ;;
     esac
 
     case "$(uname -m)" in
         x86_64 | amd64) arch=x64 ;;
         aarch64 | arm64) arch=arm64 ;;
-        *) fail "Chartula has no binary for the $(uname -m) processor. Build it from source: https://github.com/$REPO#installation" ;;
+        *) fail "Chartula has no binary for the $(uname -m) processor. Build it from source: https://github.com/$REPO/blob/main/docs/install.md#build-from-source" ;;
     esac
 
     # A shell running under Rosetta reports x86_64 on Apple silicon. Install the

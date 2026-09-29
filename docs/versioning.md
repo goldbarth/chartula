@@ -77,9 +77,7 @@ It is announced ahead of time, and a migration note ships with the release (see 
 
 **Release assets**
 
-- Every release carries one self-contained single-file binary per platform: `chartula-linux-x64`, `chartula-linux-arm64`, `chartula-linux-musl-x64`, `chartula-linux-musl-arm64`, `chartula-osx-x64`, `chartula-osx-arm64`, `chartula-win-x64.exe`, `chartula-win-arm64.exe`.
-  The `linux-musl` binaries are for Alpine and other musl systems, and need `libstdc++` there.
-- `SHA256SUMS` lists the checksum of every binary, and every binary has a GitHub build provenance attestation (`gh attestation verify <file> --repo goldbarth/chartula`).
+- Every release carries one self-contained single-file binary per platform, `SHA256SUMS` and a build provenance attestation per binary. [Install](install.md#platforms) lists them.
 - The `Version` in `src/Chartula.Cli/Chartula.Cli.csproj` is the only place the version is written.
   The binary, the User-Agent it sends and `changelog.json` all read it from there.
 

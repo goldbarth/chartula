@@ -34,7 +34,7 @@
         $arch = switch ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture) {
             'X64' { 'x64' }
             'Arm64' { 'arm64' }
-            default { Fail "Chartula has no binary for a $_ processor. Build it from source: https://github.com/$repo#installation" }
+            default { Fail "Chartula has no binary for a $_ processor. Build it from source: https://github.com/$repo/blob/main/docs/install.md#build-from-source" }
         }
         $file = "chartula-win-$arch.exe"
 
