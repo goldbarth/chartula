@@ -5,7 +5,7 @@ A point links to its milestone once it has issues; until then it is a plan, not 
 
 ## Now: the launch
 
-The alpha is out: binaries for six platforms with a one-command install, the fact base, technical, customer and product renderings, both checks, and the four outputs.
+The alpha is out: binaries for eight platforms with a one-command install, the fact base, technical, customer and product renderings, both checks, and the four outputs.
 Before Chartula is announced, a first run has to work for someone new to it: errors on the way name their cause and fix, and the default of the thorough check rests on a measurement.
 
 [Milestone: Launch](https://github.com/goldbarth/chartula/milestone/5)

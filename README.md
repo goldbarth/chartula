@@ -264,6 +264,13 @@ Use a fine-grained token scoped to the repository, with Contents and Pull reques
 Without `--audience` a run renders `technical` and `customer`; `product` renders only when named.
 An output whose audience was not rendered is not written, and the run lists what it skipped next to what it wrote.
 
+`generate` also creates `chartula-runs/`, with one [run record](docs/run-record.md) per run: its settings, token counts and faithfulness flags.
+The folder is a local log, not release content, so add it to your `.gitignore`:
+
+```gitignore
+/chartula-runs/
+```
+
 ---
 
 ## What a run costs

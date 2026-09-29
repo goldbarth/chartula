@@ -5,7 +5,7 @@
 
 ## Context
 
-Chartula ships as a self-contained single-file binary for six platforms, and a native-AOT build is a goal.
+Chartula ships as a self-contained single-file binary for eight platforms, and a native-AOT build is a goal.
 It needs two things from outside: the commits between two tags, and the merged pull requests behind them.
 
 LibGit2Sharp brings a native library per platform, which works against a single trimmed binary.
