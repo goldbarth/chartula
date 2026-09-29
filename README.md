@@ -267,6 +267,7 @@ Left unset, each model keeps its own default, and models differ - see [`thinking
 | [GitHub](docs/github.md) | The token and its permissions, the rate limit, GitHub Enterprise, and what a run writes to GitHub. |
 | [CI](docs/ci.md) | A complete GitHub Actions job, what happens to its draft, and an Alpine variant. |
 | [What goes into a release](docs/what-goes-into-a-release.md) | The range, pull requests and commits, reverts, categories, breaking changes, filters, and which audience a change reaches. |
+| [Writing pull requests](docs/writing-pull-requests.md) | What to ask of your authors, level by level, what each level changes in the output, and a CI check for the title. |
 | [CLI](docs/cli.md) | Every command, option and environment variable the `chartula` binary accepts. |
 | [Configuration](docs/configuration.md) | Every `chartula.yaml` section and its defaults. |
 | [`changelog.json` format](docs/changelog-json.md) | The stable output schema other tools build on. |
