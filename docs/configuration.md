@@ -1,19 +1,76 @@
 # Configuration
 
-Chartula runs with sensible defaults and needs no configuration to work.
-A `chartula.yaml` in the repository root refines that default behavior; it is never required.
-Environment variables override the file, so anything here can be set with `Chartula__Section__Key` too.
+Chartula runs without a configuration file.
+A `chartula.yaml` refines its defaults, and every setting can also be given as an environment variable.
+This page lists every setting with its default and its valid values.
+
+## Where the file is read from
+
+Chartula reads `chartula.yaml`, or `chartula.yml`, from the directory the run starts in.
+It does not search parent directories, so a run started in a subdirectory of your repository reads no file; start it from the directory that holds the file, usually the repository root.
+When both names exist, Chartula reads `chartula.yaml` and ignores `chartula.yml`.
+
+Keys are matched regardless of case.
+An empty value (`model:`, `~` or `null`) leaves the setting at its default, as leaving the key out does.
+
+[`chartula.example.yaml`](../chartula.example.yaml) lists every key, commented out; copy it to `chartula.yaml` and uncomment what you need.
+
+## Settings as environment variables
+
+Every setting can be given as an environment variable named `Chartula__<section>__<key>`, which overrides the file:
+
+```console
+$ export Chartula__Faithfulness__Thorough=false
+$ export Chartula__Llm__Model=claude-opus-5
+```
+
+A list takes one variable per element, numbered from `0`, and a map takes one variable per name:
+
+```console
+$ export Chartula__Filter__ExcludeCategories__0=Internal
+$ export Chartula__Filter__ExcludeCategories__1=Documentation
+$ export Chartula__Categories__Names__Fix="Bug Fixes"
+```
+
+A variable overrides one element, not the whole list, so `__0` replaces the first element of a list from the file and leaves the others in place.
+
+## Environment-only settings
+
+Four settings decide where release data and credentials are sent: the two endpoints, and the names of the variables whose values go to them.
+Chartula reads them from the environment only, and refuses a `chartula.yaml` that sets one, naming the variable to use instead.
+The file is repository content that anyone whose pull request is merged can change, and one value in it could otherwise send any variable of your environment to any host.
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `Chartula__Llm__BaseUrl` | per provider | The endpoint the model provider is reached at. See [Providers](providers.md). |
+| `Chartula__Llm__ApiKeyEnvironmentVariable` | per provider | The name of the variable holding the API key. |
+| `Chartula__GitHub__ApiBaseUrl` | `https://api.github.com/` | The GitHub REST API. See [GitHub Enterprise](github.md#github-enterprise). |
+| `Chartula__GitHub__TokenEnvironmentVariable` | `GITHUB_TOKEN` | The name of the variable holding the GitHub token. |
+
+Both endpoints must use `https`.
+Plain `http` is accepted only for this machine (`localhost`, `127.0.0.1`, `::1`), where local model servers run; anywhere else it would send the key or token in cleartext, so the run is refused before its first request.
+
+`Chartula__Llm__BaseUrl` is also refused when its host belongs to another provider's API: `api.openai.com` with `llm.provider: anthropic`, and `api.anthropic.com` with `openai-compatible`.
+A proxy or a gateway lives at a host of its own, so any other host is accepted.
+The usual way into this refusal is an endpoint set in the environment while `llm.provider` sits in a `chartula.yaml` the run does not read, so the message says when the provider was not set:
+
+```console
+Configuration error: Chartula__Llm__BaseUrl 'https://api.openai.com/v1' is OpenAI's API, but llm.provider is not set and defaults to 'anthropic', so the key in ANTHROPIC_API_KEY would be sent to OpenAI. For OpenAI's API, set llm.provider to openai-compatible (in chartula.yaml, or as Chartula__Llm__Provider); otherwise unset Chartula__Llm__BaseUrl.
+```
+
+Chartula does not load the rest of your environment: besides `Chartula__` settings it reads only `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GITHUB_TOKEN` and the variables the two name settings point to.
+Every run prints the endpoints and variable names in force before its first request, never their values ([Providers](providers.md#what-each-provider-needs) shows the header).
 
 ## A file that cannot be read as meant
 
-A `chartula.yaml` is refused before the run starts when any part of it would not be read as written, naming the file, the line and the column:
+Chartula refuses a `chartula.yaml` before the run starts when any part of it would not be read as written, and names the file, the line and the column:
 
 - YAML that does not parse - most often indentation: a key indented under a key that already has a value, a line that lines up with no key above it, or a tab.
 - A key that is not listed below, including a key indented into the wrong section; the refusal names where it belongs, or the key it most likely is.
-- A value of the wrong kind: `true`/`false` keys take only those, list keys a list such as `[Internal]`, the others a single value.
+- A value of the wrong kind: boolean keys take only `true` or `false`, list keys a list such as `[Internal]`, map keys a map, and the others a single value.
 - The same key twice, or a second YAML document after `---`.
 
-Nothing in the file is ignored silently: a setting that is not in force would otherwise read as one that is.
+Nothing in the file is ignored silently, because a setting that is not in force would otherwise read as one that is.
 Every problem is named at once, one per line:
 
 ```console
@@ -22,163 +79,119 @@ Configuration error: chartula.yaml, line 3, column 3: 'faithfulness' is not a ke
 chartula.yaml, line 6, column 12: 'review.enabled' is 'yes'; expected true or false.
 ```
 
-An empty value (`model:`, `~` or `null`) leaves the setting at its default, as leaving the key out does.
-Keys are matched regardless of case.
-
-## Environment-only settings
-
-Four settings decide where release data and credentials are sent: the two endpoints, and the names of the variables whose values go to them.
-They are read from the environment only, and a `chartula.yaml` that sets one is refused, naming the variable to use instead.
-The file is repository content that anyone whose pull request is merged can change, and one value in it could otherwise send any variable of your environment to any host.
-
-| Variable | Default | Description |
-| --- | --- | --- |
-| `Chartula__Llm__BaseUrl` | per provider | The endpoint the model provider is reached at. See [Providers](providers.md). |
-| `Chartula__Llm__ApiKeyEnvironmentVariable` | per provider | Name of the environment variable holding the API key. |
-| `Chartula__GitHub__ApiBaseUrl` | `https://api.github.com/` | REST API base URL (override for GitHub Enterprise, see [GitHub Enterprise](github.md#github-enterprise)). |
-| `Chartula__GitHub__TokenEnvironmentVariable` | `GITHUB_TOKEN` | Name of the environment variable holding the API token. |
-
-Both endpoints must use `https`.
-Plain `http` is accepted only for this machine (`localhost`, `127.0.0.1`, `::1`), which is where local model servers run; anywhere else it would send the key or token in cleartext, so the run is refused before its first request.
-A model server elsewhere on your network needs `https` too.
-
-`Chartula__Llm__BaseUrl` is also refused when its host belongs to another provider's API: `api.openai.com` with `llm.provider: anthropic`, and `api.anthropic.com` with `openai-compatible`.
-Any other host is accepted, because a proxy or a gateway in front of a provider lives at a host of its own; a host that serves another provider's API is never one, and the key sent there would have to be rotated.
-The usual way into this is an endpoint set in the environment while `llm.provider` sits in a `chartula.yaml` that is not there, so the refusal says when the provider was not set:
-
-```console
-Configuration error: Chartula__Llm__BaseUrl 'https://api.openai.com/v1' is OpenAI's API, but llm.provider is not set and defaults to 'anthropic', so the key in ANTHROPIC_API_KEY would be sent to OpenAI. For OpenAI's API, set llm.provider to openai-compatible (in chartula.yaml, or as Chartula__Llm__Provider); otherwise unset Chartula__Llm__BaseUrl.
-```
-
-Chartula does not load the rest of your environment: besides `Chartula__` settings it reads only `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GITHUB_TOKEN` and the variables named by the two settings above.
-Every run starts by printing the endpoints and credential variable names in force, never their values, and the model and thinking mode it asks for:
-
-```console
-Model:  anthropic at its default endpoint, key from ANTHROPIC_API_KEY
-        claude-sonnet-5, thinking provider-default
-GitHub: https://api.github.com/, token from GITHUB_TOKEN
-```
-
-A minimal starting point is shipped as [`chartula.example.yaml`](../chartula.example.yaml) - copy it to `chartula.yaml` and uncomment only what you need.
+A value outside its valid values, such as an unknown category or `thinking: maximum`, stops the run with a configuration error before any GitHub request or model call.
 
 ## Sections
 
+Values are matched regardless of case, and `provider`, `thinking` and `depth` also ignore `-` and `_`, so `openai_compatible` is `openai-compatible`.
+The categories are `Feature`, `Fix`, `Performance`, `Documentation`, `Refactor`, `Internal` and `Other`.
+
 ### `llm`
 
-The model provider and which model to use. The endpoint and the name of the key variable are [environment-only](#environment-only-settings).
+The model provider and the model.
+The endpoint and the name of the key variable are [environment-only](#environment-only-settings).
 
-| Key | Default | Description |
+| Key | Default | Valid values | Description |
+| --- | --- | --- | --- |
+| `provider` | `anthropic` | `anthropic`, `openai-compatible` | The provider. [Providers](providers.md) sets up each. |
+| `model` | per provider | a model id the provider serves | The model that writes the renderings. [Choosing a model](providers.md#choosing-a-model) lists the tested ids. |
+| `maxOutputTokens` | `32000` | a positive whole number | The ceiling on the tokens the model may produce per call, thinking included. |
+| `thinking` | `provider-default` | `provider-default`, `disabled`, `low`, `medium`, `high`, `xhigh` | How much the model reasons before it answers. See [`thinking`](providers.md#thinking). |
+
+`thinking` also reads these aliases: `default` for `provider-default`; `off`, `false` and `none` for `disabled`; `adaptive`, `on` and `true` for `high`; `extrahigh` for `xhigh`.
+
+Three defaults depend on the provider, because a default that is right for one is wrong for the other:
+
+| Setting | `anthropic` | `openai-compatible` |
 | --- | --- | --- |
-| `provider` | `anthropic` | The LLM provider: `anthropic` or `openai-compatible`. [Providers](providers.md) sets up each. Any other value fails the run. |
-| `model` | per provider | The model id passed to the provider. See [Choosing a model](providers.md#choosing-a-model). |
-| `maxOutputTokens` | `32000` | Ceiling on the tokens the model may produce per call, thinking included. Thinking is produced first, so a ceiling that only fits it leaves no text. |
-| `thinking` | `provider-default` | How much the model reasons before answering. One of `provider-default`, `disabled`, `low`, `medium`, `high`, `xhigh`, the same for every provider. See [`thinking`](providers.md#thinking). |
-
-Three of those defaults depend on the provider, because a default that is right for one is wrong for the other:
-
-| Key | `anthropic` | `openai-compatible` |
-| --- | --- | --- |
-| `model` | `claude-sonnet-5` | none - required |
-| `Chartula__Llm__BaseUrl` | the Anthropic API | none - required |
+| `model` | `claude-sonnet-5` | none, required |
+| `Chartula__Llm__BaseUrl` | Anthropic's API | none, required |
 | `Chartula__Llm__ApiKeyEnvironmentVariable` | `ANTHROPIC_API_KEY` | `OPENAI_API_KEY` |
 
-Raise `maxOutputTokens` for releases whose changelog runs long.
-A ceiling that is too low truncates the generated text mid-sentence rather than failing, so a run that ends abruptly is the signal to raise it.
+The model produces its thinking before its text, so a `maxOutputTokens` that only fits the thinking leaves no text.
+A ceiling that is too low cuts the text off mid-sentence rather than failing, so a rendering that ends abruptly is the sign to raise it.
 
 ### `github`
 
-How the GitHub API is reached. Both of its settings, the API base URL and the name of the token variable, are [environment-only](#environment-only-settings), so the section has no keys of its own in `chartula.yaml`.
-
+The section has no keys in `chartula.yaml`: both of its settings are [environment-only](#environment-only-settings).
 [GitHub](github.md) covers the token, its permissions, the rate limit and GitHub Enterprise.
 
 ### `labels`
 
-Steer curation with GitHub labels. All optional; with no rules, labels are ignored.
+Rules on the labels of a pull request.
+With no rules, labels are ignored.
+Label names are yours, such as `visibility:internal`, `no-changelog` or `chore`, and are matched regardless of case.
 
-| Key | Default | Description |
-| --- | --- | --- |
-| `exclude` | (none) | Labels that exclude a pull request from the changelog. |
-| `category` | (none) | Map of label name to category, forcing that change's category. |
-| `onlyIncludeLabeled` | `false` | When true, only labeled pull requests are included. |
-| `internal` | (none) | Labels marking a change no reader can come into contact with. It is kept out of the customer rendering. |
-| `userFacing` | (none) | Labels marking a change a reader can come into contact with, whatever its category. |
-| `actionRequired` | (none) | Labels marking a change the reader has to act on although it is not breaking. It stands under "What needs action" in the customer rendering. A breaking change always does and needs no label. |
+| Key | Default | Valid values | Description |
+| --- | --- | --- | --- |
+| `exclude` | none | a list of label names | A pull request with one of these labels is dropped. |
+| `category` | none | a map of label name to category | A pull request with one of these labels gets that category, whatever its title says. |
+| `onlyIncludeLabeled` | `false` | `true`, `false` | When `true`, a change without labels is dropped. |
+| `internal` | none | a list of label names | A change no reader can meet. It is kept out of the customer rendering. |
+| `userFacing` | none | a list of label names | A change a reader can meet, whatever its category. |
+| `actionRequired` | none | a list of label names | A change the reader has to act on although it is not breaking. It stands under "What needs action" in the customer rendering. |
 
-The label names are yours. `visibility:internal` is one convention; `internal`,
-`no-changelog` and `chore` are others, which is why the names are configured here
-rather than built into the tool.
-
-[What goes into a release](what-goes-into-a-release.md) explains in which order the label rules, the category and the filter decide, and which audience a change reaches.
+[What goes into a release](what-goes-into-a-release.md) explains the order in which labels, category and filter decide, and which audience a change reaches.
 
 ### `filter`
 
-Which categories are dropped from the changelog.
-
-| Key | Default | Description |
-| --- | --- | --- |
-| `excludeCategories` | `[Internal]` | Category names to exclude. An explicit (possibly empty) list replaces the default. |
-
-Valid categories: `Feature`, `Fix`, `Performance`, `Documentation`, `Refactor`, `Internal`, `Other`.
+| Key | Default | Valid values | Description |
+| --- | --- | --- | --- |
+| `excludeCategories` | `[Internal]` | a list of categories | Changes in these categories are dropped, unless they are breaking. A list replaces the default. An empty list `[]` is read as no list and keeps the default. |
 
 ### `factBase`
 
-How much source material feeds the fact base.
+| Key | Default | Valid values | Description |
+| --- | --- | --- | --- |
+| `depth` | `title-and-description` | `title-only`, `title-and-description`, `title-description-and-issues` | How much of each change the model reads. See [How much of each change the model reads](what-goes-into-a-release.md#8-how-much-of-each-change-the-model-reads). |
 
-| Key | Default | Description |
-| --- | --- | --- |
-| `depth` | `title-and-description` | One of `title-only`, `title-and-description`, `title-description-and-issues`. |
+`depth` also reads these aliases: `title` for `title-only`, `description` for `title-and-description`, and `full` or `issues` for `title-description-and-issues`.
 
 ### `categories`
 
-How categories are presented in the output.
-
-| Key | Default | Description |
-| --- | --- | --- |
-| `order` | `[Feature, Fix, Performance, Documentation, Refactor, Other, Internal]` | The order categories appear in. Unlisted categories sort last. In the technical rendering the group comes first - Changed, Added, Fixed - and this order applies within a group. |
-| `names` | (enum names) | Map of category name to display name (e.g. `Fix: Bug Fixes`). |
-| `breakingProminent` | `true` | Whether breaking changes float to the top, shown near the top. The technical rendering always puts a breaking change first in its group, whatever this says. |
-
-Valid category names: `Feature`, `Fix`, `Performance`, `Documentation`, `Refactor`, `Internal`, `Other`.
+| Key | Default | Valid values | Description |
+| --- | --- | --- | --- |
+| `order` | `[Feature, Fix, Performance, Documentation, Refactor, Other, Internal]` | a list of categories | The order of entries within each group of the technical and customer renderings, and across the product rendering. Unlisted categories sort last. |
+| `names` | the category names | a map of category to name | The name the model is given for a category in each fact, such as `Fix: Bug Fix`. The headings of the renderings do not change. |
+| `breakingProminent` | `true` | `true`, `false` | Whether breaking changes stand first in the product rendering. The technical and customer renderings always put a breaking change first. |
 
 ### `faithfulness`
 
-The faithfulness checks. The rule-based check always runs and is not configurable.
+The two checks of every rendering against the facts.
+The rule-based check always runs and has no settings.
 
-| Key | Default | Description |
-| --- | --- | --- |
-| `thorough` | `true` | Whether the thorough (second-pass LLM) check runs. |
-| `model` | `llm.model` | The model the thorough check asks, at the same provider, endpoint and key as the rendering. |
-| `thinking` | `llm.thinking` | How much the thorough check's model reasons, in the values of [`llm.thinking`](providers.md#thinking). |
+| Key | Default | Valid values | Description |
+| --- | --- | --- | --- |
+| `thorough` | `true` | `true`, `false` | Whether the thorough check, a second model call per audience, runs. |
+| `model` | `llm.model` | a model id the provider serves | The model the thorough check asks, at the same provider, endpoint and key as the rendering. |
+| `thinking` | `llm.thinking` | the values of `llm.thinking` | How much the thorough check's model reasons. |
 
-Rendering and checking are different jobs: one writes prose from the facts, the other compares a finished text with them and answers a short verdict.
-They need not run on the same model.
-A cheaper model can render and a stronger one check, or the reverse, and the run metrics show each one's tokens and time on its own line, so the trade-off can be read from a run.
-Thinking is set apart for the same reason: on the check it has been measured to cost thousands of output tokens and find fewer claims, not more (see [`thinking`](providers.md#thinking)).
-
+Rendering and checking are different jobs, one writing prose and one comparing a finished text with the facts, so they can run on different models.
+The run metrics show each one's tokens and time on its own line, so the trade-off can be read from a run.
 A combination the Claude model is known to reject is refused when the configuration is read, naming the key it came from (`faithfulness.thinking`, or `llm.thinking` when the check inherits it).
 The run header names the check's model when it differs from the rendering's, and the [provenance](changelog-json.md#provenance) records it either way.
 
-On by default, because it is cheap for what it finds.
-On the three alpha runs in the README (`claude-sonnet-5`, technical and customer), it took 29%, 29% and 45% of the tokens of runs that cost about $0.06, $0.07 and $0.20 in total.
-Its tokens are reported apart from rephrasing, so a run without it costs what is left: a few cents less.
-On one of those runs it caught the only invented claim the rule-based check missed - the example in the README.
-
-Every run reports what each check caught and what it cost - see [`run-metrics.md`](run-metrics.md) for deciding whether the thorough check earns its tokens.
+[Run metrics](run-metrics.md) shows how to decide whether the thorough check earns its tokens.
 
 ### `review`
 
-Review mode - present generated texts for human sign-off before writing.
-Not available yet: no interactive reviewer exists, so `enabled: true` is refused with a configuration error instead of approving every text unseen.
+Review mode would present each rendering for sign-off before it is written.
+No interactive reviewer exists yet, so `enabled: true` is refused instead of approving every text unseen.
 
-| Key | Default | Description |
-| --- | --- | --- |
-| `enabled` | `false` | Whether review mode is on. Only `false` is accepted for now. |
+| Key | Default | Valid values | Description |
+| --- | --- | --- | --- |
+| `enabled` | `false` | `false` | Whether review mode is on. |
 
 ## Example
 
+A `chartula.yaml` that sets every key:
+
 ```yaml
 llm:
-  model: claude-opus-4-8
+  provider: anthropic
+  model: claude-opus-5
+  maxOutputTokens: 32000
+  thinking: disabled
 
 labels:
   exclude: [wontfix, duplicate]
@@ -198,11 +211,13 @@ factBase:
 categories:
   order: [Feature, Fix, Performance, Documentation, Refactor, Other, Internal]
   names:
-    Fix: Bug Fixes
+    Fix: Bug Fix
   breakingProminent: true
 
 faithfulness:
   thorough: true
+  model: claude-sonnet-5
+  thinking: disabled
 
 review:
   enabled: false
