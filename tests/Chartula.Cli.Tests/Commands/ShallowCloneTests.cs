@@ -11,11 +11,11 @@ public sealed class ShallowCloneTests : IDisposable
     private readonly string _origin = Path.Combine(Path.GetTempPath(), "chartula-shallow-origin-" + Guid.NewGuid().ToString("N"));
     private readonly string _checkout = Path.Combine(Path.GetTempPath(), "chartula-shallow-" + Guid.NewGuid().ToString("N"));
 
-    // #243: --whole-history is refused too, because in a shallow clone the history it
-    // would render is not the whole history.
+    // #243: confirming the range up front does not get past it, because in a shallow
+    // clone the history ends at the fetch depth, not at the first commit.
     [Theory]
     [InlineData]
-    [InlineData("--whole-history")]
+    [InlineData("--yes")]
     public async Task A_shallow_clone_is_refused_with_the_way_to_fetch_its_history(params string[] start)
     {
         Directory.CreateDirectory(_origin);

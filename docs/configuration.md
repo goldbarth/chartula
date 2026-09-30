@@ -182,6 +182,17 @@ No interactive reviewer exists yet, so `enabled: true` is refused instead of app
 | --- | --- | --- | --- |
 | `enabled` | `false` | `false` | Whether review mode is on. |
 
+### `range`
+
+A first tag, or a range with more commits than this, is confirmed twice before any GitHub request or model call, and a run without a terminal stops there unless it passes `--yes`.
+[A large range is confirmed](what-goes-into-a-release.md#a-large-range-is-confirmed) shows the question.
+
+| Key | Default | Valid values | Description |
+| --- | --- | --- | --- |
+| `confirmAboveCommits` | `200` | a whole number, `0` or more | A range with more commits than this is confirmed. `0` confirms every range. A first tag is confirmed whatever its size. |
+
+So a release of a few dozen pull requests runs without a question, and a forgotten `--since` on a long history is caught before it costs.
+
 ## Example
 
 A `chartula.yaml` that sets every key:
@@ -221,4 +232,7 @@ faithfulness:
 
 review:
   enabled: false
+
+range:
+  confirmAboveCommits: 200
 ```

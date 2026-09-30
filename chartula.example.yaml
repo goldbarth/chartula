@@ -43,3 +43,7 @@
 
 # review:
 #   enabled: false                   # only false is accepted
+
+# Confirming a large range: docs/what-goes-into-a-release.md
+# range:
+#   confirmAboveCommits: 200         # a larger range, or a first tag, is confirmed first

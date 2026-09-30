@@ -40,13 +40,13 @@ public sealed class GitCliCommitReader(GitExecutable git, string repositoryPath)
 
         // A shallow clone is the default of actions/checkout and GitLab CI. Its history
         // ends at the fetch depth, which looks like the start of a first tag's history.
-        // So neither the previous tag nor the whole history can be read from it, only
+        // So neither the previous tag nor the first commit can be read from it, only
         // an explicit start that was fetched together with the tag.
         bool shallow = await IsShallowAsync(cancellationToken);
         if (shallow && string.IsNullOrWhiteSpace(since))
         {
             throw new InvalidOperationException($"""
-                The checkout is a shallow clone: its history ends at the fetch depth, not where '{tag}' starts, so neither the previous tag nor the whole history can be read from it.
+                The checkout is a shallow clone: its history ends at the fetch depth, not where '{tag}' starts, so neither the previous tag nor the first commit can be read from it.
                 {FetchFullHistory}
                 """);
         }

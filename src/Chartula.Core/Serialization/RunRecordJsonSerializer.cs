@@ -17,8 +17,10 @@ public static class RunRecordJsonSerializer
     /// The current on-disk schema version.
     /// Version 2 turned each flag from a string into an object that names its pull request,
     /// and added the range the run read.
+    /// Version 3 renamed the range start <c>whole-history</c> to <c>first-commit</c>, since
+    /// the range ends at the tag and never was the whole history.
     /// </summary>
-    public const int SchemaVersion = 2;
+    public const int SchemaVersion = 3;
 
     public static string Serialize(RunRecord record, DateTimeOffset recordedAt, RunProvenance? provenance = null)
     {
@@ -77,10 +79,10 @@ public static class RunRecordJsonSerializer
     };
 
     // Named after the CLI's options. A named start is where the range begins whatever the
-    // tags say; without one, it begins after the previous tag, and without that, at the root.
+    // tags say; without one, it begins after the previous tag, and without that, at the first commit.
     private static string StartName(CommitRange range, string? since)
         => since is not null ? "since"
-            : range.IsWholeHistory ? "whole-history"
+            : range.StartsAtFirstCommit ? "first-commit"
             : "previous-tag";
 
     private static RunRecordLlmUsage Usage(LlmUsage usage)

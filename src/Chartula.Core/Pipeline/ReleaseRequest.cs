@@ -40,18 +40,14 @@ public sealed record ReleaseRequest(string Tag, RepositoryCoordinates Repository
 
     /// <summary>
     /// The tag or commit the release starts after, or <c>null</c> to start after the
-    /// previous tag.
-    /// Where a release starts is a fact decision, so the operator names it. On a first
-    /// tag, this is the only possible start.
+    /// previous tag, or at the first commit when there is none.
     /// </summary>
     public string? Since { get; init; }
 
     /// <summary>
-    /// Whether a range that spans all history may be rendered.
-    /// A first tag without <see cref="Since"/> has such a range. Rendered as is, it
-    /// reads as a development log: intermediate states next to the changes that
-    /// replaced them.
-    /// So it is refused unless requested, for a project whose whole history is the release.
+    /// Whether the operator confirmed a large range up front (<c>--yes</c>).
+    /// A run without a terminal has no one to ask, so this is how it reads a range
+    /// <see cref="LargeRangeRule"/> applies to.
     /// </summary>
-    public bool WholeHistory { get; init; }
+    public bool RangeConfirmed { get; init; }
 }

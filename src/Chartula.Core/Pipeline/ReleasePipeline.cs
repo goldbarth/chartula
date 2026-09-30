@@ -51,9 +51,12 @@ public sealed class ReleasePipeline(
     ICustomerPageWriter customerPageWriter,
     IReleaseNotesWriter releaseNotesWriter,
     IRunMetrics? metrics = null,
-    IRunRecordWriter? runRecordWriter = null) : IReleasePipeline
+    IRunRecordWriter? runRecordWriter = null,
+    IReleaseRangeGate? rangeGate = null,
+    LargeRangeRule? largeRangeRule = null) : IReleasePipeline
 {
     private readonly IRunMetrics _metrics = metrics ?? NullRunMetrics.Instance;
+    private readonly LargeRangeRule _largeRangeRule = largeRangeRule ?? LargeRangeRule.Default;
 
     public async Task<ReleaseOutcome> RunAsync(
         ReleaseRequest request,
@@ -65,11 +68,14 @@ public sealed class ReleasePipeline(
 
         CommitRange range = await commitReader.ReadReleaseCommitsAsync(request.Tag, request.Since, cancellationToken);
 
-        // Refuse before the first API request. Asking the operator where a release
-        // starts costs neither API budget nor tokens, and guessing it would be a fact decision.
-        if (range.IsWholeHistory && !request.WholeHistory)
+        // Ask before the first API request. A large range costs a GitHub request per commit
+        // and sends every change to the model, and a run nobody meant should cost nothing.
+        rangeGate?.Announce(range);
+        if (!request.RangeConfirmed
+            && _largeRangeRule.Applies(range)
+            && (rangeGate is null || !await rangeGate.ConfirmAsync(range, cancellationToken)))
         {
-            throw new WholeHistoryException(range.ToTag, range.Commits.Count);
+            throw new UnconfirmedRangeException(range.ToTag);
         }
 
         IReadOnlyList<PullRequestInfo> pullRequests =

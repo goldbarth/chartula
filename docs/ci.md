@@ -70,6 +70,10 @@ Each step is there for a reason:
 
 A failed audience or a refused publication ends the run with exit code `1`, so the job fails and GitHub notifies you.
 
+A first tag, or a range with more commits than [`range.confirmAboveCommits`](configuration.md#range), is confirmed before it is read, and a job has no terminal to answer on.
+So the job stops there with nothing spent and exit code `1`, and names the two ways on: `--since <ref>` to start later, or `--yes` to render the range as it is.
+Run that one release by hand or with the option added once, rather than adding `--yes` to the job for good, which would let every later range through unasked.
+
 ## What happens to the draft
 
 For a tag without a release, the job creates a draft release with the technical rendering as its notes.

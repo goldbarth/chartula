@@ -20,6 +20,7 @@ public sealed class ChartulaYamlSchemaTests
         { "categories", typeof(CategoryOptions) },
         { "faithfulness", typeof(FaithfulnessOptions) },
         { "review", typeof(ReviewOptions) },
+        { "range", typeof(RangeOptions) },
     };
 
     [Theory]

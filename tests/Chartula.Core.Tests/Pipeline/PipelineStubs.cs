@@ -24,16 +24,21 @@ internal sealed class StubCommitReader(DateOnly? taggedAt = null) : IReleaseComm
 
     /// <summary>
     /// A range bounded by a previous tag, as for any release after the first.
-    /// A test about the first release sets <see cref="WholeHistory"/>.
+    /// A test about the first release sets <see cref="FirstTag"/>.
     /// </summary>
-    public bool WholeHistory { get; init; }
+    public bool FirstTag { get; init; }
+
+    /// <summary>How many commits the range holds.</summary>
+    public int CommitCount { get; init; } = 1;
 
     public Task<CommitRange> ReadReleaseCommitsAsync(
         string tag, string? since = null, CancellationToken cancellationToken = default)
     {
         Since = since;
-        string? from = since ?? (WholeHistory ? null : "v0.9.0");
-        return Task.FromResult(new CommitRange(tag, from, [new CommitInfo("sha", "feat: add search")], _taggedAt));
+        string? from = since ?? (FirstTag ? null : "v0.9.0");
+        IReadOnlyList<CommitInfo> commits =
+            [.. Enumerable.Range(0, CommitCount).Select(static n => new CommitInfo($"sha{n}", "feat: add search"))];
+        return Task.FromResult(new CommitRange(tag, from, commits, _taggedAt));
     }
 }
 

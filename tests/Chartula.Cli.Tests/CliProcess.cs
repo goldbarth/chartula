@@ -5,6 +5,7 @@ namespace Chartula.Cli.Tests;
 /// <summary>
 /// Starts the built CLI the way a user does: its own process, from a directory the
 /// test chose, with the environment it inherits plus what the test sets.
+/// Its stdin is closed, as in a CI job, so a run that would ask a question gets no answer.
 /// </summary>
 internal static class CliProcess
 {
@@ -37,6 +38,7 @@ internal static class CliProcess
         {
             FileName = fileName,
             WorkingDirectory = directory,
+            RedirectStandardInput = true,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
@@ -53,6 +55,7 @@ internal static class CliProcess
     {
         using Process process = Process.Start(startInfo)
             ?? throw new InvalidOperationException($"Could not start {startInfo.FileName}.");
+        process.StandardInput.Close();
         Task<string> output = process.StandardOutput.ReadToEndAsync();
         Task<string> error = process.StandardError.ReadToEndAsync();
         await process.WaitForExitAsync();

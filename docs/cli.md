@@ -22,11 +22,11 @@ Options:
   --tag <tag>    The release tag. Default: the nearest tag reachable from HEAD.
   --repo <o/n>   The GitHub repository, as owner/name. Default: read from
                  the 'origin' remote.
-  --since <ref>  Start the release after this tag or commit instead of the
-                 previous tag. A first tag needs this or --whole-history.
-  --whole-history
-                 Render a first tag's whole history, e.g. for a project
-                 whose history is the release.
+  --since <ref>  Render the commits after this tag or commit, up to the
+                 release tag. Default: after the previous tag, or from the
+                 first commit for a first tag.
+  --yes          Confirm a first tag or a large range up front, for a run
+                 without a terminal to ask on.
   --no-publish   Write changelog.json and CHANGELOG.md, but publish no release notes.
   --audience <a> Render only this audience: technical, customer or product.
                  Repeat it, or separate them with commas. Default:
@@ -134,15 +134,18 @@ Invalid option --repo 'name-only'. Expected <owner/name>.
 
 ### Where a release starts
 
-A release starts after the previous tag.
-A first tag stops the run and asks where the release starts, and a shallow clone stops it because its history is cut off.
+A release is the commits after its start, up to the release tag.
+It starts after the previous tag, or at the first commit when the tag is the first.
+A first tag, or a range with more commits than `range.confirmAboveCommits`, is confirmed before any GitHub request or model call, and a shallow clone stops the run because its history is cut off.
 
 | Option | Value | Effect |
 | --- | --- | --- |
-| `--since` | `<tag-or-commit>` | The release starts after this ref instead of the previous tag. It has to be an ancestor of the release tag. |
-| `--whole-history` | - | Render a range that spans all history. |
+| `--since` | `<tag-or-commit>` | The release starts after this ref instead of the previous tag or the first commit. It has to be an ancestor of the release tag. |
+| `--yes` | - | Confirms a range that would be asked about, for a run without a terminal, such as a CI job. |
 
-[What goes into a release](what-goes-into-a-release.md#1-the-range) explains the range, the first tag, a shallow clone, and which changes of the range appear.
+A run without a terminal and without `--yes` stops at that question with nothing spent, so a CI job fails on its first tag until you pass one of the two options.
+
+[What goes into a release](what-goes-into-a-release.md#1-the-range) explains the range, the first tag, the confirmation, a shallow clone, and which changes of the range appear.
 
 ## Environment
 

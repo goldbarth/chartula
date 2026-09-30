@@ -32,9 +32,11 @@ internal static class ReleaseCommand
             // show there. Whatever did render is still written.
             return outcome.Renderings.All(audience => audience.Success) && outcome.PublishFailure is null ? 0 : 1;
         }
-        catch (WholeHistoryException ex)
+        catch (UnconfirmedRangeException ex)
         {
-            output.WriteLine($"Error: {ReleaseStart.Refusal(ex.Tag, ex.CommitCount)}");
+            // Not an error: the operator declined, or nobody could be asked. The range
+            // and the way out were shown with the question.
+            output.WriteLine($"Stopped: {ex.Message}");
             return 1;
         }
         catch (InvalidOperationException ex)
