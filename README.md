@@ -196,7 +196,7 @@ The [Roadmap](ROADMAP.md#after-the-launch-in-this-order) says which point remove
 | [Configuration](docs/configuration.md) | Every `chartula.yaml` key with its default and valid values, and settings as environment variables. |
 | [`changelog.json` format](docs/changelog-json.md) | The stable output schema other tools build on. |
 | [Run record](docs/run-record.md) | The local file each `generate` run keeps, for comparing runs. |
-| [Versioning](docs/versioning.md) | The version scheme, and what may change before and after 1.0. |
+| [Versioning](docs/versioning.md) | The version scheme, preview and alpha, when 1.0 ships, and what you can build on. |
 
 **Working on Chartula**
 
@@ -205,6 +205,7 @@ The [Roadmap](ROADMAP.md#after-the-launch-in-this-order) says which point remove
 | [Contributing](CONTRIBUTING.md) | The workflow, the setup and the conventions. |
 | [Architecture](docs/development/architecture.md) | The layering, the pipeline, and the choices behind them. |
 | [Test fixtures](docs/development/testing.md) | How the pipeline is tested without spending tokens. |
+| [Releasing](docs/development/releasing.md) | Making a release, from the version bump to the committed changelog. |
 | [Roadmap](ROADMAP.md) | What comes next, in order. |
 
 A prompt change moves the output in ways no unit test catches.
