@@ -20,7 +20,7 @@ public sealed class FactBaseDepthTests
 
     private static FactBase BuildOne(FactBaseDepth depth) => Builder(depth).Build(
         new CommitRange("v1.0.0", "v0.9.0", [new CommitInfo("sha", "subject")]),
-        [new PullRequestInfo(7, "feat: dark mode", "Adds a theme. Closes #12", [], "https://example/pull/7")]);
+        [new PullRequestInfo(7, "feat: dark mode", "Adds a theme. Closes #12", [], "https://example/pull/7") { CommitShas = ["sha"] }]);
 
     [Fact]
     public void Title_only_keeps_neither_description_nor_issues()

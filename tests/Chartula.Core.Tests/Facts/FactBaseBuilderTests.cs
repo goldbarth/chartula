@@ -21,11 +21,9 @@ public sealed class FactBaseBuilderTests
         return new FactBaseBuilder(new ReleaseChangeResolver(), filter, categorizer, labelPolicy, depth);
     }
 
+    // The pull requests name no commits, so a commit in the range would be a direct push.
     private static CommitRange Range(params (string Sha, string Subject)[] commits)
-        => new("v1.0.0", "v0.9.0",
-            commits.Length == 0
-                ? [new CommitInfo("sha", "subject")]
-                : commits.Select(c => new CommitInfo(c.Sha, c.Subject)).ToArray());
+        => new("v1.0.0", "v0.9.0", commits.Select(c => new CommitInfo(c.Sha, c.Subject)).ToArray());
 
     private static PullRequestInfo Pull(int number, string title, string? body = null, params string[] labels)
         => new(number, title, body, labels, $"https://example/pull/{number}");

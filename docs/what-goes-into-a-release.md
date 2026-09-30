@@ -64,11 +64,17 @@ That costs one request per commit, which [GitHub](github.md#the-rate-limit) coun
 Merged pull requests are the source of the release, because their title and description say what changed in words meant for a reader.
 Each pull request becomes one change, however many commits it has.
 
-A commit that belongs to no merged pull request, such as a direct push to the main branch, is left out when the release has at least one merged pull request ([#257](https://github.com/goldbarth/chartula/issues/257)).
-So in a repository that mixes pull requests and direct pushes, a direct push appears in no rendering.
+A commit that belongs to no merged pull request, such as a direct push to the main branch, becomes a change of its own, next to the pull requests.
+It has its subject line as the title, no description and no labels, and the steps below treat it like any other change.
+So a fix pushed straight to `main` is in the release, and a `chore:` or `ci:` push is dropped as `Internal`, as a pull request with that title would be.
+A release with no merged pull request at all is the same case: every commit becomes a change.
 
-A release with no merged pull request at all falls back to its commits.
-Each commit becomes one change, with its subject line as the title, no description and no labels.
+A merge commit without a pull request, such as a branch merged locally and pushed, becomes no change.
+What it brings in is the merged commits, which are in the range themselves.
+The changes keep the order of the range, so a direct push stands between the pull requests merged before and after it.
+
+The [run summary](run-metrics.md) counts the commits without a pull request, and the merge commits among them that were skipped, so no commit leaves the release without the run saying so.
+Asking GitHub about each commit is what finds its pull request, so a direct push costs no request beyond the one per commit.
 
 ### The title and the description
 
@@ -94,7 +100,7 @@ A revert that a later revert in the same range takes back removes nothing, so wh
 A change that a later change in the same range replaced without reverting it still appears as an entry of its own.
 Chartula cannot tell that one pull request supersedes another without reading their meaning, which would put a fact decision into the model.
 
-A release that falls back to commits pairs no reverts.
+A change from a commit without a pull request pairs no reverts, so a revert pushed straight to `main` stays as an entry of its own.
 
 ## 4. The category
 
@@ -140,7 +146,7 @@ Chartula reads the description for this whatever `factBase.depth` says, so a bre
 Chartula drops a change in this order:
 
 1. A label listed in `labels.exclude` drops it, whatever else applies.
-2. With `labels.onlyIncludeLabeled: true`, a change without labels is dropped. A commit carries no labels, so a release that falls back to commits keeps nothing.
+2. With `labels.onlyIncludeLabeled: true`, a change without labels is dropped. A commit carries no labels, so a change from a commit without a pull request is dropped, and a release without pull requests keeps nothing.
 3. A breaking change is kept from here on, whatever its category.
 4. A change whose category is in `filter.excludeCategories` is dropped. The default list is `[Internal]`.
 

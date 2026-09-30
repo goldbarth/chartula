@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Chartula.Core.Curation;
 using Chartula.Core.Facts;
 using Chartula.Core.Faithfulness;
 using Chartula.Core.Generation;
@@ -88,12 +89,15 @@ public sealed class ReleasePipeline(
         IReadOnlyList<PullRequestInfo> pullRequests =
             await pullRequestReader.GetMergedPullRequestsAsync(request.Repository, range, cancellationToken);
         FactBase factBase = factBaseBuilder.Build(range, pullRequests);
+        DirectCommits direct = DirectCommits.Of(range, pullRequests);
         _metrics.RecordReleaseScope(new ReleaseScope(
             range.Commits.Count,
             pullRequests.Count,
             factBase.Changes.Count,
             factBase.Changes.Count(static change => !string.IsNullOrWhiteSpace(change.Description)),
-            factBase.Changes.Sum(static change => (long)(change.Description?.Length ?? 0))));
+            factBase.Changes.Sum(static change => (long)(change.Description?.Length ?? 0)),
+            direct.Commits.Count + direct.SkippedMerges,
+            direct.SkippedMerges));
 
         IReadOnlyDictionary<Audience, ChangelogGenerationResult> rendered =
             await renderer.RenderAsync(factBase, request.Audiences, cancellationToken);

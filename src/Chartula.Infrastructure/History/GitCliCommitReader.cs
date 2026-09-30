@@ -58,7 +58,7 @@ public sealed class GitCliCommitReader(GitExecutable git, string repositoryPath)
 
         string range = from is null ? tag : $"{from}..{tag}";
         GitResult log = await RunGitAsync(
-            ["log", "--no-color", "--pretty=format:%H%x1f%s", range], cancellationToken);
+            ["log", "--no-color", "--pretty=format:%H%x1f%P%x1f%s", range], cancellationToken);
         if (log.ExitCode != 0)
         {
             throw new InvalidOperationException(
@@ -242,8 +242,12 @@ public sealed class GitCliCommitReader(GitExecutable git, string repositoryPath)
         List<CommitInfo> commits = [];
         foreach (string line in log.Split('\n', StringSplitOptions.RemoveEmptyEntries))
         {
-            string[] fields = line.Split(FieldSeparator, 2);
-            commits.Add(new CommitInfo(fields[0], fields.Length > 1 ? fields[1] : string.Empty));
+            // Hash, parents separated by spaces, subject. The subject may hold anything, so it is last.
+            string[] fields = line.Split(FieldSeparator, 3);
+            commits.Add(new CommitInfo(fields[0], fields.Length > 2 ? fields[2] : string.Empty)
+            {
+                IsMerge = fields.Length > 1 && fields[1].Contains(' ', StringComparison.Ordinal),
+            });
         }
 
         return commits;

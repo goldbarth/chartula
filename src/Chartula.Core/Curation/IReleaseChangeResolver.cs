@@ -7,7 +7,7 @@ namespace Chartula.Core.Curation;
 /// Resolves a release's commits and merged pull requests into a set of changes.
 /// It never fails only because the source data is thin:
 /// <list type="bullet">
-/// <item>Without pull requests it falls back to commit data.</item>
+/// <item>A commit that belongs to no pull request becomes a change from its commit data.</item>
 /// <item>An uninformative PR title falls back to the best available source.</item>
 /// </list>
 /// </summary>

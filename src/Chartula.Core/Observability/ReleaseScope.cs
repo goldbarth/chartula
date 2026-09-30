@@ -14,9 +14,19 @@ namespace Chartula.Core.Observability;
 /// Description characters across all facts: the text the model reads beyond the titles.
 /// Counted after template comments are stripped and at the configured depth.
 /// </param>
+/// <param name="CommitsWithoutPullRequest">
+/// Commits that belong to no merged pull request, such as direct pushes. Each became a
+/// change of its own, except the merge commits among them.
+/// </param>
+/// <param name="MergeCommitsSkipped">
+/// Merge commits without a pull request, which became no change: what they bring in is
+/// in the range already. Counted so that no commit leaves the release unmentioned.
+/// </param>
 public sealed record ReleaseScope(
     int Commits,
     int PullRequests,
     int Facts,
     int FactsWithDescription,
-    long DescriptionCharacters);
+    long DescriptionCharacters,
+    int CommitsWithoutPullRequest = 0,
+    int MergeCommitsSkipped = 0);

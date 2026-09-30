@@ -80,6 +80,27 @@ public sealed class GitCliCommitReaderTests
         Assert.Equal("feat: add dark mode", commit.Subject);
         Assert.Equal(40, commit.Sha.Length);
         Assert.Matches("^[0-9a-f]{40}$", commit.Sha);
+        Assert.False(commit.IsMerge);
+    }
+
+    [Fact]
+    public async Task A_commit_with_two_parents_is_a_merge_commit()
+    {
+        using TempGitRepository repo = new();
+        repo.Commit("A");
+        repo.Tag("v0.1.0");
+        repo.Run("switch", "-q", "-c", "side");
+        repo.Commit("feat: on a branch");
+        repo.Run("switch", "-q", "main");
+        repo.Commit("fix: on main");
+        repo.Run("merge", "-q", "--no-ff", "side", "-m", "Merge branch 'side'");
+        repo.Tag("v0.2.0");
+
+        CommitRange range = await new GitCliCommitReader(GitExecutable.FromPath(), repo.Path)
+            .ReadReleaseCommitsAsync("v0.2.0");
+
+        Assert.Equal(["Merge branch 'side'"], range.Commits.Where(c => c.IsMerge).Select(c => c.Subject));
+        Assert.Equal(3, range.Commits.Count);
     }
 
     [Fact]
