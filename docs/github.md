@@ -113,16 +113,16 @@ Publish a draft after reading it, on the release page on GitHub or with the GitH
 $ gh release edit v1.2.0 --draft=false
 ```
 
-`generate` needs Contents read and write only for this last step, and it takes that step after every model call.
-A read-only token therefore gets the files written and the model calls paid for, and then the run reports that GitHub refused to publish and exits with `1`:
+`generate` needs Contents read and write only for this last step, and it checks that permission before the first model call.
+The check asks GitHub to draft notes for the tag, a request that needs the same permission and stores nothing.
+A read-only token, or no token, stops the run there and exits with `1`:
 
 ```text
-Not published: the release notes.
-  GitHub refused to publish the release notes for v1.2.0 to owner/name (403 Forbidden).
-    The request carried the token from GITHUB_TOKEN.
-    Publishing needs a token with Contents read and write on owner/name.
-  The files above are written. A re-run replaces this release's entries rather
-  than adding them, but pays for the model calls again; --no-publish skips this step.
+Error: GitHub does not let this run publish the release notes for v1.2.0 to owner/name (403 Forbidden).
+  The request carried the token from GITHUB_TOKEN.
+  Publishing needs a token with Contents read and write on owner/name.
+  The run stopped before any model call. --no-publish writes the files without publishing them.
 ```
 
-Run `generate --no-publish` with a read-only token, so the run does not end on a refusal.
+So a token that cannot publish costs one GitHub request and no model call.
+Run `generate --no-publish` with a read-only token, so the run writes the files and leaves the release alone.

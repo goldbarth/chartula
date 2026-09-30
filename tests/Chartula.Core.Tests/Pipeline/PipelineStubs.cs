@@ -55,11 +55,14 @@ internal sealed class StubRenderer : IReleaseRenderer
     /// <summary>The audiences the pipeline asked for, or null when it asked for all.</summary>
     public IReadOnlyCollection<Audience>? Asked { get; private set; }
 
+    public int Calls { get; private set; }
+
     public Task<IReadOnlyDictionary<Audience, ChangelogGenerationResult>> RenderAsync(
         FactBase factBase,
         IReadOnlyCollection<Audience>? audiences = null,
         CancellationToken cancellationToken = default)
     {
+        Calls++;
         Asked = audiences;
         Dictionary<Audience, ChangelogGenerationResult> all = new()
         {
@@ -120,13 +123,46 @@ internal sealed class SpyReleaseNotesWriter : IReleaseNotesWriter
         Calls++;
         return Task.FromResult("https://github.com/octo/repo/releases/tag/" + tag);
     }
+
+    public int Checks { get; private set; }
+
+    public Task EnsureCanWriteAsync(
+        RepositoryCoordinates repository, string tag, CancellationToken cancellationToken = default)
+    {
+        Checks++;
+        return Task.CompletedTask;
+    }
 }
 
-/// <summary>A release notes writer that fails like a refused read-only token.</summary>
+/// <summary>
+/// A release notes writer that passes the check and then fails on writing, like a
+/// release GitHub refuses for a reason the check cannot see.
+/// </summary>
 internal sealed class RefusingReleaseNotesWriter(string message) : IReleaseNotesWriter
 {
     public Task<string> WriteAsync(
         RepositoryCoordinates repository, string tag, string body, CancellationToken cancellationToken = default)
+        => throw new InvalidOperationException(message);
+
+    public Task EnsureCanWriteAsync(
+        RepositoryCoordinates repository, string tag, CancellationToken cancellationToken = default)
+        => Task.CompletedTask;
+}
+
+/// <summary>A release notes writer whose token may not publish, found by the check.</summary>
+internal sealed class ReadOnlyTokenReleaseNotesWriter(string message) : IReleaseNotesWriter
+{
+    public int Calls { get; private set; }
+
+    public Task<string> WriteAsync(
+        RepositoryCoordinates repository, string tag, string body, CancellationToken cancellationToken = default)
+    {
+        Calls++;
+        throw new InvalidOperationException(message);
+    }
+
+    public Task EnsureCanWriteAsync(
+        RepositoryCoordinates repository, string tag, CancellationToken cancellationToken = default)
         => throw new InvalidOperationException(message);
 }
 

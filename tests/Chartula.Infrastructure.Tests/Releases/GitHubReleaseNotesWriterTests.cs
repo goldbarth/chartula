@@ -201,6 +201,60 @@ public sealed class GitHubReleaseNotesWriterTests
         Assert.Contains("no token: MY_TOKEN is not set", ex.Message);
     }
 
+    // #262: the check asks GitHub for notes it throws away. The request needs Contents
+    // write and stores nothing, so it answers the question without writing a release.
+    [Fact]
+    public async Task A_token_that_may_write_passes_the_check_and_nothing_is_written()
+    {
+        RoutingHandler handler = new(_ => Json(HttpStatusCode.OK, """{"name":"v1.0.0","body":"notes"}"""));
+        HttpClient client = Client(handler);
+        client.DefaultRequestHeaders.Authorization = new("Bearer", "read-write");
+        GitHubReleaseNotesWriter writer = new(client, "GITHUB_TOKEN");
+
+        await writer.EnsureCanWriteAsync(Repo, "v1.0.0");
+
+        (HttpMethod method, string path) = Assert.Single(handler.Requests);
+        Assert.Equal(HttpMethod.Post, method);
+        Assert.Equal("/repos/octo/repo/releases/generate-notes", path);
+        Assert.Equal("""{"tag_name":"v1.0.0"}""", handler.LastBodyByMethod[HttpMethod.Post]);
+    }
+
+    [Fact]
+    public async Task A_token_that_may_not_write_fails_the_check_with_the_permission_GitHub_asks_for()
+    {
+        RoutingHandler handler = new(_ =>
+        {
+            HttpResponseMessage refused = Json(HttpStatusCode.Forbidden, """{"message":"Resource not accessible by personal access token"}""");
+            refused.Headers.Add("x-accepted-github-permissions", "contents=write");
+            return refused;
+        });
+        HttpClient client = Client(handler);
+        client.DefaultRequestHeaders.Authorization = new("Bearer", "read-only");
+        GitHubReleaseNotesWriter writer = new(client, "MY_TOKEN");
+
+        InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => writer.EnsureCanWriteAsync(Repo, "v1.0.0"));
+
+        Assert.StartsWith("GitHub does not let this run publish the release notes for v1.0.0 to octo/repo (403 Forbidden).", ex.Message);
+        Assert.Contains("the token from MY_TOKEN", ex.Message);
+        Assert.Contains("GitHub says the token needs: contents=write", ex.Message);
+        Assert.Contains("Contents read and write on octo/repo", ex.Message);
+    }
+
+    [Fact]
+    public async Task The_check_without_a_token_says_one_is_needed()
+    {
+        GitHubReleaseNotesWriter writer = new(
+            Client(new RoutingHandler(_ => Json(HttpStatusCode.Unauthorized, """{"message":"Requires authentication"}"""))),
+            "MY_TOKEN");
+
+        InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => writer.EnsureCanWriteAsync(Repo, "v1.0.0"));
+
+        Assert.StartsWith("GitHub does not let this run publish the release notes for v1.0.0 to octo/repo (401 Unauthorized).", ex.Message);
+        Assert.Contains("no token: MY_TOKEN is not set", ex.Message);
+    }
+
     [Fact]
     public async Task Any_other_error_is_reported_in_GitHubs_words_against_the_tag()
     {

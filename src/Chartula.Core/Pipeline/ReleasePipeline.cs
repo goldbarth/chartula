@@ -78,6 +78,13 @@ public sealed class ReleasePipeline(
             throw new UnconfirmedRangeException(range.ToTag);
         }
 
+        // Publishing is the last step, after every model call. A token that may not publish
+        // is found here instead, while stopping still costs nothing.
+        if (mode == PipelineMode.Generate)
+        {
+            await EnsureCanPublishAsync(request, cancellationToken);
+        }
+
         IReadOnlyList<PullRequestInfo> pullRequests =
             await pullRequestReader.GetMergedPullRequestsAsync(request.Repository, range, cancellationToken);
         FactBase factBase = factBaseBuilder.Build(range, pullRequests);
@@ -158,6 +165,23 @@ public sealed class ReleasePipeline(
             PublishFailure = publishFailure,
             RunRecord = runRecord,
         };
+    }
+
+    private async Task EnsureCanPublishAsync(ReleaseRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await releaseNotesWriter.EnsureCanWriteAsync(request.Repository, request.Tag, cancellationToken);
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new InvalidOperationException(
+                $"""
+                {ex.Message.TrimEnd()}
+                  The run stopped before any model call. --no-publish writes the files without publishing them.
+                """,
+                ex);
+        }
     }
 
     private async Task<IReadOnlyList<FaithfulnessFlag>> CollectFlagsAsync(
