@@ -51,11 +51,10 @@ public sealed partial class FactBaseBuilder(
         LabelDecision label = labelPolicy.Evaluate(change);
         ChangeCategory category = label.ForcedCategory ?? classification.Category;
 
-        // Depth controls how much source material feeds the fact.
+        // Depth controls how much source material feeds the fact. The closed issues come
+        // from the same text, so a number the model reads is a number the checks accept.
         string? description = depth == FactBaseDepth.TitleOnly ? null : change.Description;
-        IReadOnlyList<int> linkedIssues = depth == FactBaseDepth.TitleDescriptionAndIssues
-            ? ExtractLinkedIssues(change)
-            : [];
+        IReadOnlyList<int> linkedIssues = ExtractLinkedIssues(change.Title, description);
 
         return new ChangeFact(
             Title: change.Title,
@@ -88,9 +87,9 @@ public sealed partial class FactBaseBuilder(
             or ChangeCategory.Performance
             or ChangeCategory.Other;
 
-    private static IReadOnlyList<int> ExtractLinkedIssues(ReleaseChange change)
+    private static IReadOnlyList<int> ExtractLinkedIssues(string title, string? description)
     {
-        string text = $"{change.Title}\n{change.Description}";
+        string text = $"{title}\n{description}";
 
         List<int> issues = [];
         foreach (Match match in LinkedIssue().Matches(text))

@@ -12,7 +12,7 @@ public sealed class FactBaseOptions
 
     /// <summary>
     /// How much source material feeds the fact base: title-only,
-    /// title-and-description (default), or title-description-and-issues.
+    /// or title-and-description (default).
     /// </summary>
     public string? Depth { get; init; }
 }

@@ -48,7 +48,7 @@ public sealed class FactBaseBuilderTests
         Assert.False(feature.IsBreaking);
         Assert.Equal("Adds a theme. Closes #12", feature.Description);
         Assert.Equal(["public"], feature.Labels);
-        Assert.Empty(feature.LinkedIssues); // default depth excludes linked issues
+        Assert.Equal([12], feature.LinkedIssues); // the default depth reads the description, and the issue it closes
 
         Assert.Equal(ChangeCategory.Fix, facts.Changes[1].Category);
     }
@@ -222,7 +222,7 @@ public sealed class FactBaseBuilderTests
     {
         string body = "Adds a theme.\n<!-- Link any related issue: Closes #123 -->\n<!-- BREAKING CHANGE: describe the migration -->";
 
-        ChangeFact fact = Assert.Single(Builder(depth: FactBaseDepth.TitleDescriptionAndIssues)
+        ChangeFact fact = Assert.Single(Builder(depth: FactBaseDepth.TitleAndDescription)
             .Build(Range(), [Pull(7, "feat: theme", body)]).Changes);
 
         Assert.Empty(fact.LinkedIssues);
