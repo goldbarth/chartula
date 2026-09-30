@@ -177,6 +177,7 @@ These are known and left for after the alpha, because its output is a draft a pe
 | [Providers](docs/providers.md) | Setting up Anthropic, OpenAI, a hosted endpoint or a local server, choosing a model, and `thinking`. |
 | [GitHub](docs/github.md) | The token and its permissions, the rate limit, GitHub Enterprise, and what a run writes to GitHub. |
 | [CI](docs/ci.md) | A complete GitHub Actions job, what happens to its draft, and an Alpine variant. |
+| [Troubleshooting](docs/troubleshooting.md) | The messages a run most often stops with, what causes each, and the fix. |
 
 **Understanding the output**
 

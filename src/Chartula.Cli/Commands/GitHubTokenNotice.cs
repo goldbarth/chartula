@@ -8,8 +8,8 @@ namespace Chartula.Cli.Commands;
 /// The warning a run starts with when no GitHub token is configured.
 /// A token is optional, and a small release fits the unauthenticated rate limit, so
 /// the run continues.
-/// But the run spends roughly one request per pull request. When the limit runs out,
-/// the run fails mid-release with a 403 that names a commit instead of the cause.
+/// But the run spends one request per commit in the range, to find its pull request.
+/// When the limit runs out, the run fails partway through the release.
 /// The warning comes before the work, so continuing without a token is the caller's
 /// informed decision.
 /// </summary>
@@ -47,7 +47,7 @@ internal static class GitHubTokenNotice
         return $"""
             Warning: no GitHub token found in {variable} - the run continues unauthenticated.
               GitHub allows {UnauthenticatedRequestsPerHour} requests an hour per IP address without one, and a run
-              spends roughly one per pull request, so a release can exhaust the budget
+              spends one per commit in the range, so a release can exhaust the budget
               partway through. A token raises the limit to {AuthenticatedRequestsPerHour}.
               Create a fine-grained token for this repository at {NewTokenUrl}
               with Contents and Pull requests read-only (Contents read and write to publish

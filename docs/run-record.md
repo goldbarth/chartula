@@ -123,7 +123,7 @@ Flags from several runs group by `pullRequest`, so a finding that repeats is fou
 
 Times are seconds with millisecond precision.
 `cachedInputTokens` is the part of `inputTokens` served from the provider's cache, `reasoningTokens` the part of `outputTokens` spent reasoning.
-`retries`, `cachedInputTokens` and `reasoningTokens` are left out when they could not be counted or were not reported, rather than written as zero - see [When a run was slow](costs-and-checks.md#when-a-run-was-slow).
+`retries`, `cachedInputTokens` and `reasoningTokens` are left out when they could not be counted or were not reported, rather than written as zero - see [A slow run](troubleshooting.md#a-slow-run).
 A record written before these fields existed reads with zeros for them and no `retries`.
 
 The numbers mean what they mean in the [run summary](costs-and-checks.md#reading-the-run-summary), and [Comparing runs](costs-and-checks.md#comparing-runs) shows how to read them across records with `jq`.
