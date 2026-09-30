@@ -4,9 +4,10 @@ using Chartula.Core.Serialization;
 namespace Chartula.Core.Tests.Fixtures;
 
 /// <summary>
-/// The stored fact bases the tests replay. They are ordinary <c>changelog.json</c>
-/// files, so a real release can be frozen into a fixture by copying the file a run
-/// wrote - there is no second format to keep in step.
+/// The stored fact bases the tests replay. Each is the <c>tag</c> and <c>facts</c> of a
+/// run record, so a real release can be frozen into a fixture by copying those two fields
+/// from the record a run wrote - there is no second format to keep in step.
+/// Not <c>changelog.json</c>: it leaves the descriptions out, which the model reads (#260).
 /// </summary>
 public static class FactBaseFixture
 {
@@ -45,7 +46,7 @@ public static class FactBaseFixture
 
     /// <summary>Loads a fixture by name.</summary>
     public static FactBase Load(string name)
-        => ChangelogJsonSerializer.DeserializeFactBase(ReadText(name));
+        => RunRecordJsonSerializer.DeserializeFactBase(ReadText(name));
 
     /// <summary>The raw file contents of a fixture.</summary>
     public static string ReadText(string name)

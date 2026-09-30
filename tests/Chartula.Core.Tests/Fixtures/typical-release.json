@@ -1,7 +1,6 @@
 {
-  "schemaVersion": 1,
   "tag": "v1.2.0",
-  "changes": [
+  "facts": [
     {
       "title": "feat: add dark mode",
       "number": 42,
@@ -67,6 +66,5 @@
       "labels": [],
       "description": "No behavior change."
     }
-  ],
-  "renderings": {}
+  ]
 }

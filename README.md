@@ -29,7 +29,7 @@ It runs from a checkout of your repository with your own model key, and needs no
 ## What it looks like
 
 From a real run on [goldbarth/Ingestor](https://github.com/goldbarth/Ingestor) `v3.2.0`.
-The fact Chartula established for pull request #180, as it stands in `changelog.json`:
+The fact Chartula established for pull request #180, as the run's record keeps it:
 
 ```json
 {

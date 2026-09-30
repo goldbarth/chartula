@@ -1,7 +1,6 @@
 {
-  "schemaVersion": 1,
   "tag": "v2.0.0",
-  "changes": [
+  "facts": [
     {
       "title": "feat!: drop the v1 configuration format",
       "number": 70,
@@ -37,6 +36,5 @@
       "labels": [],
       "description": "Shows what a run would produce without writing."
     }
-  ],
-  "renderings": {}
+  ]
 }

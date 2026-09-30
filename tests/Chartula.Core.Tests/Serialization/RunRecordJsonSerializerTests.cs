@@ -1,4 +1,6 @@
 using System.Text.Json;
+using Chartula.Core.Categorization;
+using Chartula.Core.Facts;
 using Chartula.Core.History;
 using Chartula.Core.Llm;
 using Chartula.Core.Observability;
@@ -215,5 +217,27 @@ public sealed class RunRecordJsonSerializerTests
         RunRecordMetrics written = RunRecordJsonSerializer.Deserialize(RunRecordJsonSerializer.Serialize(record, At)).Metrics;
 
         Assert.Equal(new RunRecordRelease(14, 10, 9, 7, 22_512, 3, 1), written.Release);
+    }
+
+    [Fact]
+    public void Writes_the_facts_with_their_descriptions_and_reads_them_back()
+    {
+        FactBase facts = new(
+            "v1.0.0",
+            [new ChangeFact("feat: add search", 7, "https://example/pull/7", ChangeCategory.Feature,
+                IsUserVisible: true, IsBreaking: false, [12], ["area:search"], "Adds search. Measured 40 ms on the internal bench.")]);
+        string json = RunRecordJsonSerializer.Serialize(Record() with { Facts = facts }, At);
+
+        Assert.Equal(facts, RunRecordJsonSerializer.DeserializeFactBase(json));
+        Assert.Contains("Measured 40 ms on the internal bench.", json);
+    }
+
+    // An absent source produces an absent field: a record without facts has no "facts".
+    [Fact]
+    public void A_record_without_facts_writes_no_facts_field()
+    {
+        using JsonDocument parsed = JsonDocument.Parse(RunRecordJsonSerializer.Serialize(Record(), At));
+
+        Assert.False(parsed.RootElement.TryGetProperty("facts", out _));
     }
 }

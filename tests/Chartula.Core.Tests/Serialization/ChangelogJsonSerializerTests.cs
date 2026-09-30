@@ -89,7 +89,8 @@ public sealed class ChangelogJsonSerializerTests
         Assert.False(change.GetProperty("breaking").GetBoolean());
         Assert.Equal([12], change.GetProperty("linkedIssues").EnumerateArray().Select(e => e.GetInt32()));
         Assert.Equal(["ui"], change.GetProperty("labels").EnumerateArray().Select(e => e.GetString()));
-        Assert.Equal("Adds a dark theme.", change.GetProperty("description").GetString());
+        // #260: the file is published; the description stays in the run record.
+        Assert.False(change.TryGetProperty("description", out _));
     }
 
     [Fact]
@@ -100,7 +101,6 @@ public sealed class ChangelogJsonSerializerTests
 
         Assert.Equal(JsonValueKind.Null, change.GetProperty("number").ValueKind);
         Assert.Equal(JsonValueKind.Null, change.GetProperty("url").ValueKind);
-        Assert.Equal(JsonValueKind.Null, change.GetProperty("description").ValueKind);
         Assert.Equal(0, change.GetProperty("linkedIssues").GetArrayLength());
 
         // A change without labels has an empty array, never null. Having no labels is a

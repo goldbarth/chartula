@@ -41,7 +41,12 @@ public sealed record ChangelogProvenance(
     [property: JsonPropertyName("checkThinking"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     string? CheckThinking = null);
 
-/// <summary>One change entry in <see cref="ChangelogDocument"/>.</summary>
+/// <summary>
+/// One change entry in <see cref="ChangelogDocument"/>.
+/// It has no pull request description: the file is the release payload and is meant to be
+/// published, and a description is what its author wrote for reviewers. Schema version 2
+/// removed it (#260); the run record keeps the complete facts (<see cref="FactEntry"/>).
+/// </summary>
 public sealed record ChangelogChange(
     [property: JsonPropertyName("title")] string Title,
     [property: JsonPropertyName("number")] int? Number,
@@ -50,5 +55,4 @@ public sealed record ChangelogChange(
     [property: JsonPropertyName("userVisible")] bool UserVisible,
     [property: JsonPropertyName("breaking")] bool Breaking,
     [property: JsonPropertyName("linkedIssues")] IReadOnlyList<int> LinkedIssues,
-    [property: JsonPropertyName("labels")] IReadOnlyList<string> Labels,
-    [property: JsonPropertyName("description")] string? Description);
+    [property: JsonPropertyName("labels")] IReadOnlyList<string> Labels);

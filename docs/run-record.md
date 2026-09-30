@@ -1,7 +1,7 @@
 # Run record
 
 Every `generate` run keeps what it did and what it cost in a file of its own, `chartula-runs/<time>-<tag>.json`, next to the other outputs.
-It holds the [run metrics](run-metrics.md) as the summary prints them, the settings the run was made with, and how each audience came out.
+It holds the [run metrics](run-metrics.md) as the summary prints them, the settings the run was made with, how each audience came out, and the complete facts the run rendered from.
 
 Comparing runs - a prompt change, another model, thinking on or off - then means comparing two files, not copying numbers out of a terminal.
 A figure written down later is a figure from memory; the record is the run's own.
@@ -12,7 +12,8 @@ The record is never published or uploaded.
 Token usage is a fact about the run, not about the release, so it stays out of `changelog.json` and the release notes.
 
 It holds no rendered text: the texts are in `changelog.json`.
-It does hold the faithfulness flags and any error message, so treat it like a local log.
+It does hold every pull request description, the faithfulness flags and any error message, so treat it like a local log.
+The descriptions are why the facts live here and not in `changelog.json`: that file is published, and a description is what its author wrote for reviewers.
 
 Whether to commit it is yours to decide.
 For a repository whose releases Chartula writes, ignore it:
@@ -56,6 +57,7 @@ The file is UTF-8, indented JSON.
 | `provenance` | object | What the run was made with, in the same fields as [`changelog.json`'s provenance](changelog-json.md#provenance): tool version, provider, model, prompt hash, `thinking`, `thoroughCheck`, `factBaseDepth`, `checkModel` and `checkThinking`. |
 | `audiences` | array | One entry per audience the run asked for (see below). |
 | `metrics` | object | Calls, tokens and check activity (see below). |
+| `facts` | array | The facts the run rendered from, descriptions included (see below). Absent in a record written before it existed. |
 
 ### Range
 
@@ -68,6 +70,18 @@ The file is UTF-8, indented JSON.
 
 A run over a wrong range looks like any other run: the tag is the same, the facts and flags are not.
 The range tells the two apart, and `git log <fromCommit>..<toCommit>` lists the commits the run read, even after a tag has moved.
+
+### Facts
+
+One entry per fact, in the fields of a [`changelog.json` change entry](changelog-json.md#change-entry), plus one:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `description` | string or null | The pull request description with HTML comments removed, since GitHub does not show them to a reader. `null` for a commit-based change, at `factBase.depth: title-only`, or when the body is empty or an unfilled template (nothing but headings and checklist items). |
+
+It is the whole fact base the model read, so a rendering can be traced back to its input even after a pull request was edited, and a stored run can be replayed or evaluated.
+`changelog.json` carries the same facts without their descriptions ([#260](https://github.com/goldbarth/chartula/issues/260)).
+An added optional field, so the record stays at version 3.
 Its size is `commits` under [`metrics.release`](#metrics).
 
 ### Audience entry

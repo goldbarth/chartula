@@ -147,6 +147,7 @@ public sealed class ReleasePipeline(
                 {
                     Range = range,
                     Since = string.IsNullOrWhiteSpace(request.Since) ? null : request.Since.Trim(),
+                    Facts = factBase,
                 },
                 cancellationToken);
         }

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Chartula.Core.Facts;
 using Chartula.Core.History;
 using Chartula.Core.Observability;
 using Chartula.Core.Pipeline;
@@ -65,9 +66,39 @@ public static class RunRecordJsonSerializer
                         scope.DescriptionCharacters,
                         scope.CommitsWithoutPullRequest,
                         scope.MergeCommitsSkipped)
-                    : null));
+                    : null),
+            record.Facts is { } facts ? [.. facts.Changes.Select(FactEntry.From)] : null);
 
         return JsonSerializer.Serialize(document, RunRecordJsonContext.Default.RunRecordDocument);
+    }
+
+    /// <summary>
+    /// The tag and facts of <paramref name="factBase"/> in the run record's fields: the
+    /// format of a test fixture.
+    /// </summary>
+    public static string SerializeFacts(FactBase factBase)
+    {
+        ArgumentNullException.ThrowIfNull(factBase);
+        return JsonSerializer.Serialize(
+            new RunRecordFacts(factBase.Tag, [.. factBase.Changes.Select(FactEntry.From)]),
+            RunRecordJsonContext.Default.RunRecordFacts);
+    }
+
+    /// <summary>
+    /// The fact base a run rendered from, read from its record - or from anything with the
+    /// record's <c>tag</c> and <c>facts</c>, such as a test fixture. The other fields are not read.
+    /// </summary>
+    public static FactBase DeserializeFactBase(string json)
+    {
+        RunRecordFacts read = JsonSerializer.Deserialize(json, RunRecordJsonContext.Default.RunRecordFacts)
+                              ?? throw new InvalidOperationException("The run record deserialized to null.");
+        if (read.Facts is null)
+        {
+            throw new InvalidOperationException(
+                $"The run record of {read.Tag} holds no facts: it was written before run records kept them.");
+        }
+
+        return new FactBase(read.Tag, [.. read.Facts.Select(static entry => entry.ToFact())]);
     }
 
     /// <summary>Reads a record back, for tests and for comparing runs.</summary>
@@ -111,4 +142,5 @@ public static class RunRecordJsonSerializer
 /// <summary>Source-generated (reflection-free) context for the run record format.</summary>
 [JsonSourceGenerationOptions(WriteIndented = true)]
 [JsonSerializable(typeof(RunRecordDocument))]
+[JsonSerializable(typeof(RunRecordFacts))]
 internal sealed partial class RunRecordJsonContext : JsonSerializerContext;

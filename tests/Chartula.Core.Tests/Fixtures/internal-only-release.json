@@ -1,7 +1,6 @@
 {
-  "schemaVersion": 1,
   "tag": "v1.2.1",
-  "changes": [
+  "facts": [
     {
       "title": "refactor: split the pipeline into named steps",
       "number": 80,
@@ -26,6 +25,5 @@
       "labels": [],
       "description": null
     }
-  ],
-  "renderings": {}
+  ]
 }

@@ -75,6 +75,18 @@ public sealed class RunRecordPipelineTests
         Assert.Null(record.Since);
     }
 
+    // #260: changelog.json is published and leaves the descriptions out. The record is
+    // the one place the complete fact base is kept, for replaying and evaluating a run.
+    [Fact]
+    public async Task The_record_keeps_the_facts_the_run_rendered_from_with_their_descriptions()
+    {
+        await BuildPipeline().RunAsync(Request(), PipelineMode.GenerateWithoutPublishing);
+
+        RunRecord record = Assert.Single(_records.Records);
+        ChangeFact fact = Assert.Single(Assert.IsType<FactBase>(record.Facts).Changes);
+        Assert.Equal("Adds search.", fact.Description);
+    }
+
     [Fact]
     public async Task The_record_keeps_the_start_the_operator_named()
     {
