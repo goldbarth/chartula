@@ -27,7 +27,7 @@ Options:
                  first commit for a first tag.
   --yes          Confirm a first tag or a large range up front, for a run
                  without a terminal to ask on.
-  --no-publish   Write changelog.json and CHANGELOG.md, but publish no release notes.
+  --no-publish   Write every file, but publish no GitHub release notes.
   --audience <a> Render only this audience: technical, customer or product.
                  Repeat it, or separate them with commas. Default:
                  technical and customer; product renders only when named.
@@ -79,7 +79,7 @@ A re-run replaces this release's entries in `CHANGELOG.md` and its draft rather 
 $ chartula generate --tag v1.2.0 --repo owner/name --no-publish
 ```
 
-Writes `CHANGELOG.md`, `release-<tag>.md` and `changelog.json`, and leaves the GitHub release notes alone.
+Writes every file `generate` writes - `CHANGELOG.md`, `release-<tag>.md`, `changelog.json` and the run record - and leaves the GitHub release notes alone.
 Use it to keep the record of a run without announcing a release - measuring a prompt change, say, or generating a changelog for a tag that was never shipped.
 The run's summary lists this under "Skipped (--no-publish)" so a deliberately unpublished run still reads as complete rather than as a partial failure.
 

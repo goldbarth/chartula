@@ -167,7 +167,7 @@ internal static class Program
                          first commit for a first tag.
           --yes          Confirm a first tag or a large range up front, for a run
                          without a terminal to ask on.
-          --no-publish   Write changelog.json and CHANGELOG.md, but publish no release notes.
+          --no-publish   Write every file, but publish no GitHub release notes.
           --audience <a> Render only this audience: technical, customer or product.
                          Repeat it, or separate them with commas. Default:
                          technical and customer; product renders only when named.
