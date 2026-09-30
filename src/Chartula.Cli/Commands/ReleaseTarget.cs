@@ -38,69 +38,99 @@ internal sealed partial record ReleaseTarget(string Tag, RepositoryCoordinates R
         Func<Task<string?>> readRemoteUrl,
         TextWriter error)
     {
-        ArgumentNullException.ThrowIfNull(args);
-        ArgumentNullException.ThrowIfNull(readNearestTag);
-        ArgumentNullException.ThrowIfNull(readRemoteUrl);
         ArgumentNullException.ThrowIfNull(error);
 
-        string? repoOption = CommandLineArguments.GetOption(args, "--repo");
-        RepositoryCoordinates repository;
-        bool repositoryDefaulted = string.IsNullOrWhiteSpace(repoOption);
-        if (!repositoryDefaulted)
+        Resolved<RepositoryCoordinates> repository = await ResolveRepositoryAsync(args, directory, readRemoteUrl);
+        if (repository.Value is null)
         {
-            if (!ReleaseCommand.TryParseRepository(repoOption, out repository))
-            {
-                error.WriteLine($"Invalid option --repo '{repoOption}'. Expected <owner/name>.");
-                return null;
-            }
+            error.WriteLine(repository.Message);
+            return null;
         }
-        else
-        {
-            string? url = await readRemoteUrl();
-            if (url is null)
-            {
-                error.WriteLine(
-                    $"No --repo given, and '{directory}' has no '{Remote}' remote to read it from. " +
-                    "Pass --repo <owner/name>, or run from a checkout of the repository.");
-                return null;
-            }
 
-            if (!TryParseRemoteUrl(url, out repository))
+        Resolved<string> tag = await ResolveTagAsync(args, directory, readNearestTag);
+        if (tag.Value is null)
+        {
+            error.WriteLine(tag.Message);
+            return null;
+        }
+
+        foreach (string? announcement in (string?[])[tag.Message, repository.Message])
+        {
+            if (announcement is not null)
             {
-                error.WriteLine(
-                    $"No --repo given, and the '{Remote}' remote '{url}' does not name an <owner/name> repository. " +
-                    "Pass --repo <owner/name>.");
-                return null;
+                error.WriteLine(announcement);
             }
         }
+
+        return new ReleaseTarget(tag.Value, repository.Value);
+    }
+
+    /// <summary>
+    /// The repository from <c>--repo</c>, or from the <see cref="Remote"/> remote when it
+    /// is not passed.
+    /// Without a value, <see cref="Resolved{T}.Message"/> says why and what to pass.
+    /// With a default, it announces where the value came from.
+    /// </summary>
+    public static async Task<Resolved<RepositoryCoordinates>> ResolveRepositoryAsync(
+        IReadOnlyList<string> args,
+        string directory,
+        Func<Task<string?>> readRemoteUrl)
+    {
+        ArgumentNullException.ThrowIfNull(args);
+        ArgumentNullException.ThrowIfNull(readRemoteUrl);
+
+        string? repoOption = CommandLineArguments.GetOption(args, "--repo");
+        if (!string.IsNullOrWhiteSpace(repoOption))
+        {
+            return ReleaseCommand.TryParseRepository(repoOption, out RepositoryCoordinates passed)
+                ? new(passed, null)
+                : new(null, $"Invalid option --repo '{repoOption}'. Expected <owner/name>.");
+        }
+
+        string? url = await readRemoteUrl();
+        if (url is null)
+        {
+            return new(null,
+                $"No --repo given, and '{directory}' has no '{Remote}' remote to read it from. " +
+                "Pass --repo <owner/name>, or run from a checkout of the repository.");
+        }
+
+        if (!TryParseRemoteUrl(url, out RepositoryCoordinates repository))
+        {
+            return new(null,
+                $"No --repo given, and the '{Remote}' remote '{url}' does not name an <owner/name> repository. " +
+                "Pass --repo <owner/name>.");
+        }
+
+        return new(repository,
+            $"Using repository {repository.Owner}/{repository.Name}, from the '{Remote}' remote. " +
+            "Pass --repo to choose another.");
+    }
+
+    /// <summary>
+    /// The tag from <c>--tag</c>, or the nearest tag reachable from <c>HEAD</c> when it is
+    /// not passed, with a message as in <see cref="ResolveRepositoryAsync"/>.
+    /// </summary>
+    public static async Task<Resolved<string>> ResolveTagAsync(
+        IReadOnlyList<string> args,
+        string directory,
+        Func<Task<string?>> readNearestTag)
+    {
+        ArgumentNullException.ThrowIfNull(args);
+        ArgumentNullException.ThrowIfNull(readNearestTag);
 
         string? tag = CommandLineArguments.GetOption(args, "--tag");
-        bool tagDefaulted = string.IsNullOrWhiteSpace(tag);
-        if (tagDefaulted)
+        if (!string.IsNullOrWhiteSpace(tag))
         {
-            tag = await readNearestTag();
-            if (tag is null)
-            {
-                error.WriteLine(
-                    $"No --tag given, and no tag is reachable from HEAD in '{directory}'. " +
-                    "Pass --tag <release-tag>, or run from a checkout of the repository with its tags fetched (git fetch --tags).");
-                return null;
-            }
+            return new(tag, null);
         }
 
-        if (tagDefaulted)
-        {
-            error.WriteLine($"Using tag {tag}, the nearest tag reachable from HEAD. Pass --tag to choose another.");
-        }
-
-        if (repositoryDefaulted)
-        {
-            error.WriteLine(
-                $"Using repository {repository.Owner}/{repository.Name}, from the '{Remote}' remote. " +
-                "Pass --repo to choose another.");
-        }
-
-        return new ReleaseTarget(tag!, repository);
+        tag = await readNearestTag();
+        return tag is null
+            ? new(null,
+                $"No --tag given, and no tag is reachable from HEAD in '{directory}'. " +
+                "Pass --tag <release-tag>, or run from a checkout of the repository with its tags fetched (git fetch --tags).")
+            : new(tag, $"Using tag {tag}, the nearest tag reachable from HEAD. Pass --tag to choose another.");
     }
 
     /// <summary>
@@ -152,3 +182,10 @@ internal sealed partial record ReleaseTarget(string Tag, RepositoryCoordinates R
         return true;
     }
 }
+
+/// <summary>
+/// A value read from the arguments or the checkout, with what to tell the operator:
+/// why it is missing, or where a default came from. <c>null</c> when there is nothing to say.
+/// </summary>
+internal sealed record Resolved<T>(T? Value, string? Message)
+    where T : class;

@@ -19,7 +19,8 @@ internal static class LlmServiceCollectionExtensions
     /// <param name="configuration">The run's configuration.</param>
     /// <param name="requireApiKey">
     /// Whether a missing key stops the run here. A preview makes no model call, so it
-    /// needs no key; everything else about the model is still checked.
+    /// needs no key; everything else about the model is still checked. <c>chartula doctor</c>
+    /// reports the key on a line of its own.
     /// </param>
     public static IServiceCollection AddChartulaLlm(
         this IServiceCollection services,
@@ -119,17 +120,34 @@ internal static class LlmServiceCollectionExtensions
     /// </summary>
     private static void RequireApiKey(LlmProvider provider, LlmOptions options, IConfiguration configuration)
     {
+        if (MissingApiKey(provider, options, configuration) is { } missing)
+        {
+            throw new InvalidOperationException(missing);
+        }
+    }
+
+    /// <summary>
+    /// Why a run of this configuration would be refused for its key, or <c>null</c> when
+    /// it would not. <c>chartula doctor</c> reports it in the words a run would use.
+    /// </summary>
+    internal static string? MissingApiKey(IConfiguration configuration)
+    {
+        LlmProvider provider = LlmProviderParser.Parse(configuration[$"{LlmOptions.SectionName}:Provider"]);
+        return MissingApiKey(provider, ReadOptions(configuration, provider), configuration);
+    }
+
+    private static string? MissingApiKey(LlmProvider provider, LlmOptions options, IConfiguration configuration)
+    {
         if (provider != LlmProvider.Anthropic
             || !string.IsNullOrWhiteSpace(configuration[options.ApiKeyEnvironmentVariable]))
         {
-            return;
+            return null;
         }
 
         string variable = options.ApiKeyEnvironmentVariable;
-        throw new InvalidOperationException(
-            $"No Anthropic API key found in {variable}. " +
-            $"Set one with: export {variable}=<your key> (create one at https://console.anthropic.com/settings/keys). " +
-            "For an endpoint that needs no key, set llm.provider to openai-compatible.");
+        return $"No Anthropic API key found in {variable}. " +
+               $"Set one with: export {variable}=<your key> (create one at https://console.anthropic.com/settings/keys). " +
+               "For an endpoint that needs no key, set llm.provider to openai-compatible.";
     }
 
     // Reject an unparsable or non-positive value loudly. Otherwise it would fall back
@@ -184,10 +202,11 @@ internal static class LlmServiceCollectionExtensions
 
     /// <summary>
     /// The client a run's configuration builds, with <paramref name="transport"/> instead
-    /// of the network.
-    /// This seam lets tests check a failed call through the real SDKs without an endpoint.
+    /// of the network when one is given.
+    /// This seam lets tests check a failed call through the real SDKs without an endpoint,
+    /// and lets <c>chartula doctor</c> ask the endpoint the way a run would.
     /// </summary>
-    internal static IChatClient CreateChatClient(IConfiguration configuration, HttpMessageHandler transport)
+    internal static IChatClient CreateChatClient(IConfiguration configuration, HttpMessageHandler? transport = null)
     {
         LlmProvider provider = LlmProviderParser.Parse(configuration[$"{LlmOptions.SectionName}:Provider"]);
         return CreateChatClient(provider, ReadOptions(configuration, provider), configuration, transport);

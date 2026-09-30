@@ -15,6 +15,7 @@ Chartula - multi-audience, grounded changelog generator.
 Usage:
   chartula preview  [options]   Show the facts and what generate would send. Free.
   chartula generate [options]   Produce and write the outputs.
+  chartula doctor   [options]   Check the setup a run needs, before a run spends anything.
   chartula --version            Print the version and its commit.
 
 Run it from a checkout of the repository the release belongs to.
@@ -40,8 +41,54 @@ Options:
 It is the same text a run records as `toolVersion` in `changelog.json`, so a report and a run file name the same build.
 An unrecognized first word is not silently ignored - it prints `Unknown command '<word>'.`, the same usage text, and exits with status 1.
 
-Two commands exist: `preview` and `generate`.
+Two commands make a changelog: `preview` and `generate`.
 Both establish the same facts the same way; `preview` stops there, and `generate` goes on to the model.
+A third, `doctor`, checks the setup both need.
+
+## `chartula doctor`
+
+```console
+$ chartula doctor [--tag <release-tag>] [--repo <owner/name>]
+```
+
+Checks everything a run needs, one line per check, and says whether a run would start:
+
+```console
+$ chartula doctor
+Checking the setup for a run in /work/my-repo
+
+  ok    git           /usr/bin/git
+  ok    checkout      /work/my-repo, with its full history
+  ok    tag           v1.3.0, the nearest tag reachable from HEAD. Pass --tag to choose another.
+  ok    repository    owner/name, from the 'origin' remote. Pass --repo to choose another.
+  ok    config        /work/my-repo/chartula.yaml
+  ok    model         openai-compatible at http://localhost:11434/v1, model qwen3:14b-ctx24k, no key in OPENAI_API_KEY: a local server needs none
+  ok    endpoint      qwen3:14b-ctx24k answered, 98 tokens
+  ok    GitHub read   owner/name at https://api.github.com/, token from GITHUB_TOKEN
+  warn  GitHub write  GitHub does not let this run publish the release notes for v1.3.0 to owner/name (403 Forbidden).
+                      The request carried the token from GITHUB_TOKEN.
+                      Publishing needs a token with Contents read and write on owner/name.
+                      generate stops before its first model call. preview and generate --no-publish publish nothing and still run.
+  warn  PR titles     24 of the last 30 merged pull requests carry a Conventional Commits prefix, such as feat: or fix:.
+                      Without one, a change is Other, and internal work is not filtered out. For example: 'Update readme', 'Bump deps'
+                      docs/writing-pull-requests.md shows what a prefix changes in the output.
+
+A run would start. The warnings above do not stop it, but read them before generate.
+```
+
+Each check asks what a run asks, through the same code, so a failed check shows the message the run would print.
+A check that needs an earlier one that failed shows as `skip`, so a missing `git` does not bury the report under follow-on errors.
+
+- **`ok`** - the check passed.
+- **`warn`** - a run starts, but something limits it: no GitHub token, a token that cannot publish, or pull request titles without a prefix.
+- **`fail`** - a run would stop there.
+
+`doctor` exits with `0` when nothing failed, and with `1` otherwise, so a CI job can run it before `generate`.
+It writes no file and publishes nothing.
+It names variables, never their values.
+
+The endpoint check is the one that costs: it asks each model a run uses for an answer of at most 16 tokens, about a hundred with the prompt, because only an answer proves the key, the model id and the endpoint together.
+The GitHub checks cost three requests: the pull requests of the tag's commit, the check that the token may publish (the same one `generate` makes, which stores nothing), and the last 30 merged pull requests for the title check.
 
 ## `chartula preview`
 

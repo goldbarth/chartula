@@ -40,6 +40,23 @@ public sealed partial class ConventionalCommitCategorizer : IChangeCategorizer
         return new ChangeClassification(category, isBreaking);
     }
 
+    /// <summary>
+    /// Whether <paramref name="title"/> starts with a Conventional Commits prefix whose
+    /// type maps to a category. An unknown type such as <c>wip:</c> does not count: it
+    /// reads as <see cref="ChangeCategory.Other"/>, the same as no prefix at all.
+    /// </summary>
+    public static bool HasKnownPrefix(string? title)
+    {
+        Match match = ConventionalPrefix().Match(title ?? string.Empty);
+        if (!match.Success)
+        {
+            return false;
+        }
+
+        string type = match.Groups["type"].Value.ToLowerInvariant();
+        return type is "revert" or "breaking" || MapType(type) != ChangeCategory.Other;
+    }
+
     private static ChangeCategory MapType(string type) => type switch
     {
         "feat" or "feature" => ChangeCategory.Feature,

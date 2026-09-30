@@ -82,11 +82,22 @@
             Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
         }
 
-        & $target --help | Out-Null
-        if ($LASTEXITCODE -ne 0) {
-            Fail "chartula was installed to $target but does not start. Please report it at https://github.com/$repo/issues"
+        # --version names the build that was installed. A release pinned with
+        # CHARTULA_VERSION from before --version and doctor existed is checked with --help,
+        # and told to start with preview instead.
+        $firstRun = 'chartula doctor'
+        $installed = & $target --version 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "Installed and checked: $target ($installed)"
         }
-        Write-Host "Installed and checked: $target"
+        else {
+            & $target --help | Out-Null
+            if ($LASTEXITCODE -ne 0) {
+                Fail "chartula was installed to $target but does not start. Please report it at https://github.com/$repo/issues"
+            }
+            Write-Host "Installed and checked: $target"
+            $firstRun = 'chartula preview'
+        }
 
         $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
         $entries = @($userPath -split ';' | Where-Object { $_ })
@@ -100,10 +111,12 @@
         }
 
         Write-Host ''
-        Write-Host 'Before the first run, Chartula needs two keys in the terminal it runs in:'
+        Write-Host 'Before the first run, Chartula needs a model key and a GitHub token in the terminal it runs in.'
+        Write-Host 'With Anthropic, the default provider:'
         Write-Host '  $env:ANTHROPIC_API_KEY = "<key>"    from https://console.anthropic.com/settings/keys'
         Write-Host '  $env:GITHUB_TOKEN = "<token>"       from https://github.com/settings/personal-access-tokens/new'
-        Write-Host 'Then, inside your repository: chartula preview'
+        Write-Host "OpenAI, another hosted endpoint or a local server: https://github.com/$repo/blob/main/docs/providers.md"
+        Write-Host "Then, inside your repository: $firstRun"
         Write-Host "More: https://github.com/$repo#readme"
     }
     catch {
