@@ -74,7 +74,7 @@ A merge commit without a pull request, such as a branch merged locally and pushe
 What it brings in is the merged commits, which are in the range themselves.
 The changes keep the order of the range, so a direct push stands between the pull requests merged before and after it.
 
-The [run summary](run-metrics.md) counts the commits without a pull request, and the merge commits among them that were skipped, so no commit leaves the release without the run saying so.
+The [run summary](costs-and-checks.md#reading-the-run-summary) counts the commits without a pull request, and the merge commits among them that were skipped, so no commit leaves the release without the run saying so.
 Asking GitHub about each commit is what finds its pull request, so a direct push costs no request beyond the one per commit.
 
 ### The title and the description
