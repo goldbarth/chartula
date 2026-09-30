@@ -239,11 +239,7 @@ Three environment variables carry credentials, and none is ever read from `chart
 A `generate` run without `ANTHROPIC_API_KEY` is refused before it reads anything, naming the variable, because every audience would fail on it.
 The `openai-compatible` provider is exempt: a local server needs no key.
 `preview` makes no model call and needs no key.
-
-```console
-$ chartula generate
-Configuration error: No Anthropic API key found in ANTHROPIC_API_KEY. Set one with: export ANTHROPIC_API_KEY=<your key> (create one at https://console.anthropic.com/settings/keys). For an endpoint that needs no key, set llm.provider to openai-compatible.
-```
+[No model key](troubleshooting.md#no-model-key) shows the message.
 
 A run starts without `GITHUB_TOKEN` and prints a warning to stderr rather than refusing, because a small release of a public repository fits GitHub's unauthenticated rate limit.
 [GitHub](github.md) says when you need a token, which permissions it takes, and what a run spends of the rate limit.
@@ -268,23 +264,8 @@ Errors are written to stderr when they are about the invocation itself, and to s
 
 ### When a model call fails
 
-A failed model call names the provider, the address it asked, the model and the status, then what that status usually means, then the endpoint's own message.
-Audiences that failed for the same reason say it once:
-
-```console
---- Technical ---
-  (failed) Changelog generation for 'v1.2.0' failed: openai-compatible at http://localhost:11434/v1/chat/completions answered 404 Not Found for model 'gpt-luna'.
-           Either the endpoint does not serve that model id (check llm.model), or Chartula__Llm__BaseUrl is not the address of this provider's API - another provider's, or a wrong path such as a missing /v1.
-           The endpoint said: The model `gpt-luna` does not exist or you do not have access to it.
-
---- Customer ---
-  (failed) The same as Technical.
-```
-
-A `401` or `403` names the variable the key was read from, and says so when that variable is not set.
-An endpoint that cannot be reached at all is named as configured, with the transport's reason (`Connection refused`, a failed name lookup).
-
-A failed call of the thorough check does not fail the audience: the rendering is kept and flagged as `The thorough check could not be evaluated`, with the same explanation, and names `faithfulness.model` when the check asks a model of its own.
+A failed model call names the provider, the address it asked, the model and the status, then what that status usually means.
+[A model call fails](troubleshooting.md#a-model-call-fails) shows the messages and what fixes each.
 
 ## While a run works
 

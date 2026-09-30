@@ -56,7 +56,7 @@ Run metrics
 | `caught ... missed` | The claims only the thorough check found, and what the check spent to find them ([Does the thorough check earn its tokens?](#does-the-thorough-check-earn-its-tokens)). |
 | `Total` | All tokens of the run, and how long the whole run took, from reading history to the last model call. |
 | `lower bound` | Printed under `Total` as `lower bound, <n> of <m> calls unreported` when the provider returned no usage for some calls. So the real token count is higher than the total says. |
-| `Retries` | Requests sent again after the first, per operation ([When a run was slow](#when-a-run-was-slow)). |
+| `Retries` | Requests sent again after the first, per operation ([A slow run](troubleshooting.md#a-slow-run)). |
 | `Recorded in` | The [run record](run-record.md) that keeps these figures after the terminal is gone. |
 
 Providers break the tokens out differently.
@@ -65,48 +65,13 @@ What a provider does not report is shown as `not reported`, never as zero, becau
 The `out` figure is complete either way: reasoning is inside it, not on top of it.
 So you can compare the `out` figures of two providers even when only one of them reports reasoning.
 
-### When a run was slow
+### Lines that point to a problem
 
-A run shows each step while it works ([While a run works](cli.md#while-a-run-works)); the summary tells the three usual causes of a slow step apart:
+Some lines appear only when something went wrong, and [Troubleshooting](troubleshooting.md) has the cause and the fix for each:
 
-- **One slow call:** the `longest` time is most of the operation's time. A long release, or a model thinking at length.
-- **Uniformly slow calls:** the `longest` time is close to the average. A slow model or endpoint.
-- **Retried calls:** `Retries` above zero. The provider was overloaded, rate-limited the key, or a request timed out and was sent again.
-
-Every provider client retries on its own, and Chartula counts the requests the transport actually sends, the same way for every provider.
-So a retried call does not pass for one slow call.
-`not observed` means the retries could not be counted, which is not the same as none: it appears only for a model client Chartula did not build itself.
-
-This summary is from a real run on a local server, where one check call was retried and took most of the run:
-
-```text
-  Thorough check:   2 runs, 1 with findings, 3 claims, 22,790 in / 999 out, 10 min 18 s (longest 10 min 17 s)
-    of which 10,220 in cached, reasoning not reported
-    caught 3 claims the rule-based check missed, for 23,789 tokens in 2 calls
-  Rephrasing:       2 calls, 21,863 in / 2,340 out, 49.7 s (longest 27.7 s)
-    of which 207 in cached, reasoning not reported
-  Total:            47,992 tokens in 11 min 17 s
-  Retries:          1 (rephrasing 0, thorough check 1)
-```
-
-A call that ended in an error rather than an answer is listed under its operation as `failed without an answer`.
-Its time is in the totals, its tokens are not, because there were none to report.
-
-### When a check verified nothing
-
-A thorough check can reach the model and still come back with an answer that cannot be read.
-Those runs get a line of their own, here from a real run whose only check call failed:
-
-```text
-  Thorough check:   1 run, 0 with findings, 0 claims, 0 in / 0 out, 37.6 s
-    1 call failed without an answer
-    1 of 1 run came back unreadable and verified nothing
-```
-
-Read it as a check that did not happen, not as a clean one.
-The same runs are flagged on each affected rendering.
-The likeliest cause is a model that does not hold to the requested response format ([What to watch: the thorough check](providers.md#what-to-watch-the-thorough-check)).
-So test a smaller model or a new provider with the check before you trust its `0 claims`.
+- **`failed without an answer`** under an operation: calls that ended in an error. Their time is in the totals, their tokens are not, because there were none to report ([A model call fails](troubleshooting.md#a-model-call-fails)).
+- **`came back unreadable and verified nothing`** under the thorough check: runs whose verdict could not be read ([A thorough check that verified nothing](troubleshooting.md#a-thorough-check-that-verified-nothing)).
+- **`Retries`** above zero, or a `longest` call that is most of an operation's time ([A slow run](troubleshooting.md#a-slow-run)).
 
 A thorough check with runs but no calls was turned off, or had nothing to check:
 
@@ -114,20 +79,6 @@ A thorough check with runs but no calls was turned off, or had nothing to check:
   Thorough check:   2 runs, 0 with findings, 0 claims, 0 in / 0 out
     caught 0 claims the rule-based check missed, for 0 tokens in 0 calls
 ```
-
-### When the prompt never arrived
-
-An endpoint can cut a prompt to fit its context window and answer from what is left.
-A cut rendering still yields entries, written from the facts the model kept, and a cut check still returns a well-formed verdict.
-Neither shows in the summary, because Chartula stops the run instead.
-
-Every model call's prompt length in characters sets a lower bound on its token count.
-When the provider reports far fewer input tokens than that bound, the prompt was cut, and Chartula fails that call with an error naming the endpoint's context window.
-A cut rendering fails its audience, and a cut check fails the run.
-So a changelog written from a third of a release never passes for the whole of it.
-
-An endpoint that reports the uncut length whatever it processed, or no usage at all, leaves nothing to catch.
-[The context window is the first thing to get right](providers.md#the-context-window-is-the-first-thing-to-get-right) shows the fix, and how the summary gives such an endpoint away.
 
 ## The two checks
 

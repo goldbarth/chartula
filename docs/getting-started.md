@@ -222,3 +222,4 @@ echo 'chartula-runs/' >> .gitignore
 - [CI](ci.md) runs `generate` on every tag, with a complete GitHub Actions job.
 - [Writing pull requests](writing-pull-requests.md) shows what your authors can do for better release notes, level by level.
 - [Configuration](configuration.md) lists every setting, from the model to which categories are left out.
+- [Troubleshooting](troubleshooting.md) has the cause and the fix for a run that stops.
