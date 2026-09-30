@@ -47,7 +47,7 @@ The file is UTF-8, indented JSON.
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `schemaVersion` | integer | The format version. Bumped only on a breaking change. Currently `2`. |
+| `schemaVersion` | integer | The format version. Bumped only on a breaking change. Currently `3`. |
 | `recordedAt` | string | When the run was recorded, ISO 8601 in UTC, to the second. |
 | `tag` | string | The release tag the run was for. |
 | `repository` | string | The repository, as `owner/name`. |
@@ -61,9 +61,9 @@ The file is UTF-8, indented JSON.
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `start` | string | Where the range started: `previous-tag` (found on its own), `since` (named with `--since`) or `whole-history` (`--whole-history`, no start at all). |
-| `from` | string | The tag or commit the range starts after, as named or found. Absent for `whole-history`. |
-| `fromCommit` | string | The full hash `from` pointed to when the run read the range. Absent for `whole-history`. |
+| `start` | string | Where the range started: `previous-tag` (found on its own), `since` (named with `--since`) or `first-commit` (a first tag, no start at all). |
+| `from` | string | The tag or commit the range starts after, as named or found. Absent for `first-commit`. |
+| `fromCommit` | string | The full hash `from` pointed to when the run read the range. Absent for `first-commit`. |
 | `toCommit` | string | The full hash the release tag pointed to when the run read the range. |
 
 A run over a wrong range looks like any other run: the tag is the same, the facts and flags are not.
@@ -123,12 +123,14 @@ Both operations are always present, with zeros when they made no call, so any tw
 
 Version 2 turned each flag from a string into an object with `text` and `pullRequest`, and added `range`.
 A version 1 record holds the same text as a plain string in `flags` and has no `range`; nothing else changed.
+Version 3 renamed the start `whole-history` to `first-commit`, since the range ends at the tag and never was the whole history.
+A version 2 record with `whole-history` means the same as `first-commit`; nothing else changed.
 
 ## Example
 
 ```json
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "recordedAt": "2026-09-22T12:30:15+00:00",
   "tag": "v1.2.0",
   "repository": "owner/repo",

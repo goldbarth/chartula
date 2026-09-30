@@ -83,7 +83,10 @@ internal static class ChartulaYamlSchema
             Scalar(nameof(FaithfulnessOptions.Thinking))),
         Section(
             "review",
-            Boolean(nameof(ReviewOptions.Enabled))));
+            Boolean(nameof(ReviewOptions.Enabled))),
+        Section(
+            "range",
+            Scalar(nameof(RangeOptions.ConfirmAboveCommits))));
 
     private static YamlKey Section(string name, params YamlKey[] keys) => new(name, YamlValueKind.Section, keys);
 

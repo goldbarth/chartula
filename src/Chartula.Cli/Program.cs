@@ -91,7 +91,7 @@ internal static class Program
                 {
                     Audiences = audiences,
                     Since = start.Since,
-                    WholeHistory = start.WholeHistory,
+                    RangeConfirmed = CommandLineArguments.HasFlag(args, ConsoleRangeGate.YesFlag),
                 },
                 Console.Out,
                 CancellationToken.None);
@@ -122,7 +122,7 @@ internal static class Program
             .AddChartulaReview(configuration)
             .AddChartulaOutputs(configuration)
             .AddChartulaReleaseNotes(configuration)
-            .AddChartulaPipeline()
+            .AddChartulaPipeline(configuration)
             .BuildServiceProvider();
     }
 
@@ -162,11 +162,11 @@ internal static class Program
           --tag <tag>    The release tag. Default: the nearest tag reachable from HEAD.
           --repo <o/n>   The GitHub repository, as owner/name. Default: read from
                          the 'origin' remote.
-          --since <ref>  Start the release after this tag or commit instead of the
-                         previous tag. A first tag needs this or --whole-history.
-          --whole-history
-                         Render a first tag's whole history, e.g. for a project
-                         whose history is the release.
+          --since <ref>  Render the commits after this tag or commit, up to the
+                         release tag. Default: after the previous tag, or from the
+                         first commit for a first tag.
+          --yes          Confirm a first tag or a large range up front, for a run
+                         without a terminal to ask on.
           --no-publish   Write changelog.json and CHANGELOG.md, but publish no release notes.
           --audience <a> Render only this audience: technical, customer or product.
                          Repeat it, or separate them with commas. Default:

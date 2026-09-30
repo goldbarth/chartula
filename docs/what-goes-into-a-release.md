@@ -12,34 +12,43 @@ For `v1.3.0` with `v1.2.0` before it, the release is `v1.2.0..v1.3.0`.
 
 ### A first tag
 
-A first tag has no previous tag, so its range is the whole history.
-Rendered as it is, that reads as a development log: intermediate states stand next to the changes that replaced them.
-Where a release starts is a decision about facts, so Chartula does not guess it.
-A first tag stops the run before any GitHub request or model call, and asks:
+A first tag has no previous tag, so its release is every commit up to it, from the first commit on.
+For a new project, that is its first release, and it renders without any option.
+For a project that tags late, it is a development log: intermediate states stand next to the changes that replaced them.
+
+`--since <ref>` starts the release after a tag or commit you name instead, which has to be an ancestor of the release tag.
+It works on any tag, not only the first.
+Adopting Chartula on a project with a long history usually means `--since` on the first run, pointing at the last state that was already shipped; every later tag starts after its predecessor on its own.
+So `--since` is only needed when a release starts later than the previous tag or the first commit.
+
+### A large range is confirmed
+
+Before any GitHub request or model call, the run header names the range with both of its ends.
+A first tag, or a range with more commits than [`range.confirmAboveCommits`](configuration.md#range) (200 by default), is confirmed twice before it is read:
 
 ```console
 $ chartula preview --tag v0.1.0
-Error: v0.1.0 is the first tag, so its range is the whole history (69 commits).
-  Rendered as it is, that reads as a development log rather than a release.
-  --since <ref>     start the release after a tag or commit (e.g. the last state you shipped)
-  --whole-history   render all of it, e.g. for a project whose history is the release
+...
+Range:  every commit up to v0.1.0 (69 commits), the first tag
+        It costs 69 GitHub requests, and every pull request in it goes to the model once per audience.
+        To start later, pass --since <ref>: the commits after <ref>, up to v0.1.0.
+Render all 69 commits up to v0.1.0? [y/N] y
+This sends every pull request in the range to the model. Continue? [y/N] y
 ```
 
-`--since <ref>` starts the release after a tag or commit you name, which has to be an ancestor of the release tag.
-It works on any tag, not only the first.
-`--whole-history` renders the whole history, for a project whose history is its first release.
-Passing both is refused, since they answer the same question two ways.
-Adopting Chartula on a project with a long history usually means `--since` on the first run, pointing at the last state that was already shipped; every later tag starts after its predecessor on its own.
+Anything but `y` stops the run with nothing spent.
+Without a terminal, as in CI, nobody can answer, so the run stops with the same text, and `--yes` confirms the range up front.
+So a job stops once on its first tag, and every later tag runs on its own unless it is larger than the threshold.
 
 ### A shallow clone
 
 A shallow clone ends its history at the fetch depth, which looks the same as a first tag's history ending at the first commit.
 `actions/checkout` makes one by default (`fetch-depth: 1`).
-So a run in a shallow clone stops before any GitHub request or model call, `--whole-history` included, since the history it would render is not the whole history:
+So a run in a shallow clone without `--since` stops before any GitHub request or model call, `--yes` included, since its history ends at the fetch depth, not at the first commit:
 
 ```console
 $ chartula preview --tag v0.2.0
-Error: The checkout is a shallow clone: its history ends at the fetch depth, not where 'v0.2.0' starts, so neither the previous tag nor the whole history can be read from it.
+Error: The checkout is a shallow clone: its history ends at the fetch depth, not where 'v0.2.0' starts, so neither the previous tag nor the first commit can be read from it.
   Fetch the full history and tags: git fetch --unshallow --tags
   In GitHub Actions, check out with fetch-depth: 0; in GitLab CI, set GIT_DEPTH: 0.
 ```

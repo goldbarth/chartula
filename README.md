@@ -130,7 +130,7 @@ chartula generate    # write them, and create a draft release on GitHub
 
 `preview` makes the same model calls as `generate` and costs the same.
 `generate` writes `CHANGELOG.md`, `release-<tag>.md`, `changelog.json` and a draft release, and keeps a local run record in `chartula-runs/`, which belongs in your `.gitignore`.
-A first tag has no previous tag to start from, so Chartula asks where the release starts ([What goes into a release](docs/what-goes-into-a-release.md#a-first-tag)).
+A first tag renders every commit up to it, and Chartula asks before it reads a first tag or a large range ([What goes into a release](docs/what-goes-into-a-release.md#a-first-tag)).
 
 ---
 

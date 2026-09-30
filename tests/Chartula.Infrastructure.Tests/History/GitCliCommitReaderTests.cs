@@ -21,7 +21,7 @@ public sealed class GitCliCommitReaderTests
 
         Assert.Equal("v2.0.0", range.ToTag);
         Assert.Equal("v1.0.0", range.From);
-        Assert.False(range.IsWholeHistory);
+        Assert.False(range.StartsAtFirstCommit);
 
         string[] subjects = range.Commits.Select(c => c.Subject).ToArray();
         Assert.Equal(["D", "C"], subjects); // git log is newest-first
@@ -62,7 +62,7 @@ public sealed class GitCliCommitReaderTests
         Assert.Null(range.From);
         Assert.Null(range.FromCommit);
         Assert.Equal(repo.Run("rev-parse", "v1.0.0"), range.ToCommit);
-        Assert.True(range.IsWholeHistory);
+        Assert.True(range.StartsAtFirstCommit);
         Assert.Equal(["B", "A"], range.Commits.Select(c => c.Subject).ToArray());
     }
 
@@ -195,13 +195,13 @@ public sealed class GitCliCommitReaderTests
         repo.Tag("v1.0.0");
 
         GitCliCommitReader reader = new(GitExecutable.FromPath(), repo.Path);
-        Assert.True((await reader.ReadReleaseCommitsAsync("v1.0.0")).IsWholeHistory);
+        Assert.True((await reader.ReadReleaseCommitsAsync("v1.0.0")).StartsAtFirstCommit);
 
         repo.Run("tag", "baseline", "v1.0.0~2");
         CommitRange range = await reader.ReadReleaseCommitsAsync("v1.0.0", since: "baseline");
 
         Assert.Equal("baseline", range.From);
-        Assert.False(range.IsWholeHistory);
+        Assert.False(range.StartsAtFirstCommit);
         Assert.Equal(["feat: C", "feat: B"], range.Commits.Select(c => c.Subject));
     }
 

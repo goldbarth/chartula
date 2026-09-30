@@ -74,6 +74,7 @@ Please do not trade these away without raising it first:
 | Concern | Where |
 | --- | --- |
 | Reading commits and pull requests | `Core/History`, `Core/PullRequests` (ports), `Infrastructure` (adapters) |
+| Confirming a large range before it is read | `Core/Pipeline/LargeRangeRule.cs` (rule), `Core/Pipeline/IReleaseRangeGate.cs` (port), `Cli/Commands/ConsoleRangeGate.cs` (adapter) |
 | Deciding what counts as a change | `Core/Curation`, `Core/Filtering`, `Core/Labeling`, `Core/Categorization` |
 | The grounded facts | `Core/Facts` |
 | Turning facts into prose | `Core/Generation`, `Core/Rendering`, `Core/Prompting`, `Core/Llm` |

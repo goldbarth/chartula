@@ -77,7 +77,7 @@ public sealed class RunRecordJsonSerializerTests
         RunRecordDocument document = RunRecordJsonSerializer.Deserialize(
             RunRecordJsonSerializer.Serialize(Record(PipelineMode.GenerateWithoutPublishing), At));
 
-        Assert.Equal(2, document.SchemaVersion);
+        Assert.Equal(3, document.SchemaVersion);
         Assert.Equal(new DateTimeOffset(2026, 9, 22, 10, 30, 15, TimeSpan.Zero), document.RecordedAt);
         Assert.Equal(TimeSpan.Zero, document.RecordedAt.Offset);
         Assert.Equal("v1.0.0", document.Tag);
@@ -102,7 +102,7 @@ public sealed class RunRecordJsonSerializerTests
     [Theory]
     [InlineData(null, "v0.9.0", "previous-tag")]
     [InlineData("v0.8.0", "v0.8.0", "since")]
-    [InlineData(null, null, "whole-history")]
+    [InlineData(null, null, "first-commit")]
     public void Writes_the_range_the_run_read(string? since, string? from, string start)
     {
         string? fromCommit = from is null ? null : new string('a', 40);
