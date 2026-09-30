@@ -191,7 +191,7 @@ These are known and left for after the alpha, because its output is a draft a pe
 
 | Document | What it covers |
 | --- | --- |
-| [CLI](docs/cli.md) | Every command, option and environment variable, the outputs of `generate`, and the exit status. |
+| [CLI](docs/cli.md) | Every command and option with its default, the environment, what goes to stdout and stderr, and the exit status. |
 | [Configuration](docs/configuration.md) | Every `chartula.yaml` key with its default and valid values, and settings as environment variables. |
 | [`changelog.json` format](docs/changelog-json.md) | The stable output schema other tools build on. |
 | [Run record](docs/run-record.md) | The local file each `generate` run keeps, for comparing runs. |
