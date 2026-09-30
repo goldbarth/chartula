@@ -51,6 +51,32 @@ public sealed class GitHubReleaseNotesWriter(HttpClient httpClient, string token
     }
 
     /// <summary>
+    /// Asks GitHub to draft release notes for the tag and throws away the answer.
+    /// GitHub requires Contents write for that request and stores nothing, so it
+    /// answers "may this token write releases?" without writing one.
+    /// </summary>
+    public async Task EnsureCanWriteAsync(
+        RepositoryCoordinates repository,
+        string tag,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(repository);
+        ArgumentException.ThrowIfNullOrWhiteSpace(tag);
+
+        Target target = new(repository, tag);
+        using StringContent content = JsonContent(GitHubReleaseJsonContext.Default.GenerateNotesRequest,
+            new GenerateNotesRequest(tag));
+        HttpResponseMessage response = await SendAsync(
+            () => httpClient.PostAsync($"repos/{repository.Owner}/{repository.Name}/releases/generate-notes",
+                content, cancellationToken),
+            tag);
+        using (response)
+        {
+            await EnsureSuccessAsync(response, target, cancellationToken, checking: true);
+        }
+    }
+
+    /// <summary>
     /// Finds a draft for the tag from an earlier run.
     /// GitHub's lookup by tag finds only published releases, so without this every
     /// re-run would add another draft.
@@ -139,7 +165,8 @@ public sealed class GitHubReleaseNotesWriter(HttpClient httpClient, string token
         }
     }
 
-    private async Task EnsureSuccessAsync(HttpResponseMessage response, Target target, CancellationToken ct)
+    private async Task EnsureSuccessAsync(
+        HttpResponseMessage response, Target target, CancellationToken ct, bool checking = false)
     {
         if (response.IsSuccessStatusCode)
         {
@@ -147,15 +174,17 @@ public sealed class GitHubReleaseNotesWriter(HttpClient httpClient, string token
         }
 
         GitHubErrorResponse error = await GitHubErrorResponse.ReadAsync(response, httpClient.DefaultRequestHeaders, ct);
-        throw new InvalidOperationException(Describe(error, target));
+        throw new InvalidOperationException(Describe(error, target, checking));
     }
 
     /// <summary>
     /// Names a cause the caller can act on.
-    /// The pull requests were read a moment earlier, so a refusal here is about writing.
+    /// A refusal here is most likely about writing, not reading.
     /// The likeliest cause is the read-only token the docs recommend until a run publishes.
+    /// A refusal while <paramref name="checking"/> comes before anything was sent, so it
+    /// says the token may not publish rather than that publishing was refused.
     /// </summary>
-    private string Describe(GitHubErrorResponse error, Target target)
+    private string Describe(GitHubErrorResponse error, Target target, bool checking)
     {
         string repo = $"{target.Repository.Owner}/{target.Repository.Name}";
 
@@ -171,8 +200,11 @@ public sealed class GitHubReleaseNotesWriter(HttpClient httpClient, string token
                 ? $"\n  GitHub says the token needs: {needed}"
                 : string.Empty;
 
+            string refusal = checking
+                ? $"GitHub does not let this run publish the release notes for {target.Tag} to {repo} ({error.Status})."
+                : $"GitHub refused to publish the release notes for {target.Tag} to {repo} ({error.Status}).";
             return $"""
-                GitHub refused to publish the release notes for {target.Tag} to {repo} ({error.Status}).
+                {refusal}
                   {error.DescribeToken(tokenVariable)}{permission}
                   Publishing needs a token with Contents read and write on {repo}.
                 """;

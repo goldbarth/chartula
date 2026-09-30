@@ -23,4 +23,18 @@ public interface IReleaseNotesWriter
         string tag,
         string body,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Confirms that <see cref="WriteAsync"/> would be allowed, without writing anything.
+    /// Publishing is the last step of a run, after every model call, so a refusal found
+    /// only there has already been paid for.
+    /// </summary>
+    /// <exception cref="System.InvalidOperationException">
+    /// The platform refuses the write, could not be reached or returned an error.
+    /// The message names the cause the same way <see cref="WriteAsync"/> would.
+    /// </exception>
+    Task EnsureCanWriteAsync(
+        RepositoryCoordinates repository,
+        string tag,
+        CancellationToken cancellationToken = default);
 }

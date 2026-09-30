@@ -71,8 +71,8 @@ public sealed class ReleasePipelineTests
         Assert.Equal(0, _releaseNotes.Calls);
     }
 
-    // #219: publishing is the last write, so a refusal there leaves the files written.
-    // The outcome must carry both the written files and the error.
+    // #219: publishing is the last write, so a refusal the check could not foresee leaves
+    // the files written. The outcome must carry both the written files and the error.
     [Fact]
     public async Task A_refused_publication_keeps_the_files_the_run_wrote()
     {
@@ -83,6 +83,50 @@ public sealed class ReleasePipelineTests
         Assert.Contains("CHANGELOG.md", outcome.WrittenOutputs);
         Assert.Equal(1, _json.Calls);
         Assert.Equal(1, _customerPage.Calls);
+    }
+
+    // #262: a token that may not publish is found before the first model call, so the
+    // run stops before it has spent anything.
+    [Fact]
+    public async Task Generate_stops_before_any_model_call_when_the_token_may_not_publish()
+    {
+        StubRenderer renderer = new();
+        ReadOnlyTokenReleaseNotesWriter releaseNotes = new("GitHub does not let this run publish.");
+
+        InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => BuildPipeline(renderer, releaseNotes).RunAsync(Request(), PipelineMode.Generate));
+
+        Assert.StartsWith("GitHub does not let this run publish.", ex.Message);
+        Assert.Contains("stopped before any model call", ex.Message);
+        Assert.Contains("--no-publish", ex.Message);
+        Assert.Equal(0, renderer.Calls);
+        Assert.Equal(0, releaseNotes.Calls);
+        Assert.Equal(0, _json.Calls);
+        Assert.Equal(0, _markdown.Calls);
+        Assert.Equal(0, _customerPage.Calls);
+    }
+
+    [Theory]
+    [InlineData(PipelineMode.Preview)]
+    [InlineData(PipelineMode.GenerateWithoutPublishing)]
+    public async Task A_run_that_does_not_publish_does_not_ask_whether_it_may(PipelineMode mode)
+    {
+        StubRenderer renderer = new();
+
+        ReleaseOutcome outcome = await BuildPipeline(renderer, new ReadOnlyTokenReleaseNotesWriter("refused"))
+            .RunAsync(Request(), mode);
+
+        Assert.Equal(1, renderer.Calls);
+        Assert.All(outcome.Renderings, rendering => Assert.True(rendering.Success));
+    }
+
+    [Fact]
+    public async Task Generate_checks_once_and_then_publishes()
+    {
+        await BuildPipeline().RunAsync(Request(), PipelineMode.Generate);
+
+        Assert.Equal(1, _releaseNotes.Checks);
+        Assert.Equal(1, _releaseNotes.Calls);
     }
 
     [Fact]

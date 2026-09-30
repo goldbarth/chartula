@@ -69,7 +69,8 @@ It stays on your machine, never published.
 
 A field with no source behind it is left out rather than filled in - no description when the facts do not support one, no date when the tag has none.
 
-Publishing is the last step, so when GitHub refuses it - most often a token without Contents read and write - the files are already written.
+A token without Contents read and write stops the run before the first model call ([What `generate` writes to GitHub](github.md#what-generate-writes-to-github)).
+Publishing is still the last step, so when GitHub refuses it for another reason, the files are already written.
 The summary lists them under "Wrote:", names the refusal under "Not published:", and the run exits with 1.
 A re-run replaces this release's entries in `CHANGELOG.md` and its draft rather than adding to them, but pays for the model calls again.
 

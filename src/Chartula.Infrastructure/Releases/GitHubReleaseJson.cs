@@ -38,10 +38,19 @@ internal sealed record CreateReleaseRequest(
     public bool Draft => true;
 }
 
+/// <summary>
+/// Body for asking GitHub to draft notes for a tag (POST <c>releases/generate-notes</c>).
+/// Chartula discards the answer: the request only proves that the token may write
+/// releases, because GitHub requires Contents write for it and stores nothing.
+/// </summary>
+internal sealed record GenerateNotesRequest(
+    [property: JsonPropertyName("tag_name")] string TagName);
+
 /// <summary>Source-generated (reflection-free) context, so release I/O stays AOT-safe.</summary>
 [JsonSourceGenerationOptions(PropertyNameCaseInsensitive = true)]
 [JsonSerializable(typeof(GitHubReleaseDto))]
 [JsonSerializable(typeof(List<GitHubReleaseDto>))]
 [JsonSerializable(typeof(UpdateReleaseRequest))]
 [JsonSerializable(typeof(CreateReleaseRequest))]
+[JsonSerializable(typeof(GenerateNotesRequest))]
 internal sealed partial class GitHubReleaseJsonContext : JsonSerializerContext;
