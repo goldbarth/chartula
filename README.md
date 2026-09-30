@@ -150,7 +150,8 @@ A first tag renders every commit up to it, and Chartula asks before it reads a f
 
 ## Known limitations
 
-These are known and left for after the alpha, because its output is a draft a person reads before publishing:
+These are known, and the output is a draft a person reads before publishing, so each one is left for after the launch.
+The [Roadmap](ROADMAP.md#after-the-launch-in-this-order) says which point removes which limitation, and in which order.
 
 - **Facts are author text.** A wrong pull request title or description stays wrong, and the checks verify against that same text, not against the code.
 - **Pull request text goes to the model as it is.** It is neither delimited nor size-limited, and edits made to a pull request after its merge are not detected.
