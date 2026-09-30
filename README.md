@@ -124,6 +124,7 @@ Run it from a checkout of your repository, which knows the release tag and the G
 
 ```bash
 cd my-repo
+chartula doctor      # check the setup, and what to fix, before a run spends anything
 chartula preview     # show the facts of the nearest tag and what generate would send, for free
 chartula generate    # render them, write the files, and create a draft release on GitHub
 ```
@@ -131,6 +132,8 @@ chartula generate    # render them, write the files, and create a draft release 
 `preview` makes no model call, so it needs no model key and costs no tokens; `generate --no-publish` shows the prose without publishing.
 `generate` writes `CHANGELOG.md`, `release-<tag>.md`, `changelog.json` and a draft release, and keeps a local run record in `chartula-runs/`, which belongs in your `.gitignore`.
 A first tag renders every commit up to it, and Chartula asks before it reads a first tag or a large range ([What goes into a release](docs/what-goes-into-a-release.md#a-first-tag)).
+
+[Getting started](docs/getting-started.md) walks through the first run step by step, up to a published draft.
 
 ---
 
@@ -169,6 +172,7 @@ These are known and left for after the alpha, because its output is a draft a pe
 
 | Document | What it covers |
 | --- | --- |
+| [Getting started](docs/getting-started.md) | The first run, step by step: install, `doctor`, `preview`, `generate`, and publishing the draft. |
 | [Install](docs/install.md) | Platforms, the install scripts and their settings, a download by hand, building from source, updating and uninstalling. |
 | [Providers](docs/providers.md) | Setting up Anthropic, OpenAI, a hosted endpoint or a local server, choosing a model, and `thinking`. |
 | [GitHub](docs/github.md) | The token and its permissions, the rate limit, GitHub Enterprise, and what a run writes to GitHub. |
