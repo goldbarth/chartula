@@ -195,12 +195,14 @@ labels:
 
 | `factBase.depth` | The model reads | `linkedIssues` |
 | --- | --- | --- |
-| `title-only` | the title | empty |
-| `title-and-description` (default) | the title and the description | empty |
-| `title-description-and-issues` | the title and the description | the issue numbers they close |
+| `title-only` | the title | the issue numbers the title closes |
+| `title-and-description` (default) | the title and the description | the issue numbers they close |
 
 `title-only` sends far less text, so a run costs less and the model has less to overstate, but it also has less to say.
 The issue numbers are the numbers after `close`, `closes`, `closed`, `fix`, `fixes`, `fixed`, `resolve`, `resolves` or `resolved` and a `#`, as in `closes #12`.
-Chartula reads no issue, so the number is all a fact knows about it ([#258](https://github.com/goldbarth/chartula/issues/258)).
+They come from the text the model reads, so a number in a rendering that the text closes is not flagged as invented.
+Chartula reads no issue, so the number is all a fact knows about it.
+
+`title-description-and-issues`, a third value of earlier versions, is still accepted and means `title-and-description`: it read no issue either, and the model read the same text ([#258](https://github.com/goldbarth/chartula/issues/258)).
 
 The title fallback and the breaking footer read the description at every depth, because they decide facts, not wording.

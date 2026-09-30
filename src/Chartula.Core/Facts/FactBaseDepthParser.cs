@@ -26,10 +26,12 @@ public static class FactBaseDepthParser
         {
             "titleonly" or "title" => FactBaseDepth.TitleOnly,
             "titleanddescription" or "description" => FactBaseDepth.TitleAndDescription,
-            "titledescriptionandissues" or "full" or "issues" => FactBaseDepth.TitleDescriptionAndIssues,
+            // A configuration value is a public surface, so the old third depth and its
+            // aliases stay accepted. The model read the same text at it (#258).
+            "titledescriptionandissues" or "full" or "issues" => FactBaseDepth.TitleAndDescription,
             _ => throw new InvalidOperationException(
-                $"Unknown fact-base depth '{value}'. Valid values: title-only, title-and-description, " +
-                "title-description-and-issues (aliases: title, description, full)."),
+                $"Unknown fact-base depth '{value}'. Valid values: title-only, title-and-description " +
+                "(aliases: title, description)."),
         };
     }
 
@@ -38,7 +40,6 @@ public static class FactBaseDepthParser
     {
         FactBaseDepth.TitleOnly => "title-only",
         FactBaseDepth.TitleAndDescription => "title-and-description",
-        FactBaseDepth.TitleDescriptionAndIssues => "title-description-and-issues",
         _ => throw new ArgumentOutOfRangeException(nameof(depth), depth, null),
     };
 }

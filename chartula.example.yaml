@@ -27,7 +27,7 @@
 #   excludeCategories: [Internal]    # a list replaces the default
 
 # factBase:
-#   depth: title-and-description     # title-only, title-and-description, title-description-and-issues
+#   depth: title-and-description     # title-only, title-and-description
 
 # categories:
 #   order: [Feature, Fix, Performance, Documentation, Refactor, Other, Internal]

@@ -58,7 +58,7 @@ public sealed class ChartulaYamlConfigurationTests
         IConfiguration config = FromYaml(
             """
             factBase:
-              depth: title-description-and-issues
+              depth: title-only
             faithfulness:
               thorough: false
             """);
@@ -68,7 +68,7 @@ public sealed class ChartulaYamlConfigurationTests
         FaithfulnessOptions faithfulness =
             config.GetSection(FaithfulnessOptions.SectionName).Get<FaithfulnessOptions>() ?? new FaithfulnessOptions();
 
-        Assert.Equal(FactBaseDepth.TitleDescriptionAndIssues, FactBaseDepthParser.Parse(factBase.Depth));
+        Assert.Equal(FactBaseDepth.TitleOnly, FactBaseDepthParser.Parse(factBase.Depth));
         Assert.False(faithfulness.Thorough); // refined away from the default
     }
 

@@ -115,7 +115,7 @@ The description is copied in full into `changelog.json`, so notes meant only for
 ### Link the issue
 
 `closes #12`, `fixes #12` or `resolves #12` in the title or description links the issue.
-With `factBase.depth: title-description-and-issues`, its number appears under `linkedIssues` in `changelog.json`, where a tool that reads the file can follow it.
+Its number appears under `linkedIssues` in `changelog.json`, where a tool that reads the file can follow it; at `factBase.depth: title-only`, only an issue the title closes does.
 The renderings do not link issues, and Chartula reads nothing from the issue itself.
 
 ## Optional: labels

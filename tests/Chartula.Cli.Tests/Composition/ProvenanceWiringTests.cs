@@ -61,7 +61,6 @@ public sealed class ProvenanceWiringTests
     [Theory]
     [InlineData(FactBaseDepth.TitleOnly)]
     [InlineData(FactBaseDepth.TitleAndDescription)]
-    [InlineData(FactBaseDepth.TitleDescriptionAndIssues)]
     public void A_recorded_depth_reads_back_as_itself(FactBaseDepth depth)
         => Assert.Equal(depth, FactBaseDepthParser.Parse(FactBaseDepthParser.Name(depth)));
 }

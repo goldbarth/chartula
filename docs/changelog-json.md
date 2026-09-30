@@ -33,7 +33,7 @@ Read them before you publish the file.
 | `category` | string | One of `Feature`, `Fix`, `Performance`, `Documentation`, `Refactor`, `Internal`, `Other`. |
 | `userVisible` | boolean | Whether a reader can come into contact with the change. Decided by the visibility labels in [`configuration.md`](configuration.md), with the category as the fallback; a breaking change is always `true`. |
 | `breaking` | boolean | Whether the change is a breaking change. |
-| `linkedIssues` | array of integers | The numbers after `close`, `closes`, `closed`, `fix`, `fixes`, `fixed`, `resolve`, `resolves` or `resolved` and a `#` in the title or description (`closes #12`), in the order found, each once. Chartula reads no issue, so the number is all the file knows about it. Empty unless `factBase.depth` is `title-description-and-issues`. |
+| `linkedIssues` | array of integers | The numbers after `close`, `closes`, `closed`, `fix`, `fixes`, `fixed`, `resolve`, `resolves` or `resolved` and a `#` in the title or description (`closes #12`), in the order found, each once. Chartula reads no issue, so the number is all the file knows about it. At `factBase.depth: title-only`, from the title alone, since the model reads no description. Files written before this held the numbers only at the former `title-description-and-issues` depth, and were empty otherwise. |
 | `labels` | array of strings | The labels on the pull request, verbatim and unfiltered. Empty when the source carries none, as a commit-based change does. |
 | `description` | string or null | The source description with HTML comments removed, since GitHub does not show them to a reader. `null` for a commit-based change, when the depth excludes it, or when the body is empty or an unfilled template (nothing but headings and checklist items). |
 
@@ -53,7 +53,7 @@ Each field is left out when the run does not have a value for it, never written 
 | `promptHash` | string | `sha256:` and a hex digest of every instruction Chartula sends - each audience's system prompt and the thorough check's - without the facts. Two files with the same hash were rendered from the same instructions. |
 | `thinking` | string | The configured `llm.thinking`: `provider-default`, `disabled`, `low`, `medium`, `high` or `xhigh`, as the configuration spells it (`adaptive` is recorded as `high`). `provider-default` records the setting, not whether the model thought - some models think by default, others do not (see [`thinking`](providers.md#thinking)). |
 | `thoroughCheck` | boolean | Whether the thorough faithfulness check ran (`faithfulness.thorough`). |
-| `factBaseDepth` | string | The configured `factBase.depth`: `title-only`, `title-and-description` or `title-description-and-issues`. |
+| `factBaseDepth` | string | The configured `factBase.depth`: `title-only` or `title-and-description`. A file written before #258 may hold `title-description-and-issues`, which read the same text as `title-and-description`. |
 | `checkModel` | string | The model the thorough check asked: `faithfulness.model`, or `llm.model` when not set. Present only when the check ran. |
 | `checkThinking` | string | The thinking mode the thorough check asked for, spelled as `thinking`. Present only when the check ran. |
 

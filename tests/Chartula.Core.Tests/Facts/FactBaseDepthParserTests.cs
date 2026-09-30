@@ -20,9 +20,11 @@ public sealed class FactBaseDepthParserTests
     [InlineData("title", FactBaseDepth.TitleOnly)]
     [InlineData("title-and-description", FactBaseDepth.TitleAndDescription)]
     [InlineData("description", FactBaseDepth.TitleAndDescription)]
-    [InlineData("title-description-and-issues", FactBaseDepth.TitleDescriptionAndIssues)]
-    [InlineData("full", FactBaseDepth.TitleDescriptionAndIssues)]
-    [InlineData("issues", FactBaseDepth.TitleDescriptionAndIssues)]
+    // #258: the old third depth read no issue, and the model read the same text as at
+    // title-and-description. A configuration that names it keeps working.
+    [InlineData("title-description-and-issues", FactBaseDepth.TitleAndDescription)]
+    [InlineData("full", FactBaseDepth.TitleAndDescription)]
+    [InlineData("issues", FactBaseDepth.TitleAndDescription)]
     public void Parses_names_and_aliases(string value, FactBaseDepth expected)
     {
         Assert.Equal(expected, FactBaseDepthParser.Parse(value));

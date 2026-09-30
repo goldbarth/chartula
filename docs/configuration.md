@@ -148,9 +148,10 @@ Label names are yours, such as `visibility:internal`, `no-changelog` or `chore`,
 
 | Key | Default | Valid values | Description |
 | --- | --- | --- | --- |
-| `depth` | `title-and-description` | `title-only`, `title-and-description`, `title-description-and-issues` | How much of each change the model reads. See [How much of each change the model reads](what-goes-into-a-release.md#8-how-much-of-each-change-the-model-reads). |
+| `depth` | `title-and-description` | `title-only`, `title-and-description` | How much of each change the model reads. See [How much of each change the model reads](what-goes-into-a-release.md#8-how-much-of-each-change-the-model-reads). |
 
-`depth` also reads these aliases: `title` for `title-only`, `description` for `title-and-description`, and `full` or `issues` for `title-description-and-issues`.
+`depth` also reads these aliases: `title` for `title-only`, and `description` for `title-and-description`.
+`title-description-and-issues`, `full` and `issues`, the values of a third depth that read no issue, are read as `title-and-description`, so an older `chartula.yaml` keeps working unchanged.
 
 ### `categories`
 
@@ -222,7 +223,7 @@ filter:
   excludeCategories: [Internal, Documentation]
 
 factBase:
-  depth: title-description-and-issues
+  depth: title-only
 
 categories:
   order: [Feature, Fix, Performance, Documentation, Refactor, Other, Internal]
