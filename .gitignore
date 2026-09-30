@@ -73,3 +73,7 @@ desktop.ini
 /tmp-output/
 /chartula-runs/
 *.local.md
+
+# Chartula output that is published elsewhere (release assets), not versioned here
+/changelog.json
+/release-*.md
