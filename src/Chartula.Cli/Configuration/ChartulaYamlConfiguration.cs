@@ -33,7 +33,7 @@ internal static class ChartulaYamlConfiguration
 
     /// <summary>
     /// Adds <c>chartula.yaml</c> (or <c>chartula.yml</c>) from <paramref name="directory"/>
-    /// if present. Does nothing when neither exists.
+    /// if present. Does nothing when neither exists, and throws when both do.
     /// </summary>
     public static IConfigurationBuilder AddChartulaYaml(this IConfigurationBuilder builder, string directory)
     {
@@ -87,17 +87,24 @@ internal static class ChartulaYamlConfiguration
             "the file is repository content, and these decide where release data and credentials are sent.");
     }
 
+    /// <summary>
+    /// Finds the one configuration file in <paramref name="directory"/>, or <c>null</c>.
+    /// Both names present is refused: whichever file won, the settings in the other would
+    /// not be in force, and nothing would say so.
+    /// </summary>
     private static string? FindConfigFile(string directory)
     {
-        foreach (string name in (string[])["chartula.yaml", "chartula.yml"])
+        string[] found = [.. ((string[])["chartula.yaml", "chartula.yml"])
+            .Select(name => Path.Combine(directory, name))
+            .Where(File.Exists)];
+
+        if (found.Length > 1)
         {
-            string candidate = Path.Combine(directory, name);
-            if (File.Exists(candidate))
-            {
-                return candidate;
-            }
+            throw new InvalidOperationException(
+                $"Both {found[0]} and {found[1]} exist, and a run reads one configuration file. " +
+                "Keep one: move the settings you want into it and delete the other.");
         }
 
-        return null;
+        return found.FirstOrDefault();
     }
 }

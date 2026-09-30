@@ -172,6 +172,30 @@ public sealed class MalformedYamlTests
         }
     }
 
+    // #278: with both names present, one file's settings would not be in force.
+    [Fact]
+    public void Both_file_names_present_is_refused_naming_both_paths()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), "chartula-both-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        try
+        {
+            File.WriteAllText(Path.Combine(directory, "chartula.yaml"), "llm:\n  model: a\n");
+            File.WriteAllText(Path.Combine(directory, "chartula.yml"), "llm:\n  model: b\n");
+
+            InvalidOperationException error = Assert.Throws<InvalidOperationException>(
+                () => new ConfigurationBuilder().AddChartulaYaml(directory).Build());
+
+            Assert.Contains(Path.Combine(directory, "chartula.yaml"), error.Message);
+            Assert.Contains(Path.Combine(directory, "chartula.yml"), error.Message);
+            Assert.Contains("Keep one", error.Message);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
     // Everything the file could express before keeps its meaning.
     [Theory]
     [InlineData("")]

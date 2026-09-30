@@ -8,7 +8,12 @@ This page lists every setting with its default and its valid values.
 
 Chartula reads `chartula.yaml`, or `chartula.yml`, from the directory the run starts in.
 It does not search parent directories, so a run started in a subdirectory of your repository reads no file; start it from the directory that holds the file, usually the repository root.
-When both names exist, Chartula reads `chartula.yaml` and ignores `chartula.yml`.
+When both names exist, the run stops with a configuration error that names both files, because the settings in one of them would not be in force:
+
+```console
+$ chartula preview
+Configuration error: Both /work/my-repo/chartula.yaml and /work/my-repo/chartula.yml exist, and a run reads one configuration file. Keep one: move the settings you want into it and delete the other.
+```
 
 Keys are matched regardless of case.
 An empty value (`model:`, `~` or `null`) leaves the setting at its default, as leaving the key out does.
