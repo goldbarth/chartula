@@ -1,7 +1,6 @@
 {
-  "schemaVersion": 1,
   "tag": "v0.9.1",
-  "changes": [
+  "facts": [
     {
       "title": "fix: handle a missing tag without crashing",
       "number": null,
@@ -24,6 +23,5 @@
       "labels": [],
       "description": null
     }
-  ],
-  "renderings": {}
+  ]
 }

@@ -1,3 +1,4 @@
+using Chartula.Core.Facts;
 using Chartula.Core.History;
 using Chartula.Core.Pipeline;
 using Chartula.Core.PullRequests;
@@ -34,4 +35,11 @@ public sealed record RunRecord(
     /// It says whether <see cref="CommitRange.From"/> was named or found as the previous tag.
     /// </summary>
     public string? Since { get; init; }
+
+    /// <summary>
+    /// The fact base the run rendered from, descriptions included, or <c>null</c> when it
+    /// is not known. The record is the one place it is kept whole: <c>changelog.json</c> is
+    /// published, and leaves the descriptions out (#260).
+    /// </summary>
+    public FactBase? Facts { get; init; }
 }

@@ -37,7 +37,7 @@ public sealed class FileChangelogJsonWriterTests : IDisposable
         using JsonDocument parsed = JsonDocument.Parse(json); // valid JSON
 
         JsonElement root = parsed.RootElement;
-        Assert.Equal(1, root.GetProperty("schemaVersion").GetInt32());
+        Assert.Equal(2, root.GetProperty("schemaVersion").GetInt32());
         Assert.Equal("v1.0.0", root.GetProperty("tag").GetString());
         Assert.Equal("Feature", root.GetProperty("changes")[0].GetProperty("category").GetString());
     }

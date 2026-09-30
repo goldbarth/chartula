@@ -3,10 +3,11 @@
 The pipeline is tested against stored fact bases in `tests/Chartula.Core.Tests/Fixtures/`.
 The suite can run as often as you like at no token cost, so tests are never something you avoid running.
 
-## The fixtures are ordinary `changelog.json` files
+## The fixtures are the facts of a run record
 
-A fixture is exactly what a run writes - the format in [`changelog-json.md`](../changelog-json.md), nothing else.
-That means a real release can be frozen into a fixture by copying the `changelog.json` a run produced into the fixtures folder.
+A fixture is the `tag` and `facts` of a [run record](../run-record.md#facts), nothing else.
+That means a real release can be frozen into a fixture by copying those two fields from the record a run wrote in `chartula-runs/`.
+Not `changelog.json`: it leaves out the pull request descriptions, which the model reads.
 
 `FactBaseFixtureTests` re-serializes every fixture and compares it to the file on disk.
 If the writer's output ever drifts from these files, that test fails: a fixture that no longer matches what a real run writes has stopped representing one.

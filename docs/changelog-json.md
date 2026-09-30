@@ -1,7 +1,8 @@
 # `changelog.json` format
 
-Chartula writes the release fact base and the audience texts to `changelog.json`, a machine-readable record of one release.
+Chartula writes the release's facts and the audience texts to `changelog.json`, a machine-readable record of one release.
 A tool that reacts to a release, such as a webhook, reads it instead of parsing Markdown.
+It is meant to be published.
 
 The file holds the current release only, and every `generate` run overwrites it.
 One file is one release notification: a consumer that receives it has everything about that release, and nothing it has to tell apart from earlier ones.
@@ -9,15 +10,16 @@ To keep a history, store each file where your release pipeline keeps its artifac
 
 The file is UTF-8, indented JSON.
 
-**`description` carries each pull request description in full.**
-Publishing the file publishes every one of them, including notes written for reviewers rather than readers.
-Read them before you publish the file.
+**It holds no pull request description.**
+A description is what its author wrote for reviewers - internal notes, measurements, links to internal systems - and publishing the file must not publish it.
+The file holds each change's title, number, link, category, flags, labels and closed issue numbers, the renderings, and how the file was made.
+The complete facts a run rendered from, descriptions included, stay on your machine in its [run record](run-record.md#facts).
 
 ## Schema
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `schemaVersion` | integer | The format version. Bumped only on a breaking change. Currently `1`. |
+| `schemaVersion` | integer | The format version. Bumped only on a breaking change. Currently `2`. |
 | `tag` | string | The release tag the facts belong to. |
 | `changes` | array | One entry per included change (see below). |
 | `renderings` | object | The rendered audience texts as Markdown, keyed by audience (`technical`, `customer`, `product`). Only the audiences the run rendered are present. A written file has at least one, because a run in which no audience rendered writes no files. |
@@ -35,7 +37,6 @@ Read them before you publish the file.
 | `breaking` | boolean | Whether the change is a breaking change. |
 | `linkedIssues` | array of integers | The numbers after `close`, `closes`, `closed`, `fix`, `fixes`, `fixed`, `resolve`, `resolves` or `resolved` and a `#` in the title or description (`closes #12`), in the order found, each once. Chartula reads no issue, so the number is all the file knows about it. At `factBase.depth: title-only`, from the title alone, since the model reads no description. Files written before this held the numbers only at the former `title-description-and-issues` depth, and were empty otherwise. |
 | `labels` | array of strings | The labels on the pull request, verbatim and unfiltered. Empty when the source carries none, as a commit-based change does. |
-| `description` | string or null | The source description with HTML comments removed, since GitHub does not show them to a reader. `null` for a commit-based change, when the depth excludes it, or when the body is empty or an unfilled template (nothing but headings and checklist items). |
 
 Every field of a change entry is an established fact derived deterministically from the pull request or commit.
 The `renderings` object holds the audience texts the LLM produced by rephrasing those facts; the facts themselves are never LLM-generated.
@@ -68,15 +69,18 @@ Endpoint hosts, flags and check verdicts are deliberately not recorded: the file
 - New optional fields may be added without bumping `schemaVersion`; removing or renaming a field, or
   changing a field's meaning, bumps it.
 
+Version 2 removed a change's `description`, so the file can be published without the notes authors wrote for reviewers ([#260](https://github.com/goldbarth/chartula/issues/260)).
+A consumer of version 1 that read `description` finds it in the run record's [`facts`](run-record.md#facts) now.
+
 ## Example
 
-Three of the six changes of Chartula's own `v0.1.0-preview.3`, as its run wrote them.
-Each description is cut after its first line here, and the renderings keep only the entries of these changes; the file holds both in full.
+Three of the six changes of Chartula's own `v0.1.0-preview.3`, in the shape a run writes them now.
+The renderings keep only the entries of these changes; the file holds them in full.
 #246 is a `Documentation` change and not `userVisible`, so it is a fact without an entry in either rendering.
 
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "tag": "v0.1.0-preview.3",
   "changes": [
     {
@@ -87,8 +91,7 @@ Each description is cut after its first line here, and the renderings keep only 
       "userVisible": true,
       "breaking": false,
       "linkedIssues": [],
-      "labels": [],
-      "description": "Follows #250, which introduced run record schema version 2, and #227 and #231."
+      "labels": []
     },
     {
       "title": "fix(cli): refuse review mode until an interactive reviewer exists",
@@ -98,8 +101,7 @@ Each description is cut after its first line here, and the renderings keep only 
       "userVisible": true,
       "breaking": false,
       "linkedIssues": [],
-      "labels": [],
-      "description": "Follows #19."
+      "labels": []
     },
     {
       "title": "docs: add the changelog Chartula generated for 0.1.0-preview.2",
@@ -109,8 +111,7 @@ Each description is cut after its first line here, and the renderings keep only 
       "userVisible": false,
       "breaking": false,
       "linkedIssues": [],
-      "labels": [],
-      "description": "Follows #139 and the `v0.1.0-preview.2` tag."
+      "labels": []
     }
   ],
   "renderings": {

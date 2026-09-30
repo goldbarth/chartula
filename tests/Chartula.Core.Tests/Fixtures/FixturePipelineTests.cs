@@ -263,10 +263,10 @@ public sealed class FactBaseFixtureTests
     {
         FactBase factBase = FactBaseFixture.Load(fixture);
 
-        string reserialized = ChangelogJsonSerializer.Serialize(factBase);
+        string reserialized = RunRecordJsonSerializer.SerializeFacts(factBase);
 
-        // A fixture is a frozen changelog.json. If the writer's output ever drifts from
-        // these files, the fixtures stop representing real runs - so they must match.
+        // A fixture is the tag and facts of a frozen run record. If the writer's output ever
+        // drifts from these files, the fixtures stop representing real runs - so they must match.
         Assert.Equal(
             FactBaseFixture.ReadText(fixture).ReplaceLineEndings().TrimEnd(),
             reserialized.ReplaceLineEndings().TrimEnd());

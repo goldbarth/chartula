@@ -110,7 +110,8 @@ With a description, it can say what the change does for the reader; the technica
 The start, the ref and the hashes come from the description of #251, not its title.
 Two sentences are enough; the rest of a long description adds tokens to every run and gives the model more to overstate.
 
-The description is copied in full into `changelog.json`, so notes meant only for reviewers become public when that file is published ([`changelog.json`](changelog-json.md)).
+The description stays out of `changelog.json`, which is meant to be published; the local [run record](run-record.md#facts) keeps it.
+The model reads it, though, so a note meant only for reviewers can still surface in a rendering you publish.
 
 ### Link the issue
 

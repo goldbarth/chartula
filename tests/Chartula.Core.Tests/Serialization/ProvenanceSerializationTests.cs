@@ -85,7 +85,7 @@ public sealed class ProvenanceSerializationTests
         ChangelogDocument document = ChangelogJsonSerializer.Deserialize(json);
 
         Assert.Equal(new ChangelogProvenance("0.1.0", "anthropic", "m", null), document.Provenance);
-        Assert.Equal(Facts, ChangelogJsonSerializer.ToFactBase(document));
+        Assert.Equal(Facts.Changes.Select(static fact => fact.Title), document.Changes.Select(static change => change.Title));
     }
 
     [Fact]

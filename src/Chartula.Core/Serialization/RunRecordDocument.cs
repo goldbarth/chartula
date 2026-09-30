@@ -19,7 +19,18 @@ public sealed record RunRecordDocument(
     [property: JsonPropertyName("provenance"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     ChangelogProvenance? Provenance,
     [property: JsonPropertyName("audiences")] IReadOnlyList<RunRecordAudience> Audiences,
-    [property: JsonPropertyName("metrics")] RunRecordMetrics Metrics);
+    [property: JsonPropertyName("metrics")] RunRecordMetrics Metrics,
+    [property: JsonPropertyName("facts"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    IReadOnlyList<FactEntry>? Facts = null);
+
+/// <summary>
+/// The part of a run record that holds the fact base: the tag and the facts.
+/// Reading only these, a stored run replays through the pipeline, and a test fixture
+/// is the same two fields - so a real run is frozen into a fixture by copying them.
+/// </summary>
+public sealed record RunRecordFacts(
+    [property: JsonPropertyName("tag")] string Tag,
+    [property: JsonPropertyName("facts")] IReadOnlyList<FactEntry>? Facts);
 
 /// <summary>
 /// The commits the run read, so a later look can tell a run from a wrong range.
