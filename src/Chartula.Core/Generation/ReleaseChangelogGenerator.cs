@@ -33,6 +33,12 @@ public sealed class ReleaseChangelogGenerator(
     private readonly CategorySettings _categorySettings = categorySettings ?? CategorySettings.Default;
     private readonly LabelRules _labelRules = labelRules ?? LabelRules.None;
 
+    public RenderPlan Plan(FactBase factBase, Audience audience)
+    {
+        ArgumentNullException.ThrowIfNull(factBase);
+        return GroundedFactsFactory.Build(factBase, audience, _categorySettings, _labelRules.ActionRequiredLabels);
+    }
+
     public async Task<ChangelogGenerationResult> GenerateAsync(
         FactBase factBase,
         Audience audience,
@@ -40,8 +46,7 @@ public sealed class ReleaseChangelogGenerator(
     {
         ArgumentNullException.ThrowIfNull(factBase);
 
-        RenderPlan plan = GroundedFactsFactory.Build(
-            factBase, audience, _categorySettings, _labelRules.ActionRequiredLabels);
+        RenderPlan plan = Plan(factBase, audience);
 
         // Nothing to generate: skip the model call.
         if (plan.Entries.Count == 0)

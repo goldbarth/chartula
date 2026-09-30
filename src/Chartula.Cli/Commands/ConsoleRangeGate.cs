@@ -7,6 +7,7 @@ namespace Chartula.Cli.Commands;
 /// Shows the range in the run header and asks before a large one is read.
 /// It asks twice, with no as the default, because a yes here is the one step between a
 /// forgotten <c>--since</c> and a paid run over every commit up to the tag.
+/// A preview sends nothing to the model, so it asks once, about the GitHub requests.
 /// Without a terminal nobody can answer, so it declines and names <c>--yes</c>.
 /// </summary>
 /// <param name="interactive">Whether a person can answer on <paramref name="input"/>.</param>
@@ -20,7 +21,8 @@ internal sealed class ConsoleRangeGate(TextReader input, TextWriter output, bool
 
     public void Announce(CommitRange range) => output.WriteLine($"Range:  {Describe(range)}");
 
-    public async Task<bool> ConfirmAsync(CommitRange range, CancellationToken cancellationToken = default)
+    public async Task<bool> ConfirmAsync(
+        CommitRange range, bool sendsToModel = true, CancellationToken cancellationToken = default)
     {
         int commits = range.Commits.Count;
         if (!range.StartsAtFirstCommit)
@@ -28,8 +30,9 @@ internal sealed class ConsoleRangeGate(TextReader input, TextWriter output, bool
             output.WriteLine($"{Indent}That is more than range.confirmAboveCommits ({rule.CommitThreshold}).");
         }
 
-        output.WriteLine(
-            $"{Indent}It costs {Count(commits, "GitHub request")}, and every pull request in it goes to the model once per audience.");
+        output.WriteLine(sendsToModel
+            ? $"{Indent}It costs {Count(commits, "GitHub request")}, and every pull request in it goes to the model once per audience."
+            : $"{Indent}It costs {Count(commits, "GitHub request")}. A preview sends nothing to the model.");
         output.WriteLine(
             $"{Indent}To start later, pass {ReleaseStart.SinceOption} <ref>: the commits after <ref>, up to {range.ToTag}.");
 
@@ -37,6 +40,11 @@ internal sealed class ConsoleRangeGate(TextReader input, TextWriter output, bool
         {
             output.WriteLine($"{Indent}No terminal to confirm this. Pass {YesFlag} to confirm it up front.");
             return false;
+        }
+
+        if (!sendsToModel)
+        {
+            return await AskAsync($"Read all {Count(commits, "commit")} up to {range.ToTag}? [y/N] ", cancellationToken);
         }
 
         return await AskAsync($"Render all {Count(commits, "commit")} up to {range.ToTag}? [y/N] ", cancellationToken)

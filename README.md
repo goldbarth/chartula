@@ -124,11 +124,11 @@ Run it from a checkout of your repository, which knows the release tag and the G
 
 ```bash
 cd my-repo
-chartula preview     # print the release notes for the nearest tag, write nothing
-chartula generate    # write them, and create a draft release on GitHub
+chartula preview     # show the facts of the nearest tag and what generate would send, for free
+chartula generate    # render them, write the files, and create a draft release on GitHub
 ```
 
-`preview` makes the same model calls as `generate` and costs the same.
+`preview` makes no model call, so it needs no model key and costs no tokens; `generate --no-publish` shows the prose without publishing.
 `generate` writes `CHANGELOG.md`, `release-<tag>.md`, `changelog.json` and a draft release, and keeps a local run record in `chartula-runs/`, which belongs in your `.gitignore`.
 A first tag renders every commit up to it, and Chartula asks before it reads a first tag or a large range ([What goes into a release](docs/what-goes-into-a-release.md#a-first-tag)).
 

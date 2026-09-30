@@ -24,6 +24,8 @@ public sealed class ThoroughFaithfulnessChecker(
     private readonly ThoroughFaithfulnessOptions _options =
         options ?? throw new ArgumentNullException(nameof(options));
 
+    public bool Enabled => _options.Enabled;
+
     public async Task<FaithfulnessReport> CheckAsync(
         string output,
         FactBase factBase,

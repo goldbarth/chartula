@@ -56,16 +56,6 @@ public sealed class ReleaseCommandMetricsTests
     }
 
     [Fact]
-    public async Task A_preview_run_reports_its_cost_too()
-    {
-        string text = await RunAsync(PipelineMode.Preview);
-
-        // A preview writes nothing, but it still spends tokens.
-        Assert.Contains("Preview only - nothing was written or published.", text);
-        Assert.Contains("3,840 tokens", text);
-    }
-
-    [Fact]
     public async Task A_run_that_kept_a_record_says_where_under_its_metrics()
     {
         string text = await RunAsync(PipelineMode.Generate, "chartula-runs/20260922T123015Z-v1.0.0.json");
@@ -77,7 +67,7 @@ public sealed class ReleaseCommandMetricsTests
     [Fact]
     public async Task A_run_without_a_record_names_none()
     {
-        string text = await RunAsync(PipelineMode.Preview);
+        string text = await RunAsync(PipelineMode.GenerateWithoutPublishing);
 
         Assert.DoesNotContain("Recorded in", text);
     }

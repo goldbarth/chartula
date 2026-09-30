@@ -19,23 +19,27 @@ public sealed class ChangeFilter(
     ILabelRulePolicy labelPolicy,
     ChangeFilterRules rules) : IChangeFilter
 {
-    public bool ShouldInclude(ReleaseChange change)
+    public string? DropReason(ReleaseChange change)
     {
         ArgumentNullException.ThrowIfNull(change);
 
         LabelDecision label = labelPolicy.Evaluate(change);
         if (!label.Include)
         {
-            return false;
+            return label.ExcludedBecause ?? "its labels exclude it";
         }
 
         ChangeClassification classification = categorizer.Classify(change);
         if (classification.IsBreaking)
         {
-            return true;
+            return null;
         }
 
         ChangeCategory category = label.ForcedCategory ?? classification.Category;
-        return !rules.ExcludedCategories.Contains(category);
+        return rules.ExcludedCategories.Contains(category)
+            ? $"{category} is in filter.excludeCategories"
+            : null;
     }
+
+    public bool ShouldInclude(ReleaseChange change) => DropReason(change) is null;
 }

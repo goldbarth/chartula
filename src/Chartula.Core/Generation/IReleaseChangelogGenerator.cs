@@ -10,6 +10,12 @@ namespace Chartula.Core.Generation;
 /// </summary>
 public interface IReleaseChangelogGenerator
 {
+    /// <summary>
+    /// Everything about <paramref name="audience"/>'s rendering that is decided before the
+    /// model call, without making it. A preview shows this, and an empty plan makes no call.
+    /// </summary>
+    RenderPlan Plan(FactBase factBase, Audience audience);
+
     Task<ChangelogGenerationResult> GenerateAsync(
         FactBase factBase,
         Audience audience,

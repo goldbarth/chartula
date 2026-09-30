@@ -6,7 +6,7 @@ namespace Chartula.Core.Pipeline;
 /// <summary>How a pipeline run treats its outputs.</summary>
 public enum PipelineMode
 {
-    /// <summary>Produce everything but write and publish nothing (dry run).</summary>
+    /// <summary>Establish the facts and stop before the model: no call, nothing written or published.</summary>
     Preview,
 
     /// <summary>Produce everything and write the outputs.</summary>

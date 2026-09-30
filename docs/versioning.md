@@ -87,7 +87,7 @@ It is announced ahead of time, and a migration note ships with the release (see 
 2. After it is merged, tag the merge commit on `main` and push the tag (`v0.1.0-preview.2`).
 3. `.github/workflows/release.yml` refuses a tag that does not match the csproj or is not on `main`, runs CI on the tagged commit, builds and smoke-tests each binary on its own platform (the Linux ones in a Debian slim or an Alpine container, which have none of the runner's extra libraries), and creates a draft release with the binaries, `SHA256SUMS` and the attestations.
 4. `chartula generate` for the tag writes the notes into that draft; a person reads them and publishes the release.
-5. Publishing runs `.github/workflows/install.yml` against the release: the install scripts, then a real `chartula preview`, in fresh containers of every mainstream Linux (glibc and musl, x64 and arm64), on macOS and on Windows.
+5. Publishing runs `.github/workflows/install.yml` against the release: the install scripts, then a real `chartula generate --no-publish`, in fresh containers of every mainstream Linux (glibc and musl, x64 and arm64), on macOS and on Windows.
 
 **Version string formatting**
 

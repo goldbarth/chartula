@@ -135,16 +135,4 @@ public sealed class CustomerPageOutputTests
         // The check must see every sentence the model wrote, whichever field carries it.
         Assert.Contains(thorough.Checked, text => text.Contains("A release about finding things."));
     }
-
-    [Fact]
-    public async Task A_preview_shows_the_description_it_would_publish()
-    {
-        ReleaseOutcome outcome =
-            await BuildPipeline(new CustomerRenderer("- Search is here.", "A release about finding things."))
-                .RunAsync(Request(), PipelineMode.Preview);
-
-        AudienceOutcome customer = Assert.Single(
-            outcome.Renderings, rendering => rendering.Audience == Audience.Customer);
-        Assert.Equal("A release about finding things.", customer.Description);
-    }
 }

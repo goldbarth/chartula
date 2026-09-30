@@ -15,9 +15,16 @@ namespace Chartula.Cli.Composition;
 /// </summary>
 internal static class LlmServiceCollectionExtensions
 {
+    /// <param name="services">The services.</param>
+    /// <param name="configuration">The run's configuration.</param>
+    /// <param name="requireApiKey">
+    /// Whether a missing key stops the run here. A preview makes no model call, so it
+    /// needs no key; everything else about the model is still checked.
+    /// </param>
     public static IServiceCollection AddChartulaLlm(
         this IServiceCollection services,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        bool requireApiKey = true)
     {
         // Read the provider first, because it decides the defaults of the other keys,
         // for example the default model.
@@ -38,7 +45,11 @@ internal static class LlmServiceCollectionExtensions
 
         // Check the key last: report a wrong setting in chartula.yaml first, because the
         // key may be missing only because the file is not fixed yet.
-        RequireApiKey(provider, options, configuration);
+        if (requireApiKey)
+        {
+            RequireApiKey(provider, options, configuration);
+        }
+
         services.AddSingleton(sp => CreateChatClient(provider, options, configuration));
         services.AddSingleton<IChangelogPromptBuilder, ChangelogPromptBuilder>();
         services.AddSingleton<IChangelogModel, ChatModel>();

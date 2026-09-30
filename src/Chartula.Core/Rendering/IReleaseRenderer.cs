@@ -17,6 +17,12 @@ public interface IReleaseRenderer
     /// A run that measures one audience's wording requests only that audience and
     /// pays for one model call instead of three.
     /// </summary>
+    /// <summary>
+    /// The plan of each requested audience's rendering, in the order
+    /// <see cref="RenderAsync"/> renders them, without a model call.
+    /// </summary>
+    IReadOnlyDictionary<Audience, RenderPlan> Plan(FactBase factBase, IReadOnlyCollection<Audience>? audiences = null);
+
     Task<IReadOnlyDictionary<Audience, ChangelogGenerationResult>> RenderAsync(
         FactBase factBase,
         IReadOnlyCollection<Audience>? audiences = null,

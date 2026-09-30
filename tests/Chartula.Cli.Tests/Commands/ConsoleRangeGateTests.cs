@@ -53,6 +53,18 @@ public sealed class ConsoleRangeGateTests
         Assert.Contains("Continue? [y/N]", output.ToString());
     }
 
+    // A preview sends nothing to the model, so it asks once, about the GitHub requests.
+    [Fact]
+    public async Task A_preview_asks_once_and_names_only_the_github_requests()
+    {
+        (ConsoleRangeGate gate, StringWriter output) = Gate("y\n");
+
+        Assert.True(await gate.ConfirmAsync(FirstTag, sendsToModel: false));
+        Assert.Contains("It costs 100 GitHub requests. A preview sends nothing to the model.", output.ToString());
+        Assert.Contains("Read all 100 commits up to v0.1.0? [y/N]", output.ToString());
+        Assert.DoesNotContain("Continue?", output.ToString());
+    }
+
     [Theory]
     [InlineData("y\nn\n")]
     [InlineData("n\n")]

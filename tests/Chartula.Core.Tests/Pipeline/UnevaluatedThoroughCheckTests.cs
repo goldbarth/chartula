@@ -52,7 +52,7 @@ public sealed class UnevaluatedThoroughCheckTests
 
     private Task<ReleaseOutcome> RunAsync(string providerAnswer)
         => BuildPipeline(providerAnswer).RunAsync(
-            new ReleaseRequest("v1.0.0", new RepositoryCoordinates("octo", "repo")), PipelineMode.Preview);
+            new ReleaseRequest("v1.0.0", new RepositoryCoordinates("octo", "repo")), PipelineMode.GenerateWithoutPublishing);
 
     [Fact]
     public async Task Every_audience_is_flagged_when_the_check_cannot_be_read()

@@ -1,4 +1,6 @@
+using System.Globalization;
 using System.Text;
+using Chartula.Core.Facts;
 using Chartula.Core.Llm;
 using Chartula.Core.Observability;
 using Chartula.Core.Pipeline;
@@ -9,7 +11,8 @@ namespace Chartula.Cli.Commands;
 /// <summary>
 /// Runs the release pipeline for the <c>generate</c> and <c>preview</c> commands and
 /// prints a clear summary.
-/// Preview shows what would be produced and writes nothing.
+/// Preview shows the facts generate would render and what it would send, without a
+/// model call, and writes nothing.
 /// Generate writes the outputs and reports where they went. With <c>--no-publish</c>
 /// it also lists what it left out.
 /// </summary>
@@ -25,6 +28,12 @@ internal static class ReleaseCommand
         try
         {
             ReleaseOutcome outcome = await pipeline.RunAsync(request, mode, cancellationToken);
+            if (outcome.Preview is { } preview)
+            {
+                output.Write(FormatPreview(outcome, preview));
+                return 0;
+            }
+
             output.Write(Format(outcome));
 
             // Exit with 1 when a requested audience or the publication failed.
@@ -56,13 +65,9 @@ internal static class ReleaseCommand
         StringBuilder builder = new();
         int failed = outcome.Renderings.Count(audience => !audience.Success);
         bool nothingRendered = failed > 0 && failed == outcome.Renderings.Count;
-        builder.AppendLine((outcome.Mode, nothingRendered) switch
-        {
-            (PipelineMode.Preview, false) => $"Preview changelog for {outcome.Tag}",
-            (PipelineMode.Preview, true) => $"No preview for {outcome.Tag}: no audience rendered.",
-            (_, false) => $"Generated changelog for {outcome.Tag}",
-            (_, true) => $"No changelog generated for {outcome.Tag}: no audience rendered.",
-        });
+        builder.AppendLine(nothingRendered
+            ? $"No changelog generated for {outcome.Tag}: no audience rendered."
+            : $"Generated changelog for {outcome.Tag}");
         builder.AppendLine();
 
         // Print a repeated error only once. Two audiences failing the same way, for
@@ -107,14 +112,7 @@ internal static class ReleaseCommand
             builder.AppendLine();
         }
 
-        if (outcome.Mode == PipelineMode.Preview)
-        {
-            builder.AppendLine("Preview only - nothing was written or published.");
-        }
-        else
-        {
-            AppendOutputs(builder, outcome);
-        }
+        AppendOutputs(builder, outcome);
 
         if (failed > 0 && !nothingRendered)
         {
@@ -130,6 +128,80 @@ internal static class ReleaseCommand
 
         return builder.ToString();
     }
+
+    // Each fact on two lines, the audiences below it, so a long title does not push them
+    // out of sight. Audience names are written as --audience takes them.
+    private static string FormatPreview(ReleaseOutcome outcome, ReleasePreview preview)
+    {
+        StringBuilder builder = new();
+        builder.AppendLine($"Preview of {outcome.Tag} - no model call was made, and nothing was written or published.");
+        builder.AppendLine();
+        if (outcome.Metrics.Scope is { } scope)
+        {
+            builder.AppendLine($"Release: {RunReportFormatter.FormatScope(scope)}");
+            builder.AppendLine();
+        }
+
+        if (preview.Facts.Count == 0)
+        {
+            builder.AppendLine("Facts: none");
+        }
+        else
+        {
+            builder.AppendLine($"Facts ({Number(preview.Facts.Count)}):");
+            foreach (PreviewFact fact in preview.Facts)
+            {
+                string category = fact.Fact.IsBreaking ? $"{fact.Fact.Category}, breaking" : fact.Fact.Category.ToString();
+                builder.AppendLine($"  {Reference(fact.Fact.Number, commitSha: null),-9}{category}: {fact.Fact.Title}");
+                builder.AppendLine($"           {(fact.Audiences.Count == 0 ? "in no rendering" : Names(fact.Audiences))}");
+            }
+        }
+
+        if (preview.Dropped.Count > 0)
+        {
+            builder.AppendLine($"Dropped ({Number(preview.Dropped.Count)}):");
+            foreach (DroppedChange dropped in preview.Dropped)
+            {
+                builder.AppendLine($"  {Reference(dropped.Change.Number, dropped.Change.CommitSha),-9}{dropped.Change.Title}");
+                builder.AppendLine($"           {dropped.Reason}");
+            }
+        }
+
+        builder.AppendLine();
+        builder.AppendLine(preview.ModelCalls == 1
+            ? "generate would make 1 model call:"
+            : $"generate would make {Number(preview.ModelCalls)} model calls:");
+        foreach (AudiencePreview audience in preview.Audiences)
+        {
+            string name = Name(audience.Audience).PadRight(10);
+            if (audience.Entries == 0)
+            {
+                builder.AppendLine($"  {name}nothing to render, no call");
+                continue;
+            }
+
+            string check = preview.ThoroughCheck ? ", then 1 thorough check" : string.Empty;
+            builder.AppendLine($"  {name}1 rephrasing call, {Number(audience.PromptCharacters)} characters of prompt{check}");
+        }
+
+        if (preview.ThoroughCheck && preview.ModelCalls > 0)
+        {
+            builder.AppendLine("  A thorough check sends the rendering along with the facts, so its size is known only once the rendering is.");
+        }
+
+        return builder.ToString();
+    }
+
+    // A pull request by its number, a commit by its short hash. A fact keeps no hash,
+    // so a fact from a commit shows only that it is one.
+    private static string Reference(int? number, string? commitSha)
+        => number is { } n ? $"#{n}" : commitSha is { Length: >= 7 } sha ? sha[..7] : "commit";
+
+    private static string Names(IEnumerable<Audience> audiences) => string.Join(", ", audiences.Select(Name));
+
+    private static string Name(Audience audience) => audience.ToString().ToLowerInvariant();
+
+    private static string Number(long value) => value.ToString("N0", CultureInfo.InvariantCulture);
 
     /// <summary>
     /// Appends <paramref name="text"/> after <paramref name="prefix"/>, with further lines

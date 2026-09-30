@@ -11,6 +11,12 @@ namespace Chartula.Core.Faithfulness;
 /// </summary>
 public interface IThoroughFaithfulnessChecker
 {
+    /// <summary>
+    /// Whether a rendering with text to check costs a model call. A preview counts the
+    /// calls generate would make from this.
+    /// </summary>
+    bool Enabled => true;
+
     Task<FaithfulnessReport> CheckAsync(
         string output,
         FactBase factBase,

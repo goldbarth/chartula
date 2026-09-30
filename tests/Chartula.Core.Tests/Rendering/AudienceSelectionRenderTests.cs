@@ -17,6 +17,8 @@ public sealed class AudienceSelectionRenderTests
     {
         public List<Audience> Rendered { get; } = [];
 
+        public RenderPlan Plan(FactBase factBase, Audience audience) => new(new GroundedFacts([]), []);
+
         public Task<ChangelogGenerationResult> GenerateAsync(
             FactBase factBase, Audience audience, CancellationToken cancellationToken = default)
         {

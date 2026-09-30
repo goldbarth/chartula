@@ -2,7 +2,7 @@ name: Install
 
 # Installs and runs Chartula the way a user does: install.sh in fresh containers of
 # every mainstream Linux and on macOS, install.ps1 on Windows, then a real
-# `chartula preview` (see .github/scripts/check-install.sh).
+# `chartula generate --no-publish` (see .github/scripts/check-install.sh).
 # A pull request installs the binaries it builds. A published release installs itself,
 # so a release that cannot be installed or does not run shows up at once.
 on:
@@ -187,11 +187,11 @@ jobs:
           # Chartula writes its notices to stderr. Under the runner's 'Stop', Windows
           # PowerShell would turn the first stderr line into a terminating error.
           $ErrorActionPreference = 'Continue'
-          $output = chartula preview --tag v0.1.0-preview.1 --since 4bc57c8 2>&1 | Out-String
+          $output = chartula generate --no-publish --tag v0.1.0-preview.1 --since 4bc57c8 2>&1 | Out-String
           $code = $LASTEXITCODE
           $output
           if ($code -ne 1 -or $output -notmatch 'answered 401 Unauthorized') {
-            Write-Output "::error::chartula preview exited with $code and did not report the model endpoint's 401."
+            Write-Output "::error::chartula generate --no-publish exited with $code and did not report the model endpoint's 401."
             exit 1
           }
           Write-Output 'Passed: git, the GitHub API and the model endpoint were all reached.'

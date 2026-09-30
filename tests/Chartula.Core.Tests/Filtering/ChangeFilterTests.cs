@@ -26,6 +26,20 @@ public sealed class ChangeFilterTests
         Assert.False(Filter().ShouldInclude(Change(title)));
     }
 
+    // A preview names the setting that dropped a change, so it can be checked before a run is paid for.
+    [Fact]
+    public void A_dropped_change_names_the_setting_that_dropped_it()
+    {
+        Assert.Equal("Internal is in filter.excludeCategories", Filter().DropReason(Change("chore: bump deps")));
+        Assert.Equal(
+            "its label 'skip' is in labels.exclude",
+            Filter(new LabelRules(excludedLabels: ["skip"])).DropReason(Change("feat: add search", labels: "skip")));
+        Assert.Equal(
+            "it has no label, and labels.onlyIncludeLabeled is on",
+            Filter(new LabelRules(onlyIncludeLabeled: true)).DropReason(Change("feat: add search")));
+        Assert.Null(Filter().DropReason(Change("feat: add search")));
+    }
+
     [Theory]
     [InlineData("feat: add search")]
     [InlineData("fix: crash on start")]

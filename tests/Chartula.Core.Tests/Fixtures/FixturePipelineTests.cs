@@ -6,6 +6,7 @@ using Chartula.Core.Generation;
 using Chartula.Core.Llm;
 using Chartula.Core.Observability;
 using Chartula.Core.Pipeline;
+using Chartula.Core.Prompting;
 using Chartula.Core.PullRequests;
 using Chartula.Core.Rendering;
 using Chartula.Core.Review;
@@ -46,6 +47,51 @@ public sealed partial class FixturePipelineTests
 
     private static ReleaseRequest Request(FactBase factBase)
         => new(factBase.Tag, new RepositoryCoordinates("owner", "repo"));
+
+    // #259: a preview shows what generate would send and makes no call. The model throws
+    // if reached, so "a preview costs no tokens" is enforced, not assumed.
+    [Theory]
+    [MemberData(nameof(FactBaseFixture.AllAsTheoryData), MemberType = typeof(FactBaseFixture))]
+    public async Task A_preview_of_every_fixture_never_reaches_the_model(string fixture)
+    {
+        FactBase factBase = FactBaseFixture.Load(fixture);
+        IReadOnlyCollection<Audience> audiences = [Audience.Technical, Audience.Customer];
+
+        ReleaseOutcome outcome = await BuildPipeline(factBase, new UnreachableChangelogModel(), new RunMetrics())
+            .RunAsync(Request(factBase) with { Audiences = audiences }, PipelineMode.Preview);
+
+        ReleasePreview preview = Assert.IsType<ReleasePreview>(outcome.Preview);
+        Assert.Equal(factBase.Changes, preview.Facts.Select(fact => fact.Fact));
+        Assert.Equal(audiences, preview.Audiences.Select(audience => audience.Audience));
+        foreach (AudiencePreview audience in preview.Audiences)
+        {
+            // The same plan generate renders from, measured with the prompt it would send.
+            RenderPlan plan = new ReleaseChangelogGenerator(new UnreachableChangelogModel(), new ChangelogFormatter())
+                .Plan(factBase, audience.Audience);
+            Assert.Equal(plan.Entries.Count, audience.Entries);
+            Assert.Equal(preview.Facts.Count(fact => fact.Audiences.Contains(audience.Audience)), audience.Entries);
+            if (plan.Entries.Count > 0)
+            {
+                ChangelogPrompt prompt = new ChangelogPromptBuilder().BuildRephrasePrompt(plan.Facts, audience.Audience);
+                Assert.Equal(prompt.System.Length + prompt.User.Length, audience.PromptCharacters);
+            }
+        }
+
+        Assert.Equal(preview.Audiences.Count(audience => audience.Entries > 0) * 2, preview.ModelCalls);
+    }
+
+    [Fact]
+    public async Task A_preview_without_the_thorough_check_counts_one_call_per_rendering()
+    {
+        FactBase factBase = FactBaseFixture.Load(FactBaseFixture.Typical);
+
+        ReleaseOutcome outcome = await BuildPipeline(factBase, new UnreachableChangelogModel(), new RunMetrics(), thoroughEnabled: false)
+            .RunAsync(Request(factBase), PipelineMode.Preview);
+
+        ReleasePreview preview = Assert.IsType<ReleasePreview>(outcome.Preview);
+        Assert.False(preview.ThoroughCheck);
+        Assert.Equal(preview.Audiences.Count(audience => audience.Entries > 0), preview.ModelCalls);
+    }
 
     [Theory]
     [MemberData(nameof(FactBaseFixture.AllAsTheoryData), MemberType = typeof(FactBaseFixture))]
@@ -95,7 +141,7 @@ public sealed partial class FixturePipelineTests
         FactBase factBase = FactBaseFixture.Load(FactBaseFixture.Typical);
 
         ReleaseOutcome outcome = await BuildPipeline(factBase, new InventingChangelogModel(), new RunMetrics())
-            .RunAsync(Request(factBase), PipelineMode.Preview);
+            .RunAsync(Request(factBase), PipelineMode.GenerateWithoutPublishing);
 
         // Proves the fixtures exercise the checks for real, not just clean input.
         Assert.All(outcome.Renderings, rendering => Assert.Contains(
@@ -111,7 +157,7 @@ public sealed partial class FixturePipelineTests
         EchoingChangelogModel model = new();
 
         await BuildPipeline(factBase, model, new RunMetrics())
-            .RunAsync(Request(factBase), PipelineMode.Preview);
+            .RunAsync(Request(factBase), PipelineMode.GenerateWithoutPublishing);
 
         // The composer adds references after the model has written. A reference the
         // check cannot find in its facts reads to it as an invented one, on every entry.
@@ -132,7 +178,7 @@ public sealed partial class FixturePipelineTests
         WritingChangelogModel model = new("Write a release-<tag>.md page, named `release-<tag>.md` on disk.");
 
         ReleaseOutcome outcome = await BuildPipeline(factBase, model, new RunMetrics())
-            .RunAsync(Request(factBase), PipelineMode.Preview);
+            .RunAsync(Request(factBase), PipelineMode.GenerateWithoutPublishing);
 
         // GitHub drops an unknown HTML tag, so an unescaped <tag> renders as "release-.md".
         // Inside a code span the brackets are literal already and must stay untouched.
@@ -164,7 +210,7 @@ public sealed partial class FixturePipelineTests
             new SpyReleaseNotesWriter(),
             metrics);
 
-        ReleaseOutcome outcome = await pipeline.RunAsync(Request(factBase), PipelineMode.Preview);
+        ReleaseOutcome outcome = await pipeline.RunAsync(Request(factBase), PipelineMode.GenerateWithoutPublishing);
 
         Assert.All(outcome.Renderings, rendering => Assert.True(rendering.Success));
         Assert.Equal(3, outcome.Metrics.Thorough.Runs);
@@ -178,7 +224,7 @@ public sealed partial class FixturePipelineTests
         EchoingChangelogModel model = new();
 
         ReleaseOutcome outcome = await BuildPipeline(factBase, model, new RunMetrics())
-            .RunAsync(Request(factBase), PipelineMode.Preview);
+            .RunAsync(Request(factBase), PipelineMode.GenerateWithoutPublishing);
 
         AudienceOutcome customer = outcome.Renderings.Single(r => r.Audience == Audience.Customer);
         Assert.True(customer.Success);
@@ -191,7 +237,7 @@ public sealed partial class FixturePipelineTests
         FactBase factBase = FactBaseFixture.Load(FactBaseFixture.Breaking);
 
         ReleaseOutcome outcome = await BuildPipeline(factBase, new EchoingChangelogModel(), new RunMetrics())
-            .RunAsync(Request(factBase), PipelineMode.Preview);
+            .RunAsync(Request(factBase), PipelineMode.GenerateWithoutPublishing);
 
         string technical = outcome.Renderings.Single(r => r.Audience == Audience.Technical).Text!;
         string firstEntry = technical.Split('\n').First(line => line.StartsWith("- ", StringComparison.Ordinal));

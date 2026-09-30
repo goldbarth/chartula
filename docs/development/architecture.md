@@ -45,7 +45,8 @@ The model never decides what happened, so it cannot invent a change; it can only
 The thorough check is a second model pass and can be turned off.
 Whether it earns its tokens is a question the run itself answers - see [Run metrics](../run-metrics.md).
 
-**Preview and generate are the same run.** They differ in the last step only: preview writes nothing.
+**Preview stops where the facts are complete.** Every fact decision is made before the model, so a preview shows exactly what generate renders from, what it drops and why, and what it would send, without a model call (#259).
+Generate goes on from the same point: it renders, checks and writes.
 Writing and publishing are separable there too: `--no-publish` writes `changelog.json`, `CHANGELOG.md` and the customer page and leaves the release notes untouched, because producing a record is not the same act as announcing a release.
 
 **Every audience that has a written shape gets a file.** The technical rendering feeds `CHANGELOG.md` and the release notes; the customer rendering is written as a page of its own, `release-<tag>.md`, in the published serialisation - front matter, then the entries.

@@ -55,6 +55,9 @@ internal sealed class StubPullRequestReader : IReleasePullRequestReader
 
 internal sealed class StubRenderer : IReleaseRenderer
 {
+    public IReadOnlyDictionary<Audience, RenderPlan> Plan(FactBase factBase, IReadOnlyCollection<Audience>? audiences = null)
+        => StubPlans.Empty(audiences);
+
     /// <summary>The audiences the pipeline asked for, or null when it asked for all.</summary>
     public IReadOnlyCollection<Audience>? Asked { get; private set; }
 
@@ -187,6 +190,9 @@ internal sealed class SpyCustomerPageWriter : ICustomerPageWriter
 /// <summary>Renders all three audiences, failing the ones named.</summary>
 internal sealed class FailingRenderer(params Audience[] failing) : IReleaseRenderer
 {
+    public IReadOnlyDictionary<Audience, RenderPlan> Plan(FactBase factBase, IReadOnlyCollection<Audience>? audiences = null)
+        => StubPlans.Empty(audiences);
+
     public Task<IReadOnlyDictionary<Audience, ChangelogGenerationResult>> RenderAsync(
         FactBase factBase,
         IReadOnlyCollection<Audience>? audiences = null,
@@ -201,6 +207,9 @@ internal sealed class FailingRenderer(params Audience[] failing) : IReleaseRende
 
 internal sealed class CustomerRenderer(string text, string? description = null) : IReleaseRenderer
 {
+    public IReadOnlyDictionary<Audience, RenderPlan> Plan(FactBase factBase, IReadOnlyCollection<Audience>? audiences = null)
+        => StubPlans.Empty(audiences);
+
     public Task<IReadOnlyDictionary<Audience, ChangelogGenerationResult>> RenderAsync(
         FactBase factBase,
         IReadOnlyCollection<Audience>? audiences = null,
@@ -236,4 +245,13 @@ internal sealed class SpyRunRecordWriter : IRunRecordWriter
         Records.Add(record);
         return Task.FromResult("chartula-runs/run.json");
     }
+}
+
+/// <summary>Plans for stub renderers: one empty plan per requested audience, in render order.</summary>
+internal static class StubPlans
+{
+    public static IReadOnlyDictionary<Audience, RenderPlan> Empty(IReadOnlyCollection<Audience>? audiences)
+        => new[] { Audience.Technical, Audience.Customer, Audience.Product }
+            .Where(audience => audiences is null || audiences.Contains(audience))
+            .ToDictionary(audience => audience, _ => new RenderPlan(new GroundedFacts([]), []));
 }

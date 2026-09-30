@@ -21,6 +21,13 @@ public sealed class ReleaseRenderer(IReleaseChangelogGenerator generator) : IRel
     private readonly IReleaseChangelogGenerator _generator =
         generator ?? throw new ArgumentNullException(nameof(generator));
 
+    public IReadOnlyDictionary<Audience, RenderPlan> Plan(
+        FactBase factBase, IReadOnlyCollection<Audience>? audiences = null)
+    {
+        ArgumentNullException.ThrowIfNull(factBase);
+        return Wanted(audiences).ToDictionary(audience => audience, audience => _generator.Plan(factBase, audience));
+    }
+
     public async Task<IReadOnlyDictionary<Audience, ChangelogGenerationResult>> RenderAsync(
         FactBase factBase,
         IReadOnlyCollection<Audience>? audiences = null,
@@ -28,16 +35,15 @@ public sealed class ReleaseRenderer(IReleaseChangelogGenerator generator) : IRel
     {
         ArgumentNullException.ThrowIfNull(factBase);
 
-        Audience[] wanted = audiences is null
-            ? AllAudiences
-            : [.. AllAudiences.Where(audiences.Contains)];
-
         Dictionary<Audience, ChangelogGenerationResult> renderings = [];
-        foreach (Audience audience in wanted)
+        foreach (Audience audience in Wanted(audiences))
         {
             renderings[audience] = await _generator.GenerateAsync(factBase, audience, cancellationToken);
         }
 
         return renderings;
     }
+
+    private static Audience[] Wanted(IReadOnlyCollection<Audience>? audiences)
+        => audiences is null ? AllAudiences : [.. AllAudiences.Where(audiences.Contains)];
 }
