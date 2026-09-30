@@ -12,7 +12,8 @@ public sealed class FilterOptions
 
     /// <summary>
     /// Category names to exclude. <c>null</c> keeps the default; an explicit
-    /// (possibly empty) list overrides it.
+    /// (possibly empty) list overrides it. The binder leaves an empty list <c>null</c>,
+    /// so <c>AddChartulaFilter</c> reads it from the section.
     /// </summary>
     public List<string>? ExcludeCategories { get; init; }
 }

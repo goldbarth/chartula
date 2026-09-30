@@ -17,6 +17,14 @@ namespace Chartula.Cli.Configuration;
 /// </summary>
 internal static partial class ChartulaYamlReader
 {
+    /// <summary>
+    /// The value an empty list is read as. An empty list has no items to become indexed
+    /// keys, and without a key of its own it would read as no setting, so [] would keep
+    /// the default it was written to replace. An empty value would not do: configuration
+    /// layers pass an empty value on as no value.
+    /// </summary>
+    public const string EmptyList = "[]";
+
     private const string Indentation =
         "Check the indentation: the keys of one section line up, indented under it with spaces.";
 
@@ -245,6 +253,9 @@ internal static partial class ChartulaYamlReader
                         : $"'{path}' takes a single value, not a list.");
                     break;
 
+                case YamlValueKind.List when node is YamlSequenceNode { Children.Count: 0 }:
+                    Pairs.Add(new(configKey, EmptyList));
+                    break;
                 case YamlValueKind.List when node is YamlSequenceNode list:
                     for (int i = 0; i < list.Children.Count; i++)
                     {

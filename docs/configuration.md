@@ -142,7 +142,7 @@ Label names are yours, such as `visibility:internal`, `no-changelog` or `chore`,
 
 | Key | Default | Valid values | Description |
 | --- | --- | --- | --- |
-| `excludeCategories` | `[Internal]` | a list of categories | Changes in these categories are dropped, unless they are breaking. A list replaces the default. An empty list `[]` is read as no list and keeps the default. |
+| `excludeCategories` | `[Internal]` | a list of categories | Changes in these categories are dropped, unless they are breaking. A list replaces the default. An empty list, `[]`, drops no category, so internal work stays in. |
 
 ### `factBase`
 

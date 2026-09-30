@@ -18,10 +18,15 @@ internal static class FilterServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        FilterOptions options = configuration.GetSection(FilterOptions.SectionName).Get<FilterOptions>()
-                                ?? new FilterOptions();
+        IConfigurationSection section = configuration.GetSection(FilterOptions.SectionName);
+        FilterOptions options = section.Get<FilterOptions>() ?? new FilterOptions();
 
-        services.AddSingleton(ChangeFilterRules.From(options.ExcludeCategories));
+        // The binder reads an empty list as no list at all, which keeps the default.
+        // Only this list's default differs from empty, so only here does [] need reading.
+        List<string>? excluded = options.ExcludeCategories
+                                 ?? (section[nameof(FilterOptions.ExcludeCategories)] == ChartulaYamlReader.EmptyList ? [] : null);
+
+        services.AddSingleton(ChangeFilterRules.From(excluded));
         services.AddSingleton<IChangeFilter, ChangeFilter>();
         return services;
     }

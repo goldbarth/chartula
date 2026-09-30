@@ -25,6 +25,16 @@ public sealed class ChartulaYamlConfigurationTests
         Assert.Equal("Documentation", config["Chartula:Filter:ExcludeCategories:1"]);
     }
 
+    // #277: an empty list has no items to become indexed keys. With no key at all,
+    // excludeCategories: [] read as no setting.
+    [Fact]
+    public void An_empty_list_is_kept_as_a_value_of_its_own()
+    {
+        IConfiguration config = FromYaml("filter:\n  excludeCategories: []\n");
+
+        Assert.Equal("[]", config["Chartula:Filter:ExcludeCategories"]);
+    }
+
     [Fact]
     public void With_no_config_options_bind_to_their_defaults()
     {
