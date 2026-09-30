@@ -56,12 +56,47 @@ public sealed class CommandLineArgumentsTests
     }
 
     [Fact]
-    public void Preview_stays_a_preview_with_or_without_the_flag()
-    {
-        // Preview publishes nothing anyway, so --no-publish changes nothing.
-        Assert.Equal(PipelineMode.Preview, Program.ParseMode("preview", ["preview", "--tag", "v1.0.0"]));
-        Assert.Equal(PipelineMode.Preview, Program.ParseMode("preview", ["preview", "--no-publish"]));
-    }
+    public void Preview_is_a_preview()
+        => Assert.Equal(PipelineMode.Preview, Program.ParseMode("preview", ["preview", "--tag", "v1.0.0"]));
+
+    // #300: the readers look options up by name and pass over the rest, so the command
+    // line is checked first, and refused when any part of it cannot be read as meant.
+    [Theory]
+    [InlineData("generate", "--tag", "v1.0.0", "--repo", "octo/repo", "--since", "v0.9.0", "--audience", "technical,customer", "--yes", "--no-publish")]
+    [InlineData("preview", "--tag", "v1.0.0", "--audience", "technical", "--audience", "customer", "--yes")]
+    [InlineData("doctor", "--tag", "v1.0.0", "--repo", "octo/repo")]
+    [InlineData("generate")]
+    public void Every_option_a_command_takes_passes(params string[] args)
+        => Assert.Null(CommandLineArguments.Check(args));
+
+    [Theory]
+    [InlineData("Unknown option '--tga' for preview. Did you mean --tag?", "preview", "--tga", "v1.0.0")]
+    [InlineData("Unknown option '--nopublish' for generate. Did you mean --no-publish?", "generate", "--nopublish")]
+    [InlineData("Unknown option '--verbose' for generate.", "generate", "--verbose")]
+    [InlineData("--tag needs a value: --tag <release-tag>.", "preview", "--tag")]
+    [InlineData("--tag needs a value: --tag <release-tag>.", "preview", "--tag", "--audience", "technical")]
+    [InlineData("--since needs a value: --since <ref>.", "generate", "--since", "--no-publish")]
+    [InlineData("--tag is given twice. Pass it once.", "generate", "--tag", "v1", "--tag", "v2")]
+    [InlineData("--no-publish is an option of generate, not of preview.", "preview", "--no-publish")]
+    [InlineData("--since is an option of preview and generate, not of doctor.", "doctor", "--since", "v1")]
+    [InlineData("Write --tag v1.0.0, with a space, not --tag=v1.0.0.", "generate", "--tag=v1.0.0")]
+    [InlineData("Unexpected argument 'v1.0.0'. generate takes options only, such as --tag <release-tag>.", "generate", "v1.0.0")]
+    public void An_argument_that_cannot_be_read_as_meant_is_refused_with_the_fix(string expected, params string[] args)
+        => Assert.Equal(expected, CommandLineArguments.Check(args));
+
+    // #282 removed it; ignoring it would run a range the caller did not ask for.
+    [Fact]
+    public void The_removed_whole_history_flag_names_what_replaced_it()
+        => Assert.StartsWith(
+            "--whole-history is gone: a first tag renders every commit up to it without a flag.",
+            CommandLineArguments.Check(["generate", "--whole-history"]));
+
+    [Theory]
+    [InlineData("-h", true)]
+    [InlineData("--help", true)]
+    [InlineData("help", false)]
+    public void Help_is_asked_for_with_a_flag(string arg, bool help)
+        => Assert.Equal(help, CommandLineArguments.IsHelp(arg));
 
     [Fact]
     public void An_unknown_command_has_no_mode()
