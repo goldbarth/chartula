@@ -15,6 +15,7 @@ Chartula - multi-audience, grounded changelog generator.
 Usage:
   chartula preview  [options]   Show what would be produced (dry run).
   chartula generate [options]   Produce and write the outputs.
+  chartula --version            Print the version and its commit.
 
 Run it from a checkout of the repository the release belongs to.
 
@@ -35,6 +36,8 @@ Options:
 ```
 
 `-h`, `--help` and `help` all print this text, and so does running `chartula` with no arguments at all.
+`chartula --version` prints the version and the commit it was built from, such as `chartula 0.1.0-preview.3+7620e6d...`, and exits with status 0.
+It is the same text a run records as `toolVersion` in `changelog.json`, so a report and a run file name the same build.
 An unrecognized first word is not silently ignored - it prints `Unknown command '<word>'.`, the same usage text, and exits with status 1.
 
 Two commands exist: `preview` and `generate`.
