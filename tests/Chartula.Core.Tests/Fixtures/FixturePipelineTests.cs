@@ -30,12 +30,13 @@ public sealed partial class FixturePipelineTests
         FactBase factBase,
         IChangelogModel model,
         IRunMetrics metrics,
-        bool thoroughEnabled = true)
+        bool thoroughEnabled = true,
+        IRunProgress? progress = null)
         => new(
             new StubCommitReader(),
             new StubPullRequestReader(),
             new FixtureFactBaseBuilder(factBase),
-            new ReleaseRenderer(new ReleaseChangelogGenerator(model, new ChangelogFormatter())),
+            new ReleaseRenderer(new ReleaseChangelogGenerator(model, new ChangelogFormatter()), progress),
             new RuleBasedFaithfulnessChecker(),
             new ThoroughFaithfulnessChecker(model, new ThoroughFaithfulnessOptions(thoroughEnabled)),
             new ReviewCoordinator(new AutoApproveReviewer(), new ReviewOptions(Enabled: false)),
@@ -43,7 +44,8 @@ public sealed partial class FixturePipelineTests
             new SpyMarkdownWriter(),
             new SpyCustomerPageWriter(),
             new SpyReleaseNotesWriter(),
-            metrics);
+            metrics,
+            progress: progress);
 
     private static ReleaseRequest Request(FactBase factBase)
         => new(factBase.Tag, new RepositoryCoordinates("owner", "repo"));
@@ -91,6 +93,37 @@ public sealed partial class FixturePipelineTests
         ReleasePreview preview = Assert.IsType<ReleasePreview>(outcome.Preview);
         Assert.False(preview.ThoroughCheck);
         Assert.Equal(preview.Audiences.Count(audience => audience.Entries > 0), preview.ModelCalls);
+    }
+
+    // #283: a run shows its steps as they start, in the order it takes them, and ends the
+    // last one before the result is printed.
+    [Fact]
+    public async Task A_run_shows_each_step_as_it_starts_and_ends_the_last()
+    {
+        FactBase factBase = FactBaseFixture.Load(FactBaseFixture.Typical);
+        RecordingRunProgress progress = new();
+
+        await BuildPipeline(factBase, new EchoingChangelogModel(), new RunMetrics(), progress: progress)
+            .RunAsync(Request(factBase) with { Audiences = [Audience.Technical, Audience.Customer] }, PipelineMode.GenerateWithoutPublishing);
+
+        Assert.Equal(
+            [
+                "ReadingPullRequests of 1", "Rendering Technical", "Rendering Customer",
+                "Checking Technical", "Checking Customer", "complete",
+            ],
+            progress.Events);
+    }
+
+    [Fact]
+    public async Task A_preview_shows_only_reading_the_pull_requests()
+    {
+        FactBase factBase = FactBaseFixture.Load(FactBaseFixture.Typical);
+        RecordingRunProgress progress = new();
+
+        await BuildPipeline(factBase, new UnreachableChangelogModel(), new RunMetrics(), progress: progress)
+            .RunAsync(Request(factBase), PipelineMode.Preview);
+
+        Assert.Equal(["ReadingPullRequests of 1", "complete"], progress.Events);
     }
 
     [Theory]

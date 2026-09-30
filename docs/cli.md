@@ -286,6 +286,30 @@ An endpoint that cannot be reached at all is named as configured, with the trans
 
 A failed call of the thorough check does not fail the audience: the rendering is kept and flagged as `The thorough check could not be evaluated`, with the same explanation, and names `faithfulness.model` when the check asks a model of its own.
 
+## While a run works
+
+After the header, a run shows each step as it starts, with its count where it has one and the time it has taken so far:
+
+```console
+$ chartula generate --tag v1.3.0
+...
+Range:  the commits after v1.2.0, up to v1.3.0 (100 commits)
+Reading pull requests   100/100 commits  4 s
+Rendering technical                      12 s
+Rendering customer                       14 s
+Checking technical                       3 s
+Checking customer                        5 s
+```
+
+In a terminal the current line updates in place, and its time keeps counting while a model call runs.
+So a slow step still shows it is working, and a run that is about to finish is not aborted and paid for again.
+The steps are the ones the run takes: one GitHub request per commit, then one rendering per audience, then the checks of each rendering; a `preview` shows the first step only.
+There is no estimate of the time remaining, because how long a model call takes is not known before it returns.
+
+The steps go to stderr, like the header, so a changelog redirected from stdout stays clean.
+Without a terminal, as in CI, each step is one plain line as it starts - `Reading pull requests (100 commits)`, `Rendering technical` - with no control characters, so a job log stays readable.
+When a step fails, it is the last line shown, and the error follows below it.
+
 ## After a run
 
 Every `generate` run ends with a report of what it did and what it cost in tokens.

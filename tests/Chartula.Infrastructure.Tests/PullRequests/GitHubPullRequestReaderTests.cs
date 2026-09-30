@@ -1,5 +1,6 @@
 using System.Net;
 using Chartula.Core.History;
+using Chartula.Core.Observability;
 using Chartula.Core.PullRequests;
 using Chartula.Infrastructure.PullRequests;
 
@@ -53,6 +54,34 @@ public sealed class GitHubPullRequestReaderTests
         Assert.Equal(
             "https://api.github.com/repos/octo/repo/commits/abc123/pulls",
             handler.Requests.Single().ToString());
+    }
+
+    // #283: one request per commit, counted off as the run shows its steps.
+    [Fact]
+    public async Task Counts_off_each_commit_as_its_request_returns()
+    {
+        StubHttpMessageHandler handler = StubHttpMessageHandler.ReturningJson(TwoPullsJson);
+        CountingProgress progress = new();
+        GitHubPullRequestReader reader = new(StubHttpMessageHandler.ClientFor(handler), "GITHUB_TOKEN", progress);
+
+        await reader.GetMergedPullRequestsAsync(Repo, RangeWith("sha1", "sha2", "sha3"));
+
+        Assert.Equal([1, 2, 3], progress.Done);
+    }
+
+    private sealed class CountingProgress : IRunProgress
+    {
+        public List<int> Done { get; } = [];
+
+        public void Begin(ProgressStep step, int? total = null)
+        {
+        }
+
+        public void Advance(int done) => Done.Add(done);
+
+        public void Complete()
+        {
+        }
     }
 
     [Fact]

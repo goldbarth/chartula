@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using Chartula.Core.History;
+using Chartula.Core.Observability;
 using Chartula.Core.PullRequests;
 using Chartula.Infrastructure.GitHub;
 
@@ -17,8 +18,14 @@ namespace Chartula.Infrastructure.PullRequests;
 /// The environment variable the token is read from. Errors name it, so the message
 /// points at what the caller can change.
 /// </param>
-public sealed class GitHubPullRequestReader(HttpClient httpClient, string tokenVariable) : IReleasePullRequestReader
+/// <param name="httpClient">The client for the GitHub API.</param>
+/// <param name="tokenVariable">The variable the token is read from, named in errors.</param>
+/// <param name="progress">Counts off the commits, one request each, as the run shows its steps.</param>
+public sealed class GitHubPullRequestReader(HttpClient httpClient, string tokenVariable, IRunProgress? progress = null)
+    : IReleasePullRequestReader
 {
+    private readonly IRunProgress _progress = progress ?? NullRunProgress.Instance;
+
     public async Task<IReadOnlyList<PullRequestInfo>> GetMergedPullRequestsAsync(
         RepositoryCoordinates repository,
         CommitRange range,
@@ -34,10 +41,12 @@ public sealed class GitHubPullRequestReader(HttpClient httpClient, string tokenV
         Dictionary<int, List<string>> commitsByPull = [];
 
         bool first = true;
+        int done = 0;
         foreach (CommitInfo commit in range.Commits)
         {
             GitHubPullRequestDto[] pulls = await GetPullsForCommitAsync(repository, commit.Sha, first, cancellationToken);
             first = false;
+            _progress.Advance(++done);
 
             foreach (GitHubPullRequestDto dto in pulls)
             {

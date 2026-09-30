@@ -3,6 +3,7 @@ using Chartula.Core.Curation;
 using Chartula.Core.Facts;
 using Chartula.Core.Faithfulness;
 using Chartula.Core.Filtering;
+using Chartula.Core.History;
 using Chartula.Core.Labeling;
 using Chartula.Core.Llm;
 using Chartula.Core.Pipeline;
@@ -199,5 +200,39 @@ public sealed class ReleasePipelineTests
         // The outcome must show the skipped release notes. Otherwise "wrote two of three
         // outputs" looks like a complete run.
         Assert.Equal("Release notes for v1.0.0 in octo/repo", Assert.Single(outcome.SkippedOutputs));
+    }
+
+    // #283: a step that fails stays the last one shown, so the error that follows can be placed.
+    [Fact]
+    public async Task A_step_that_fails_is_still_ended_before_the_error_surfaces()
+    {
+        ConventionalCommitCategorizer categorizer = new();
+        LabelRulePolicy labelPolicy = new(LabelRules.None);
+        ChangeFilter filter = new(categorizer, labelPolicy, ChangeFilterRules.Default);
+        RecordingRunProgress progress = new();
+        ReleasePipeline pipeline = new(
+            new StubCommitReader(),
+            new FailingPullRequestReader(),
+            new FactBaseBuilder(new ReleaseChangeResolver(), filter, categorizer, labelPolicy, FactBaseDepth.TitleAndDescription),
+            new StubRenderer(),
+            new RuleBasedFaithfulnessChecker(),
+            new PassThroughThoroughChecker(),
+            new ReviewCoordinator(new AutoApproveReviewer(), new ReviewOptions(Enabled: false)),
+            _json,
+            _markdown,
+            _customerPage,
+            _releaseNotes,
+            progress: progress);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => pipeline.RunAsync(Request(), PipelineMode.GenerateWithoutPublishing));
+
+        Assert.Equal(["ReadingPullRequests of 1", "complete"], progress.Events);
+    }
+
+    private sealed class FailingPullRequestReader : IReleasePullRequestReader
+    {
+        public Task<IReadOnlyList<PullRequestInfo>> GetMergedPullRequestsAsync(
+            RepositoryCoordinates repository, CommitRange range, CancellationToken cancellationToken = default)
+            => throw new InvalidOperationException("Could not reach the GitHub API.");
     }
 }

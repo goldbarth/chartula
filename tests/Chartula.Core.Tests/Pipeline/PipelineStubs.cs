@@ -255,3 +255,16 @@ internal static class StubPlans
             .Where(audience => audiences is null || audiences.Contains(audience))
             .ToDictionary(audience => audience, _ => new RenderPlan(new GroundedFacts([]), []));
 }
+
+/// <summary>Records each step a run shows, as text a test can compare.</summary>
+internal sealed class RecordingRunProgress : IRunProgress
+{
+    public List<string> Events { get; } = [];
+
+    public void Begin(ProgressStep step, int? total = null)
+        => Events.Add($"{step.Kind}{(step.Audience is { } audience ? $" {audience}" : "")}{(total is { } count ? $" of {count}" : "")}");
+
+    public void Advance(int done) => Events.Add($"advance {done}");
+
+    public void Complete() => Events.Add("complete");
+}
