@@ -31,7 +31,7 @@ internal sealed class FailureDescribingChatClient(IChatClient inner, LlmOptions 
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            throw new InvalidOperationException(Describe(options?.ModelId, capture.Last, ex), ex);
+            throw new InvalidOperationException(Describe(options?.ModelId, capture, ex), ex);
         }
     }
 
@@ -40,13 +40,22 @@ internal sealed class FailureDescribingChatClient(IChatClient inner, LlmOptions 
     /// the endpoint's own message.
     /// Two audiences that fail the same way get the same text, so the output can print it once.
     /// </summary>
-    private string Describe(string? requestedModel, ModelErrorResponse? error, Exception exception)
+    private string Describe(string? requestedModel, ModelErrorResponseHandler.Capture call, Exception exception)
     {
         // The thorough check sends a model of its own only when it differs from llm.model.
         string model = requestedModel ?? llm.Model;
         string modelKey = model == llm.Model ? "llm.model" : "faithfulness.model";
 
-        if (error is null)
+        if (call.Answer is { } answer)
+        {
+            // The endpoint answered, and the SDK failed on what it sent, e.g. a finish_reason
+            // it does not know (#263). Pointing at the network would send the user the wrong way.
+            return $"{llm.Provider} at {answer.Endpoint} answered {answer.Status} for model '{model}', " +
+                   $"but the answer could not be read: {UnreadableMessage(exception)}\n" +
+                   "The endpoint is reachable, but its answer is not in the form the provider's SDK expects.";
+        }
+
+        if (call.Last is not { } error)
         {
             // No answer at all: refused connection, DNS, TLS or a timeout. Name the
             // configured endpoint, because no request got through to name another.
@@ -81,6 +90,27 @@ internal sealed class FailureDescribingChatClient(IChatClient inner, LlmOptions 
         }
 
         return exception.Message;
+    }
+
+    // An SDK that meets a value it does not know throws with the value on a line of its
+    // own, after the parameter name, which means nothing to the user. Name the value instead.
+    private static string UnreadableMessage(Exception exception)
+    {
+        for (Exception? current = exception; current is not null; current = current.InnerException)
+        {
+            if (current is ArgumentOutOfRangeException { ActualValue: { } value } unknown)
+            {
+                string text = unknown.Message.Split('\n')[0].Trim();
+                if (unknown.ParamName is { } name)
+                {
+                    text = text.Replace($" (Parameter '{name}')", "", StringComparison.Ordinal);
+                }
+
+                return $"{text.TrimEnd('.')} '{value}'.";
+            }
+        }
+
+        return ModelErrorResponse.SingleLine(exception.Message) ?? exception.GetType().Name;
     }
 
     private string? Meaning(HttpStatusCode status, string model, string modelKey)
