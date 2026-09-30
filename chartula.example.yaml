@@ -35,7 +35,7 @@
 #     Fix: Bug Fix                   # the name the model is given, not a heading
 #   breakingProminent: true          # product rendering only
 
-# The checks: docs/run-metrics.md
+# The checks: docs/costs-and-checks.md
 # faithfulness:
 #   thorough: true
 #   model: claude-sonnet-5           # defaults to llm.model

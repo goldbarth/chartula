@@ -1,7 +1,7 @@
 # Run record
 
 Every `generate` run keeps what it did and what it cost in a file of its own, `chartula-runs/<time>-<tag>.json`, next to the other outputs.
-It holds the [run metrics](run-metrics.md) as the summary prints them, the settings the run was made with, how each audience came out, and the complete facts the run rendered from.
+It holds the figures of the [run summary](costs-and-checks.md#reading-the-run-summary), the settings the run was made with, how each audience came out, and the complete facts the run rendered from.
 
 Comparing runs - a prompt change, another model, thinking on or off - then means comparing two files, not copying numbers out of a terminal.
 A figure written down later is a figure from memory; the record is the run's own.
@@ -123,10 +123,10 @@ Flags from several runs group by `pullRequest`, so a finding that repeats is fou
 
 Times are seconds with millisecond precision.
 `cachedInputTokens` is the part of `inputTokens` served from the provider's cache, `reasoningTokens` the part of `outputTokens` spent reasoning.
-`retries`, `cachedInputTokens` and `reasoningTokens` are left out when they could not be counted or were not reported, rather than written as zero - see [When a run was slow](run-metrics.md#when-a-run-was-slow).
+`retries`, `cachedInputTokens` and `reasoningTokens` are left out when they could not be counted or were not reported, rather than written as zero - see [When a run was slow](costs-and-checks.md#when-a-run-was-slow).
 A record written before these fields existed reads with zeros for them and no `retries`.
 
-The numbers mean what they mean in the [run summary](run-metrics.md#what-the-numbers-mean).
+The numbers mean what they mean in the [run summary](costs-and-checks.md#reading-the-run-summary), and [Comparing runs](costs-and-checks.md#comparing-runs) shows how to read them across records with `jq`.
 `callsWithoutUsage` above zero makes the token counts a lower bound.
 Both operations are always present, with zeros when they made no call, so any two records compare field by field.
 

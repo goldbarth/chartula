@@ -313,6 +313,6 @@ When a step fails, it is the last line shown, and the error follows below it.
 ## After a run
 
 Every `generate` run ends with a report of what it did and what it cost in tokens.
-See [Run metrics](run-metrics.md) for how to read it.
+See [Costs and checks](costs-and-checks.md#reading-the-run-summary) for how to read it.
 A `preview` spends no tokens, so it ends with what `generate` would send instead.
 `generate` keeps the same report in a [run record](run-record.md) and names the file below it.

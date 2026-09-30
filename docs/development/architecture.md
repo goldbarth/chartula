@@ -43,7 +43,7 @@ The model never decides what happened, so it cannot invent a change; it can only
 
 **Two checks, different costs.** The rule-based check is pure and free and always runs.
 The thorough check is a second model pass and can be turned off.
-Whether it earns its tokens is a question the run itself answers - see [Run metrics](../run-metrics.md).
+Whether it earns its tokens is a question the run itself answers - see [Costs and checks](../costs-and-checks.md#does-the-thorough-check-earn-its-tokens).
 
 **Preview stops where the facts are complete.** Every fact decision is made before the model, so a preview shows exactly what generate renders from, what it drops and why, and what it would send, without a model call (#259).
 Generate goes on from the same point: it renders, checks and writes.

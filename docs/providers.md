@@ -122,16 +122,13 @@ Model:  openai-compatible at http://localhost:11434/v1, key from OPENAI_API_KEY
 LM Studio serves the same dialect at `http://localhost:1234/v1`.
 The header names `OPENAI_API_KEY` although no key is set, because a local server does not read the `Authorization` header and the run needs none.
 
-No local model has passed the [model comparison](#choosing-a-model) yet.
-`qwen3:14b` failed there as the rephrasing model: in seven attempts, Chartula once rejected its text for an entry about a fact it was not sent, and once it copied an example from Chartula's instructions into the customer page.
-As the checker, `qwen3:14b` swung between 0 and 28 flags over three runs, and most of its flags said in their own reasoning that the passage was supported.
-`granite4.1-guardian:8b` failed as the checker too: it put its thinking log where the reason for a flag belongs.
+No local model has passed the [model comparison](costs-and-checks.md#local-models) yet: `qwen3:14b` failed there as the rephrasing model and as the checker, and `granite4.1-guardian:8b` as the checker.
 Until a local model passes, read a local run's output line by line before you publish anything from it.
 
 ### The context window is the first thing to get right
 
 Chartula sends the whole fact base in one call.
-For a release of 18 changes with their descriptions, one call is around 11,000 tokens, and it grows with the release.
+For a release of 18 changes with their descriptions, one call was around 11,000 tokens in the [comparison of 2026-09-25](costs-and-checks.md#the-model-comparison-of-2026-09-25), and it grows with the release.
 
 A local server does not refuse a prompt that is too long for its context window.
 It cuts the prompt and answers from what is left.
@@ -154,7 +151,7 @@ $ ollama create my-changelog-model -f Modelfile
 Chartula catches a cut prompt when the endpoint reports how many tokens it read.
 A prompt's length in characters sets a lower bound on its token count, and a reported count far below that bound fails the call with a message that points here.
 An endpoint that reports the uncut length whatever it processed leaves nothing to catch.
-In the [run metrics](run-metrics.md), an input-token count that is identical across runs, or that sits exactly on a power of two, is the window's limit rather than your prompt, and the sign to raise it.
+In the [run summary](costs-and-checks.md#reading-the-run-summary), an input-token count that is identical across runs, or that sits exactly on a power of two, is the window's limit rather than your prompt, and the sign to raise it.
 
 ### What to watch: the thorough check
 
@@ -185,14 +182,8 @@ Anthropic's model ids are complete as written, so do not append a date suffix.
 Every model in the table supports the structured output the thorough check needs.
 Prices change, so look them up at the source: [Anthropic](https://www.anthropic.com/pricing#api), [OpenAI](https://openai.com/api/pricing/).
 
-The comparison of 2026-09-25 ran one release, `goldbarth/ServiceDeskLite` `v1.9.0` with 18 changes, three times per setting ([evaluation](https://github.com/goldbarth/chartula-evals/blob/main/sweeps/servicedesklite-v1.9.0-evaluation.md)).
-What it supports:
-
-- **Rephrasing:** `gpt-6-luna` with `thinking: disabled` had the best ratio of cost to flags, at about half the cost of `gpt-6-sol`.
-- **Checking:** `gpt-6-sol` is the better checker. Some of `gpt-6-luna`'s flags said in their own reasoning that the passage was supported, and none of `gpt-6-sol`'s did.
-- **Thinking** lowered the flags at no level, and raised cost and duration: `gpt-6-sol` at `high` cost 62% more than at `disabled` and took four times as long.
-
-Three runs of one release cannot tell a one-flag difference from noise, and a flag count says nothing about how well a text reads.
+The [model comparison of 2026-09-25](costs-and-checks.md#the-model-comparison-of-2026-09-25) has the figures behind the notes, what they cannot tell, and the recommendations drawn from them.
+In short, `gpt-6-luna` rendered at the lowest cost, `gpt-6-sol` was the steadier checker, and thinking lowered no flag while it raised cost and duration.
 Read the output of a cheaper setup before you adopt it, because changelog quality is what the saving could cost.
 The comparison runs for the Claude models follow.
 

@@ -173,11 +173,11 @@ The rule-based check always runs and has no settings.
 | `thinking` | `llm.thinking` | the values of `llm.thinking` | How much the thorough check's model reasons. |
 
 Rendering and checking are different jobs, one writing prose and one comparing a finished text with the facts, so they can run on different models.
-The run metrics show each one's tokens and time on its own line, so the trade-off can be read from a run.
+The run summary shows each one's tokens and time on its own line, so the trade-off can be read from a run.
 A combination the Claude model is known to reject is refused when the configuration is read, naming the key it came from (`faithfulness.thinking`, or `llm.thinking` when the check inherits it).
 The run header names the check's model when it differs from the rendering's, and the [provenance](changelog-json.md#provenance) records it either way.
 
-[Run metrics](run-metrics.md) shows how to decide whether the thorough check earns its tokens.
+[Costs and checks](costs-and-checks.md#does-the-thorough-check-earn-its-tokens) shows how to decide whether the thorough check earns its tokens.
 
 ### `review`
 
