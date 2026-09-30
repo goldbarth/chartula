@@ -57,9 +57,11 @@ public sealed class ReleasePipeline(
     IRunRecordWriter? runRecordWriter = null,
     IReleaseRangeGate? rangeGate = null,
     LargeRangeRule? largeRangeRule = null,
-    IChangelogPromptBuilder? promptBuilder = null) : IReleasePipeline
+    IChangelogPromptBuilder? promptBuilder = null,
+    IRunProgress? progress = null) : IReleasePipeline
 {
     private readonly IRunMetrics _metrics = metrics ?? NullRunMetrics.Instance;
+    private readonly IRunProgress _progress = progress ?? NullRunProgress.Instance;
     private readonly LargeRangeRule _largeRangeRule = largeRangeRule ?? LargeRangeRule.Default;
     private readonly IChangelogPromptBuilder _promptBuilder = promptBuilder ?? new ChangelogPromptBuilder();
 
@@ -69,6 +71,22 @@ public sealed class ReleasePipeline(
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
+        try
+        {
+            return await RunStepsAsync(request, mode, cancellationToken);
+        }
+        finally
+        {
+            // Also when a step failed: it stays the last line shown, above the error.
+            _progress.Complete();
+        }
+    }
+
+    private async Task<ReleaseOutcome> RunStepsAsync(
+        ReleaseRequest request,
+        PipelineMode mode,
+        CancellationToken cancellationToken)
+    {
         long started = Stopwatch.GetTimestamp();
 
         CommitRange range = await commitReader.ReadReleaseCommitsAsync(request.Tag, request.Since, cancellationToken);
@@ -91,6 +109,8 @@ public sealed class ReleasePipeline(
             await EnsureCanPublishAsync(request, cancellationToken);
         }
 
+        // One request per commit, which the reader counts off.
+        _progress.Begin(new ProgressStep(RunStep.ReadingPullRequests), range.Commits.Count);
         IReadOnlyList<PullRequestInfo> pullRequests =
             await pullRequestReader.GetMergedPullRequestsAsync(request.Repository, range, cancellationToken);
         CuratedRelease curated = factBaseBuilder.Curate(range, pullRequests);
@@ -133,6 +153,7 @@ public sealed class ReleasePipeline(
 
             // Check the description together with its text. The model wrote it from the
             // same facts, so its claims need the same check as any other.
+            _progress.Begin(new ProgressStep(RunStep.Checking, audience));
             IReadOnlyList<FaithfulnessFlag> flags =
                 await CollectFlagsAsync(Checkable(result), factBase, cancellationToken);
 

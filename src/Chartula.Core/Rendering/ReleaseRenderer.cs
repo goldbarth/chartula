@@ -1,6 +1,7 @@
 using Chartula.Core.Facts;
 using Chartula.Core.Generation;
 using Chartula.Core.Llm;
+using Chartula.Core.Observability;
 
 namespace Chartula.Core.Rendering;
 
@@ -13,8 +14,12 @@ namespace Chartula.Core.Rendering;
 /// same audiences make the same calls in the same order, however the request lists them.
 /// </para>
 /// </summary>
-public sealed class ReleaseRenderer(IReleaseChangelogGenerator generator) : IReleaseRenderer
+/// <param name="generator">Renders one audience.</param>
+/// <param name="progress">Shows each audience as its rendering starts.</param>
+public sealed class ReleaseRenderer(IReleaseChangelogGenerator generator, IRunProgress? progress = null) : IReleaseRenderer
 {
+    private readonly IRunProgress _progress = progress ?? NullRunProgress.Instance;
+
     private static readonly Audience[] AllAudiences =
         [Audience.Technical, Audience.Customer, Audience.Product];
 
@@ -38,6 +43,7 @@ public sealed class ReleaseRenderer(IReleaseChangelogGenerator generator) : IRel
         Dictionary<Audience, ChangelogGenerationResult> renderings = [];
         foreach (Audience audience in Wanted(audiences))
         {
+            _progress.Begin(new ProgressStep(RunStep.Rendering, audience));
             renderings[audience] = await _generator.GenerateAsync(factBase, audience, cancellationToken);
         }
 

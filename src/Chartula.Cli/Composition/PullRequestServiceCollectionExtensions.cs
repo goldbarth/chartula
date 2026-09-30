@@ -1,4 +1,5 @@
 using Chartula.Cli.Configuration;
+using Chartula.Core.Observability;
 using Chartula.Core.PullRequests;
 using Chartula.Infrastructure.PullRequests;
 using Microsoft.Extensions.Configuration;
@@ -20,10 +21,11 @@ internal static class PullRequestServiceCollectionExtensions
         GitHubOptions options = GitHubHttpClientFactory.ReadOptions(configuration);
 
         services.AddSingleton(options);
-        services.AddSingleton<IReleasePullRequestReader>(_ =>
+        services.AddSingleton<IReleasePullRequestReader>(sp =>
             new GitHubPullRequestReader(
                 GitHubHttpClientFactory.Create(options, configuration),
-                options.TokenEnvironmentVariable));
+                options.TokenEnvironmentVariable,
+                sp.GetService<IRunProgress>()));
         return services;
     }
 }
