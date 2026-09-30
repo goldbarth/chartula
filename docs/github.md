@@ -85,16 +85,14 @@ Error: GitHub's rate limit is spent (403 Forbidden). A token in GITHUB_TOKEN rai
 Point Chartula at your server's API, in the environment only:
 
 ```console
-$ export Chartula__GitHub__ApiBaseUrl=https://github.example.com/api/v3/
+$ export Chartula__GitHub__ApiBaseUrl=https://github.example.com/api/v3
 $ chartula preview
 ...
 GitHub: https://github.example.com/api/v3/, token from GITHUB_TOKEN
 ```
 
-Keep the trailing slash.
-Chartula appends each request's path to this URL, and without the slash the last segment is replaced, so requests go to `/api/repos/...` instead of `/api/v3/repos/...` and fail with `404`.
-
-The header line every run prints names the API URL and the token variable in effect, so a setting inherited from a shell profile or a CI runner shows before the first request.
+The header line every run prints names the API URL the requests go to and the token variable in effect, so a setting inherited from a shell profile or a CI runner shows before the first request.
+Chartula adds a missing trailing slash, so the URL works as GitHub's documentation writes it.
 
 ## What `generate` writes to GitHub
 

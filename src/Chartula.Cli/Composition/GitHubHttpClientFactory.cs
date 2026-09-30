@@ -18,7 +18,11 @@ internal static class GitHubHttpClientFactory
 
         return new GitHubOptions
         {
-            ApiBaseUrl = apiBaseUrl,
+            // The adapters request relative paths such as repos/..., and a relative path
+            // replaces the last segment of a base without a trailing slash: .../api/v3
+            // would send every request to .../api/repos/.... GitHub's own documentation
+            // writes an Enterprise URL without the slash, so it is added, not required.
+            ApiBaseUrl = apiBaseUrl.EndsWith('/') ? apiBaseUrl : apiBaseUrl + "/",
             TokenEnvironmentVariable =
                 configuration[$"{GitHubOptions.SectionName}:TokenEnvironmentVariable"] ?? "GITHUB_TOKEN",
         };
