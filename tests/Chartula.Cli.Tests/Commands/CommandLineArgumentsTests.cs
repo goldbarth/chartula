@@ -38,6 +38,15 @@ public sealed class CommandLineArgumentsTests
         => Assert.Contains("--no-publish", Program.Usage);
 
     [Fact]
+    public void The_help_text_says_the_flag_leaves_out_only_the_release_notes()
+    {
+        // It once named two of the files, which read as if the others were not written.
+        string line = Program.Usage.Split('\n').Single(l => l.TrimStart().StartsWith("--no-publish", StringComparison.Ordinal));
+        Assert.Contains("every file", line);
+        Assert.Contains("no GitHub release notes", line);
+    }
+
+    [Fact]
     public void Generate_publishes_unless_it_is_told_not_to()
     {
         Assert.Equal(
