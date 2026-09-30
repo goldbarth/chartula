@@ -1,6 +1,7 @@
 # Run metrics
 
-Every `preview` and `generate` run ends with a summary of what it did and what it cost.
+Every `generate` run ends with a summary of what it did and what it cost.
+A `preview` makes no model call; it shows the `Release` line below and what `generate` would send.
 It is printed unconditionally: measuring a run should never be something you have to remember to turn on.
 A `generate` run also keeps it in a local file, so runs can be compared after their output is gone - see [Run record](run-record.md).
 

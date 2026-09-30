@@ -53,7 +53,7 @@ public sealed class ReleasePipelineMetricsTests
         RunMetrics metrics = new();
 
         ReleaseOutcome outcome = await BuildPipeline(new PassThroughThoroughChecker(), metrics)
-            .RunAsync(Request(), PipelineMode.Preview);
+            .RunAsync(Request(), PipelineMode.GenerateWithoutPublishing);
 
         // Three audiences are rendered, so each check runs three times.
         Assert.Equal(3, outcome.Renderings.Count);
@@ -67,7 +67,7 @@ public sealed class ReleasePipelineMetricsTests
         RunMetrics metrics = new();
 
         ReleaseOutcome outcome = await BuildPipeline(new FindingThoroughChecker("invented a claim"), metrics)
-            .RunAsync(Request(), PipelineMode.Preview);
+            .RunAsync(Request(), PipelineMode.GenerateWithoutPublishing);
 
         // The rule-based check finds nothing here, so every thorough finding counts as thorough-only.
         Assert.Equal(0, outcome.Metrics.RuleBased.Flags);
@@ -82,7 +82,7 @@ public sealed class ReleasePipelineMetricsTests
         RunMetrics metrics = new();
 
         ReleaseOutcome outcome = await BuildPipeline(new FindingThoroughChecker("invented a claim"), metrics)
-            .RunAsync(Request(), PipelineMode.Preview);
+            .RunAsync(Request(), PipelineMode.GenerateWithoutPublishing);
 
         // Metrics must not change what the run produces.
         Assert.All(outcome.Renderings, rendering => Assert.Contains(new FaithfulnessFlag("invented a claim"), rendering.Flags));
@@ -93,7 +93,7 @@ public sealed class ReleasePipelineMetricsTests
     {
         ReleasePipeline pipeline = BuildPipeline(new PassThroughThoroughChecker(), NullRunMetrics.Instance);
 
-        ReleaseOutcome outcome = await pipeline.RunAsync(Request(), PipelineMode.Preview);
+        ReleaseOutcome outcome = await pipeline.RunAsync(Request(), PipelineMode.GenerateWithoutPublishing);
 
         Assert.Equal(RunReport.Empty, outcome.Metrics);
     }
@@ -105,7 +105,7 @@ public sealed class ReleasePipelineMetricsTests
         RunMetrics metrics = new();
 
         ReleaseOutcome outcome = await BuildPipeline(new PassThroughThoroughChecker(), metrics)
-            .RunAsync(Request(), PipelineMode.Preview);
+            .RunAsync(Request(), PipelineMode.GenerateWithoutPublishing);
 
         Assert.NotNull(outcome.Metrics.Duration);
     }
@@ -118,7 +118,7 @@ public sealed class ReleasePipelineMetricsTests
         RunMetrics metrics = new();
 
         ReleaseOutcome outcome = await BuildPipeline(new PassThroughThoroughChecker(), metrics)
-            .RunAsync(Request(), PipelineMode.Preview);
+            .RunAsync(Request(), PipelineMode.GenerateWithoutPublishing);
 
         // One commit, one pull request, one fact described as "Adds search.".
         Assert.Equal(new ReleaseScope(1, 1, 1, 1, 12), outcome.Metrics.Scope);

@@ -20,4 +20,9 @@ namespace Chartula.Core.Labeling;
 /// <c>null</c> is deliberately distinct from <c>false</c>: without a label the
 /// category-based fallback decides.
 /// </param>
-public sealed record LabelDecision(bool Include, ChangeCategory? ForcedCategory, bool? UserVisible = null);
+/// <param name="ExcludedBecause">
+/// Why a change is not included, naming the setting that decided it, so a preview can
+/// say it. <c>null</c> when the change is included.
+/// </param>
+public sealed record LabelDecision(
+    bool Include, ChangeCategory? ForcedCategory, bool? UserVisible = null, string? ExcludedBecause = null);

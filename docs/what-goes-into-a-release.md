@@ -27,7 +27,7 @@ Before any GitHub request or model call, the run header names the range with bot
 A first tag, or a range with more commits than [`range.confirmAboveCommits`](configuration.md#range) (200 by default), is confirmed twice before it is read:
 
 ```console
-$ chartula preview --tag v0.1.0
+$ chartula generate --tag v0.1.0
 ...
 Range:  every commit up to v0.1.0 (69 commits), the first tag
         It costs 69 GitHub requests, and every pull request in it goes to the model once per audience.
@@ -37,6 +37,7 @@ This sends every pull request in the range to the model. Continue? [y/N] y
 ```
 
 Anything but `y` stops the run with nothing spent.
+A `preview` sends nothing to the model, so it names the GitHub requests only and asks once: `Read all 69 commits up to v0.1.0? [y/N]`.
 Without a terminal, as in CI, nobody can answer, so the run stops with the same text, and `--yes` confirms the range up front.
 So a job stops once on its first tag, and every later tag runs on its own unless it is larger than the threshold.
 

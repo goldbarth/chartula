@@ -11,4 +11,8 @@ namespace Chartula.Core.Facts;
 public interface IFactBaseBuilder
 {
     FactBase Build(CommitRange range, IReadOnlyList<PullRequestInfo> pullRequests);
+
+    /// <summary>The fact base together with the changes dropped from it, for a preview.</summary>
+    CuratedRelease Curate(CommitRange range, IReadOnlyList<PullRequestInfo> pullRequests)
+        => new(Build(range, pullRequests), []);
 }

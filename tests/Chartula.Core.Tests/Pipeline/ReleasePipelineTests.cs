@@ -106,18 +106,25 @@ public sealed class ReleasePipelineTests
         Assert.Equal(0, _customerPage.Calls);
     }
 
-    [Theory]
-    [InlineData(PipelineMode.Preview)]
-    [InlineData(PipelineMode.GenerateWithoutPublishing)]
-    public async Task A_run_that_does_not_publish_does_not_ask_whether_it_may(PipelineMode mode)
+    [Fact]
+    public async Task A_run_that_does_not_publish_does_not_ask_whether_it_may()
     {
         StubRenderer renderer = new();
 
         ReleaseOutcome outcome = await BuildPipeline(renderer, new ReadOnlyTokenReleaseNotesWriter("refused"))
-            .RunAsync(Request(), mode);
+            .RunAsync(Request(), PipelineMode.GenerateWithoutPublishing);
 
         Assert.Equal(1, renderer.Calls);
         Assert.All(outcome.Renderings, rendering => Assert.True(rendering.Success));
+    }
+
+    [Fact]
+    public async Task A_preview_does_not_ask_whether_it_may_publish()
+    {
+        ReleaseOutcome outcome = await BuildPipeline(new StubRenderer(), new ReadOnlyTokenReleaseNotesWriter("refused"))
+            .RunAsync(Request(), PipelineMode.Preview);
+
+        Assert.NotNull(outcome.Preview);
     }
 
     [Fact]
@@ -141,14 +148,19 @@ public sealed class ReleasePipelineTests
         Assert.Equal(0, _releaseNotes.Calls);
     }
 
+    // #259: a preview that cost as much as generate gave nothing generate --no-publish
+    // did not. Every fact is decided before the model, so a preview stops there.
     [Fact]
-    public async Task Preview_still_produces_all_three_audience_renderings()
+    public async Task Preview_makes_no_model_call_and_shows_the_facts_instead()
     {
-        ReleaseOutcome outcome = await BuildPipeline().RunAsync(Request(), PipelineMode.Preview);
+        StubRenderer renderer = new();
 
-        Assert.Equal(3, outcome.Renderings.Count);
-        Assert.All(outcome.Renderings, r => Assert.True(r.Success));
-        Assert.Contains(outcome.Renderings, r => r.Audience == Audience.Customer && r.Text == "- Search is here.");
+        ReleaseOutcome outcome = await BuildPipeline(renderer).RunAsync(Request(), PipelineMode.Preview);
+
+        Assert.Equal(0, renderer.Calls);
+        Assert.Empty(outcome.Renderings);
+        ReleasePreview preview = Assert.IsType<ReleasePreview>(outcome.Preview);
+        Assert.Equal("feat: add search", Assert.Single(preview.Facts).Fact.Title);
     }
 
     [Fact]

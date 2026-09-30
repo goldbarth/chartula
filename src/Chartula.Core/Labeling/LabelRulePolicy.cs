@@ -23,14 +23,16 @@ public sealed class LabelRulePolicy(LabelRules rules) : ILabelRulePolicy
 
         IReadOnlyList<string> labels = change.Labels;
 
-        if (labels.Any(_rules.ExcludedLabels.Contains))
+        if (labels.FirstOrDefault(_rules.ExcludedLabels.Contains) is { } excluded)
         {
-            return new LabelDecision(Include: false, ForcedCategory: null);
+            return new LabelDecision(
+                Include: false, ForcedCategory: null, ExcludedBecause: $"its label '{excluded}' is in labels.exclude");
         }
 
         if (_rules.OnlyIncludeLabeled && labels.Count == 0)
         {
-            return new LabelDecision(Include: false, ForcedCategory: null);
+            return new LabelDecision(
+                Include: false, ForcedCategory: null, ExcludedBecause: "it has no label, and labels.onlyIncludeLabeled is on");
         }
 
         ChangeCategory? forced = null;

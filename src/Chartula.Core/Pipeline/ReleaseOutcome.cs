@@ -19,8 +19,8 @@ public sealed record AudienceOutcome(
     /// <summary>
     /// The one-sentence summary of the release written together with the text, or
     /// <c>null</c> when the audience has none.
-    /// A preview that shows the text must show this summary too. Otherwise the preview
-    /// could not vouch for the first line of the page.
+    /// Output that shows the text must show this summary too. Otherwise it could not
+    /// vouch for the first line of the page.
     /// </summary>
     public string? Description { get; init; }
 }
@@ -53,6 +53,12 @@ public sealed record ReleaseOutcome(
     /// are paid for, so failing the whole run would hide both behind one error.
     /// </summary>
     public string? PublishFailure { get; init; }
+
+    /// <summary>
+    /// What a preview found, or <c>null</c> for a run that renders. A preview makes no
+    /// model call, so its <see cref="Renderings"/> are empty and this carries its result.
+    /// </summary>
+    public ReleasePreview? Preview { get; init; }
 
     /// <summary>
     /// Where the run record was written. <c>null</c> when none was written: a preview

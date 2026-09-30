@@ -112,7 +112,7 @@ public static class GroundedFactsFactory
     // The technical and product renderings follow the category-based default. A label
     // can widen that default but not narrow it: an internal label says users cannot
     // meet a change, not that developers or product managers cannot.
-    private static bool Reaches(ChangeFact change, Audience audience) => audience switch
+    public static bool Reaches(ChangeFact change, Audience audience) => audience switch
     {
         Audience.Customer => change.IsUserVisible,
         Audience.Technical or Audience.Product =>

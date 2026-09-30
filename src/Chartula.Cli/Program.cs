@@ -11,8 +11,8 @@ namespace Chartula.Cli;
 
 /// <summary>
 /// Entry point for the Chartula CLI. Dispatches the <c>generate</c> and <c>preview</c>
-/// commands. Both run the same pipeline. Preview writes nothing, and
-/// <c>--no-publish</c> limits generate to the local files.
+/// commands. Both run the same pipeline. Preview stops before the model and writes
+/// nothing, and <c>--no-publish</c> limits generate to the local files.
 /// </summary>
 internal static class Program
 {
@@ -56,7 +56,7 @@ internal static class Program
         try
         {
             configuration = BuildConfiguration();
-            services = BuildServices(configuration);
+            services = BuildServices(configuration, mode.Value);
         }
         catch (InvalidOperationException ex)
         {
@@ -111,11 +111,11 @@ internal static class Program
     private static IConfiguration BuildConfiguration()
         => ChartulaConfiguration.Build(Directory.GetCurrentDirectory());
 
-    private static ServiceProvider BuildServices(IConfiguration configuration)
+    private static ServiceProvider BuildServices(IConfiguration configuration, PipelineMode mode)
     {
         return new ServiceCollection()
             .AddChartulaObservability()
-            .AddChartulaLlm(configuration)
+            .AddChartulaLlm(configuration, requireApiKey: mode != PipelineMode.Preview)
             .AddChartulaHistory()
             .AddChartulaPullRequests(configuration)
             .AddChartulaCuration()
@@ -167,7 +167,7 @@ internal static class Program
         Chartula - multi-audience, grounded changelog generator.
 
         Usage:
-          chartula preview  [options]   Show what would be produced (dry run).
+          chartula preview  [options]   Show the facts and what generate would send. Free.
           chartula generate [options]   Produce and write the outputs.
           chartula --version            Print the version and its commit.
 

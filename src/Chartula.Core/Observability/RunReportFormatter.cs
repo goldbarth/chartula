@@ -10,6 +10,13 @@ namespace Chartula.Core.Observability;
 /// </summary>
 public static class RunReportFormatter
 {
+    /// <summary>The release line of the summary, for a preview that shows no other metric.</summary>
+    public static string FormatScope(ReleaseScope scope)
+    {
+        ArgumentNullException.ThrowIfNull(scope);
+        return Scope(scope);
+    }
+
     public static string Format(RunReport report)
     {
         ArgumentNullException.ThrowIfNull(report);

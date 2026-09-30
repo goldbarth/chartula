@@ -13,7 +13,7 @@ $ chartula --help
 Chartula - multi-audience, grounded changelog generator.
 
 Usage:
-  chartula preview  [options]   Show what would be produced (dry run).
+  chartula preview  [options]   Show the facts and what generate would send. Free.
   chartula generate [options]   Produce and write the outputs.
   chartula --version            Print the version and its commit.
 
@@ -41,7 +41,7 @@ It is the same text a run records as `toolVersion` in `changelog.json`, so a rep
 An unrecognized first word is not silently ignored - it prints `Unknown command '<word>'.`, the same usage text, and exits with status 1.
 
 Two commands exist: `preview` and `generate`.
-Both run the identical pipeline against the same facts; they differ only in what happens at the very end.
+Both establish the same facts the same way; `preview` stops there, and `generate` goes on to the model.
 
 ## `chartula preview`
 
@@ -49,10 +49,38 @@ Both run the identical pipeline against the same facts; they differ only in what
 $ chartula preview [--tag <release-tag>] [--repo <owner/name>]
 ```
 
-Runs the full pipeline - curation, filtering, labeling, categorization, then one rephrasing and one faithfulness check per audience - and prints the result to stdout.
+Reads the range and its pull requests, and decides every fact the way `generate` does - curation, filtering, labeling, categorization, visibility.
+Then it stops, before the model, and prints what `generate` would render from and what it would send:
+
+```console
+$ chartula preview --tag v1.3.0
+Preview of v1.3.0 - no model call was made, and nothing was written or published.
+
+Release: 14 commits, 10 pull requests, 9 facts (7 with a description, 22,512 characters)
+
+Facts (9):
+  #412     Feature: feat(cli): add --since
+           technical, customer
+  #415     Documentation: docs: rewrite the install guide
+           in no rendering
+  ...
+Dropped (1):
+  #409     chore: bump dependencies
+           Internal is in filter.excludeCategories
+
+generate would make 4 model calls:
+  technical 1 rephrasing call, 24,310 characters of prompt, then 1 thorough check
+  customer  1 rephrasing call, 27,905 characters of prompt, then 1 thorough check
+  A thorough check sends the rendering along with the facts, so its size is known only once the rendering is.
+```
+
+Each fact names the audiences whose rendering carries it, and each dropped change the setting that dropped it.
+The prompt is counted in characters, exactly as it would be sent; how many tokens that is depends on the model's tokenizer.
+
+A preview makes no model call, so it costs no tokens and needs no model key, only the GitHub requests.
 Nothing is written to disk and nothing is published.
-Use it to see what a release would look like, or to try a configuration change without touching `CHANGELOG.md`.
-It makes the same model calls as `generate` and costs the same.
+Use it to check a release, or a change to labels, filters or categories, before a run is paid for.
+To see the prose, run `generate --no-publish`: it writes the files and publishes nothing.
 
 ## `chartula generate`
 
@@ -60,7 +88,7 @@ It makes the same model calls as `generate` and costs the same.
 $ chartula generate [--tag <release-tag>] [--repo <owner/name>]
 ```
 
-Runs the same pipeline as `preview` and then writes the outputs:
+Establishes the same facts as `preview`, renders each audience with the model, checks the renderings, and writes the outputs:
 
 - **`CHANGELOG.md`** - the technical rendering, prepended to whatever is already there.
 - **`release-<tag>.md`** - the customer rendering as a standalone page, with YAML front matter (title, date, one-sentence description) ahead of the entries.
@@ -161,11 +189,12 @@ Three environment variables carry credentials, and none is ever read from `chart
 | `OPENAI_API_KEY` | The model that rephrases the facts, with `llm.provider: openai-compatible`, when the endpoint needs a key. `Chartula__Llm__ApiKeyEnvironmentVariable` names another variable instead. |
 | `GITHUB_TOKEN` | Reading pull requests and writing release notes. [GitHub](github.md) covers its permissions and the rate limit. |
 
-A run without `ANTHROPIC_API_KEY` is refused before it reads anything, naming the variable, because every audience would fail on it.
+A `generate` run without `ANTHROPIC_API_KEY` is refused before it reads anything, naming the variable, because every audience would fail on it.
 The `openai-compatible` provider is exempt: a local server needs no key.
+`preview` makes no model call and needs no key.
 
 ```console
-$ chartula preview
+$ chartula generate
 Configuration error: No Anthropic API key found in ANTHROPIC_API_KEY. Set one with: export ANTHROPIC_API_KEY=<your key> (create one at https://console.anthropic.com/settings/keys). For an endpoint that needs no key, set llm.provider to openai-compatible.
 ```
 
@@ -212,6 +241,7 @@ A failed call of the thorough check does not fail the audience: the rendering is
 
 ## After a run
 
-Every run - `preview` or `generate` - ends with a report of what it did and what it cost in tokens.
+Every `generate` run ends with a report of what it did and what it cost in tokens.
 See [Run metrics](run-metrics.md) for how to read it.
+A `preview` spends no tokens, so it ends with what `generate` would send instead.
 `generate` keeps the same report in a [run record](run-record.md) and names the file below it.

@@ -17,5 +17,11 @@ public interface IReleaseRangeGate
     /// Asks whether a range <see cref="LargeRangeRule"/> applies to is read.
     /// Returns false when the operator declines or there is no one to ask.
     /// </summary>
-    Task<bool> ConfirmAsync(CommitRange range, CancellationToken cancellationToken = default);
+    /// <param name="range">The range.</param>
+    /// <param name="sendsToModel">
+    /// Whether the run sends the range's changes to the model. A preview does not, so it
+    /// costs GitHub requests only, and the question says so.
+    /// </param>
+    /// <param name="cancellationToken">Cancels the question.</param>
+    Task<bool> ConfirmAsync(CommitRange range, bool sendsToModel = true, CancellationToken cancellationToken = default);
 }

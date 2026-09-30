@@ -43,7 +43,7 @@ public sealed class ReleaseCommandOutputTests
             [.. rendered.Select((success, i) => success
                 ? new AudienceOutcome(audiences[i], Success: true, "- Added search", [], Error: null)
                 : new AudienceOutcome(audiences[i], Success: false, Text: null, [], Error: "Status Code: Unauthorized"))],
-            rendered.Any(success => success) && mode != PipelineMode.Preview ? ["changelog.json"] : []);
+            rendered.Any(success => success) ? ["changelog.json"] : []);
 
         StringWriter output = new();
         int exitCode = await ReleaseCommand.RunAsync(
@@ -57,7 +57,7 @@ public sealed class ReleaseCommandOutputTests
     }
 
     [Theory]
-    [InlineData(PipelineMode.Preview)]
+    [InlineData(PipelineMode.GenerateWithoutPublishing)]
     [InlineData(PipelineMode.Generate)]
     public async Task A_run_in_which_every_audience_rendered_exits_zero(PipelineMode mode)
     {
@@ -67,7 +67,7 @@ public sealed class ReleaseCommandOutputTests
     }
 
     [Theory]
-    [InlineData(PipelineMode.Preview)]
+    [InlineData(PipelineMode.Generate)]
     [InlineData(PipelineMode.GenerateWithoutPublishing)]
     public async Task A_run_in_which_one_audience_failed_exits_non_zero_and_counts_it(PipelineMode mode)
     {
@@ -86,15 +86,6 @@ public sealed class ReleaseCommandOutputTests
         Assert.StartsWith("No changelog generated for v1.0.0: no audience rendered.", text);
         Assert.DoesNotContain("Generated changelog", text);
         Assert.Contains("Nothing to write.", text);
-    }
-
-    [Fact]
-    public async Task A_preview_in_which_no_audience_rendered_says_so()
-    {
-        (int exitCode, string text) = await RunAsync(PipelineMode.Preview, false, false, false);
-
-        Assert.Equal(1, exitCode);
-        Assert.StartsWith("No preview for v1.0.0: no audience rendered.", text);
     }
 
     [Fact]
@@ -127,11 +118,11 @@ public sealed class ReleaseCommandOutputTests
     [Fact]
     public async Task A_rendering_with_a_description_shows_it_above_the_text()
     {
-        // The description is the first line of the published page. A preview that hides
+        // The description is the first line of the published page. Output that hides
         // it would vouch for everything except the first line the reader sees.
         ReleaseOutcome outcome = new(
             "v1.0.0",
-            PipelineMode.Preview,
+            PipelineMode.GenerateWithoutPublishing,
             [
                 new AudienceOutcome(Audience.Customer, Success: true, "- Search is here.", [], Error: null)
                 {
@@ -143,7 +134,7 @@ public sealed class ReleaseCommandOutputTests
         StringWriter output = new();
         await ReleaseCommand.RunAsync(
             new StubPipeline(outcome),
-            PipelineMode.Preview,
+            PipelineMode.GenerateWithoutPublishing,
             new ReleaseRequest("v1.0.0", new RepositoryCoordinates("octo", "repo")),
             output,
             CancellationToken.None);
@@ -198,8 +189,8 @@ public sealed class ReleaseCommandOutputTests
     {
         StringWriter output = new();
         await ReleaseCommand.RunAsync(
-            new StubPipeline(new ReleaseOutcome("v1.0.0", PipelineMode.Preview, renderings, [])),
-            PipelineMode.Preview,
+            new StubPipeline(new ReleaseOutcome("v1.0.0", PipelineMode.GenerateWithoutPublishing, renderings, [])),
+            PipelineMode.GenerateWithoutPublishing,
             new ReleaseRequest("v1.0.0", new RepositoryCoordinates("octo", "repo")),
             output,
             CancellationToken.None);

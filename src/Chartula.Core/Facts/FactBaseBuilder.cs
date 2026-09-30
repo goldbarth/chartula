@@ -27,22 +27,27 @@ public sealed partial class FactBaseBuilder(
     private static partial Regex LinkedIssue();
 
     public FactBase Build(CommitRange range, IReadOnlyList<PullRequestInfo> pullRequests)
+        => Curate(range, pullRequests).Facts;
+
+    public CuratedRelease Curate(CommitRange range, IReadOnlyList<PullRequestInfo> pullRequests)
     {
         ArgumentNullException.ThrowIfNull(range);
         ArgumentNullException.ThrowIfNull(pullRequests);
 
         List<ChangeFact> facts = [];
+        List<DroppedChange> dropped = [];
         foreach (ReleaseChange change in resolver.Resolve(range, pullRequests))
         {
-            if (!filter.ShouldInclude(change))
+            if (filter.DropReason(change) is { } reason)
             {
+                dropped.Add(new DroppedChange(change, reason));
                 continue;
             }
 
             facts.Add(ToFact(change));
         }
 
-        return new FactBase(range.ToTag, facts);
+        return new CuratedRelease(new FactBase(range.ToTag, facts), dropped);
     }
 
     private ChangeFact ToFact(ReleaseChange change)

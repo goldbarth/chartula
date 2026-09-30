@@ -28,7 +28,7 @@ Commit it where the history of runs is the point, as in an evaluation repository
 - `generate` and `generate --no-publish` write one record per run.
 - A run in which no audience rendered is recorded too: its tokens were spent all the same.
   Only `changelog.json` is held back then, so an earlier run's file is not replaced.
-- `preview` writes nothing, and that includes the record.
+- `preview` writes nothing, and that includes the record: it makes no model call, so there is no cost to record.
 
 The run summary names the file under its metrics:
 

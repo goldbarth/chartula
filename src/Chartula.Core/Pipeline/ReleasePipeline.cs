@@ -6,6 +6,7 @@ using Chartula.Core.Generation;
 using Chartula.Core.History;
 using Chartula.Core.Llm;
 using Chartula.Core.Observability;
+using Chartula.Core.Prompting;
 using Chartula.Core.PullRequests;
 using Chartula.Core.Releases;
 using Chartula.Core.Rendering;
@@ -19,9 +20,10 @@ namespace Chartula.Core.Pipeline;
 /// requests, builds the fact base, renders every audience, runs the rule-based and
 /// thorough faithfulness checks and review, and writes the outputs.
 /// <para>
-/// The modes differ only in the final write step:
+/// The modes:
 /// <list type="bullet">
-/// <item>preview writes and publishes nothing,</item>
+/// <item>preview stops at the fact base: it makes no model call and writes and publishes
+/// nothing, and shows what generate would render and send (#259),</item>
 /// <item>generate writes and publishes,</item>
 /// <item>generate-without-publishing writes the local files and leaves the release notes alone.</item>
 /// </list>
@@ -54,10 +56,12 @@ public sealed class ReleasePipeline(
     IRunMetrics? metrics = null,
     IRunRecordWriter? runRecordWriter = null,
     IReleaseRangeGate? rangeGate = null,
-    LargeRangeRule? largeRangeRule = null) : IReleasePipeline
+    LargeRangeRule? largeRangeRule = null,
+    IChangelogPromptBuilder? promptBuilder = null) : IReleasePipeline
 {
     private readonly IRunMetrics _metrics = metrics ?? NullRunMetrics.Instance;
     private readonly LargeRangeRule _largeRangeRule = largeRangeRule ?? LargeRangeRule.Default;
+    private readonly IChangelogPromptBuilder _promptBuilder = promptBuilder ?? new ChangelogPromptBuilder();
 
     public async Task<ReleaseOutcome> RunAsync(
         ReleaseRequest request,
@@ -74,7 +78,8 @@ public sealed class ReleasePipeline(
         rangeGate?.Announce(range);
         if (!request.RangeConfirmed
             && _largeRangeRule.Applies(range)
-            && (rangeGate is null || !await rangeGate.ConfirmAsync(range, cancellationToken)))
+            && (rangeGate is null
+                || !await rangeGate.ConfirmAsync(range, sendsToModel: mode != PipelineMode.Preview, cancellationToken)))
         {
             throw new UnconfirmedRangeException(range.ToTag);
         }
@@ -88,7 +93,8 @@ public sealed class ReleasePipeline(
 
         IReadOnlyList<PullRequestInfo> pullRequests =
             await pullRequestReader.GetMergedPullRequestsAsync(request.Repository, range, cancellationToken);
-        FactBase factBase = factBaseBuilder.Build(range, pullRequests);
+        CuratedRelease curated = factBaseBuilder.Curate(range, pullRequests);
+        FactBase factBase = curated.Facts;
         DirectCommits direct = DirectCommits.Of(range, pullRequests);
         _metrics.RecordReleaseScope(new ReleaseScope(
             range.Commits.Count,
@@ -98,6 +104,16 @@ public sealed class ReleasePipeline(
             factBase.Changes.Sum(static change => (long)(change.Description?.Length ?? 0)),
             direct.Commits.Count + direct.SkippedMerges,
             direct.SkippedMerges));
+
+        // Every fact is decided here, before the model. A preview stops and shows them.
+        if (mode == PipelineMode.Preview)
+        {
+            _metrics.RecordRunDuration(Stopwatch.GetElapsedTime(started));
+            return new ReleaseOutcome(request.Tag, mode, [], [], _metrics.Snapshot())
+            {
+                Preview = Preview(curated, request.Audiences),
+            };
+        }
 
         IReadOnlyDictionary<Audience, ChangelogGenerationResult> rendered =
             await renderer.RenderAsync(factBase, request.Audiences, cancellationToken);
@@ -138,9 +154,8 @@ public sealed class ReleasePipeline(
 
         // All model calls are done, so the record is complete here.
         // Write it even when nothing rendered, because those tokens were still spent.
-        // Preview writes no record, because preview writes nothing.
         string? runRecord = null;
-        if (mode != PipelineMode.Preview && runRecordWriter is not null)
+        if (runRecordWriter is not null)
         {
             runRecord = await runRecordWriter.WriteAsync(
                 new RunRecord(request.Tag, request.Repository, mode, outcomes, report)
@@ -157,7 +172,7 @@ public sealed class ReleasePipeline(
         // Write no outputs when no audience rendered. Writing the fact base alone would
         // replace the renderings of an earlier, good run with none, and would look
         // like a run that produced something.
-        if (mode != PipelineMode.Preview && finalTexts.Count > 0)
+        if (finalTexts.Count > 0)
         {
             (written, skipped, publishFailure) = await WriteOutputsAsync(
                 request, range, factBase, finalTexts, descriptions, mode, cancellationToken);
@@ -169,6 +184,30 @@ public sealed class ReleasePipeline(
             PublishFailure = publishFailure,
             RunRecord = runRecord,
         };
+    }
+
+    // The same plans the renderer would send, measured with the same prompt builder,
+    // so what a preview reports is what generate sends.
+    private ReleasePreview Preview(CuratedRelease curated, IReadOnlyCollection<Audience>? audiences)
+    {
+        IReadOnlyDictionary<Audience, RenderPlan> plans = renderer.Plan(curated.Facts, audiences);
+
+        List<AudiencePreview> sent = [];
+        foreach ((Audience audience, RenderPlan plan) in plans)
+        {
+            int characters = 0;
+            if (plan.Entries.Count > 0)
+            {
+                ChangelogPrompt prompt = _promptBuilder.BuildRephrasePrompt(plan.Facts, audience);
+                characters = prompt.System.Length + prompt.User.Length;
+            }
+
+            sent.Add(new AudiencePreview(audience, plan.Entries.Count, characters));
+        }
+
+        List<PreviewFact> facts = [.. curated.Facts.Changes.Select(fact => new PreviewFact(
+            fact, [.. plans.Keys.Where(audience => GroundedFactsFactory.Reaches(fact, audience))]))];
+        return new ReleasePreview(facts, curated.Dropped, sent, thoroughChecker.Enabled);
     }
 
     private async Task EnsureCanPublishAsync(ReleaseRequest request, CancellationToken cancellationToken)

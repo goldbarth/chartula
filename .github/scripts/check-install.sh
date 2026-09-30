@@ -1,6 +1,7 @@
 #!/bin/sh
 # Installs Chartula with install.sh the way a user does, then runs a real
-# `chartula preview` on a clone of this repository against OpenAI with a dummy key.
+# `chartula generate --no-publish` on a clone of this repository against OpenAI with a
+# dummy key. Not `preview`: it makes no model call, so it would not reach the endpoint.
 # The check passes on the endpoint's 401: git read the history, the GitHub API
 # answered over TLS, and the model call went out, without spending tokens.
 # install.yml runs it in fresh containers and on the macOS runners. It also runs
@@ -62,11 +63,11 @@ Chartula__Llm__Provider=openai-compatible \
 Chartula__Llm__Model=gpt-5.6-luna \
 Chartula__Llm__BaseUrl=https://api.openai.com/v1 \
 OPENAI_API_KEY=sk-dummy \
-    chartula preview --tag v0.1.0-preview.1 --since 4bc57c8 > "$work/preview.txt" 2>&1
+    chartula generate --no-publish --tag v0.1.0-preview.1 --since 4bc57c8 > "$work/run.txt" 2>&1
 code=$?
 set -e
-cat "$work/preview.txt"
+cat "$work/run.txt"
 
-[ "$code" -eq 1 ] || fail "chartula preview exited with $code, expected 1 (every audience failed on the 401)."
-grep -q 'answered 401 Unauthorized' "$work/preview.txt" || fail "chartula preview did not report the model endpoint's 401."
+[ "$code" -eq 1 ] || fail "chartula generate --no-publish exited with $code, expected 1 (every audience failed on the 401)."
+grep -q 'answered 401 Unauthorized' "$work/run.txt" || fail "chartula generate --no-publish did not report the model endpoint's 401."
 echo "Passed: git, the GitHub API and the model endpoint were all reached."

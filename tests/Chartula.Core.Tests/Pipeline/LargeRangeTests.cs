@@ -147,7 +147,7 @@ public sealed class LargeRangeTests
 
         public void Announce(CommitRange range) => Announced = range;
 
-        public Task<bool> ConfirmAsync(CommitRange range, CancellationToken cancellationToken = default)
+        public Task<bool> ConfirmAsync(CommitRange range, bool sendsToModel = true, CancellationToken cancellationToken = default)
         {
             Asked++;
             return Task.FromResult(answer);
@@ -163,6 +163,9 @@ public sealed class LargeRangeTests
 
     private sealed class UnreachableRenderer : IReleaseRenderer
     {
+        public IReadOnlyDictionary<Audience, RenderPlan> Plan(FactBase factBase, IReadOnlyCollection<Audience>? audiences = null)
+            => StubPlans.Empty(audiences);
+
         public Task<IReadOnlyDictionary<Audience, ChangelogGenerationResult>> RenderAsync(
             FactBase factBase, IReadOnlyCollection<Audience>? audiences = null, CancellationToken cancellationToken = default)
             => throw new InvalidOperationException("The model was reached for a range nobody confirmed.");
