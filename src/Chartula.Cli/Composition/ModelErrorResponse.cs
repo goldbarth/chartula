@@ -27,18 +27,23 @@ internal sealed record ModelErrorResponse(string Endpoint, HttpStatusCode Status
         await response.Content.LoadIntoBufferAsync(cancellationToken);
         string body = await response.Content.ReadAsStringAsync(cancellationToken);
 
-        string reason = response.ReasonPhrase is { Length: > 0 } phrase ? phrase : response.StatusCode.ToString();
         return new ModelErrorResponse(
             EndpointOf(request.RequestUri),
             response.StatusCode,
-            $"{(int)response.StatusCode} {reason}",
+            StatusOf(response),
             MessageOf(body));
     }
 
     // Scheme, host and path only: the query string and the user info can both carry a
     // key (some providers take it in the query).
-    private static string EndpointOf(Uri? uri)
+    internal static string EndpointOf(Uri? uri)
         => uri is null ? "an unknown address" : $"{uri.Scheme}://{uri.Authority}{uri.AbsolutePath}";
+
+    internal static string StatusOf(HttpResponseMessage response)
+    {
+        string reason = response.ReasonPhrase is { Length: > 0 } phrase ? phrase : response.StatusCode.ToString();
+        return $"{(int)response.StatusCode} {reason}";
+    }
 
     /// <summary>
     /// The message in the body. Anthropic and OpenAI both put it at <c>error.message</c>.
@@ -100,7 +105,7 @@ internal sealed record ModelErrorResponse(string Endpoint, HttpStatusCode Status
         return null;
     }
 
-    private static string? SingleLine(string? text)
+    internal static string? SingleLine(string? text)
     {
         if (string.IsNullOrWhiteSpace(text))
         {

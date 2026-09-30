@@ -137,6 +137,55 @@ public sealed class ModelCallFailureTests
             message);
     }
 
+    // #263: a local server answered with a finish_reason the SDK does not know, and the run
+    // reported the endpoint as unreachable, sending the user after a network problem.
+    [Fact]
+    public async Task An_answer_with_an_unknown_finish_reason_is_reported_as_unreadable_and_names_the_value()
+    {
+        string message = await FailAsync("openai-compatible", HttpStatusCode.OK, OpenAiAnswer("weird_reason"));
+
+        Assert.Equal(
+            "openai-compatible at http://localhost:8799/v1/chat/completions answered 200 OK for model 'some-model', " +
+            "but the answer could not be read: Unknown ChatFinishReason value 'weird_reason'.\n" +
+            "The endpoint is reachable, but its answer is not in the form the provider's SDK expects.",
+            message);
+    }
+
+    [Theory]
+    [MemberData(nameof(Providers))]
+    public async Task An_answer_that_is_not_json_is_reported_as_unreadable_not_as_unreachable(string provider, string requested)
+    {
+        string message = await FailAsync(provider, HttpStatusCode.OK, "<html>not an answer</html>");
+
+        Assert.StartsWith($"{provider} at {requested} answered 200 OK for model 'some-model', but the answer could not be read: ", message);
+        Assert.DoesNotContain("could not be reached", message);
+    }
+
+    // After a retried error, the answer is the response the SDK gave up on, not the error.
+    [Fact]
+    public async Task An_answer_after_an_error_replaces_it()
+    {
+        using HttpMessageInvoker transport = new(new ModelErrorResponseHandler(new Sequence(
+            new Answering(HttpStatusCode.InternalServerError, "{}"), new Answering(HttpStatusCode.OK, "{}"))));
+        using ModelErrorResponseHandler.Capture call = ModelErrorResponseHandler.Begin();
+
+        for (int i = 0; i < 2; i++)
+        {
+            using HttpRequestMessage request = new(HttpMethod.Post, "http://localhost:8799/v1/chat/completions");
+            using HttpResponseMessage response = await transport.SendAsync(request, CancellationToken.None);
+        }
+
+        Assert.Null(call.Last);
+        Assert.Equal(new ModelAnswer("http://localhost:8799/v1/chat/completions", "200 OK"), call.Answer);
+    }
+
+    private static string OpenAiAnswer(string finishReason)
+        => $$$"""
+            {"id":"x","object":"chat.completion","created":1,"model":"some-model",
+             "choices":[{"index":0,"message":{"role":"assistant","content":"- Added search"},"finish_reason":"{{{finishReason}}}"}],
+             "usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}
+            """;
+
     private static Task<string> FailAsync(
         string provider, HttpStatusCode status, string body, string? baseUrl = "", bool withKey = true)
         => FailAsync(provider, new Answering(status, body), baseUrl, withKey);
@@ -192,6 +241,15 @@ public sealed class ModelCallFailureTests
                 RequestMessage = request,
                 Content = new StringContent(body, Encoding.UTF8, "application/json"),
             });
+    }
+
+    /// <summary>Answers each request with the next handler in line.</summary>
+    private sealed class Sequence(params HttpMessageHandler[] handlers) : HttpMessageHandler
+    {
+        private int _next;
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            => new HttpMessageInvoker(handlers[_next++], disposeHandler: false).SendAsync(request, cancellationToken);
     }
 
     /// <summary>Fails every request the way a refused connection does.</summary>
