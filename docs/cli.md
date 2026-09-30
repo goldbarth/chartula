@@ -1,51 +1,44 @@
 # The `chartula` CLI
 
-Chartula is controlled entirely through the `chartula` command.
-There is no daemon, no interactive shell and no menu - every run is one command that reads pull requests and produces output, then exits.
+This page is the reference for the `chartula` command: every command, every option with its default, the environment it reads, what it prints where, and its exit status.
+`chartula --help` prints the commands and options from the binary itself, so it always matches the version you run.
+[Getting started](getting-started.md) walks through a first run, and [Troubleshooting](troubleshooting.md) has the messages a run stops with.
 
-This page lists every command and option the CLI accepts today.
-`chartula --help` prints a short version of the same thing from the binary itself.
+Every run is one command that reads a release, prints or writes its result, and exits.
+There is no daemon and no interactive shell.
 
-## Command overview
+## Commands
 
-```console
-$ chartula --help
-Chartula - multi-audience, grounded changelog generator.
+| Command | What it does | Model calls | Writes files | Publishes |
+| --- | --- | --- | --- | --- |
+| `chartula preview` | Establishes the facts of a release and shows what `generate` would send. | none | no | no |
+| `chartula generate` | Establishes the same facts, has the model write each audience, checks the texts, and writes the outputs. | one per audience, and one check per rendering | yes | a draft of the release notes |
+| `chartula generate --no-publish` | The same, without the release notes on GitHub. | as `generate` | yes | no |
+| `chartula doctor` | Checks everything a run needs. | one short call per model | no | no |
+| `chartula --version` | Prints the version and the commit it was built from. | none | no | no |
+| `chartula --help` | Prints the commands and options. | none | no | no |
 
-Usage:
-  chartula preview  [options]   Show the facts and what generate would send. Free.
-  chartula generate [options]   Produce and write the outputs.
-  chartula doctor   [options]   Check the setup a run needs, before a run spends anything.
-  chartula --version            Print the version and its commit.
+Run `preview`, `generate` and `doctor` from a checkout of the repository the release belongs to, because the range of the release is read with `git` from the current directory.
 
-Run it from a checkout of the repository the release belongs to.
+`-h`, `--help` and `help` print the help text as the first word, and so does `chartula` without arguments.
+`-h` and `--help` print it after a command too, such as `chartula generate --help`, and start nothing.
+An unknown first word prints `Unknown command '<word>'.` and the help text, and exits with 1.
 
-Options:
-  --tag <tag>    The release tag. Default: the nearest tag reachable from HEAD.
-  --repo <o/n>   The GitHub repository, as owner/name. Default: read from
-                 the 'origin' remote.
-  --since <ref>  Render the commits after this tag or commit, up to the
-                 release tag. Default: after the previous tag, or from the
-                 first commit for a first tag.
-  --yes          Confirm a first tag or a large range up front, for a run
-                 without a terminal to ask on.
-  --no-publish   Write every file, but publish no GitHub release notes.
-  --audience <a> Render only this audience: technical, customer or product.
-                 Repeat it, or separate them with commas. Default:
-                 technical and customer; product renders only when named.
-                 An output whose audience was not rendered is not written.
+## Options
 
-doctor takes --tag and --repo; --no-publish is for generate only.
-An option a command does not take stops before anything starts.
-```
+| Option | Value | Default | Commands |
+| --- | --- | --- | --- |
+| `--tag` | a tag | The nearest tag reachable from `HEAD` (`git describe --tags --abbrev=0`). | `preview`, `generate`, `doctor` |
+| `--repo` | `owner/name` | Owner and name from the `origin` remote, in the `https://`, `ssh://` or `git@host:` form. | `preview`, `generate`, `doctor` |
+| `--since` | a tag or commit | After the previous tag, or from the first commit for a first tag. | `preview`, `generate` |
+| `--yes` | none | Off: a first tag or a large range is asked about in a terminal, and stops a run without one. | `preview`, `generate` |
+| `--audience` | `technical`, `customer`, `product` | `technical` and `customer` | `preview`, `generate` |
+| `--no-publish` | none | Off: `generate` publishes the release notes. | `generate` |
 
-`-h`, `--help` and `help` all print this text, and so does running `chartula` with no arguments at all.
-`-h` and `--help` also print it after a command, such as `chartula generate --help`, and start nothing.
-`chartula --version` prints the version and the commit it was built from, such as `chartula 0.1.0-preview.3+7620e6d...`, and exits with status 0.
-It is the same text a run records as `toolVersion` in `changelog.json`, so a report and a run file name the same build.
-An unrecognized first word is not silently ignored - it prints `Unknown command '<word>'.`, the same usage text, and exits with status 1.
+Options follow the command in any order, and a value follows its option after a space.
+`--audience` may be repeated; every other option may be given once.
 
-Every option after the command is checked before anything starts, and one that cannot be read as meant stops the run with status 1:
+Chartula checks every option before it reads configuration, git or GitHub, and stops on one it cannot read as meant:
 
 ```console
 $ chartula generate --nopublish
@@ -53,18 +46,129 @@ Unknown option '--nopublish' for generate. Did you mean --no-publish?
 chartula --help lists every command and its options.
 ```
 
-The same goes for an option without its value (`--tag` at the end, or `--tag --no-publish`), a single-value option given twice, an option of another command (`--no-publish` on `preview`), `--tag=v1.2.0` instead of `--tag v1.2.0`, and a word that is no option.
+| Command line | Message |
+| --- | --- |
+| an option of another command | `--no-publish is an option of generate, not of preview.` |
+| an option without its value, at the end or before another option | `--tag needs a value: --tag <release-tag>.` |
+| an option given twice | `--tag is given twice. Pass it once.` |
+| `=` instead of a space | `Write --tag v1.3.0, with a space, not --tag=v1.3.0.` |
+| a word that is no option | `Unexpected argument 'v1.3.0'. preview takes options only, such as --tag <release-tag>.` |
+
+Each message is followed by `chartula --help lists every command and its options.`, and the run exits with 1.
 So a typo never runs for another release, and never publishes by accident.
 
-Two commands make a changelog: `preview` and `generate`.
-Both establish the same facts the same way; `preview` stops there, and `generate` goes on to the model.
-A third, `doctor`, checks the setup both need.
+### `--tag` and `--repo`
 
-## `chartula doctor`
+A value you did not pass is announced on stderr before the run starts, so `generate` never publishes to a release you did not see:
 
 ```console
-$ chartula doctor [--tag <release-tag>] [--repo <owner/name>]
+$ chartula preview
+Using tag v1.3.0, the nearest tag reachable from HEAD. Pass --tag to choose another.
+Using repository owner/name, from the 'origin' remote. Pass --repo to choose another.
 ```
+
+When a default cannot be read, the run stops before any network call and names the option to pass:
+
+```console
+$ chartula preview
+No --tag given, and no tag is reachable from HEAD in '/work/my-repo'. Pass --tag <release-tag>, or run from a checkout of the repository with its tags fetched (git fetch --tags).
+
+$ chartula preview --repo name-only
+Invalid option --repo 'name-only'. Expected <owner/name>.
+```
+
+### `--since` and `--yes`
+
+`--since` starts the release after the tag or commit you name, instead of after the previous tag.
+It has to be an ancestor of the release tag.
+
+A first tag, or a range with more commits than `range.confirmAboveCommits`, is confirmed before any GitHub request or model call.
+In a terminal the run asks; `--yes` confirms up front, for a run without one, such as a CI job.
+So a CI job stops on its first tag, with nothing spent, until you pass `--yes` or `--since`.
+[What goes into a release](what-goes-into-a-release.md#1-the-range) explains the range, the first tag, the confirmation and a shallow clone.
+
+### `--audience`
+
+```console
+$ chartula generate --audience customer
+$ chartula generate --audience technical,product
+$ chartula generate --audience technical --audience customer
+```
+
+Renders only the named audiences instead of the default two.
+The names are case-insensitive, and both forms can be mixed.
+A name that is not an audience stops the run before it reads anything:
+
+```console
+$ chartula generate --audience developers
+Unknown audience 'developers'. There are three: technical, customer, product.
+```
+
+Each audience is one rendering call and one thorough check, so a run for one audience pays for one.
+An output whose audience was not rendered is not written: no `CHANGELOG.md` without `technical`, no `release-<tag>.md` without `customer`.
+`product` renders only when named, because it has no output file of its own and would otherwise cost a third of every run.
+
+### `--no-publish`
+
+`generate --no-publish` writes every file `generate` writes and leaves the GitHub release notes alone.
+The summary lists the notes under `Skipped (--no-publish)`, so a run you kept local still reads as complete.
+Use it to keep the record of a run without announcing a release, for example when you compare a prompt change or a model.
+`preview` publishes nothing either way.
+
+## `chartula preview`
+
+Reads the range and its pull requests, decides every fact the way `generate` does, and stops before the model:
+
+```console
+$ chartula preview --tag v0.1.0-preview.3
+Preview of v0.1.0-preview.3 - no model call was made, and nothing was written or published.
+
+Release: 7 commits, 7 pull requests, 6 facts (6 with a description, 15,083 characters)
+
+Facts (6):
+  #252     Fix: fix: keep the reason in each flag, and bound the customer outcome by the facts
+           technical, customer
+  #251     Feature: feat(observability): record the range a run read in its run record
+           technical, customer
+  ...
+  #248     Documentation: docs: rewrite comments for readability
+           in no rendering
+  ...
+Dropped (1):
+  #253     build: bump version to 0.1.0-preview.3
+           Internal is in filter.excludeCategories
+
+generate would make 4 model calls:
+  technical 1 rephrasing call, 14,484 characters of prompt, then 1 thorough check
+  customer  1 rephrasing call, 18,549 characters of prompt, then 1 thorough check
+  A thorough check sends the rendering along with the facts, so its size is known only once the rendering is.
+```
+
+Each fact names the audiences whose rendering carries it, and each dropped change names the setting that dropped it.
+The prompt is counted in characters, as it would be sent; [Estimating the cost of a run](costs-and-checks.md#estimating-the-cost-of-a-run) turns them into tokens.
+
+`preview` makes no model call, so it costs no tokens and needs no model key.
+It spends one GitHub request per commit in the range, writes nothing and publishes nothing.
+So you can repeat it until the facts are right, and pay only for the `generate` that follows.
+
+## `chartula generate`
+
+Establishes the same facts as `preview`, renders each audience with the model, checks the renderings, and writes the outputs:
+
+- **`CHANGELOG.md`** - the technical rendering, prepended to whatever is already there.
+- **`release-<tag>.md`** - the customer rendering as a standalone page, with YAML front matter (title, date, one-sentence description) ahead of the entries.
+- **`changelog.json`** - every audience's text plus the facts behind it, without the pull request descriptions, in the [documented, stable format](changelog-json.md). It is meant to be published.
+- **GitHub release notes** - the technical rendering, as a **draft** release for the tag that you publish on GitHub after reading it. A release that already exists for the tag keeps its state: a draft stays a draft, a published release stays published, and only its notes are replaced. The output marks a draft with `(draft)` after its link.
+- **`chartula-runs/<time>-<tag>.json`** - the [run record](run-record.md): what the run cost, what it was made with, and the complete facts, descriptions included. It stays on your machine.
+
+A field with no source behind it is left out rather than filled in: no description when the facts do not support one, no date when the tag has none.
+
+A token that cannot publish stops the run before the first model call ([What `generate` writes to GitHub](github.md#what-generate-writes-to-github)).
+Publishing is still the last step, so when GitHub refuses it for another reason, the files are already written.
+The summary lists them under `Wrote:`, names the refusal under `Not published:`, and the run exits with 1.
+A re-run replaces this release's entries in `CHANGELOG.md` and its draft rather than adding to them, but pays for the model calls again.
+
+## `chartula doctor`
 
 Checks everything a run needs, one line per check, and says whether a run would start:
 
@@ -92,195 +196,28 @@ A run would start. The warnings above do not stop it, but read them before gener
 ```
 
 Each check asks what a run asks, through the same code, so a failed check shows the message the run would print.
-A check that needs an earlier one that failed shows as `skip`, so a missing `git` does not bury the report under follow-on errors.
 
-- **`ok`** - the check passed.
-- **`warn`** - a run starts, but something limits it: no GitHub token, a token that cannot publish, or pull request titles without a prefix.
-- **`fail`** - a run would stop there.
+| Status | Meaning |
+| --- | --- |
+| `ok` | The check passed. |
+| `warn` | A run starts, but something limits it: no GitHub token, a token that cannot publish, or pull request titles without a prefix. |
+| `fail` | A run would stop there. |
+| `skip` | The check needs an earlier one that failed, so one missing piece does not bury the report under follow-on errors. |
 
-`doctor` exits with `0` when nothing failed, and with `1` otherwise, so a CI job can run it before `generate`.
-It writes no file and publishes nothing.
-It names variables, never their values.
-
+`doctor` writes no file, publishes nothing, and names variables, never their values.
 The endpoint check is the one that costs: it asks each model a run uses for an answer of at most 16 tokens, about a hundred with the prompt, because only an answer proves the key, the model id and the endpoint together.
 The GitHub checks cost three requests: the pull requests of the tag's commit, the check that the token may publish (the same one `generate` makes, which stores nothing), and the last 30 merged pull requests for the title check.
+So a CI job can run `doctor` before `generate` for the price of a few tokens.
 
-## `chartula preview`
-
-```console
-$ chartula preview [--tag <release-tag>] [--repo <owner/name>]
-```
-
-Reads the range and its pull requests, and decides every fact the way `generate` does - curation, filtering, labeling, categorization, visibility.
-Then it stops, before the model, and prints what `generate` would render from and what it would send:
+## `chartula --version`
 
 ```console
-$ chartula preview --tag v1.3.0
-Preview of v1.3.0 - no model call was made, and nothing was written or published.
-
-Release: 14 commits, 10 pull requests, 9 facts (7 with a description, 22,512 characters)
-
-Facts (9):
-  #412     Feature: feat(cli): add --since
-           technical, customer
-  #415     Documentation: docs: rewrite the install guide
-           in no rendering
-  ...
-Dropped (1):
-  #409     chore: bump dependencies
-           Internal is in filter.excludeCategories
-
-generate would make 4 model calls:
-  technical 1 rephrasing call, 24,310 characters of prompt, then 1 thorough check
-  customer  1 rephrasing call, 27,905 characters of prompt, then 1 thorough check
-  A thorough check sends the rendering along with the facts, so its size is known only once the rendering is.
+$ chartula --version
+chartula 0.1.0-preview.3+f2b8f02e37f7c6bcd6ea725c39c576b800865ee6
 ```
 
-Each fact names the audiences whose rendering carries it, and each dropped change the setting that dropped it.
-The prompt is counted in characters, exactly as it would be sent; how many tokens that is depends on the model's tokenizer.
-
-A preview makes no model call, so it costs no tokens and needs no model key, only the GitHub requests.
-Nothing is written to disk and nothing is published.
-Use it to check a release, or a change to labels, filters or categories, before a run is paid for.
-To see the prose, run `generate --no-publish`: it writes the files and publishes nothing.
-
-## `chartula generate`
-
-```console
-$ chartula generate [--tag <release-tag>] [--repo <owner/name>]
-```
-
-Establishes the same facts as `preview`, renders each audience with the model, checks the renderings, and writes the outputs:
-
-- **`CHANGELOG.md`** - the technical rendering, prepended to whatever is already there.
-- **`release-<tag>.md`** - the customer rendering as a standalone page, with YAML front matter (title, date, one-sentence description) ahead of the entries.
-- **`changelog.json`** - every audience's text plus the facts behind it, without the pull request descriptions, in the [documented, stable format](changelog-json.md). It is meant to be published.
-- **GitHub release notes** - the technical rendering, as a **draft** release for `<release-tag>` that you publish on GitHub after reading it. A release that already exists for the tag keeps its state: a draft stays a draft, a published release stays published, and only its notes are replaced. The output marks a draft with `(draft)` after its link.
-
-It also keeps a [run record](run-record.md) in `chartula-runs/`: what the run cost, what it was made with, and the complete facts, descriptions included, for comparing runs later.
-It stays on your machine, never published.
-
-A field with no source behind it is left out rather than filled in - no description when the facts do not support one, no date when the tag has none.
-
-A token without Contents read and write stops the run before the first model call ([What `generate` writes to GitHub](github.md#what-generate-writes-to-github)).
-Publishing is still the last step, so when GitHub refuses it for another reason, the files are already written.
-The summary lists them under "Wrote:", names the refusal under "Not published:", and the run exits with 1.
-A re-run replaces this release's entries in `CHANGELOG.md` and its draft rather than adding to them, but pays for the model calls again.
-
-### `--no-publish`
-
-```console
-$ chartula generate --tag v1.2.0 --repo owner/name --no-publish
-```
-
-Writes every file `generate` writes - `CHANGELOG.md`, `release-<tag>.md`, `changelog.json` and the run record - and leaves the GitHub release notes alone.
-Use it to keep the record of a run without announcing a release - measuring a prompt change, say, or generating a changelog for a tag that was never shipped.
-The run's summary lists this under "Skipped (--no-publish)" so a deliberately unpublished run still reads as complete rather than as a partial failure.
-
-### `--audience <a>`
-
-```console
-$ chartula generate --tag v1.2.0 --repo owner/name --audience customer
-$ chartula generate --tag v1.2.0 --repo owner/name --audience technical,product
-$ chartula generate --tag v1.2.0 --repo owner/name --audience technical --audience customer
-```
-
-Renders only the named audiences instead of the default two.
-Valid values are `technical`, `customer` and `product`, case-insensitive; a misspelled name fails the run with `Unknown audience '<name>'.` rather than quietly producing nothing.
-Repeat the flag or separate values with a comma - both forms are accepted and can be mixed.
-
-Each audience is its own rephrasing call and its own faithfulness check, so a run that asks for one audience pays for one.
-An output whose audience was not rendered is not written: no `CHANGELOG.md` without `technical`, no `release-<tag>.md` without `customer`.
-The run's summary lists the skipped outputs next to the written ones.
-
-With no `--audience` given, `technical` and `customer` render: the two with somewhere to go, `CHANGELOG.md` and the release notes, and `release-<tag>.md`.
-`product` renders only when named, since it has no output file of its own and no evaluation yet, and would otherwise cost a third of every run.
-All three are `--audience technical,customer,product`.
-
-## Release and repository
-
-A run starts from a checkout of the repository the release belongs to, because the commit range is read with `git` from the current directory.
-That checkout already knows the release and the repository, so both options default from it and only need to be passed to choose something else.
-
-| Option | Value | Default |
-| --- | --- | --- |
-| `--tag` | `<release-tag>` | The nearest tag reachable from `HEAD` (`git describe --tags --abbrev=0`). |
-| `--repo` | `<owner/name>` | Owner and name from the `origin` remote, in the `https://`, `ssh://` or `git@host:` form. |
-
-A value that was not passed is announced on stderr before the run starts, so `generate` never publishes to a release you did not see:
-
-```console
-$ cd my-repo
-$ chartula preview
-Using tag v1.3.0, the nearest tag reachable from HEAD. Pass --tag to choose another.
-Using repository owner/name, from the 'origin' remote. Pass --repo to choose another.
-```
-
-When a default cannot be read, the run fails before any network call and names the option to pass:
-
-```console
-$ chartula preview
-No --tag given, and no tag is reachable from HEAD in '/work/my-repo'. Pass --tag <release-tag>, or run from a checkout of the repository with its tags fetched (git fetch --tags).
-
-$ chartula preview --repo name-only
-Invalid option --repo 'name-only'. Expected <owner/name>.
-```
-
-### Where a release starts
-
-A release is the commits after its start, up to the release tag.
-It starts after the previous tag, or at the first commit when the tag is the first.
-A first tag, or a range with more commits than `range.confirmAboveCommits`, is confirmed before any GitHub request or model call, and a shallow clone stops the run because its history is cut off.
-
-| Option | Value | Effect |
-| --- | --- | --- |
-| `--since` | `<tag-or-commit>` | The release starts after this ref instead of the previous tag or the first commit. It has to be an ancestor of the release tag. |
-| `--yes` | - | Confirms a range that would be asked about, for a run without a terminal, such as a CI job. |
-
-A run without a terminal and without `--yes` stops at that question with nothing spent, so a CI job fails on its first tag until you pass one of the two options.
-
-[What goes into a release](what-goes-into-a-release.md#1-the-range) explains the range, the first tag, the confirmation, a shallow clone, and which changes of the range appear.
-
-## Environment
-
-Three environment variables carry credentials, and none is ever read from `chartula.yaml`:
-
-| Variable | Used for |
-| --- | --- |
-| `ANTHROPIC_API_KEY` | The model that rephrases the facts, with `llm.provider: anthropic` (the default). |
-| `OPENAI_API_KEY` | The model that rephrases the facts, with `llm.provider: openai-compatible`, when the endpoint needs a key. `Chartula__Llm__ApiKeyEnvironmentVariable` names another variable instead. |
-| `GITHUB_TOKEN` | Reading pull requests and writing release notes. [GitHub](github.md) covers its permissions and the rate limit. |
-
-A `generate` run without `ANTHROPIC_API_KEY` is refused before it reads anything, naming the variable, because every audience would fail on it.
-The `openai-compatible` provider is exempt: a local server needs no key.
-`preview` makes no model call and needs no key.
-[No model key](troubleshooting.md#no-model-key) shows the message.
-
-A run starts without `GITHUB_TOKEN` and prints a warning to stderr rather than refusing, because a small release of a public repository fits GitHub's unauthenticated rate limit.
-[GitHub](github.md) says when you need a token, which permissions it takes, and what a run spends of the rate limit.
-
-The variable names above are the defaults; all three can be renamed, in the environment only - see [Environment-only settings](configuration.md#environment-only-settings).
-
-## Configuration file
-
-`chartula.yaml` in the repository root refines the default behavior of both commands - which model is used, which labels affect curation, which categories are excluded, and more.
-It is never required; every command above works with no file present.
-See [Configuration](configuration.md) for every key and its default.
-A file that cannot be read as written - invalid YAML, an unknown or misplaced key, a value of the wrong kind - stops the run with a configuration error naming the file, the line and the column; see [A file that cannot be read as meant](configuration.md#a-file-that-cannot-be-read-as-meant).
-
-## Exit status
-
-`0` when every audience the run asked for rendered.
-`1` on a usage error (an unknown command or option, an option without its value, an unknown audience), a run-time failure (bad configuration, a pipeline error), or a run in which any requested audience failed.
-
-An audience that failed does not hold back the ones that rendered: `generate` still writes their outputs and says `<n> of <m> audiences failed.`
-When no audience rendered, no output is written, so an earlier run's `changelog.json` is not replaced by one without renderings; only the [run record](run-record.md) is kept, since the tokens were spent.
-Errors are written to stderr when they are about the invocation itself, and to stdout as `Error: <message>` when the pipeline started running and then failed.
-
-### When a model call fails
-
-A failed model call names the provider, the address it asked, the model and the status, then what that status usually means.
-[A model call fails](troubleshooting.md#a-model-call-fails) shows the messages and what fixes each.
+It prints the version and the commit it was built from, the same text a run records as `toolVersion` in `changelog.json` and the run record.
+So a bug report and a run file name the same build.
 
 ## While a run works
 
@@ -302,13 +239,57 @@ So a slow step still shows it is working, and a run that is about to finish is n
 The steps are the ones the run takes: one GitHub request per commit, then one rendering per audience, then the checks of each rendering; a `preview` shows the first step only.
 There is no estimate of the time remaining, because how long a model call takes is not known before it returns.
 
-The steps go to stderr, like the header, so a changelog redirected from stdout stays clean.
-Without a terminal, as in CI, each step is one plain line as it starts - `Reading pull requests (100 commits)`, `Rendering technical` - with no control characters, so a job log stays readable.
+Without a terminal on stderr, as in CI, each step is one plain line as it starts, `Reading pull requests (100 commits)` or `Rendering technical`, with no control characters, so a job log stays readable.
 When a step fails, it is the last line shown, and the error follows below it.
+[A slow run](troubleshooting.md#a-slow-run) shows how to read the steps and the summary when a run takes long.
+
+## What goes to stdout and stderr
+
+| Stream | What it carries |
+| --- | --- |
+| stdout | The result: the help text, the version, the `doctor` report, the `preview` report, and the `generate` report with its renderings, flags, written files and run summary. An error after the run started, as `Error: <message>`, and a range that was not confirmed, as `Stopped: <message>`. |
+| stderr | Everything about the run itself: the announced `--tag` and `--repo` defaults, the header naming the model and GitHub endpoints, the warning without a GitHub token, the `Range:` line and its question, the progress lines, a usage error, and a `Configuration error:`. |
+
+So `chartula generate > report.txt` keeps the report free of progress lines, and a CI log still shows where a run stood.
+The question about a first tag or a large range is asked only when stdin is a terminal, and the progress lines update in place only when stderr is one.
+
+## Environment
+
+Three variables carry credentials, and none is ever read from `chartula.yaml`:
+
+| Variable | Used for | Home |
+| --- | --- | --- |
+| `ANTHROPIC_API_KEY` | The model, with `llm.provider: anthropic`, the default. `generate` refuses to start without it. | [Providers](providers.md#anthropic) |
+| `OPENAI_API_KEY` | The model, with `llm.provider: openai-compatible`, when the endpoint needs a key. A local server needs none. | [Providers](providers.md#what-each-provider-needs) |
+| `GITHUB_TOKEN` | Reading pull requests and publishing the release notes. A run starts without one and warns. | [GitHub](github.md#the-token) |
+
+`preview` makes no model call, so it runs without a model key.
+
+Every setting of `chartula.yaml` can also be set as a `Chartula__<Section>__<Key>` variable, which wins over the file ([Settings as environment variables](configuration.md#settings-as-environment-variables)).
+Four settings exist only as variables: the two endpoints and the names of the two credential variables ([Environment-only settings](configuration.md#environment-only-settings)).
+The install scripts read `CHARTULA_VERSION`, `CHARTULA_INSTALL_DIR` and `CHARTULA_DOWNLOAD_URL`; the CLI does not ([Install](install.md#settings)).
+
+## Configuration file
+
+`chartula.yaml` in the directory the run starts in refines what every command does: the model, the labels, the filters, the categories and more.
+No command needs it, and every default applies without it.
+[Configuration](configuration.md) lists every key and its default.
+A file that cannot be read as written stops the run with a configuration error naming the file, the line and the column ([A file that cannot be read as meant](configuration.md#a-file-that-cannot-be-read-as-meant)).
+
+## Exit status
+
+| Status | When |
+| --- | --- |
+| `0` | `preview` showed the release. `generate` rendered every audience it asked for and published, or skipped publishing with `--no-publish`. `doctor` found nothing that fails. `--help` and `--version`. |
+| `1` | A usage error: an unknown command or option, an option of another command or without its value, an unknown audience, an invalid `--repo`. A configuration error. A tag or repository that cannot be read. A range that was not confirmed. An error once the run started. A `generate` in which any requested audience failed, or GitHub refused to publish. A `doctor` with a `fail` line. |
+
+An audience that failed does not hold back the ones that rendered: `generate` still writes their outputs and says `<n> of <m> audiences failed.`
+When no audience rendered, no output is written, so an earlier run's `changelog.json` is not replaced by one without renderings; only the [run record](run-record.md) is kept, since the tokens were spent.
+So a CI job reads the exit status, and a person reads the report for what did render.
+[A model call fails](troubleshooting.md#a-model-call-fails) shows the messages of a failed audience.
 
 ## After a run
 
-Every `generate` run ends with a report of what it did and what it cost in tokens.
-See [Costs and checks](costs-and-checks.md#reading-the-run-summary) for how to read it.
+Every `generate` run ends with a summary of what it did and what it cost in tokens, and names its run record below it.
+[Reading the run summary](costs-and-checks.md#reading-the-run-summary) explains each line.
 A `preview` spends no tokens, so it ends with what `generate` would send instead.
-`generate` keeps the same report in a [run record](run-record.md) and names the file below it.

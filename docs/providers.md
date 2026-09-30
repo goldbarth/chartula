@@ -23,7 +23,7 @@ The provider exists so release data can stay on your machine, and a default endp
 A run that lacks either stops with a message that names the missing setting.
 
 An `anthropic` run without a key stops before it reads anything, naming the variable.
-An `openai-compatible` run starts without one, because a local server needs none; a hosted endpoint that does need one answers the first call with `401`, and the run names the variable it read the key from (see [When a model call fails](cli.md#when-a-model-call-fails)).
+An `openai-compatible` run starts without one, because a local server needs none; a hosted endpoint that does need one answers the first call with `401`, and the run names the variable it read the key from (see [A model call fails](troubleshooting.md#a-model-call-fails)).
 
 Every run prints what is in effect to stderr before its first request, so a setting inherited from a shell profile or a CI runner shows before it costs anything:
 
