@@ -72,6 +72,78 @@ public sealed class GitHubPullRequestReader(HttpClient httpClient, string tokenV
         })];
     }
 
+    /// <summary>
+    /// Asks GitHub for the pull requests of one commit, the request a run starts with,
+    /// and throws with the run's own message when GitHub refuses it.
+    /// So a setup check fails exactly where a run would, and says the same.
+    /// </summary>
+    public async Task EnsureCanReadAsync(
+        RepositoryCoordinates repository,
+        string sha,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(repository);
+        ArgumentException.ThrowIfNullOrWhiteSpace(sha);
+
+        await GetPullsForCommitAsync(repository, sha, first: true, cancellationToken);
+    }
+
+    /// <summary>
+    /// The titles of up to <paramref name="count"/> pull requests merged most recently,
+    /// newest first, read with one request.
+    /// The closed list also holds pull requests closed without a merge, so it is read a
+    /// page larger than asked, and those are left out.
+    /// </summary>
+    public async Task<IReadOnlyList<string>> ReadRecentMergedTitlesAsync(
+        RepositoryCoordinates repository,
+        int count,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(repository);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
+
+        string path = $"repos/{repository.Owner}/{repository.Name}/pulls?state=closed&sort=updated&direction=desc&per_page=100";
+        HttpResponseMessage response;
+        try
+        {
+            response = await httpClient.GetAsync(path, cancellationToken);
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new InvalidOperationException(
+                $"Could not reach the GitHub API for the pull requests of {repository.Owner}/{repository.Name}: {ex.Message}", ex);
+        }
+
+        using (response)
+        {
+            if (!response.IsSuccessStatusCode)
+            {
+                GitHubErrorResponse error = await GitHubErrorResponse.ReadAsync(
+                    response, httpClient.DefaultRequestHeaders, cancellationToken);
+                throw new InvalidOperationException(
+                    error.DescribeCredentials(tokenVariable)
+                    ?? $"GitHub API returned {error.Status} for the pull requests of {repository.Owner}/{repository.Name}: {error.Message}");
+            }
+
+            try
+            {
+                string json = await response.Content.ReadAsStringAsync(cancellationToken);
+                GitHubPullRequestDto[] pulls =
+                    JsonSerializer.Deserialize(json, GitHubJsonContext.Default.GitHubPullRequestDtoArray) ?? [];
+                return [.. pulls
+                    .Where(pull => pull.MergedAt is not null)
+                    .OrderByDescending(pull => pull.MergedAt, StringComparer.Ordinal)
+                    .Take(count)
+                    .Select(pull => pull.Title ?? string.Empty)];
+            }
+            catch (JsonException ex)
+            {
+                throw new InvalidOperationException(
+                    $"GitHub API returned an unexpected response for the pull requests of {repository.Owner}/{repository.Name}: {ex.Message}", ex);
+            }
+        }
+    }
+
     private async Task<GitHubPullRequestDto[]> GetPullsForCommitAsync(
         RepositoryCoordinates repository,
         string sha,

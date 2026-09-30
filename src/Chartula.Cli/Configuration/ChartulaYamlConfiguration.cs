@@ -92,7 +92,7 @@ internal static class ChartulaYamlConfiguration
     /// Both names present is refused: whichever file won, the settings in the other would
     /// not be in force, and nothing would say so.
     /// </summary>
-    private static string? FindConfigFile(string directory)
+    internal static string? FindConfigFile(string directory)
     {
         string[] found = [.. ((string[])["chartula.yaml", "chartula.yml"])
             .Select(name => Path.Combine(directory, name))

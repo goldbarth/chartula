@@ -28,9 +28,14 @@ internal static class GitHubHttpClientFactory
         };
     }
 
-    public static HttpClient Create(GitHubOptions options, IConfiguration configuration)
+    /// <param name="options">The resolved GitHub options.</param>
+    /// <param name="configuration">The configuration the token is read from.</param>
+    /// <param name="transport">A handler in place of the network, for tests; <c>null</c> for a run.</param>
+    public static HttpClient Create(
+        GitHubOptions options, IConfiguration configuration, HttpMessageHandler? transport = null)
     {
-        HttpClient client = new() { BaseAddress = new Uri(options.ApiBaseUrl) };
+        HttpClient client = transport is null ? new() : new(transport);
+        client.BaseAddress = new Uri(options.ApiBaseUrl);
         client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Chartula", ToolVersion.Release));
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
         client.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");

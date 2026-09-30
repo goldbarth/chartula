@@ -15,8 +15,8 @@ public sealed class GitCliCommitReader(GitExecutable git, string repositoryPath)
     // subject. git's %x1f format token emits it, and ParseCommits splits on it.
     private const char FieldSeparator = '\u001f';
 
-    // How to fetch the history a shallow clone left out, locally and per CI system.
-    private const string FetchFullHistory = """
+    /// <summary>How to fetch the history a shallow clone left out, locally and per CI system.</summary>
+    public const string FetchFullHistory = """
           Fetch the full history and tags: git fetch --unshallow --tags
           In GitHub Actions, check out with fetch-depth: 0; in GitLab CI, set GIT_DEPTH: 0.
         """;

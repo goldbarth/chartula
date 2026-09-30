@@ -27,7 +27,7 @@ internal static class GitHubTokenNotice
     /// broadest credential, with read and write access to every repository they can
     /// reach, and would be handed to a process that reads repository content.
     /// </summary>
-    private const string NewTokenUrl = "https://github.com/settings/personal-access-tokens/new";
+    internal const string NewTokenUrl = "https://github.com/settings/personal-access-tokens/new";
 
     /// <summary>
     /// The notice for this configuration, or <c>null</c> when a token is present.

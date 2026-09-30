@@ -188,10 +188,18 @@ main() {
     chmod +x "$tmp/$file"
     mv "$tmp/$file" "$INSTALL_DIR/chartula"
 
-    "$INSTALL_DIR/chartula" --help >/dev/null 2>&1 \
-        || fail "chartula was installed to $INSTALL_DIR/chartula but does not start. Please report it at https://github.com/$REPO/issues"
-
-    say "Installed and checked: $INSTALL_DIR/chartula"
+    # --version names the build that was installed. A release pinned with
+    # CHARTULA_VERSION from before --version and doctor existed is checked with --help,
+    # and told to start with preview instead.
+    first_run="chartula doctor"
+    if version=$("$INSTALL_DIR/chartula" --version 2>/dev/null); then
+        say "Installed and checked: $INSTALL_DIR/chartula ($version)"
+    elif "$INSTALL_DIR/chartula" --help >/dev/null 2>&1; then
+        say "Installed and checked: $INSTALL_DIR/chartula"
+        first_run="chartula preview"
+    else
+        fail "chartula was installed to $INSTALL_DIR/chartula but does not start. Please report it at https://github.com/$REPO/issues"
+    fi
 
     case ":$PATH:" in
         *":$INSTALL_DIR:"*) ;;
@@ -199,10 +207,12 @@ main() {
     esac
 
     say ""
-    say "Before the first run, Chartula needs two keys in the terminal it runs in:"
+    say "Before the first run, Chartula needs a model key and a GitHub token in the terminal it runs in."
+    say "With Anthropic, the default provider:"
     say "  export ANTHROPIC_API_KEY=<key>    from https://console.anthropic.com/settings/keys"
     say "  export GITHUB_TOKEN=<token>       from https://github.com/settings/personal-access-tokens/new"
-    say "Then, inside your repository: chartula preview"
+    say "OpenAI, another hosted endpoint or a local server: https://github.com/$REPO/blob/main/docs/providers.md"
+    say "Then, inside your repository: $first_run"
     say "More: https://github.com/$REPO#readme"
 }
 

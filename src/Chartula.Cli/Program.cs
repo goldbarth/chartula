@@ -11,8 +11,9 @@ namespace Chartula.Cli;
 
 /// <summary>
 /// Entry point for the Chartula CLI. Dispatches the <c>generate</c> and <c>preview</c>
-/// commands. Both run the same pipeline. Preview stops before the model and writes
-/// nothing, and <c>--no-publish</c> limits generate to the local files.
+/// commands, and <c>doctor</c>, which checks the setup. The first two run the same
+/// pipeline. Preview stops before the model and writes nothing, and
+/// <c>--no-publish</c> limits generate to the local files.
 /// </summary>
 internal static class Program
 {
@@ -28,6 +29,12 @@ internal static class Program
         {
             Console.Out.WriteLine(VersionLine);
             return 0;
+        }
+
+        if (args[0] is DoctorCommand.Name)
+        {
+            return await DoctorCommand.RunAsync(
+                args, Directory.GetCurrentDirectory(), Environment.GetEnvironmentVariables(), Console.Out);
         }
 
         PipelineMode? mode = ParseMode(args[0], args);
@@ -56,7 +63,7 @@ internal static class Program
         try
         {
             configuration = BuildConfiguration();
-            services = BuildServices(configuration, mode.Value);
+            services = BuildServices(configuration, requireApiKey: mode != PipelineMode.Preview);
         }
         catch (InvalidOperationException ex)
         {
@@ -111,11 +118,17 @@ internal static class Program
     private static IConfiguration BuildConfiguration()
         => ChartulaConfiguration.Build(Directory.GetCurrentDirectory());
 
-    private static ServiceProvider BuildServices(IConfiguration configuration, PipelineMode mode)
+    /// <summary>
+    /// The services a run is built from. Building them checks every setting, so
+    /// <c>chartula doctor</c> builds them too. A preview makes no model call and needs no
+    /// key, and doctor reports the key on a line of its own, so both leave
+    /// <paramref name="requireApiKey"/> off.
+    /// </summary>
+    internal static ServiceProvider BuildServices(IConfiguration configuration, bool requireApiKey)
     {
         return new ServiceCollection()
             .AddChartulaObservability()
-            .AddChartulaLlm(configuration, requireApiKey: mode != PipelineMode.Preview)
+            .AddChartulaLlm(configuration, requireApiKey)
             .AddChartulaHistory()
             .AddChartulaPullRequests(configuration)
             .AddChartulaCuration()
@@ -169,6 +182,7 @@ internal static class Program
         Usage:
           chartula preview  [options]   Show the facts and what generate would send. Free.
           chartula generate [options]   Produce and write the outputs.
+          chartula doctor   [options]   Check the setup a run needs, before a run spends anything.
           chartula --version            Print the version and its commit.
 
         Run it from a checkout of the repository the release belongs to.
