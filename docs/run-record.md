@@ -105,7 +105,7 @@ Flags from several runs group by `pullRequest`, so a finding that repeats is fou
 | `ruleBasedCheck` | `runs`, `runsWithFindings` and `flags` of the free check. |
 | `thoroughCheck` | The same three for the thorough check, plus `onlyThoroughFlags` - the claims only it caught - and `notEvaluated` - the runs that came back unreadable. |
 | `durationSeconds` | How long the whole run took. |
-| `release` | How much release the run worked on: `commits`, `pullRequests`, `facts`, `factsWithDescription` and `descriptionCharacters` - the description text the model read, at the configured `factBase.depth`. |
+| `release` | How much release the run worked on: `commits`, `pullRequests`, `facts`, `factsWithDescription` and `descriptionCharacters` - the description text the model read, at the configured `factBase.depth` - plus `commitsWithoutPullRequest` and `mergeCommitsSkipped`, the commits that belong to no pull request and the merge commits among them that became no change. |
 
 Times are seconds with millisecond precision.
 `cachedInputTokens` is the part of `inputTokens` served from the provider's cache, `reasoningTokens` the part of `outputTokens` spent reasoning.

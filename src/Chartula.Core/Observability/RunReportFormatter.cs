@@ -127,8 +127,26 @@ public static class RunReportFormatter
     private static string Scope(ReleaseScope scope)
         => $"{Count(scope.Commits)} {(scope.Commits == 1 ? "commit" : "commits")}, "
            + $"{Count(scope.PullRequests)} {(scope.PullRequests == 1 ? "pull request" : "pull requests")}, "
+           + WithoutPullRequest(scope)
            + $"{Count(scope.Facts)} {(scope.Facts == 1 ? "fact" : "facts")} "
            + $"({Count(scope.FactsWithDescription)} with a description, {Count(scope.DescriptionCharacters)} characters)";
+
+    // Only when there are any: a release of pull requests alone reads as it always did.
+    private static string WithoutPullRequest(ReleaseScope scope)
+    {
+        if (scope.CommitsWithoutPullRequest == 0)
+        {
+            return string.Empty;
+        }
+
+        string commits = $"{Count(scope.CommitsWithoutPullRequest)} {(scope.CommitsWithoutPullRequest == 1 ? "commit" : "commits")} without one";
+        return scope.MergeCommitsSkipped switch
+        {
+            0 => $"{commits}, ",
+            1 => $"{commits} (1 merge commit, skipped), ",
+            int merges => $"{commits} ({Count(merges)} merge commits, skipped), ",
+        };
+    }
 
     private static string Activity(CheckActivity activity)
         => $"{Runs(activity.Runs)}, {Count(activity.RunsWithFindings)} with findings, {Claims(activity.Flags)}";

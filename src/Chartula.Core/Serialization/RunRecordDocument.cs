@@ -83,7 +83,9 @@ public sealed record RunRecordRelease(
     [property: JsonPropertyName("pullRequests")] int PullRequests,
     [property: JsonPropertyName("facts")] int Facts,
     [property: JsonPropertyName("factsWithDescription")] int FactsWithDescription,
-    [property: JsonPropertyName("descriptionCharacters")] long DescriptionCharacters);
+    [property: JsonPropertyName("descriptionCharacters")] long DescriptionCharacters,
+    [property: JsonPropertyName("commitsWithoutPullRequest")] int CommitsWithoutPullRequest = 0,
+    [property: JsonPropertyName("mergeCommitsSkipped")] int MergeCommitsSkipped = 0);
 
 /// <summary>
 /// Calls, tokens and time of one LLM operation.

@@ -20,7 +20,7 @@ public sealed class ReleaseChangeResolverTests
     {
         IReadOnlyList<ReleaseChange> changes = _resolver.Resolve(
             Range(("sha1", "some commit")),
-            [Pull(7, "Add dark mode", "A theme.", "feature")]);
+            [Pull(7, "Add dark mode", "A theme.", "feature") with { CommitShas = ["sha1"] }]);
 
         ReleaseChange change = Assert.Single(changes);
         Assert.Equal(ChangeSource.PullRequest, change.Source);
@@ -76,6 +76,69 @@ public sealed class ReleaseChangeResolverTests
             [Pull(42, title: "", body: "")]);
 
         Assert.Equal("PR #42", Assert.Single(changes).Title);
+    }
+
+    // #257: a fix pushed straight to main shipped with the release, and was left out
+    // because the release also had a pull request.
+    [Fact]
+    public void A_commit_without_a_pull_request_becomes_a_change_next_to_the_pull_requests()
+    {
+        CommitRange range = new("v1.0.0", "v0.9.0", [
+            new CommitInfo("merge", "Merge branch 'side'") { IsMerge = true },
+            new CommitInfo("direct", "fix: crash on start"),
+            new CommitInfo("pr", "feat: add search"),
+        ]);
+
+        IReadOnlyList<ReleaseChange> changes = _resolver.Resolve(
+            range, [Pull(7, "feat: add search", "Adds search.") with { CommitShas = ["pr"] }]);
+
+        // In range order, and the merge commit is no change of its own.
+        Assert.Equal(["fix: crash on start", "feat: add search"], changes.Select(c => c.Title));
+        Assert.Equal(ChangeSource.Commit, changes[0].Source);
+        Assert.Equal("direct", changes[0].CommitSha);
+        Assert.Null(changes[0].Number);
+        Assert.Equal(7, changes[1].Number);
+    }
+
+    // A pull request that a revert took back leaves its commits behind in the range.
+    // They belong to a pull request, so they are no direct push.
+    [Fact]
+    public void The_commits_of_a_reverted_pull_request_do_not_come_back_as_direct_commits()
+    {
+        CommitRange range = Range(("revert", "Revert \"feat: add search\""), ("pr", "feat: add search"));
+
+        IReadOnlyList<ReleaseChange> changes = _resolver.Resolve(range, [
+            Pull(8, "Revert \"feat: add search\"", "Reverts octo/repo#7") with { CommitShas = ["revert"] },
+            Pull(7, "feat: add search") with { CommitShas = ["pr"] },
+        ]);
+
+        Assert.Empty(changes);
+    }
+
+    [Fact]
+    public void A_release_without_pull_requests_skips_its_merge_commits()
+    {
+        CommitRange range = new("v1.0.0", "v0.9.0", [
+            new CommitInfo("merge", "Merge branch 'side'") { IsMerge = true },
+            new CommitInfo("sha1", "feat: add search"),
+        ]);
+
+        Assert.Equal("feat: add search", Assert.Single(_resolver.Resolve(range, pullRequests: [])).Title);
+    }
+
+    [Fact]
+    public void Direct_commits_count_the_merge_commits_they_skip()
+    {
+        CommitRange range = new("v1.0.0", "v0.9.0", [
+            new CommitInfo("merge", "Merge branch 'side'") { IsMerge = true },
+            new CommitInfo("direct", "fix: crash on start"),
+            new CommitInfo("pr", "feat: add search"),
+        ]);
+
+        DirectCommits direct = DirectCommits.Of(range, [Pull(7, "feat: add search") with { CommitShas = ["pr"] }]);
+
+        Assert.Equal(["direct"], direct.Commits.Select(c => c.Sha));
+        Assert.Equal(1, direct.SkippedMerges);
     }
 
     [Fact]

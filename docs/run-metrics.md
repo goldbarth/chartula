@@ -21,7 +21,7 @@ Run metrics
 
 | Line | Reading |
 | --- | --- |
-| `Release` | How much release the run worked on: commits in the range, the merged pull requests behind them, the facts the changelog was written from after filtering, and the characters of description the model read beyond the titles. Cost follows those characters more than the count of pull requests. |
+| `Release` | How much release the run worked on: commits in the range, the merged pull requests behind them, the facts the changelog was written from after filtering, and the characters of description the model read beyond the titles. Cost follows those characters more than the count of pull requests. When some commits belong to no pull request, it names them too: `3 commits without one (1 merge commit, skipped)`. Each became a change of its own, except the merge commits - see [What goes into a release](what-goes-into-a-release.md#2-pull-requests-or-commits). |
 | `runs` | How often the check was asked to run - once per rendered audience. |
 | `with findings` | How many of those runs flagged at least one claim, the check's hit rate. |
 | `claims` | How many claims the check flagged in total. |

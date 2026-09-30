@@ -155,6 +155,17 @@ public sealed class RunReportFormatterTests
     }
 
     [Fact]
+    public void The_release_line_names_the_commits_without_a_pull_request_and_the_merge_commits_skipped()
+    {
+        RunMetrics metrics = new();
+        metrics.RecordReleaseScope(new ReleaseScope(14, 10, 9, 7, 22_512, CommitsWithoutPullRequest: 3, MergeCommitsSkipped: 1));
+
+        Assert.Contains(
+            "  Release:          14 commits, 10 pull requests, 3 commits without one (1 merge commit, skipped), 9 facts",
+            RunReportFormatter.Format(metrics.Snapshot()));
+    }
+
+    [Fact]
     public void A_report_without_a_scope_has_no_release_line()
     {
         Assert.DoesNotContain("Release:", RunReportFormatter.Format(RunReport.Empty));

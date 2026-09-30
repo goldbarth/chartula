@@ -5,7 +5,8 @@ namespace Chartula.Core.Curation;
 
 /// <summary>
 /// Default <see cref="IReleaseChangeResolver"/>. It prefers merged pull requests.
-/// Without pull requests it falls back to commit data.
+/// A commit that belongs to none, such as a direct push, becomes a change from its
+/// commit data, so a release with pull requests does not lose it (#257).
 /// When a title is missing or uninformative, it falls back to the first informative
 /// line of the pull request body, then to "PR #N".
 /// </summary>
@@ -26,14 +27,40 @@ public sealed class ReleaseChangeResolver : IReleaseChangeResolver
         ArgumentNullException.ThrowIfNull(range);
         ArgumentNullException.ThrowIfNull(pullRequests);
 
-        // Merged PRs are the preferred source. Fall back to commit data only when
-        // there are none.
-        if (pullRequests.Count > 0)
+        IReadOnlyList<PullRequestInfo> kept = RevertPairing.Apply(range, pullRequests);
+        HashSet<CommitInfo> direct = [.. DirectCommits.Of(range, pullRequests).Commits];
+
+        // In range order: a pull request where its first commit is, a direct commit where
+        // it is. A release with pull requests only keeps the order it always had.
+        Dictionary<string, PullRequestInfo> pullByCommit = new(StringComparer.OrdinalIgnoreCase);
+        foreach (PullRequestInfo pull in kept)
         {
-            return RevertPairing.Apply(range, pullRequests).Select(FromPullRequest).ToArray();
+            foreach (string sha in pull.CommitShas)
+            {
+                pullByCommit.TryAdd(sha, pull);
+            }
         }
 
-        return range.Commits.Select(FromCommit).ToArray();
+        List<ReleaseChange> changes = [];
+        HashSet<int> placed = [];
+        foreach (CommitInfo commit in range.Commits)
+        {
+            if (pullByCommit.TryGetValue(commit.Sha, out PullRequestInfo? pull))
+            {
+                if (placed.Add(pull.Number))
+                {
+                    changes.Add(FromPullRequest(pull));
+                }
+            }
+            else if (direct.Contains(commit))
+            {
+                changes.Add(FromCommit(commit));
+            }
+        }
+
+        // A pull request whose commits the source did not name has no place in the range.
+        changes.AddRange(kept.Where(pull => !placed.Contains(pull.Number)).Select(FromPullRequest));
+        return changes;
     }
 
     private static ReleaseChange FromPullRequest(PullRequestInfo pull)

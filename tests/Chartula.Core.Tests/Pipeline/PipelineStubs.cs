@@ -47,7 +47,10 @@ internal sealed class StubPullRequestReader : IReleasePullRequestReader
     public Task<IReadOnlyList<PullRequestInfo>> GetMergedPullRequestsAsync(
         RepositoryCoordinates repository, CommitRange range, CancellationToken cancellationToken = default)
         => Task.FromResult<IReadOnlyList<PullRequestInfo>>(
-            [new PullRequestInfo(7, "feat: add search", "Adds search.", [], "https://example/pull/7")]);
+            [new PullRequestInfo(7, "feat: add search", "Adds search.", [], "https://example/pull/7")
+            {
+                CommitShas = [.. range.Commits.Select(static commit => commit.Sha)],
+            }]);
 }
 
 internal sealed class StubRenderer : IReleaseRenderer

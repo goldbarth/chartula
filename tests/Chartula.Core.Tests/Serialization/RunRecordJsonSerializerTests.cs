@@ -209,11 +209,11 @@ public sealed class RunRecordJsonSerializerTests
     public void Writes_how_much_release_the_run_worked_on()
     {
         RunMetrics metrics = new();
-        metrics.RecordReleaseScope(new ReleaseScope(14, 10, 9, 7, 22_512));
+        metrics.RecordReleaseScope(new ReleaseScope(14, 10, 9, 7, 22_512, CommitsWithoutPullRequest: 3, MergeCommitsSkipped: 1));
         RunRecord record = Record() with { Metrics = metrics.Snapshot() };
 
         RunRecordMetrics written = RunRecordJsonSerializer.Deserialize(RunRecordJsonSerializer.Serialize(record, At)).Metrics;
 
-        Assert.Equal(new RunRecordRelease(14, 10, 9, 7, 22_512), written.Release);
+        Assert.Equal(new RunRecordRelease(14, 10, 9, 7, 22_512, 3, 1), written.Release);
     }
 }
