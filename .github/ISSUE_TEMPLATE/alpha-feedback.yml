@@ -16,8 +16,8 @@ body:
     id: version
     attributes:
       label: Chartula version
-      description: The release you downloaded, or the commit you built from.
-      placeholder: 0.1.0-preview.1
+      description: The output of `chartula --version`.
+      placeholder: chartula 0.1.0-preview.3+7620e6d95b62190d12f57ba345479b524674fea1
     validations:
       required: true
 

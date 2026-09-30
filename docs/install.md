@@ -52,8 +52,11 @@ Both scripts start the installed binary once before they report success, so a bi
 Check it yourself with:
 
 ```bash
-chartula --help
+chartula --version
 ```
+
+It prints the installed version and the commit it was built from, such as `chartula 0.1.0-preview.3+7620e6d...`.
+A bug report or feedback form asks for this line, so it names the exact build you ran.
 
 To read a script before running it, open it in a browser: [install.sh](../install.sh), [install.ps1](../install.ps1).
 
@@ -163,6 +166,7 @@ A build from source needs the .NET runtime to run, unlike a release binary.
 
 Run the install command again.
 It replaces the binary with the latest release, or with the release `CHARTULA_VERSION` names.
+`chartula --version` shows which one you have now.
 
 A binary downloaded by hand is updated the same way it was installed: download the new one and replace the old file.
 

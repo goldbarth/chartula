@@ -24,6 +24,12 @@ internal static class Program
             return 0;
         }
 
+        if (args[0] is VersionFlag)
+        {
+            Console.Out.WriteLine(VersionLine);
+            return 0;
+        }
+
         PipelineMode? mode = ParseMode(args[0], args);
 
         if (mode is null)
@@ -144,6 +150,14 @@ internal static class Program
     private static bool IsHelp(string arg)
         => arg is "-h" or "--help" or "help";
 
+    private const string VersionFlag = "--version";
+
+    /// <summary>
+    /// The version with the commit it was built from, in the form <c>changelog.json</c>
+    /// records as <c>toolVersion</c>, so a bug report names the same build a run file does.
+    /// </summary>
+    internal static string VersionLine => $"chartula {ToolVersion.Informational ?? ToolVersion.Release}";
+
     /// <summary>
     /// The help text. It is one string instead of a series of writes, so a test can
     /// check it against what the CLI actually accepts.
@@ -155,6 +169,7 @@ internal static class Program
         Usage:
           chartula preview  [options]   Show what would be produced (dry run).
           chartula generate [options]   Produce and write the outputs.
+          chartula --version            Print the version and its commit.
 
         Run it from a checkout of the repository the release belongs to.
 

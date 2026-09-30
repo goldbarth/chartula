@@ -18,7 +18,7 @@ What you expected to happen instead.
 3. ...
 
 **Environment**
-- Chartula version:
+- Chartula version (output of `chartula --version`):
 - OS:
 - .NET version:
 
