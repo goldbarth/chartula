@@ -31,20 +31,35 @@ internal static class Program
             return 0;
         }
 
+        if (!CommandLineArguments.IsCommand(args[0]))
+        {
+            Console.Error.WriteLine($"Unknown command '{args[0]}'.");
+            PrintUsage();
+            return 1;
+        }
+
+        // Help wins wherever it stands, before anything is checked or started.
+        if (args.Skip(1).Any(CommandLineArguments.IsHelp))
+        {
+            PrintUsage();
+            return 0;
+        }
+
+        if (CommandLineArguments.Check(args) is { } argumentError)
+        {
+            Console.Error.WriteLine(argumentError);
+            Console.Error.WriteLine("chartula --help lists every command and its options.");
+            return 1;
+        }
+
         if (args[0] is DoctorCommand.Name)
         {
             return await DoctorCommand.RunAsync(
                 args, Directory.GetCurrentDirectory(), Environment.GetEnvironmentVariables(), Console.Out);
         }
 
-        PipelineMode? mode = ParseMode(args[0], args);
-
-        if (mode is null)
-        {
-            Console.Error.WriteLine($"Unknown command '{args[0]}'.");
-            PrintUsage();
-            return 1;
-        }
+        PipelineMode mode = ParseMode(args[0], args)
+                            ?? throw new InvalidOperationException($"'{args[0]}' is a command without a pipeline mode.");
 
         if (!AudienceSelection.TryParse(args, out IReadOnlyCollection<Audience>? audiences, out string? audienceError))
         {
@@ -99,7 +114,7 @@ internal static class Program
 
             return await ReleaseCommand.RunAsync(
                 pipeline,
-                mode.Value,
+                mode,
                 new ReleaseRequest(target.Tag, target.Repository)
                 {
                     Audiences = audiences,
@@ -161,7 +176,7 @@ internal static class Program
         };
 
     private static bool IsHelp(string arg)
-        => arg is "-h" or "--help" or "help";
+        => CommandLineArguments.IsHelp(arg) || arg is "help";
 
     private const string VersionFlag = "--version";
 
@@ -201,6 +216,9 @@ internal static class Program
                          Repeat it, or separate them with commas. Default:
                          technical and customer; product renders only when named.
                          An output whose audience was not rendered is not written.
+
+        doctor takes --tag and --repo; --no-publish is for generate only.
+        An option a command does not take stops before anything starts.
 
         """;
 

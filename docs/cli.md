@@ -34,12 +34,27 @@ Options:
                  Repeat it, or separate them with commas. Default:
                  technical and customer; product renders only when named.
                  An output whose audience was not rendered is not written.
+
+doctor takes --tag and --repo; --no-publish is for generate only.
+An option a command does not take stops before anything starts.
 ```
 
 `-h`, `--help` and `help` all print this text, and so does running `chartula` with no arguments at all.
+`-h` and `--help` also print it after a command, such as `chartula generate --help`, and start nothing.
 `chartula --version` prints the version and the commit it was built from, such as `chartula 0.1.0-preview.3+7620e6d...`, and exits with status 0.
 It is the same text a run records as `toolVersion` in `changelog.json`, so a report and a run file name the same build.
 An unrecognized first word is not silently ignored - it prints `Unknown command '<word>'.`, the same usage text, and exits with status 1.
+
+Every option after the command is checked before anything starts, and one that cannot be read as meant stops the run with status 1:
+
+```console
+$ chartula generate --nopublish
+Unknown option '--nopublish' for generate. Did you mean --no-publish?
+chartula --help lists every command and its options.
+```
+
+The same goes for an option without its value (`--tag` at the end, or `--tag --no-publish`), a single-value option given twice, an option of another command (`--no-publish` on `preview`), `--tag=v1.2.0` instead of `--tag v1.2.0`, and a word that is no option.
+So a typo never runs for another release, and never publishes by accident.
 
 Two commands make a changelog: `preview` and `generate`.
 Both establish the same facts the same way; `preview` stops there, and `generate` goes on to the model.
@@ -256,7 +271,7 @@ A file that cannot be read as written - invalid YAML, an unknown or misplaced ke
 ## Exit status
 
 `0` when every audience the run asked for rendered.
-`1` on a usage error (missing option, unknown command, unknown audience), a run-time failure (bad configuration, a pipeline error), or a run in which any requested audience failed.
+`1` on a usage error (an unknown command or option, an option without its value, an unknown audience), a run-time failure (bad configuration, a pipeline error), or a run in which any requested audience failed.
 
 An audience that failed does not hold back the ones that rendered: `generate` still writes their outputs and says `<n> of <m> audiences failed.`
 When no audience rendered, no output is written, so an earlier run's `changelog.json` is not replaced by one without renderings; only the [run record](run-record.md) is kept, since the tokens were spent.
