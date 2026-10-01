@@ -1,0 +1,46 @@
+name: Feature request
+description: Something Chartula cannot do for you yet
+title: "[Feature] "
+labels: ["type:feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The problem matters more than a solution, because it is what decides whether and how Chartula changes.
+        [ROADMAP.md](https://github.com/goldbarth/chartula/blob/main/ROADMAP.md) lists what is planned already, each point with its issue.
+        A question about how to use Chartula belongs in [Discussions](https://github.com/goldbarth/chartula/discussions/categories/q-a).
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What you are trying to do, and where Chartula stops you.
+      placeholder: |
+        Our release notes go out in German and English.
+        Chartula writes the customer page in one language, so we translate it by hand for every release.
+    validations:
+      required: true
+
+  - type: textarea
+    id: workaround
+    attributes:
+      label: Your current workaround
+      description: What you do today instead, and what it costs you. Write "none" when there is none.
+      placeholder: We copy release-v1.3.0.md into a translation tool and fix the result, about 20 minutes per release.
+    validations:
+      required: true
+
+  - type: textarea
+    id: affected
+    attributes:
+      label: Who is affected
+      description: Who runs into this, and how often. For example, the maintainer at every release, or the readers of the customer page.
+      placeholder: The maintainer at every release, and every customer who reads German.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: A proposal
+      description: How Chartula could solve it, if you have an idea. Optional.

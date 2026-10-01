@@ -1,0 +1,122 @@
+name: Bug report
+description: Chartula stopped with an error, or wrote something it should not have
+title: "[Bug] "
+labels: ["type:bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Each field below is something a maintainer needs to run your case again.
+        Leave a field empty rather than guess.
+
+        Do not paste API keys or tokens.
+        Chartula names variables, never their values, so its own output is safe to paste.
+        Replace the name of a private repository if you are not free to share it.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What Chartula did, and what you expected it to do instead.
+      placeholder: |
+        generate stopped after "Rendering customer" with the error below.
+        I expected it to write release-v1.3.0.md, as it did for v1.2.0.
+    validations:
+      required: true
+
+  - type: input
+    id: command
+    attributes:
+      label: Command
+      description: The command line you ran, with every option.
+      placeholder: chartula generate --tag v1.3.0 --no-publish
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Chartula version
+      description: The output of `chartula --version`. It names the exact build, commit included.
+      placeholder: chartula 0.1.0-preview.N+<commit>
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install-method
+    attributes:
+      label: Install method
+      options:
+        - Install script (install.sh)
+        - Install script (install.ps1)
+        - Downloaded by hand from a release
+        - Built from source
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Operating system and architecture
+      description: The platform of the binary you run. `docs/install.md` lists which binary each one uses.
+      options:
+        - Linux with glibc, x64
+        - Linux with glibc, arm64
+        - Linux with musl (Alpine), x64
+        - Linux with musl (Alpine), arm64
+        - macOS, Intel
+        - macOS, Apple silicon
+        - Windows, x64
+        - Windows, arm64
+        - Another platform, built from source
+    validations:
+      required: true
+
+  - type: input
+    id: model
+    attributes:
+      label: Provider and model
+      description: The `llm.provider` and `llm.model` the run used, or "defaults" when `chartula.yaml` sets neither.
+      placeholder: openai-compatible, qwen3:8b on a local server
+
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of `chartula doctor`
+      description: |
+        Run it in the same directory, with the same environment and `--tag` as the failing command.
+        It checks git, the tag, the configuration, the model endpoint and GitHub, so it often shows the cause already.
+      render: text
+
+  - type: textarea
+    id: header
+    attributes:
+      label: Header lines of the run
+      description: |
+        Every line the run printed before its first step, up to and including `Range:`.
+        They name the tag, the repository, the model and the endpoints the run used, which the command line alone does not show.
+      placeholder: |
+        Using tag v1.3.0, the nearest tag reachable from HEAD. Pass --tag to choose another.
+        Model:  anthropic at its default endpoint, key from ANTHROPIC_API_KEY
+                claude-sonnet-5, thinking provider-default
+        GitHub: https://api.github.com/, token from GITHUB_TOKEN
+        Range:  the commits after v1.2.0, up to v1.3.0 (100 commits)
+      render: text
+
+  - type: textarea
+    id: result
+    attributes:
+      label: Error or run summary
+      description: |
+        When the run stopped: the last progress line and the message below it.
+        When the run finished but its output is wrong: the "Run metrics" block from its end, and the entry that is wrong.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: other
+    attributes:
+      label: Anything else
+      description: Your `chartula.yaml` without secrets, the pull request an entry came from, or what you already tried.
