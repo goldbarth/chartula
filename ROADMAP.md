@@ -12,6 +12,7 @@ Before Chartula is announced, a first run has to work for someone new to it, and
 - The run header says when a run has no GitHub token or no model key, instead of naming a variable that is empty ([#210](https://github.com/goldbarth/chartula/issues/210)).
 - "Flagged for review" stands apart from the entries, so it no longer reads as part of the last one ([#211](https://github.com/goldbarth/chartula/issues/211)).
 - A decision on whether `changelog.json` writes `+`, quotes and non-ASCII characters as they are, so a person can read and diff it ([#226](https://github.com/goldbarth/chartula/issues/226)).
+- A release with nothing for developers says so in `CHANGELOG.md` and its release notes, instead of an empty heading and empty notes ([#307](https://github.com/goldbarth/chartula/issues/307)).
 - The documentation covers a first run from install to a published draft, and every page a user needs on the way; this has no issue.
 
 [Milestone: Launch](https://github.com/goldbarth/chartula/milestone/5)
