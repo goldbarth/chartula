@@ -9,6 +9,7 @@ A change that goes against one starts as an issue, not a pull request, so the re
 | [0002](0002-dependencies-that-keep-native-aot-reachable.md) | Dependencies that keep a native-AOT build reachable | Accepted | 2026-07-16 |
 | [0003](0003-endpoints-and-credentials-from-the-environment.md) | Endpoints and credential names come from the environment only | Accepted | 2026-09-21 |
 | [0004](0004-models-through-ichatclient-alone.md) | The domain talks to models through `IChatClient` alone | Accepted | 2026-07-16 |
+| [0005](0005-refuse-rather-than-guess.md) | Refuse rather than guess what the user meant | Accepted | 2026-09-21 |
 
 ## When to write one
 
