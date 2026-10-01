@@ -1,5 +1,8 @@
 blank_issues_enabled: true
 contact_links:
+  - name: Ask a question
+    url: https://github.com/goldbarth/chartula/discussions/categories/q-a
+    about: How to set up or use Chartula. An answer there stays findable for the next person with the same question.
   - name: Report a security vulnerability
     url: https://github.com/goldbarth/chartula/security/advisories/new
     about: Please report vulnerabilities privately, not as a public issue. See SECURITY.md.

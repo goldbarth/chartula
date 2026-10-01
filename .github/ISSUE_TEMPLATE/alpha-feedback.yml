@@ -6,6 +6,7 @@ body:
     attributes:
       value: |
         Thank you for trying the alpha.
+        The alpha is the time before 1.0.0, and its releases carry "preview" in the version, such as `0.1.0-preview.N` ([Versioning](https://github.com/goldbarth/chartula/blob/main/docs/versioning.md#before-100-preview-and-alpha)).
         A report like "it didn't work well" cannot be acted on; the answers below are what explains it.
         Leave a field empty rather than guess.
 
@@ -17,7 +18,7 @@ body:
     attributes:
       label: Chartula version
       description: The output of `chartula --version`.
-      placeholder: chartula 0.1.0-preview.3+7620e6d95b62190d12f57ba345479b524674fea1
+      placeholder: chartula 0.1.0-preview.N+<commit>
     validations:
       required: true
 
