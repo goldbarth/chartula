@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Decided:** 2026-07-16 (#41, for #2)
-- **Recorded:** 2026-10-01 (#ADR4PR)
+- **Recorded:** 2026-10-01 (#319)
 
 ## Context
 
