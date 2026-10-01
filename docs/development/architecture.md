@@ -62,7 +62,7 @@ Please do not trade these away without raising it first:
 - **The git CLI, not LibGit2Sharp.** A native library would work against a self-contained, trim-friendly binary.
 - **`HttpClient` and source-generated JSON, not Octokit.** The GitHub surface Chartula needs is small, and reflection-based serialization is what trimming struggles with most.
 - **Source-generated regexes**, for the same reason.
-- **`Microsoft.Extensions.AI.IChatClient`, not a provider SDK, in the domain.** The provider package is referenced by `Chartula.Cli` alone, which is what makes the domain untestable against a real model by construction rather than by discipline.
+- **`Microsoft.Extensions.AI.IChatClient`, not a provider SDK, in the domain**, with the provider packages in `Chartula.Cli` alone ([ADR 0004](adr/0004-models-through-ichatclient-alone.md)).
 
 ## Where things are
 
