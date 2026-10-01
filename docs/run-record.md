@@ -1,50 +1,11 @@
 # Run record
 
-Every `generate` run keeps what it did and what it cost in a file of its own, `chartula-runs/<time>-<tag>.json`, next to the other outputs.
-It holds the figures of the [run summary](costs-and-checks.md#reading-the-run-summary), the settings the run was made with, how each [audience](glossary.md#audience) came out, and the complete [facts](glossary.md#fact) the run rendered from.
+The schema of the run record, the file `chartula-runs/<time>-<tag>.json` that every `generate` run keeps on your machine.
+[Outputs](outputs.md#the-run-record) says when it is written and how it is named, and [Comparing runs](costs-and-checks.md#comparing-runs) shows what to do with it.
 
-Comparing runs - a prompt change, another model, thinking on or off - then means comparing two files, not copying numbers out of a terminal.
-A figure written down later is a figure from memory; the record is the run's own.
-
-## What it is not
-
-The record is never published or uploaded.
-Token usage is a fact about the run, not about the release, so it stays out of `changelog.json` and the release notes.
-
-It holds no rendered text: the texts are in `changelog.json`.
-It does hold every pull request description, the faithfulness [flags](glossary.md#flag) and any error message, so treat it like a local log.
-The descriptions are why the facts live here and not in `changelog.json`: that file is published, and a description is what its author wrote for reviewers.
-
-Whether to commit it is yours to decide.
-For a repository whose releases Chartula writes, ignore it:
-
-```gitignore
-/chartula-runs/
-```
-
-Commit it where the history of runs is the point, as in an evaluation repository.
-
-## When it is written
-
-- `generate` and `generate --no-publish` write one record per run.
-- A run in which no audience rendered is recorded too: its tokens were spent all the same.
-  Only `changelog.json` is held back then, so an earlier run's file is not replaced.
-- `preview` writes nothing, and that includes the record: it makes no model call, so there is no cost to record.
-
-The run summary names the file under its metrics:
-
-```text
-  Total:            12,656 tokens
-  Recorded in /home/me/repo/chartula-runs/20260922T123015Z-v1.2.0.json
-```
-
-One file per run rather than one file appended to: each record is a whole JSON document that can be read and diffed on its own, and no run rewrites what an earlier one recorded.
-The name starts with the time in UTC, so the files list in the order the runs were made.
-A character a file name cannot carry, such as the `/` in `release/1.2`, becomes `-`; two runs in the same second get `-2`, `-3` and so on.
+The file is UTF-8, indented JSON, and escapes characters the way [`changelog.json`](changelog-json.md#known-issue-escaped-characters) does.
 
 ## Schema
-
-The file is UTF-8, indented JSON.
 
 | Field | Type | Description |
 | --- | --- | --- |
@@ -52,24 +13,23 @@ The file is UTF-8, indented JSON.
 | `recordedAt` | string | When the run was recorded, ISO 8601 in UTC, to the second. |
 | `tag` | string | The release tag the run was for. |
 | `repository` | string | The repository, as `owner/name`. |
-| `range` | object | The commits the run read (see below). Absent in a version 1 record. |
+| `range` | object | The commits the run read (see below). |
 | `mode` | string | `generate` or `generate --no-publish`. |
-| `provenance` | object | What the run was made with, in the same fields as [`changelog.json`'s provenance](changelog-json.md#provenance): tool version, provider, model, prompt hash, `thinking`, `thoroughCheck`, `factBaseDepth`, `checkModel` and `checkThinking`. |
-| `audiences` | array | One entry per audience the run asked for (see below). |
-| `metrics` | object | Calls, tokens and check activity (see below). |
-| `facts` | array | The facts the run rendered from, descriptions included (see below). Absent in a record written before it existed. |
+| `provenance` | object | What the run was made with, in the fields of [`changelog.json`'s provenance](changelog-json.md#provenance). |
+| `audiences` | array | One entry per [audience](glossary.md#audience) the run asked for (see below). |
+| `metrics` | object | The model calls, tokens and check findings of the run (see below). |
+| `facts` | array | The [facts](glossary.md#fact) the run rendered from, descriptions included (see below). |
 
 ### Range
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `start` | string | Where the [range](glossary.md#range) started: `previous-tag` (found on its own), `since` (named with `--since`) or `first-commit` (a first tag, no start at all). |
+| `start` | string | Where the [range](glossary.md#range) started: `previous-tag` (found on its own), `since` (named with `--since`) or `first-commit` (a first tag). |
 | `from` | string | The tag or commit the range starts after, as named or found. Absent for `first-commit`. |
 | `fromCommit` | string | The full hash `from` pointed to when the run read the range. Absent for `first-commit`. |
 | `toCommit` | string | The full hash the release tag pointed to when the run read the range. |
 
-A run over a wrong range looks like any other run: the tag is the same, the facts and flags are not.
-The range tells the two apart, and `git log <fromCommit>..<toCommit>` lists the commits the run read, even after a tag has moved.
+`git log <fromCommit>..<toCommit>` lists the commits the run read, even after a tag has moved.
 
 ### Facts
 
@@ -77,12 +37,9 @@ One entry per fact, in the fields of a [`changelog.json` change entry](changelog
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `description` | string or null | The pull request description with HTML comments removed, since GitHub does not show them to a reader. `null` for a commit-based change, at `factBase.depth: title-only`, or when the body is empty or an unfilled template (nothing but headings and checklist items). |
+| `description` | string or null | The pull request description without its HTML comments. `null` for a change from a commit, at `factBase.depth: title-only`, and when the description is empty or an unfilled template ([The title and the description](what-goes-into-a-release.md#the-title-and-the-description)). |
 
-It is the whole [fact base](glossary.md#fact-base) the model read, so a [rendering](glossary.md#rendering) can be traced back to its input even after a pull request was edited, and a stored run can be replayed or evaluated.
-`changelog.json` carries the same facts without their descriptions ([#260](https://github.com/goldbarth/chartula/issues/260)).
-An added optional field, so the record stays at version 3.
-Its size is `commits` under [`metrics.release`](#metrics).
+Together they are the whole [fact base](glossary.md#fact-base) the model read, so a [rendering](glossary.md#rendering) can be traced back to its input after a pull request was edited.
 
 ### Audience entry
 
@@ -90,45 +47,37 @@ Its size is `commits` under [`metrics.release`](#metrics).
 | --- | --- | --- |
 | `audience` | string | `technical`, `customer` or `product`. |
 | `rendered` | boolean | Whether the audience rendered. |
-| `flags` | array of objects | What the faithfulness checks flagged (see below). Present when the audience rendered, empty when nothing was flagged. |
+| `flags` | array of objects | What the checks flagged (see below). Present when the audience rendered, and empty when nothing was flagged. Absent when it failed, because a failed audience was never checked and an empty list would read as a clean check. |
 | `error` | string | Why the audience failed. Present only when it did. |
-
-A failed audience has no `flags`: it was never checked, and an empty list would read as a clean check.
 
 ### Flag
 
 | Field | Type | Description |
 | --- | --- | --- |
 | `text` | string | What was flagged, and why. |
-| `pullRequest` | integer | The pull request whose fact the flagged passage rephrases. Absent when the flag concerns no single fact. |
+| `pullRequest` | integer | The pull request whose fact the flagged passage rephrases (see below). |
 
-The [thorough check](glossary.md#thorough-check) names the pull request, and Chartula keeps the number only when the release has that pull request among its facts.
-A number the release does not have, such as an issue a title mentions, stays in the flag's text as the check's lead, not as its `pullRequest`.
-A number the release does have is still the check's reading: Chartula verifies that the fact exists, not that the check picked the right one.
-The [rule-based check](glossary.md#rule-based-check)'s flags never have one: they name a number or a name that no fact contains.
-Neither does a [claim](glossary.md#claim) about the release as a whole, a fact that came from a commit without a pull request, or a thorough check that could not be evaluated.
-
-Flags from several runs group by `pullRequest`, so a finding that repeats is found by the fact it concerns rather than by how alike its wording is.
+A [flag](glossary.md#flag) has a `pullRequest` when the [thorough check](glossary.md#thorough-check) names a pull request that is part of this release.
+It has none when it comes from the [rule-based check](glossary.md#rule-based-check), concerns the release as a whole or a change from a commit, names a number the release does not have, or reports a thorough check that could not be evaluated.
+Chartula verifies that the number is a pull request of the release, not that the check picked the right one.
 
 ### Metrics
 
+Four objects describe the model calls and the checks: `rephrase` and `faithfulnessCheck` count the calls of the rendering and of the thorough check, and `ruleBasedCheck` and `thoroughCheck` count what each check found.
+
 | Field | Description |
 | --- | --- |
-| `rephrase` | The rephrasing calls: `calls`, `callsWithoutUsage`, `inputTokens`, `outputTokens`, `failedCalls`, `durationSeconds`, `longestCallSeconds`, and - when they could be counted or were reported - `retries`, `cachedInputTokens` and `reasoningTokens`. |
-| `faithfulnessCheck` | The thorough check's calls, in the same fields. All zero when the check was off. |
-| `ruleBasedCheck` | `runs`, `runsWithFindings` and `flags` of the free check. |
-| `thoroughCheck` | The same three for the thorough check, plus `onlyThoroughFlags` - the claims only it caught - and `notEvaluated` - the runs that came back unreadable. |
+| `rephrase` | The rendering calls: `calls`, `callsWithoutUsage`, `inputTokens`, `outputTokens`, `failedCalls`, `durationSeconds`, `longestCallSeconds`, and, when they could be counted or were reported, `retries`, `cachedInputTokens` and `reasoningTokens`. |
+| `faithfulnessCheck` | The calls of the thorough check, in the same fields. All zero when the check was off. |
+| `ruleBasedCheck` | What the rule-based check found: `runs`, `runsWithFindings` and `flags`. |
+| `thoroughCheck` | What the thorough check found, in the same three fields, plus `onlyThoroughFlags`, the flags the rule-based check did not raise, and `notEvaluated`, the runs whose answer could not be read. |
 | `durationSeconds` | How long the whole run took. |
-| `release` | How much release the run worked on: `commits`, `pullRequests`, `facts`, `factsWithDescription` and `descriptionCharacters` - the description text the model read, at the configured `factBase.depth` - plus `commitsWithoutPullRequest` and `mergeCommitsSkipped`, the commits that belong to no pull request and the merge commits among them that became no change. |
+| `release` | How much release the run worked on: `commits`, `pullRequests`, `facts`, `factsWithDescription`, `descriptionCharacters`, `commitsWithoutPullRequest` and `mergeCommitsSkipped`. |
 
+Each figure means what the same line of the [run summary](costs-and-checks.md#reading-the-run-summary) means.
 Times are seconds with millisecond precision.
-`cachedInputTokens` is the part of `inputTokens` served from the provider's cache, `reasoningTokens` the part of `outputTokens` spent reasoning.
-`retries`, `cachedInputTokens` and `reasoningTokens` are left out when they could not be counted or were not reported, rather than written as zero - see [A slow run](troubleshooting.md#a-slow-run).
-A record written before these fields existed reads with zeros for them and no `retries`.
-
-The numbers mean what they mean in the [run summary](costs-and-checks.md#reading-the-run-summary), and [Comparing runs](costs-and-checks.md#comparing-runs) shows how to read them across records with `jq`.
-`callsWithoutUsage` above zero makes the token counts a lower bound.
-Both operations are always present, with zeros when they made no call, so any two records compare field by field.
+`retries`, `cachedInputTokens` and `reasoningTokens` are left out when they could not be counted or were not reported, rather than written as zero.
+Both call objects are always present, with zeros when they made no call, so any two records compare field by field.
 
 ## Stability
 
@@ -139,30 +88,36 @@ Version 2 turned each flag from a string into an object with `text` and `pullReq
 A version 1 record holds the same text as a plain string in `flags` and has no `range`; nothing else changed.
 Version 3 renamed the start `whole-history` to `first-commit`, since the range ends at the tag and never was the whole history.
 A version 2 record with `whole-history` means the same as `first-commit`; nothing else changed.
+`facts` was added within version 3 as an optional field, so an earlier version 3 record has none.
+Fields added to `metrics` after a record was written read as zero in it, and `retries` as absent.
 
 ## Example
+
+The record of the same run as the [`changelog.json` example](changelog-json.md#example), as written, with one of its six facts:
 
 ```json
 {
   "schemaVersion": 3,
-  "recordedAt": "2026-09-22T12:30:15+00:00",
-  "tag": "v1.2.0",
-  "repository": "owner/repo",
+  "recordedAt": "2026-10-01T14:18:19+00:00",
+  "tag": "v0.1.0-preview.3",
+  "repository": "goldbarth/chartula",
   "range": {
     "start": "previous-tag",
-    "from": "v1.1.0",
-    "fromCommit": "9f2e1c47b0a6d3e85c1f4a7b2d9e0c3f6a8b1d42",
-    "toCommit": "4c8a0d1e7f3b92a65e0d4c1b8f7a3e2d9c6b5a10"
+    "from": "v0.1.0-preview.2",
+    "fromCommit": "ca35f082b088099ffc62deabc99111c95cbd874f",
+    "toCommit": "7620e6d95b62190d12f57ba345479b524674fea1"
   },
   "mode": "generate --no-publish",
   "provenance": {
-    "toolVersion": "0.1.0-preview.1+2c43772833e4ed32790e5549848f7f42bc0e4eee",
-    "provider": "anthropic",
-    "model": "claude-sonnet-5",
-    "promptHash": "sha256:3f1c...e9a0",
+    "toolVersion": "0.1.0-preview.3\u002Bdde0019754ac9f23ec2615fe85b58d3b88ca6b38",
+    "provider": "openai-compatible",
+    "model": "gpt-6-sol",
+    "promptHash": "sha256:18467240be1e8a49ca134d8d94ebaf281104fff70ad715fbc0c6b71dc048b5c1",
     "thinking": "disabled",
     "thoroughCheck": true,
-    "factBaseDepth": "title-and-description"
+    "factBaseDepth": "title-and-description",
+    "checkModel": "gpt-6-sol",
+    "checkThinking": "disabled"
   },
   "audiences": [
     {
@@ -173,58 +128,69 @@ A version 2 record with `whole-history` means the same as `first-commit`; nothin
     {
       "audience": "customer",
       "rendered": true,
-      "flags": [
-        {
-          "text": "'Search is now faster' is a claim of degree the facts do not back.",
-          "pullRequest": 412
-        },
-        {
-          "text": "The number '3' is not supported by the facts."
-        }
-      ]
+      "flags": []
     }
   ],
   "metrics": {
     "rephrase": {
       "calls": 2,
       "callsWithoutUsage": 0,
-      "inputTokens": 5437,
-      "outputTokens": 859,
+      "inputTokens": 8369,
+      "outputTokens": 411,
       "failedCalls": 0,
-      "durationSeconds": 41.023,
-      "longestCallSeconds": 22.105,
-      "retries": 1
+      "durationSeconds": 9.786,
+      "longestCallSeconds": 5.393,
+      "retries": 0,
+      "cachedInputTokens": 0,
+      "reasoningTokens": 0
     },
     "faithfulnessCheck": {
       "calls": 2,
       "callsWithoutUsage": 0,
-      "inputTokens": 4120,
-      "outputTokens": 96,
+      "inputTokens": 9084,
+      "outputTokens": 40,
       "failedCalls": 0,
-      "durationSeconds": 9.87,
-      "longestCallSeconds": 5.2,
-      "retries": 0
+      "durationSeconds": 2.687,
+      "longestCallSeconds": 1.757,
+      "retries": 0,
+      "cachedInputTokens": 0,
+      "reasoningTokens": 0
     },
     "ruleBasedCheck": {
       "runs": 2,
-      "runsWithFindings": 1,
-      "flags": 1
+      "runsWithFindings": 0,
+      "flags": 0
     },
     "thoroughCheck": {
       "runs": 2,
-      "runsWithFindings": 1,
-      "flags": 1,
-      "onlyThoroughFlags": 1,
+      "runsWithFindings": 0,
+      "flags": 0,
+      "onlyThoroughFlags": 0,
       "notEvaluated": 0
     },
-    "durationSeconds": 64.311,
+    "durationSeconds": 15.427,
     "release": {
-      "commits": 14,
-      "pullRequests": 10,
-      "facts": 9,
-      "factsWithDescription": 7,
-      "descriptionCharacters": 22512
+      "commits": 7,
+      "pullRequests": 7,
+      "facts": 6,
+      "factsWithDescription": 6,
+      "descriptionCharacters": 15083,
+      "commitsWithoutPullRequest": 0,
+      "mergeCommitsSkipped": 0
     }
-  }
+  },
+  "facts": [
+    {
+      "title": "docs: add the changelog Chartula generated for 0.1.0-preview.2",
+      "number": 246,
+      "url": "https://github.com/goldbarth/chartula/pull/246",
+      "category": "Documentation",
+      "userVisible": false,
+      "breaking": false,
+      "linkedIssues": [],
+      "labels": [],
+      "description": "Follows #139 and the \u0060v0.1.0-preview.2\u0060 tag.\n\n- \u0060CHANGELOG.md\u0060 section for \u00600.1.0-preview.2\u0060 generated by Chartula and committed as written.\n- Run: \u0060generate --tag v0.1.0-preview.2\u0060, provider \u0060openai-compatible\u0060, model \u0060gpt-6-sol\u0060, thinking \u0060disabled\u0060, thorough check on, binary \u00600.1.0-preview.2\u002Bca35f08\u0060. 24 pull requests, 23 facts, 69,876 tokens, 41 s. The same run wrote the draft release notes.\n- Only the note above the sections was edited by hand. The old note said nothing was released and named one provider and model for the whole file. Both are no longer true, so it now lists the settings per release.\n- \u0060changelog.json\u0060 goes to chartula-evals (\u0060test-runs/\u0060), not here, as with #139.\n\n**Verification**\n\n- \u0060toolVersion\u0060 in the run\u0027s \u0060changelog.json\u0060 is \u00600.1.0-preview.2\u002Bca35f082b088099ffc62deabc99111c95cbd874f\u0060, the tagged commit.\n- Thorough check: technical 0 flags, customer 2 (customer rendering is not in this file).\n\nTests: none, documentation only."
+    }
+  ]
 }
 ```

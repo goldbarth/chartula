@@ -204,14 +204,22 @@ It holds the facts of the release without the pull request descriptions, every r
 It is meant to be published: the descriptions stay out because their authors wrote them for reviewers, not for the public.
 
 Every run overwrites it, so it holds the current release only.
+One file is one release notification: a consumer that receives it has everything about that release, and nothing it has to tell apart from earlier ones.
+To keep a history, store each file where your release pipeline keeps its artifacts.
 [`changelog.json` format](changelog-json.md) is the schema.
 
 ## The run record
 
 `chartula-runs/<time>-<tag>.json` keeps what a run did and what it cost, and the complete facts it rendered from, pull request descriptions included.
-Each run writes a file of its own and never overwrites an earlier one.
+It holds no rendered text, since the texts are in `changelog.json`.
+A run whose audiences all failed writes it too, because its tokens were spent all the same.
 
-It stays on your machine and can hold text from private pull requests, so add `chartula-runs/` to your `.gitignore`.
+Each run writes a file of its own and never overwrites an earlier one, so every record can be read and diffed on its own.
+The name starts with the time in UTC, such as `20260922T123015Z-v1.2.0.json`, so the files list in the order the runs were made.
+A character a file name cannot carry, such as the `/` in `release/1.2`, becomes `-`; two runs in the same second get `-2`, `-3` and so on.
+
+The record is never published or uploaded.
+It can hold text from private pull requests, so add `chartula-runs/` to your `.gitignore`; commit it only where the history of runs is the point, as in an evaluation repository.
 [Run record](run-record.md) is the schema, and [Comparing runs](costs-and-checks.md#comparing-runs) shows what to do with it.
 
 ## A release with nothing to say

@@ -1,19 +1,9 @@
 # `changelog.json` format
 
-Chartula writes the release's [facts](glossary.md#fact) and the [audience](glossary.md#audience) texts to `changelog.json`, a machine-readable record of one release.
-A tool that reacts to a release, such as a webhook, reads it instead of parsing Markdown.
-It is meant to be published.
-
-The file holds the current release only, and every `generate` run overwrites it.
-One file is one release notification: a consumer that receives it has everything about that release, and nothing it has to tell apart from earlier ones.
-To keep a history, store each file where your release pipeline keeps its artifacts.
+The schema of `changelog.json`, the file a `generate` run writes with the release's [facts](glossary.md#fact) and its [renderings](glossary.md#rendering).
+[Outputs](outputs.md#changelogjson) says what the file is for, when it is written, and why it holds no pull request description.
 
 The file is UTF-8, indented JSON.
-
-**It holds no pull request description.**
-A description is what its author wrote for reviewers - internal notes, measurements, links to internal systems - and publishing the file must not publish it.
-The file holds each change's title, number, link, category, whether it is breaking and whether a reader can meet it, its labels and closed issue numbers, the [renderings](glossary.md#rendering), and how the file was made.
-The complete facts a run rendered from, descriptions included, stay on your machine in its [run record](run-record.md#facts).
 
 ## Schema
 
@@ -21,25 +11,22 @@ The complete facts a run rendered from, descriptions included, stay on your mach
 | --- | --- | --- |
 | `schemaVersion` | integer | The format version. Bumped only on a breaking change. Currently `2`. |
 | `tag` | string | The release tag the facts belong to. |
-| `changes` | array | One entry per included change (see below). |
-| `renderings` | object | The rendered audience texts as Markdown, keyed by audience (`technical`, `customer`, `product`). Only the audiences the run rendered are present. A written file has at least one, because a run in which no audience rendered writes no files. |
-| `provenance` | object, optional | How the file was made (see below). Absent in a file written without it, including every file from before it existed. |
+| `changes` | array | One entry per change of the release (see below). |
+| `renderings` | object | The rendered texts as Markdown, keyed by [audience](glossary.md#audience): `technical`, `customer`, `product`. Only the audiences the run rendered are present, and at least one is ([The renderings](#the-renderings)). |
+| `provenance` | object, optional | How the file was made (see below). Absent in a file written without it. |
 
 ### Change entry
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `title` | string | For a pull request, its title, trimmed. When the title says nothing - empty, starting with `Merge `, or exactly `wip`, `update`, `updates`, `misc`, `changes`, `fix`, `fixes` or `cleanup` - the first informative line of the description takes its place, or `PR #<n>` when there is none. This fallback reads the description whatever `factBase.depth` says, so even at `title-only` a pull request titled `fix` shows a line of its description. For a commit-based change, the commit subject. |
-| `number` | integer or null | The pull request number, or `null` for commit-based changes. |
-| `url` | string or null | The pull request link, or `null` for commit-based changes. |
-| `category` | string | One of `Feature`, `Fix`, `Performance`, `Documentation`, `Refactor`, `Internal`, `Other`. |
-| `userVisible` | boolean | Whether a reader can come into contact with the change. Decided by the visibility labels in [`configuration.md`](configuration.md), with the category as the fallback; a breaking change is always `true`. |
-| `breaking` | boolean | Whether the change is a breaking change. |
-| `linkedIssues` | array of integers | The numbers after `close`, `closes`, `closed`, `fix`, `fixes`, `fixed`, `resolve`, `resolves` or `resolved` and a `#` in the title or description (`closes #12`), in the order found, each once. Chartula reads no issue, so the number is all the file knows about it. At `factBase.depth: title-only`, from the title alone, since the model reads no description. Files written before this held the numbers only at the former `title-description-and-issues` depth, and were empty otherwise. |
-| `labels` | array of strings | The labels on the pull request, verbatim and unfiltered. Empty when the source carries none, as a commit-based change does. |
-
-Every field of a change entry is an established fact derived deterministically from the pull request or commit.
-The `renderings` object holds the audience texts the LLM produced by rephrasing those facts; the facts themselves are never LLM-generated.
+| `title` | string | The pull request title, or a line of its description when the title says nothing ([The title and the description](what-goes-into-a-release.md#the-title-and-the-description)). For a change from a commit without a pull request, the commit subject. |
+| `number` | integer or null | The pull request number, or `null` for a change from a commit. |
+| `url` | string or null | The pull request link, or `null` for a change from a commit. |
+| `category` | string | One of the seven categories in [The category](what-goes-into-a-release.md#4-the-category), such as `Feature` or `Fix`. |
+| `userVisible` | boolean | Whether a reader can meet the change ([Who can meet a change](what-goes-into-a-release.md#7-who-can-meet-a-change)). |
+| `breaking` | boolean | Whether the change is breaking ([Breaking changes](what-goes-into-a-release.md#5-breaking-changes)). |
+| `linkedIssues` | array of integers | The issue numbers the change closes, such as `12` for `closes #12`, in the order found, each once. Read from the text the model reads ([How much of each change the model reads](what-goes-into-a-release.md#8-how-much-of-each-change-the-model-reads)); Chartula reads no issue itself. |
+| `labels` | array of strings | The labels on the pull request, verbatim and unfiltered. Empty for a change from a commit. |
 
 ### Provenance
 
@@ -48,19 +35,64 @@ Each field is left out when the run does not have a value for it, never written 
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `toolVersion` | string | The Chartula version that wrote the file, with the commit it was built from after a `+`. |
-| `provider` | string | The model provider as configured: `anthropic` or `openai-compatible`. |
+| `toolVersion` | string | The Chartula version that wrote the file, with the commit it was built from after a `+`: the text `chartula --version` prints. |
+| `provider` | string | The provider the run used, `llm.provider` ([`llm`](configuration.md#llm)). |
 | `model` | string | The model id the renderings were written with. |
 | `promptHash` | string | `sha256:` and a hex digest of every instruction Chartula sends - each audience's system prompt and the [thorough check](glossary.md#thorough-check)'s - without the facts. Two files with the same hash were rendered from the same instructions. |
-| `thinking` | string | The configured `llm.thinking`: `provider-default`, `disabled`, `low`, `medium`, `high` or `xhigh`, as the configuration spells it (`adaptive` is recorded as `high`). `provider-default` records the setting, not whether the model thought - some models think by default, others do not (see [`thinking`](providers.md#thinking)). |
-| `thoroughCheck` | boolean | Whether the thorough faithfulness check ran (`faithfulness.thorough`). |
-| `factBaseDepth` | string | The configured `factBase.depth`: `title-only` or `title-and-description`. A file written before #258 may hold `title-description-and-issues`, which read the same text as `title-and-description`. |
-| `checkModel` | string | The model the thorough check asked: `faithfulness.model`, or `llm.model` when not set. Present only when the check ran. |
+| `thinking` | string | The configured `llm.thinking`, as the configuration spells it, with `adaptive` recorded as `high`. `provider-default` records the setting, not whether the model thought ([`thinking`](providers.md#thinking)). |
+| `thoroughCheck` | boolean | Whether the thorough check ran (`faithfulness.thorough`). |
+| `factBaseDepth` | string | The configured `factBase.depth`. A file from before #258 may hold `title-description-and-issues`, which read the same text as `title-and-description`. |
+| `checkModel` | string | The model the thorough check asked: `faithfulness.model`, or `llm.model` when that is not set. Present only when the check ran. |
 | `checkThinking` | string | The thinking mode the thorough check asked for, spelled as `thinking`. Present only when the check ran. |
 
-`thinking`, `thoroughCheck`, `factBaseDepth`, `checkModel` and `checkThinking` are the settings that move a run's cost and output most, so two files can be compared by what they were made with rather than by what someone remembers.
-
 Endpoint hosts, [flags](glossary.md#flag) and check verdicts are deliberately not recorded: the file may be published, and a host can name an internal gateway.
+
+## The renderings
+
+Each value of `renderings` is the Markdown text of one rendering, as Chartula put it together: a `### ` heading per group, one `- ` line per entry, lines separated by `\n`.
+[Outputs](outputs.md) shows the groups and markers of each audience.
+
+- **No release heading and no front matter.** `CHANGELOG.md` adds `## VERSION - DATE` around the technical text, and `release-<tag>.md` adds the front matter around the customer text; neither is in the file. So the customer page's description is not in the file either.
+- **An empty string** when the release has no change for that audience ([A release with nothing to say](outputs.md#a-release-with-nothing-to-say)).
+- **`<` is escaped as `\<`** outside code spans, so a placeholder such as `release-<tag>.md` is shown rather than read as an HTML tag. A Markdown renderer shows the bracket; a consumer that uses the text as plain text removes the backslash.
+- **The product rendering is here only,** since it has no file of its own.
+
+## Reading it with `jq`
+
+The customer text, ready to post:
+
+```console
+$ jq -r '.renderings.customer' changelog.json
+### What's New
+
+- **Run range in records:** A version 2 run record now shows how its commit range was chosen, the starting reference, and the commits at both ends. You can use those commits to identify the range the run read, even if a reference moves later.
+- **Pull requests on review flags:** Review flags now show a pull request number when the check links a claim to a pull request in the release. You can use that number to find the fact behind the flag, but it reflects the check's reading rather than a verified match.
+
+### Bug Fixes
+
+- **Reasons and limits in review text:** Review flags could quote a claim without explaining why it was flagged, while customer entries could promise outcomes beyond what the facts supported. Flags now include their reasons, and customer entries are instructed to keep outcomes within the limits stated by the facts.
+- **Review mode configuration:** Review mode previously approved generated text without showing it to a person when enabled. It is now refused with a configuration error rather than approving text unseen; remove `review.enabled: true` from `chartula.yaml` or set it to `false`.
+```
+
+Each change with its category, one per line:
+
+```console
+$ jq -r '.changes[] | "\(.category)\t#\(.number)\t\(.title)"' changelog.json
+Fix	#252	fix: keep the reason in each flag, and bound the customer outcome by the facts
+Feature	#251	feat(observability): record the range a run read in its run record
+Feature	#250	feat(faithfulness): name the pull request behind each flag
+Documentation	#248	docs: rewrite comments for readability
+Fix	#247	fix(cli): refuse review mode until an interactive reviewer exists
+Documentation	#246	docs: add the changelog Chartula generated for 0.1.0-preview.2
+```
+
+`select(.breaking) |` after `.changes[] |` keeps the breaking changes only, and `select(.userVisible) |` the ones a reader can meet.
+
+## Known issue: escaped characters
+
+The file escapes more than JSON requires: `+` is written as `\u002B`, and quotes, apostrophes, backticks, `<`, `>` and every character outside ASCII, such as `’` or `ü`, as `\u` and their code ([#226](https://github.com/goldbarth/chartula/issues/226)).
+Every JSON parser reads them back as the characters, so a consumer is not affected; a person reading or diffing the raw file is.
+The example below shows it in `toolVersion` and in the backticks of the technical rendering, which read as `\u0060`.
 
 ## Stability
 
@@ -70,13 +102,11 @@ Endpoint hosts, [flags](glossary.md#flag) and check verdicts are deliberately no
   changing a field's meaning, bumps it.
 
 Version 2 removed a change's `description`, so the file can be published without the notes authors wrote for reviewers ([#260](https://github.com/goldbarth/chartula/issues/260)).
-A consumer of version 1 that read `description` finds it in the run record's [`facts`](run-record.md#facts) now.
+A consumer of version 1 that read `description` finds it in the run record's [`facts`](run-record.md#facts).
 
 ## Example
 
-Three of the six changes of Chartula's own `v0.1.0-preview.3`, in the shape a run writes them now.
-The renderings keep only the entries of these changes; the file holds them in full.
-#246 is a `Documentation` change and not `userVisible`, so it is a fact without an entry in either rendering.
+The file a real run wrote for Chartula's own `v0.1.0-preview.3`, rendered by `gpt-6-sol` on 2026-10-01, as written:
 
 ```json
 {
@@ -84,11 +114,41 @@ The renderings keep only the entries of these changes; the file holds them in fu
   "tag": "v0.1.0-preview.3",
   "changes": [
     {
+      "title": "fix: keep the reason in each flag, and bound the customer outcome by the facts",
+      "number": 252,
+      "url": "https://github.com/goldbarth/chartula/pull/252",
+      "category": "Fix",
+      "userVisible": true,
+      "breaking": false,
+      "linkedIssues": [],
+      "labels": []
+    },
+    {
       "title": "feat(observability): record the range a run read in its run record",
       "number": 251,
       "url": "https://github.com/goldbarth/chartula/pull/251",
       "category": "Feature",
       "userVisible": true,
+      "breaking": false,
+      "linkedIssues": [],
+      "labels": []
+    },
+    {
+      "title": "feat(faithfulness): name the pull request behind each flag",
+      "number": 250,
+      "url": "https://github.com/goldbarth/chartula/pull/250",
+      "category": "Feature",
+      "userVisible": true,
+      "breaking": false,
+      "linkedIssues": [],
+      "labels": []
+    },
+    {
+      "title": "docs: rewrite comments for readability",
+      "number": 248,
+      "url": "https://github.com/goldbarth/chartula/pull/248",
+      "category": "Documentation",
+      "userVisible": false,
       "breaking": false,
       "linkedIssues": [],
       "labels": []
@@ -115,11 +175,11 @@ The renderings keep only the entries of these changes; the file holds them in fu
     }
   ],
   "renderings": {
-    "technical": "### Added\n\n- Record the range read for each run, including its start, source ref, and resolved commit hashes. ([#251](https://github.com/goldbarth/chartula/pull/251))\n\n### Fixed\n\n- Reject `review.enabled: true` because no interactive reviewer is available. ([#247](https://github.com/goldbarth/chartula/pull/247))",
-    "customer": "### What's New\n\n- **Run range records:** Run records now show the range each run read, including its starting point and the commits at both ends. You can count on those commits to identify the range later, even if a tag or branch moves.\n\n### Bug Fixes\n\n- **Review mode availability:** Turning on review mode no longer approves generated text without showing it to a reviewer. The command stops with a configuration error, so you can count on enabled review mode not silently approving text; remove the setting or set it to false in chartula.yaml or through Chartula__Review__Enabled."
+    "technical": "### Added\n\n- Record the read range beside \u0060tag\u0060 in schema version 2 run records, including its start type, source ref, and resolved commit hashes. ([#251](https://github.com/goldbarth/chartula/pull/251))\n- Add a \u0060pullRequest\u0060 reference to each thorough-check flag when its number exists in the fact base. ([#250](https://github.com/goldbarth/chartula/pull/250))\n\n### Fixed\n\n- Fix thorough-check flags to include the reason alongside the quoted claim. ([#252](https://github.com/goldbarth/chartula/pull/252))\n- Refuse \u0060review.enabled: true\u0060 until an interactive reviewer exists. ([#247](https://github.com/goldbarth/chartula/pull/247))",
+    "customer": "### What\u0027s New\n\n- **Run range in records:** A version 2 run record now shows how its commit range was chosen, the starting reference, and the commits at both ends. You can use those commits to identify the range the run read, even if a reference moves later.\n- **Pull requests on review flags:** Review flags now show a pull request number when the check links a claim to a pull request in the release. You can use that number to find the fact behind the flag, but it reflects the check\u0027s reading rather than a verified match.\n\n### Bug Fixes\n\n- **Reasons and limits in review text:** Review flags could quote a claim without explaining why it was flagged, while customer entries could promise outcomes beyond what the facts supported. Flags now include their reasons, and customer entries are instructed to keep outcomes within the limits stated by the facts.\n- **Review mode configuration:** Review mode previously approved generated text without showing it to a person when enabled. It is now refused with a configuration error rather than approving text unseen; remove \u0060review.enabled: true\u0060 from \u0060chartula.yaml\u0060 or set it to \u0060false\u0060."
   },
   "provenance": {
-    "toolVersion": "0.1.0-preview.3+7620e6d95b62190d12f57ba345479b524674fea1",
+    "toolVersion": "0.1.0-preview.3\u002Bdde0019754ac9f23ec2615fe85b58d3b88ca6b38",
     "provider": "openai-compatible",
     "model": "gpt-6-sol",
     "promptHash": "sha256:18467240be1e8a49ca134d8d94ebaf281104fff70ad715fbc0c6b71dc048b5c1",
