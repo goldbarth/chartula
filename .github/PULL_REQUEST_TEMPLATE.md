@@ -1,23 +1,21 @@
-## What does this PR do?
+Closes #
 
-<!-- A clear, changelog-style summary of the change. -->
+<!--
+The first line says what this follows:
+  Closes #123              when it resolves an issue
+  Follows #120, which ...  when it continues earlier work
+The title is the changelog line Chartula writes the release notes from: `type(scope): short description`, imperative mood.
+CONTRIBUTING.md, "The pull request", shows a complete example.
+-->
 
-## Why?
+- **Why:** <!-- the problem, as a user or contributor meets it -->
+- **<!-- a decision -->:** <!-- what was decided, and why; one bullet each, including what was left out on purpose -->
 
-<!-- The motivation. Link any related issue: Closes #123 -->
+**Verified:**
 
-## Type of change
+<!--
+How you checked it: a reproduction before the change, the run or test after it, with output where it helps.
+The build has no warnings, the tests pass, and `dotnet format Chartula.slnx --verify-no-changes` is clean.
+-->
 
-- [ ] Bug fix
-- [ ] New feature
-- [ ] Documentation
-- [ ] Refactor / internal
-- [ ] Breaking change
-
-## Checklist
-
-- [ ] The project builds and tests pass
-- [ ] Code follows the formatting in `.editorconfig`
-- [ ] I've added or updated tests where it makes sense
-- [ ] I've updated documentation where relevant
-- [ ] No secrets or API keys are included in this change
+Tests: <!-- the tests added or changed, or "none, documentation only" -->
