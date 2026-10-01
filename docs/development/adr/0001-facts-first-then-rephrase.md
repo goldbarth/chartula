@@ -4,7 +4,7 @@
 - **Decided:** 2026-07-16 (#45); the structure of a rendering 2026-09-16 (#129, for #96)
 - **Recorded:** 2026-09-21 (#216)
 - **Amended:**
-  - 2026-10-01 (#ADRPR): the consequence that the audiences "cannot disagree" is narrowed to what a shared fact base gives them.
+  - 2026-10-01 (#318): the consequence that the audiences "cannot disagree" is narrowed to what a shared fact base gives them.
 
 ## Context
 

@@ -4,7 +4,7 @@
 - **Decided:** 2026-09-21 (#166, for #158)
 - **Recorded:** 2026-09-21 (#216)
 - **Amended:**
-  - 2026-09-23 (#235, for #233): a model endpoint on the API host of the other provider is refused. Recorded 2026-10-01 (#ADRPR).
+  - 2026-09-23 (#235, for #233): a model endpoint on the API host of the other provider is refused. Recorded 2026-10-01 (#318).
 
 ## Context
 
