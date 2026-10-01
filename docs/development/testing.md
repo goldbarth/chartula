@@ -80,7 +80,7 @@ Only the model is a stand-in, from `FixtureModels.cs`:
 - `InventingChangelogModel` adds a fact, so a test can prove the checks catch it, not only that clean input stays clean.
 - `UnreachableChangelogModel` throws when it is called, so "this path costs no tokens" is something the suite enforces.
 
-No test in this project can reach a real model, because `Chartula.Core` references no provider package ([Choices that constrain contributions](architecture.md#choices-that-constrain-contributions)).
+No test in this project can reach a real model, because `Chartula.Core` references no provider package ([ADR 0004](adr/0004-models-through-ichatclient-alone.md)).
 
 ### Prompt snapshots
 
