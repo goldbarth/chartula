@@ -49,12 +49,7 @@ Small fixes (typos, obvious bugs) can go straight to a pull request.
 Worth reading before a first code change: [Architecture](docs/development/architecture.md).
 It explains the layering, why facts are established before an LLM ever sees them, and which dependency choices exist to keep a native-AOT build reachable.
 
-Decisions that already stand, and why, are recorded in [`docs/development/adr/`](docs/development/adr/):
-
-- [Facts are established first, then rephrased](docs/development/adr/0001-facts-first-then-rephrase.md)
-- [The git CLI and `HttpClient`, not LibGit2Sharp and Octokit](docs/development/adr/0002-git-cli-and-httpclient.md)
-- [Endpoints and credential names come from the environment only](docs/development/adr/0003-endpoints-and-credentials-from-the-environment.md)
-
+Decisions that already stand, and why, are recorded as [architecture decision records](docs/development/adr/README.md), with an index of all of them.
 A change that goes against one of them starts as an issue, not a pull request.
 
 Step-by-step guides for common extensions are in [`docs/development/recipes/`](docs/development/recipes/):

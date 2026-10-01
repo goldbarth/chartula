@@ -1,7 +1,10 @@
-# 2. The git CLI and `HttpClient`, not LibGit2Sharp and Octokit
+# 2. Dependencies that keep a native-AOT build reachable
 
 - **Status:** Accepted
-- **Date:** 2026-07-16 (#42, #43)
+- **Decided:** 2026-07-16 (#42, #43)
+- **Recorded:** 2026-09-21 (#216)
+- **Amended:**
+  - 2026-09-29 (#268): the number of platforms in the context is eight, not six.
 
 ## Context
 
@@ -13,6 +16,8 @@ Octokit covers the whole GitHub API with reflection-based serialization, which i
 Chartula uses a handful of git commands and a few GitHub endpoints.
 
 ## Decision
+
+Chartula takes no dependency that brings a native library or relies on reflection-based serialization:
 
 - Commits are read by running the `git` CLI (`GitCliCommitReader`, behind `IReleaseCommitReader`).
 - GitHub is read and written with `HttpClient` and source-generated `System.Text.Json` (`GitHubJson.cs`), behind `IReleasePullRequestReader` and `IReleaseNotesWriter`.

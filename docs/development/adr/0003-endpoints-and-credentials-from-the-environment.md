@@ -1,7 +1,10 @@
 # 3. Endpoints and credential names come from the environment only
 
 - **Status:** Accepted
-- **Date:** 2026-09-21 (#158, #166)
+- **Decided:** 2026-09-21 (#166, for #158)
+- **Recorded:** 2026-09-21 (#216)
+- **Amended:**
+  - 2026-09-23 (#235, for #233): a model endpoint on the API host of the other provider is refused. Recorded 2026-10-01 (#ADRPR).
 
 ## Context
 
@@ -17,6 +20,7 @@ When the file could set them, one merged change could point the GitHub endpoint 
 - A `chartula.yaml` that sets one is refused at startup, naming the variable to use instead, rather than silently ignored.
 - The environment is not loaded whole: besides `Chartula__` settings, Chartula reads only the default credential variables (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GITHUB_TOKEN`) and the ones the two name settings point at.
 - Endpoints must use `https`, except on this machine, where local model servers run.
+- A model endpoint on the API host of the other provider is refused before any request: `api.openai.com` for `anthropic`, `api.anthropic.com` for `openai-compatible` (`ProviderHost`). A key sent there has reached a third party and has to be rotated, so a warning in the run header is not enough. Every other host is accepted, because a proxy or a gateway runs at a host of its own.
 - Every run prints the endpoints and credential variable names in force, never their values (`EndpointNotice`).
 - Credentials themselves are never read from a file.
 
@@ -26,4 +30,5 @@ When the file could set them, one merged change could point the GitHub endpoint 
 - Pointing Chartula at another endpoint takes an environment variable, not a line in the config file.
   [Providers](../../providers.md) shows how.
 - A new setting that decides where data or credentials go belongs in the environment-only list, not in `chartula.yaml`.
+- The list of refused hosts holds only hosts with one certain owner. Several hosted endpoints serve both dialects under one host, so a longer list would refuse working setups.
 - A new credential variable has to be added to what `ChartulaConfiguration` reads, or the run will not see it.

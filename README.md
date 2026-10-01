@@ -247,6 +247,7 @@ The [Roadmap](ROADMAP.md#after-the-launch-in-this-order) says which point remove
 | --- | --- |
 | [Contributing](CONTRIBUTING.md) | The workflow, the setup and the conventions. |
 | [Architecture](docs/development/architecture.md) | The layering, the pipeline, and the choices behind them. |
+| [Decision records](docs/development/adr/README.md) | The decisions that constrain a change, with their reasons, and how to record a new one. |
 | [Testing](docs/development/testing.md) | How each project is tested without a network or tokens, running a single test, and adding a fixture. |
 | [Releasing](docs/development/releasing.md) | Making a release, from the version bump to the committed changelog. |
 | [Roadmap](ROADMAP.md) | What comes next, in order. |
