@@ -3,6 +3,26 @@
 Chartula runs inside a checkout with an LLM API key and a GitHub token in its environment, and it reads content that other people wrote: files, pull request text, tags.
 That makes the line between repository content and the operator's credentials the part worth protecting, and reports about it are very welcome.
 
+## The trust boundary
+
+[ADR 0003](docs/development/adr/0003-endpoints-and-credentials-from-the-environment.md) records where that line runs, and why.
+In short:
+
+- The endpoints, and the names of the variables credentials are read from, come from the environment only; a `chartula.yaml` that sets one is refused.
+- A credential is never read from a file, and no output names a credential's value: the run header and `chartula doctor` name the variable, not what it holds.
+- An endpoint must use `https`, except on this machine, and a model endpoint on the other provider's API host is refused before the first request.
+
+So no repository content can redirect a credential; only whoever controls the environment can.
+A way around any of these is in scope.
+
+## What a run sends and writes
+
+- **To the model provider:** the [facts](docs/glossary.md#fact) of the release, once per audience to write the text and once more per audience for the thorough check, which also gets the text it checks.
+  A fact holds the change's title, category and breaking status, and its pull request description unless `factBase.depth` is `title-only` ([How much of each change the model reads](docs/what-goes-into-a-release.md#8-how-much-of-each-change-the-model-reads)).
+  No code, no diff and no other credential is sent; against a [local server](docs/providers.md#a-local-server), nothing leaves the machine.
+- **To and from GitHub:** [What a run reads and writes](docs/github.md#what-a-run-reads-and-writes) lists every request; only `generate` without `--no-publish` writes, and only the release notes of the tag.
+- **On disk:** `changelog.json` is meant to be published and holds no pull request description; the run record in `chartula-runs/` holds the descriptions and stays local ([Outputs](docs/outputs.md)).
+
 ## Supported versions
 
 Chartula is in alpha and has no stable release yet.
@@ -43,5 +63,6 @@ In scope is anything that lets content Chartula reads, or a setting it did not g
 Not a vulnerability, but still worth a normal issue:
 
 - an LLM rendering that states something the facts do not support - the faithfulness checks exist for that, and a miss is a bug
+- pull request text that steers what the model writes: it reaches the model as it is, a [known limitation](README.md#known-limitations) the roadmap addresses; text that makes Chartula send a credential, run a program or publish elsewhere is in scope
 - a vulnerability in a dependency that Chartula does not expose - please report it upstream
 - anything that needs the operator's own environment or machine to be compromised first
