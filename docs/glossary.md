@@ -6,7 +6,7 @@ Every page links a term here on its first use, and each entry links the page tha
 ## Audience
 
 A group of readers Chartula writes for: `technical` (developers who work with the source), `customer` (people who use the product) or `product` (people who track what shipped).
-Each audience gets its own [rendering](#rendering) of the same [fact base](#fact-base), so the texts cannot disagree about what changed.
+Each audience gets its own [rendering](#rendering) of the same [fact base](#fact-base), so every text starts from the same changes, categories and breaking status.
 `generate` writes `technical` and `customer` unless `--audience` names others.
 [Outputs](outputs.md) shows the shape of each.
 

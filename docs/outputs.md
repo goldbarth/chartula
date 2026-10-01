@@ -59,24 +59,20 @@ The model is told to open each entry on a verb in the imperative, such as "Add" 
 
 [What goes into a release](what-goes-into-a-release.md#7-who-can-meet-a-change) says which changes reach this rendering, and [the category table](what-goes-into-a-release.md#4-the-category) which category a title gets.
 
-An excerpt of a real run on the `v1.9.0` release of ServiceDeskLite, the release of the [model comparison](costs-and-checks.md#the-model-comparison-of-2026-09-25), rendered by `gpt-6-sol`, with at most two entries of each group:
+The section a real run wrote for Chartula's own `v0.1.0-preview.3`, rendered by `gpt-6-sol` on 2026-10-01; this release has no change for `Changed`:
 
 ```markdown
-## 1.9.0 - 2026-07-14
-
-### Changed
-
-- Integrate the M9 Frontend Redesign into `main` and add v1.9.0 release notes. ([#244](https://github.com/goldbarth/ServiceDeskLite/pull/244))
+## 0.1.0-preview.3 - 2026-09-24
 
 ### Added
 
-- Add inline citation badges to sanitized assistant Markdown answers. ([#245](https://github.com/goldbarth/ServiceDeskLite/pull/245))
-- Add a keyboard-operated `CommandPalette` available on every page through Ctrl/Cmd+K. ([#236](https://github.com/goldbarth/ServiceDeskLite/pull/236))
+- Record the read range beside `tag` in schema version 2 run records, including its start type, source ref, and resolved commit hashes. ([#251](https://github.com/goldbarth/chartula/pull/251))
+- Add a `pullRequest` reference to each thorough-check flag when its number exists in the fact base. ([#250](https://github.com/goldbarth/chartula/pull/250))
 
 ### Fixed
 
-- Fix the ticket queue `Category` header width so it no longer overlaps `Due`. ([#238](https://github.com/goldbarth/ServiceDeskLite/pull/238))
-- Render ticket summary timestamps in `Anthropic:UserTimeZone`. ([#222](https://github.com/goldbarth/ServiceDeskLite/pull/222))
+- Fix thorough-check flags to include the reason alongside the quoted claim. ([#252](https://github.com/goldbarth/chartula/pull/252))
+- Refuse `review.enabled: true` until an interactive reviewer exists. ([#247](https://github.com/goldbarth/chartula/pull/247))
 ```
 
 ### `CHANGELOG.md`
@@ -152,7 +148,7 @@ publishedAt: 2026-07-14
 - **Ticket summary times:** Times in streamed ticket summaries could differ from the local times shown on the ticket. Summaries now use the user timezone, so you can count on their timestamps matching the ticket detail view.
 ```
 
-This is an excerpt of the same run as the technical example, with at most two entries of each group.
+This is an excerpt of a real run on the `v1.9.0` release of ServiceDeskLite, the release of the [model comparison](costs-and-checks.md#the-model-comparison-of-2026-09-25), rendered by `gpt-6-sol`, with at most two entries of each group.
 
 The YAML front matter at the top is what a static site generator reads:
 
@@ -187,7 +183,7 @@ The product rendering has no file: its text is in `renderings.product` of `chang
 It renders only when `--audience` names it, so a run without it pays for two renderings instead of three.
 Its structure is not part of the [1.0 promise](versioning.md#what-you-can-build-on), because it has neither a file nor an evaluation yet.
 
-An excerpt of a real run on the same release, rendered by `gpt-6-sol` on 2026-10-01, with three of its 17 entries:
+An excerpt of a real run on the same ServiceDeskLite release, rendered by `gpt-6-sol` on 2026-10-01, with three of its 17 entries:
 
 ```markdown
 ### Other
