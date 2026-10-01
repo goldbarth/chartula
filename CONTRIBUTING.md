@@ -106,7 +106,7 @@ It only checks and never changes or stages a file, and it adds about ten seconds
 To commit once without it, use `git commit --no-verify`.
 
 The suite needs no API key, no network and no tokens: the pipeline is tested by replaying stored fact bases, so you can run it as often as you like.
-[Test fixtures](docs/development/testing.md) explains how that works and how to add a case.
+[Testing](docs/development/testing.md) explains how each project is tested and how to add a case.
 A change to the prompt text also fails the suite until its snapshot is updated; [Prompt snapshots](docs/development/testing.md#prompt-snapshots) says how.
 
 ---

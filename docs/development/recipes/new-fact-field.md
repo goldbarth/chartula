@@ -58,7 +58,7 @@ After step 3 it fails for every fixture, which is the point: the files no longer
 There is no update switch.
 Add the field to each change of each fixture by hand, at the position the writer emits it, with a value that fits the case the fixture stands for: a commit-based change in `commits-only-release.json` has no pull request to take it from.
 The failing test shows the expected text, so the diff tells you exactly where it goes.
-If the field opens a case none of the five fixtures covers, add a fixture as [Test fixtures](../testing.md) describes.
+If the field opens a case none of the five fixtures covers, add a fixture as [Testing](../testing.md#fixtures-stored-fact-bases) describes.
 
 ## 6. Test it
 

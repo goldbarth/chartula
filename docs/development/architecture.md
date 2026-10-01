@@ -16,7 +16,7 @@ graph LR
 | `Chartula.Cli` | The command surface and the composition root that wires the two together. |
 
 `Chartula.Core` references no project at all, and that is the rule worth protecting.
-It is why the pipeline can be tested end to end without a network, a repository, or a model - see [Test fixtures](testing.md).
+It is why the pipeline can be tested end to end without a network, a repository, or a model - see [Testing](testing.md).
 
 Where a decision is made says a lot about it.
 Which model provider is used, which token is read, where files land: all of that is decided in `Chartula.Cli`, in one `Add*` extension per seam, and nowhere else.
