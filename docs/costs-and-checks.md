@@ -80,6 +80,18 @@ A thorough check with runs but no calls was turned off, or had nothing to check:
     caught 0 claims the rule-based check missed, for 0 tokens in 0 calls
 ```
 
+A `lower bound` line under `Total` means the provider returned no token usage for some calls, so their tokens are missing from every count above it.
+An endpoint that reports no usage at all, run here against a local stub, leaves every count at zero and every call unreported:
+
+```text
+  Rephrasing:       2 calls, 0 in / 0 out, 0.2 s (longest 0.2 s)
+    of which cached input not reported, reasoning not reported
+  Total:            0 tokens in 0.4 s
+    lower bound, 4 of 4 calls unreported
+```
+
+So the summary is no measure of that run's cost; the provider's own usage page is, and the [run record](run-record.md#metrics) keeps the count as `callsWithoutUsage`.
+
 ## The two checks
 
 Both checks read every rendering against the facts, and neither changes the text.
