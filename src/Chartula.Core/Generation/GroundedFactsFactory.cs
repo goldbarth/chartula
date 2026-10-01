@@ -20,7 +20,8 @@ namespace Chartula.Core.Generation;
 /// <item>a technical entry's reference,</item>
 /// <item>a product entry's theme.</item>
 /// </list>
-/// The templates are in <c>docs/output-format.md</c> of goldbarth/chartula-evals.
+/// <c>docs/outputs.md</c> shows the result for each audience. The templates it
+/// implements are specified in <c>docs/output-format.md</c> of goldbarth/chartula-evals.
 /// </para>
 /// </summary>
 public static class GroundedFactsFactory

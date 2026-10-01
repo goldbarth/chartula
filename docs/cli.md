@@ -153,20 +153,12 @@ So you can repeat it until the facts are right, and pay only for the `generate` 
 
 ## `chartula generate`
 
-Establishes the same facts as `preview`, renders each audience with the model, checks the renderings, and writes the outputs:
-
-- **`CHANGELOG.md`** - the technical rendering, prepended to whatever is already there.
-- **`release-<tag>.md`** - the customer rendering as a standalone page, with YAML front matter (title, date, one-sentence description) ahead of the entries.
-- **`changelog.json`** - every audience's text plus the facts behind it, without the pull request descriptions, in the [documented, stable format](changelog-json.md). It is meant to be published.
-- **GitHub release notes** - the technical rendering, as a **draft** release for the tag that you publish on GitHub after reading it. A release that already exists for the tag keeps its state: a draft stays a draft, a published release stays published, and only its notes are replaced. The output marks a draft with `(draft)` after its link.
-- **`chartula-runs/<time>-<tag>.json`** - the [run record](run-record.md): what the run cost, what it was made with, and the complete facts, descriptions included. It stays on your machine.
-
-A field with no source behind it is left out rather than filled in: no description when the facts do not support one, no date when the tag has none.
+Establishes the same facts as `preview`, renders each audience with the model, checks the renderings, and writes `CHANGELOG.md`, `release-<tag>.md`, `changelog.json`, the run record and the GitHub release notes.
+[Outputs](outputs.md) shows what each one holds and when it is written.
 
 A token that cannot publish stops the run before the first model call ([What `generate` writes to GitHub](github.md#what-generate-writes-to-github)).
 Publishing is still the last step, so when GitHub refuses it for another reason, the files are already written.
 The summary lists them under `Wrote:`, names the refusal under `Not published:`, and the run exits with 1.
-A re-run replaces this release's entries in `CHANGELOG.md` and its draft rather than adding to them, but pays for the model calls again.
 
 ## `chartula doctor`
 

@@ -49,16 +49,10 @@ Whether it earns its tokens is a question the run itself answers - see [Costs an
 Generate goes on from the same point: it renders, checks and writes.
 Writing and publishing are separable there too: `--no-publish` writes `changelog.json`, `CHANGELOG.md` and the customer page and leaves the release notes untouched, because producing a record is not the same act as announcing a release.
 
-**Every audience that has a written shape gets a file.** The technical rendering feeds `CHANGELOG.md` and the release notes; the customer rendering is written as a page of its own, `release-<tag>.md`, in the published serialisation - front matter, then the entries.
-Its one-sentence description is written by the model in the same call as the entries, as a field of its own, so it is a rephrasing of the same facts and the faithfulness check covers it on the same footing.
-A field whose source has nothing to give is left out, never emitted empty: an empty field would read as a fact about the release rather than as an absent source.
-The product rendering has a shape but no destination yet, so its text lives in `changelog.json` alone.
-
-**The structure of a rendering is not the model's.** Each audience follows its template in [chartula-evals](https://github.com/goldbarth/chartula-evals) (`docs/output-format.md`).
-Which changes reach a rendering, the group every entry stands under and its order, the breaking marker, a technical entry's reference and a product entry's theme are all decided before the model is called.
-The model is sent the facts with an id each and answers with one text per id, as structured output; code puts the headings, markers and references around those texts, and a fact left without a text fails the rendering rather than disappearing from it.
-The `CHANGELOG.md` release heading, `## VERSION - DATE`, is written around the technical text in the same way.
-Format rules in the prompt were not enough: five renderings of one release on four models came back in five structures (issue #96).
+**The structure of a rendering is not the model's.** `GroundedFactsFactory` plans each rendering before the model is called: which changes it carries, the group and order of every entry, the breaking marker and a technical entry's reference.
+The model answers with one text per fact id, as structured output, and `RenderingComposer` puts the plan around those texts; a fact left without a text fails the rendering rather than disappearing from it.
+The writers in `Core/Serialization` add what belongs to a file, such as the `CHANGELOG.md` release heading and the customer page's front matter.
+[Outputs](../outputs.md) shows the result for each audience and file, and why each is shaped as it is.
 
 ## Choices that constrain contributions
 
