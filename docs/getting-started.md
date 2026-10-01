@@ -190,7 +190,7 @@ The [run record](run-record.md) of step 8 keeps them, if you need them later.
 - **`changelog.json`** - the same release as data, for tools that build on it.
 
 It also created the release notes on GitHub as a draft, marked `(draft)` in the report.
-[`chartula generate`](cli.md#chartula-generate) describes each output, and [Costs and checks](costs-and-checks.md#reading-the-run-summary) the `Run metrics` at the end of the report.
+[Outputs](outputs.md) describes each output, and [Costs and checks](costs-and-checks.md#reading-the-run-summary) the `Run metrics` at the end of the report.
 
 ## 7. Read and publish the draft
 

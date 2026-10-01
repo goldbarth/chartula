@@ -130,7 +130,7 @@ chartula generate    # render them, write the files, and create a draft release 
 ```
 
 `preview` makes no model call, so it needs no model key and costs no tokens; `generate --no-publish` shows the prose without publishing.
-`generate` writes `CHANGELOG.md`, `release-<tag>.md`, `changelog.json` and a draft release, and keeps a local run record in `chartula-runs/`, which belongs in your `.gitignore`.
+`generate` writes `CHANGELOG.md`, `release-<tag>.md`, `changelog.json` and a draft release, and keeps a local run record in `chartula-runs/`, which belongs in your `.gitignore` ([Outputs](docs/outputs.md)).
 A first tag renders every commit up to it, and Chartula asks before it reads a first tag or a large range ([What goes into a release](docs/what-goes-into-a-release.md#a-first-tag)).
 
 [Getting started](docs/getting-started.md) walks through the first run step by step, up to a published draft.
@@ -185,6 +185,7 @@ The [Roadmap](ROADMAP.md#after-the-launch-in-this-order) says which point remove
 | Document | What it covers |
 | --- | --- |
 | [What goes into a release](docs/what-goes-into-a-release.md) | The range, pull requests and commits, reverts, categories, breaking changes, filters, and which audience a change reaches. |
+| [Outputs](docs/outputs.md) | Every file a run writes, and the shape of the technical, customer and product texts, with real examples. |
 | [Writing pull requests](docs/writing-pull-requests.md) | What to ask of your authors, level by level, what each level changes in the output, and a CI check for the title. |
 | [Costs and checks](docs/costs-and-checks.md) | A run's size before it runs, reading its cost, whether the thorough check earns it, and what the model comparison found. |
 
