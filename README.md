@@ -5,22 +5,22 @@
   <img src="docs/assets/chartula-wordmark-light.svg" alt="Chartula" width="380">
 </picture>
 
-**A check layer between your merged pull requests and what you publish about them.**
+**Release notes written from your merged pull requests, and checked against them before you publish.**
 
-[![Status](https://img.shields.io/badge/status-alpha-blue?style=flat-square)](#status)
+[![Status](https://img.shields.io/badge/status-alpha-blue?style=flat-square)](#try-it)
 [![CI](https://img.shields.io/github/actions/workflow/status/goldbarth/chartula/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/goldbarth/chartula/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](CONTRIBUTING.md)
 
 </div>
 
-Chartula reads the pull requests merged into a release.
-It establishes what changed from them without a model.
-Only then does a model write release notes from those [facts](docs/glossary.md#fact): a technical changelog, a customer page, and optionally a product summary.
-Chartula checks every generated entry against the facts it was written from, and [flags](docs/glossary.md#flag) anything the facts do not back before it ships.
+Chartula reads the pull requests merged into a release and writes its release notes: a changelog for developers, a page for the people who use your product, and on request a summary for product managers.
+Before a model writes a word, Chartula decides which changes the release contains, how each one is categorized, and whether it breaks something.
+After the model has written, Chartula checks the text against your pull requests and reports the statements it finds they do not back.
+So you know which lines to read first before you publish.
 
 Chartula is a single binary for Linux, macOS and Windows.
-It runs from a checkout of your repository with your own model key, and needs no hosting and no subscription.
+It runs in your checkout or your CI job with your own model key or a local model, without a server and without a subscription.
 
 > *Chartula* (Latin) - "a small document, a little note". Which is exactly what a changelog entry is.
 
@@ -28,77 +28,81 @@ It runs from a checkout of your repository with your own model key, and needs no
 
 ## What it looks like
 
-From a real run on [goldbarth/Ingestor](https://github.com/goldbarth/Ingestor) `v3.2.0`.
-The fact Chartula established for pull request #180, as the run's record keeps it:
+Chartula's own release notes and [changelog](CHANGELOG.md) are written by Chartula.
+This is from the run that wrote them for `v0.1.0-preview.3`, on 2026-09-24, with `gpt-6-sol`.
+
+**What the pull request says.**
+[#252](https://github.com/goldbarth/chartula/pull/252) tightened the instructions for customer entries and measured the effect: [flags](docs/glossary.md#flag) on outcomes that promised more than the [facts](docs/glossary.md#fact) dropped from 5.7 to 1.75 per run.
+Fewer, not none.
+
+**What Chartula wrote for customers:**
+
+> **Review flag reasons and customer outcomes:** Review flags could quote a claim without explaining why it was flagged, and customer outcomes could promise more than the facts supported. Flags now carry their reasons, and you can count on customer outcomes to state limits named in the facts.
+
+**What the check reported below it:**
+
+```text
+  Flagged for review:
+    ! #252: "you can count on customer outcomes to state limits named in the facts" - #252 changed the customer prompt to require fact-bounded outcomes, but its measured runs still had outcome-related flags. The facts do not establish that customer outcomes now consistently state the limits in the facts.
+```
+
+The pull request made overpromising entries rarer.
+The entry tells your users they can count on outcomes staying within the facts.
+Chartula leaves the sentence as the model wrote it and tells you it is the one to read before you publish.
+The [thorough check](docs/glossary.md#thorough-check), which asks a model, found it; the free [rule-based check](docs/glossary.md#rule-based-check), which looks for numbers and names the pull requests do not contain, had nothing to find here.
+
+<details>
+<summary>The same finding in the run's record</summary>
+
+The local [run record](docs/run-record.md) keeps every flag with the pull request it concerns, and what the run was made with.
+Shortened to those parts:
 
 ```json
 {
-  "title": "update-environment-variable-for-database-connection",
-  "number": 180,
-  "category": "Other",
-  "userVisible": true,
-  "breaking": false,
-  "description": null
+  "tag": "v0.1.0-preview.3",
+  "repository": "goldbarth/chartula",
+  "mode": "generate",
+  "provenance": {
+    "toolVersion": "0.1.0-preview.3\u002B7620e6d95b62190d12f57ba345479b524674fea1",
+    "provider": "openai-compatible",
+    "model": "gpt-6-sol",
+    "promptHash": "sha256:18467240be1e8a49ca134d8d94ebaf281104fff70ad715fbc0c6b71dc048b5c1",
+    "thinking": "disabled",
+    "thoroughCheck": true,
+    "factBaseDepth": "title-and-description",
+    "checkModel": "gpt-6-sol",
+    "checkThinking": "disabled"
+  },
+  "audiences": [
+    {
+      "audience": "technical",
+      "rendered": true,
+      "flags": []
+    },
+    {
+      "audience": "customer",
+      "rendered": true,
+      "flags": [
+        {
+          "text": "\u0022you can count on customer outcomes to state limits named in the facts\u0022 - #252 changed the customer prompt to require fact-bounded outcomes, but its measured runs still had outcome-related flags. The facts do not establish that customer outcomes now consistently state the limits in the facts.",
+          "pullRequest": 252
+        }
+      ]
+    }
+  ]
 }
 ```
 
-The customer entry the model wrote from it:
-
-> **Database connection setting:** The environment variable used to configure the database connection has been renamed. If you set this variable yourself, update it to match the new name.
-
-And what the run reported next to it:
-
-```text
-Flagged for review:
-  ! #180: The claim that the database environment variable was "renamed" and that users who set
-    it themselves need to update it to match the new name is not supported by the facts, which
-    only state that the environment variable for the database connection was updated, not that
-    it was specifically renamed.
-```
-
-The fact says the variable was updated.
-The entry tells customers to act on a rename nobody stated.
-Chartula does not fix that sentence for you; it tells you which one to read before you publish.
-This finding came from the [thorough check](docs/glossary.md#thorough-check), the one that costs tokens; the free [rule-based check](docs/glossary.md#rule-based-check) did not catch it.
-
-Chartula's own [changelog](CHANGELOG.md) is generated by Chartula.
+</details>
 
 ---
 
-## What it promises, and what it does not
+## Try it
 
-**It cannot invent a change.**
-Which pull requests are in a release, how each is categorized, whether it is user-visible or breaking, and which link it gets are all decided before a model is involved.
-The model writes exactly one entry per fact it is given; a [rendering](docs/glossary.md#rendering) with an entry for no fact, or a fact without its entry, fails instead of being written.
+**Alpha.** Chartula runs end to end on real repositories, and its output is for a person to read before it is published.
+If you try it, [tell us how it went](https://github.com/goldbarth/chartula/issues/new?template=alpha-feedback.yml).
 
-**It reports what it could not verify.**
-Two checks read every rendering against the facts: a rule-based one that costs nothing, and a thorough one that asks the model again.
-What they cannot back is listed under "Flagged for review" instead of being dropped silently, with the pull request it concerns where there is one.
-
-**It does not make your pull requests true.**
-The facts are what your pull requests say.
-A wrong description produces a well-worded wrong entry, and both checks verify against that same text.
-See [Known limitations](#known-limitations).
-
-**No hosting, no subscription.**
-Chartula runs on your machine or your CI runner.
-You pay your model provider for the tokens a run uses, or nothing, against a model on your own machine.
-Every run ends with a summary of its tokens ([Costs and checks](docs/costs-and-checks.md)).
-
----
-
-## Status
-
-**Alpha.** The pipeline runs end to end on real repositories, from reading pull requests to writing `CHANGELOG.md`, a customer page, `changelog.json` and GitHub release notes.
-Its output is for a person to read before it is published, not something to publish unread.
-
-If you try it, [tell us how it went](https://github.com/goldbarth/chartula/issues/new?template=alpha-feedback.yml): what you had to edit, what it cost, and what misled you.
-What comes next, and in which order, is in the [Roadmap](ROADMAP.md).
-
----
-
-## Quick start
-
+You need git, a checkout of your repository with its tags, a model key or a local model, and a GitHub token to publish.
 Install Chartula on Linux or macOS:
 
 ```bash
@@ -111,29 +115,50 @@ On Windows, in PowerShell:
 irm https://raw.githubusercontent.com/goldbarth/chartula/main/install.ps1 | iex
 ```
 
-Set a model key and a GitHub token:
+Set the model key and the GitHub token, and run Chartula from your checkout:
 
 ```bash
 export ANTHROPIC_API_KEY=<your key>
 export GITHUB_TOKEN=<your fine-grained token>
-```
 
-`generate` needs the token to create the [draft](docs/glossary.md#draft) release; [GitHub](docs/github.md#the-token) lists the permissions it takes.
-
-Run it from a checkout of your repository, which knows the release tag and the GitHub repository:
-
-```bash
 cd my-repo
 chartula doctor      # check the setup, and what to fix, before a run spends anything
 chartula preview     # show the facts of the nearest tag and what generate would send, for free
-chartula generate    # render them, write the files, and create a draft release on GitHub
+chartula generate    # write the release notes, check them, and create a draft release on GitHub
 ```
 
-`preview` makes no model call, so it needs no model key and costs no tokens; `generate --no-publish` shows the prose without publishing.
-`generate` writes `CHANGELOG.md`, `release-<tag>.md`, `changelog.json` and a draft release, and keeps a local run record in `chartula-runs/`, which belongs in your `.gitignore` ([Outputs](docs/outputs.md)).
-A first tag renders every commit up to it, and Chartula asks before it reads a first tag or a large [range](docs/glossary.md#range) ([What goes into a release](docs/what-goes-into-a-release.md#a-first-tag)).
+`generate` writes `CHANGELOG.md`, `release-<tag>.md` and `changelog.json` into your checkout, and creates a [draft](docs/glossary.md#draft) release on GitHub that only people with write access see.
+On a tag whose release is already published, it replaces the published notes instead.
+`generate --no-publish` writes the files and leaves GitHub alone.
+[Outputs](docs/outputs.md) shows each file, and [GitHub](docs/github.md#the-token) the permissions the token needs.
 
 [Getting started](docs/getting-started.md) walks through the first run step by step, up to a published draft.
+To run Chartula in a GitHub Actions job instead, start with [CI](docs/ci.md).
+
+---
+
+## How the check works
+
+**The model cannot add or drop a change.**
+Which pull requests belong to the release, how each is categorized, whether it is breaking, and which group, marker and link its entry gets are all decided before the model is called.
+The model writes one entry per change it is given; an answer that leaves a change out, writes one twice, or adds one it was not given fails instead of being written.
+
+**Two checks read every text, and say why they flag.**
+The rule-based check costs nothing: it flags numbers and quoted names the pull requests do not contain.
+The thorough check asks a model whether each statement is backed by the pull requests, and can use another model than the one that wrote the text.
+Each flag names its reason and, where it can, the pull request it concerns.
+Neither check catches every unsupported statement, so a run without flags still needs a reader.
+
+**A flag is advice.**
+It does not change the text, and it does not stop the run or the publication.
+Read the flags in the terminal before you publish; no written file marks a flagged entry.
+
+**The checks compare with your pull requests, not with your code.**
+A wrong pull request description produces a well-worded wrong entry, and both checks measure against that same text.
+
+**You pay only your model provider.**
+Chartula itself needs no hosting and no subscription, and against a model on your own machine a run costs nothing.
+`preview` shows how much a run would send before it spends anything, and every run ends with what it cost ([Costs and checks](docs/costs-and-checks.md)).
 
 ---
 
@@ -153,14 +178,25 @@ A first tag renders every commit up to it, and Chartula asks before it reads a f
 These are known, and a person reads the output before it is published, so each one is left for after the launch.
 The [Roadmap](ROADMAP.md#after-the-launch-in-this-order) says which point removes which limitation, and in which order.
 
+**Source data**
+
 - **Facts are author text.** A wrong pull request title or description stays wrong, and the checks verify against that same text, not against the code.
 - **Pull request text goes to the model as it is.** It is neither delimited nor size-limited, and edits made to a pull request after its merge are not detected.
 - **Breaking status comes from the text.** A `BREAKING CHANGE:` footer or a `!` sets it. Links in pull request text are passed through unchecked.
-- **Flags appear in the terminal only.** Nothing in the written files marks a flagged entry, and a run with flags still exits with `0`.
-- **Only the release notes are a draft.** The customer page and `CHANGELOG.md` are written directly.
 - **Two pull requests with the same change become two entries.**
-- **A published release's notes are replaced unasked.** `generate` on a tag whose release is already published replaces its notes in public, with no draft in between ([#249](https://github.com/goldbarth/chartula/issues/249)). `--no-publish` leaves the release alone.
 - **GitHub is the only source.** Chartula reads pull requests from GitHub or GitHub Enterprise, and from no other host.
+
+**Checking**
+
+- **Flags appear in the terminal only.** Nothing in the written files marks a flagged entry, and a run with flags still exits with `0`.
+
+**Publishing**
+
+- **Only the release notes are a draft.** The customer page and `CHANGELOG.md` are written directly.
+- **A published release's notes are replaced unasked.** `generate` on a tag whose release is already published replaces its notes in public, with no draft in between ([#249](https://github.com/goldbarth/chartula/issues/249)). `--no-publish` leaves the release alone.
+
+**Installation and support**
+
 - **No GitHub Action yet.**
 - **The binaries are not code-signed.** Downloaded through a browser, macOS Gatekeeper and Windows SmartScreen warn on first start; the install scripts avoid that.
 - **No package manager.** No Homebrew, Scoop or winget; the install scripts or a download.
@@ -169,7 +205,7 @@ The [Roadmap](ROADMAP.md#after-the-launch-in-this-order) says which point remove
 
 ## Documentation
 
-**Setting it up**
+**Start**
 
 | Document | What it covers |
 | --- | --- |
@@ -177,36 +213,41 @@ The [Roadmap](ROADMAP.md#after-the-launch-in-this-order) says which point remove
 | [Install](docs/install.md) | Platforms, the install scripts and their settings, a download by hand, building from source, updating and uninstalling. |
 | [Providers](docs/providers.md) | Setting up Anthropic, OpenAI, a hosted endpoint or a local server, choosing a model, and `thinking`. |
 | [GitHub](docs/github.md) | The token and its permissions, the rate limit, GitHub Enterprise, and what a run writes to GitHub. |
-| [CI](docs/ci.md) | A complete GitHub Actions job, what happens to its draft, and an Alpine variant. |
 | [Troubleshooting](docs/troubleshooting.md) | The messages a run most often stops with, what causes each, and the fix. |
 
-**Understanding the output**
+**Understand the output**
 
 | Document | What it covers |
 | --- | --- |
-| [What goes into a release](docs/what-goes-into-a-release.md) | The range, pull requests and commits, reverts, categories, breaking changes, filters, and which [audience](docs/glossary.md#audience) a change reaches. |
+| [What goes into a release](docs/what-goes-into-a-release.md) | The [range](docs/glossary.md#range), pull requests and commits, reverts, categories, breaking changes, filters, and which [audience](docs/glossary.md#audience) a change reaches. |
 | [Outputs](docs/outputs.md) | Every file a run writes, and the shape of the technical, customer and product texts, with real examples. |
 | [Writing pull requests](docs/writing-pull-requests.md) | What to ask of your authors, level by level, what each level changes in the output, and a CI check for the title. |
 | [Costs and checks](docs/costs-and-checks.md) | A run's size before it runs, reading its cost, whether the thorough check earns it, and what the model comparison found. |
+| [Glossary](docs/glossary.md) | The terms the other pages use, such as fact, rendering and flag, each with one meaning. |
 
-**Reference**
+**Automate**
+
+| Document | What it covers |
+| --- | --- |
+| [CI](docs/ci.md) | A complete GitHub Actions job, what happens to its draft, and an Alpine variant. |
+| [`changelog.json` format](docs/changelog-json.md) | The release as data for other tools, its schema, and reading it with `jq`. |
+| [Versioning](docs/versioning.md) | The version scheme, preview and alpha, when 1.0 ships, and what you can build on. |
+
+**Look up**
 
 | Document | What it covers |
 | --- | --- |
 | [CLI](docs/cli.md) | Every command and option with its default, the environment, what goes to stdout and stderr, and the exit status. |
-| [Glossary](docs/glossary.md) | The terms the other pages use, such as fact, rendering and flag, each with one meaning. |
 | [Configuration](docs/configuration.md) | Every `chartula.yaml` key with its default and valid values, and settings as environment variables. |
-| [`changelog.json` format](docs/changelog-json.md) | The stable output schema other tools build on. |
 | [Run record](docs/run-record.md) | The local file each `generate` run keeps, for comparing runs. |
-| [Versioning](docs/versioning.md) | The version scheme, preview and alpha, when 1.0 ships, and what you can build on. |
 
-**Working on Chartula**
+**Contribute**
 
 | Document | What it covers |
 | --- | --- |
 | [Contributing](CONTRIBUTING.md) | The workflow, the setup and the conventions. |
 | [Architecture](docs/development/architecture.md) | The layering, the pipeline, and the choices behind them. |
-| [Test fixtures](docs/development/testing.md) | How the pipeline is tested without spending tokens. |
+| [Testing](docs/development/testing.md) | How each project is tested without a network or tokens, running a single test, and adding a fixture. |
 | [Releasing](docs/development/releasing.md) | Making a release, from the version bump to the committed changelog. |
 | [Roadmap](ROADMAP.md) | What comes next, in order. |
 
@@ -215,9 +256,10 @@ Everything that compares runs against each other lives in a separate repository,
 
 ---
 
-## Contributing
+## Feedback and contributing
 
-Feedback on the alpha is the most useful contribution right now - [the feedback form](https://github.com/goldbarth/chartula/issues/new?template=alpha-feedback.yml) asks for exactly what helps.
+Feedback on the alpha helps most right now.
+[The feedback form](https://github.com/goldbarth/chartula/issues/new?template=alpha-feedback.yml) asks for what we can act on: which work Chartula took off your hands, which it added, a flag that confused you, and where the setup got in your way.
 Bug reports, documentation fixes and code are welcome too; please read [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md) first.
 
 ---
