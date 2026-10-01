@@ -9,8 +9,8 @@ namespace Chartula.Core.Generation;
 /// Turns a fact base into the <see cref="RenderPlan"/> of one audience's rendering:
 /// which changes it carries, in which order, under which heading, and the fact
 /// statements the model rephrases.
-/// Pure and deterministic. The same fact base feeds every audience, so the renderings
-/// cannot contradict each other.
+/// Pure and deterministic. The same fact base feeds every audience, so every rendering
+/// starts from the same changes, categories and breaking status.
 /// <para>
 /// Everything in an audience's template except the wording is decided here, never by
 /// a model:

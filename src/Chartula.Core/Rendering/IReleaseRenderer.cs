@@ -6,7 +6,7 @@ namespace Chartula.Core.Rendering;
 
 /// <summary>
 /// Renders the audience versions of a release from one fact base, so the technical,
-/// customer and product renderings cannot contradict each other.
+/// customer and product renderings start from the same changes, categories and breaking status.
 /// </summary>
 public interface IReleaseRenderer
 {

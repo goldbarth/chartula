@@ -8,7 +8,8 @@ namespace Chartula.Core.Rendering;
 /// <summary>
 /// Default <see cref="IReleaseRenderer"/>. It renders each audience from the same
 /// fact base by delegating to the generator, one call per audience.
-/// The same fact base feeds every audience, so the renderings cannot contradict each other.
+/// The same fact base feeds every audience, so every rendering starts from the same changes,
+/// categories and breaking status.
 /// <para>
 /// The audience order is fixed, not taken from the caller. Two runs that request the
 /// same audiences make the same calls in the same order, however the request lists them.
