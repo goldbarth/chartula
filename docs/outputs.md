@@ -1,17 +1,17 @@
 # Outputs
 
 A `generate` run writes four files into the directory it runs in, and the release notes on GitHub.
-This page shows what each one holds and what each audience's text looks like, so you know what you will get before your first run.
+This page shows what each one holds and what each [audience](glossary.md#audience)'s text looks like, so you know what you will get before your first run.
 `preview` writes none of them.
 
 ## What a run writes
 
 | Output | Written from | Written when |
 | --- | --- | --- |
-| `CHANGELOG.md` | the technical rendering | the technical audience rendered |
+| `CHANGELOG.md` | the technical [rendering](glossary.md#rendering) | the technical audience rendered |
 | GitHub release notes | the technical rendering | the technical audience rendered, and the run was not given `--no-publish` |
 | `release-<tag>.md` | the customer rendering | the customer audience rendered, with at least one entry |
-| `changelog.json` | the facts and every rendering | at least one audience rendered |
+| `changelog.json` | the [facts](glossary.md#fact) and every rendering | at least one audience rendered |
 | `chartula-runs/<time>-<tag>.json` | the facts, the settings and the cost of the run | every `generate` run that reached the model calls |
 
 `generate` renders `technical` and `customer` unless `--audience` names others ([CLI](cli.md#--audience)).
@@ -98,7 +98,7 @@ Read it, edit it where needed, and commit it the way you commit any other change
 ### The GitHub release notes
 
 The release notes are the technical rendering without the `## VERSION - DATE` heading, because GitHub shows the release's own title above them.
-A tag without a release gets a new draft; [What `generate` writes to GitHub](github.md#what-generate-writes-to-github) says what happens to a release that exists already.
+A tag without a release gets a new [draft](glossary.md#draft); [What `generate` writes to GitHub](github.md#what-generate-writes-to-github) says what happens to a release that exists already.
 `--no-publish` leaves GitHub alone and still writes the files.
 
 ## The customer rendering
@@ -163,7 +163,7 @@ The YAML front matter at the top is what a static site generator reads:
 | `publishedAt` | the day the tag was created, as in `CHANGELOG.md` | when git gives no date |
 
 A field without a source is left out rather than written empty, because an empty field would read as a statement about the release, such as a release without a date.
-The checks read the description together with the entries, so a claim in it is flagged like any other ([Costs and checks](costs-and-checks.md#the-two-checks)).
+The checks read the description together with the entries, so a [claim](glossary.md#claim) in it is flagged like any other ([Costs and checks](costs-and-checks.md#the-two-checks)).
 
 The file name is the tag, with `/`, `\` and any other character your system does not allow in a file name replaced by `-`: the tag `release/2.0` gives `release-release-2.0.md`.
 A second run for the same release overwrites the file.
@@ -228,5 +228,5 @@ Then:
 
 ## What no output contains
 
-The checks' flags appear in the terminal and in the run record, and in none of the files above.
+The checks' [flags](glossary.md#flag) appear in the terminal and in the run record, and in none of the files above.
 Nothing in `CHANGELOG.md`, the customer page or the release notes marks a flagged entry, so read the flags before you publish ([Known limitations](../README.md#known-limitations)).

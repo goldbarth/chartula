@@ -1,6 +1,6 @@
 # Costs and checks
 
-A `generate` run pays your model provider for two kinds of calls: one rendering per audience, and one thorough check per rendering.
+A `generate` run pays your model provider for two kinds of calls: one [rendering](glossary.md#rendering) per [audience](glossary.md#audience), and one [thorough check](glossary.md#thorough-check) per rendering.
 This page shows how to see the size of a run before you pay for it, how to read what it cost afterwards, and whether the thorough check earns its share.
 It ends with what a measured comparison of models and settings found.
 
@@ -20,7 +20,7 @@ generate would make 4 model calls:
   A thorough check sends the rendering along with the facts, so its size is known only once the rendering is.
 ```
 
-So a release larger than you expected, or a range that reaches too far back, shows before a single token is spent.
+So a release larger than you expected, or a [range](glossary.md#range) that reaches too far back, shows before a single token is spent.
 [Estimating the cost of a run](#estimating-the-cost-of-a-run) turns these characters into tokens.
 
 ## Reading the run summary
@@ -45,9 +45,9 @@ Run metrics
 
 | Line | Reading |
 | --- | --- |
-| `Release` | How much release the run worked on: commits in the range, the merged pull requests behind them, the facts the changelog was written from after filtering, and the characters of description the model read beyond the titles. When some commits belong to no pull request, it names them too: `3 commits without one (1 merge commit, skipped)`. Each became a change of its own, except the merge commits ([What goes into a release](what-goes-into-a-release.md#2-pull-requests-or-commits)). So a release with long descriptions costs more than one with the same number of pull requests and short ones. |
+| `Release` | How much release the run worked on: commits in the range, the merged pull requests behind them, the [facts](glossary.md#fact) the changelog was written from after filtering, and the characters of description the model read beyond the titles. When some commits belong to no pull request, it names them too: `3 commits without one (1 merge commit, skipped)`. Each became a change of its own, except the merge commits ([What goes into a release](what-goes-into-a-release.md#2-pull-requests-or-commits)). So a release with long descriptions costs more than one with the same number of pull requests and short ones. |
 | `runs` | How often the check was asked to run: once per rendered audience. |
-| `with findings` | How many of those runs flagged at least one claim. |
+| `with findings` | How many of those runs flagged at least one [claim](glossary.md#claim). |
 | `claims` | How many claims the check flagged in total. |
 | `in / out` | Tokens sent to and produced by the model, attributed to that operation. |
 | `of which ... cached` | The part of the input the provider served from its prompt cache, which most providers bill at a lower rate. |
@@ -96,10 +96,10 @@ So the summary is no measure of that run's cost; the provider's own usage page i
 
 Both checks read every rendering against the facts, and neither changes the text.
 What they cannot back is listed under "Flagged for review" below the rendering, with the pull request it concerns where there is one.
-A flag does not fail the run.
+A [flag](glossary.md#flag) does not fail the run.
 So read the flags before you publish, because no output file marks a flagged entry.
 
-**The rule-based check** always runs and makes no model call.
+**The [rule-based check](glossary.md#rule-based-check)** always runs and makes no model call.
 It flags a number in the text that no fact contains, and a quoted or backticked name that appears in no fact.
 So it is free, and it catches only what a lookup can decide.
 
@@ -287,6 +287,6 @@ As of 2026-09-25, for a release like the one measured:
 - **Start with `thinking: disabled`**, for rendering and checking. Thinking raised cost and duration and lowered no flag.
 - **Check with the steadier model.** Among the `gpt-6` models, that is `gpt-6-sol`, whatever model renders.
 - **Render with the cheaper model**, if your own reading of its output holds up. `gpt-6-luna` rendered for $0.003 of a $0.051 run.
-- **Keep the fact base at `title-and-description`** unless your descriptions add nothing to the titles.
+- **Keep the [fact base](glossary.md#fact-base) at `title-and-description`** unless your descriptions add nothing to the titles.
 
 [Providers](providers.md#choosing-a-model) lists the model ids Chartula has been run with.

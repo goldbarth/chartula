@@ -99,7 +99,7 @@ The endpoint and the name of the key variable are [environment-only](#environmen
 | Key | Default | Valid values | Description |
 | --- | --- | --- | --- |
 | `provider` | `anthropic` | `anthropic`, `openai-compatible` | The provider. [Providers](providers.md) sets up each. |
-| `model` | per provider | a model id the provider serves | The model that writes the renderings. [Choosing a model](providers.md#choosing-a-model) lists the tested ids. |
+| `model` | per provider | a model id the provider serves | The model that writes the [renderings](glossary.md#rendering). [Choosing a model](providers.md#choosing-a-model) lists the tested ids. |
 | `maxOutputTokens` | `32000` | a positive whole number | The ceiling on the tokens the model may produce per call, thinking included. |
 | `thinking` | `provider-default` | `provider-default`, `disabled`, `low`, `medium`, `high`, `xhigh` | How much the model reasons before it answers. See [`thinking`](providers.md#thinking). |
 
@@ -136,7 +136,7 @@ Label names are yours, such as `visibility:internal`, `no-changelog` or `chore`,
 | `userFacing` | none | a list of label names | A change a reader can meet, whatever its category. |
 | `actionRequired` | none | a list of label names | A change the reader has to act on although it is not breaking. It stands under "What needs action" in the customer rendering. |
 
-[What goes into a release](what-goes-into-a-release.md) explains the order in which labels, category and filter decide, and which audience a change reaches.
+[What goes into a release](what-goes-into-a-release.md) explains the order in which labels, category and filter decide, and which [audience](glossary.md#audience) a change reaches.
 
 ### `filter`
 
@@ -158,17 +158,17 @@ Label names are yours, such as `visibility:internal`, `no-changelog` or `chore`,
 | Key | Default | Valid values | Description |
 | --- | --- | --- | --- |
 | `order` | `[Feature, Fix, Performance, Documentation, Refactor, Other, Internal]` | a list of categories | The order of entries within each group of the technical and customer renderings, and across the product rendering. Unlisted categories sort last. |
-| `names` | the category names | a map of category to name | The name the model is given for a category in each fact, such as `Fix: Bug Fix`. The headings of the renderings do not change. |
+| `names` | the category names | a map of category to name | The name the model is given for a category in each [fact](glossary.md#fact), such as `Fix: Bug Fix`. The headings of the renderings do not change. |
 | `breakingProminent` | `true` | `true`, `false` | Whether breaking changes stand first in the product rendering. The technical and customer renderings always put a breaking change first. |
 
 ### `faithfulness`
 
 The two checks of every rendering against the facts.
-The rule-based check always runs and has no settings.
+The [rule-based check](glossary.md#rule-based-check) always runs and has no settings.
 
 | Key | Default | Valid values | Description |
 | --- | --- | --- | --- |
-| `thorough` | `true` | `true`, `false` | Whether the thorough check, a second model call per audience, runs. |
+| `thorough` | `true` | `true`, `false` | Whether the [thorough check](glossary.md#thorough-check), a second model call per audience, runs. |
 | `model` | `llm.model` | a model id the provider serves | The model the thorough check asks, at the same provider, endpoint and key as the rendering. |
 | `thinking` | `llm.thinking` | the values of `llm.thinking` | How much the thorough check's model reasons. |
 
@@ -190,7 +190,7 @@ No interactive reviewer exists yet, so `enabled: true` is refused instead of app
 
 ### `range`
 
-A first tag, or a range with more commits than this, is confirmed twice before any GitHub request or model call, and a run without a terminal stops there unless it passes `--yes`.
+A first tag, or a [range](glossary.md#range) with more commits than this, is confirmed twice before any GitHub request or model call, and a run without a terminal stops there unless it passes `--yes`.
 [A large range is confirmed](what-goes-into-a-release.md#a-large-range-is-confirmed) shows the question.
 
 | Key | Default | Valid values | Description |

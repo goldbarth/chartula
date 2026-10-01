@@ -68,7 +68,7 @@ A token that cannot read the repository gets a similar message, naming the token
 GitHub allows 60 API requests an hour per IP address without a token, shared with every other unauthenticated request from that address.
 A token raises the limit to 5000 an hour.
 
-A run spends one request per commit in the range, not per pull request, because it asks GitHub which pull request each commit belongs to.
+A run spends one request per commit in the [range](glossary.md#range), not per pull request, because it asks GitHub which pull request each commit belongs to.
 A pull request merged with a merge commit costs one request for the merge commit and one for each commit on its branch, so a release merged with merge commits costs more requests than the same release squashed.
 Ten squash-merged pull requests take ten requests; ten pull requests of five commits each, merged with merge commits, take sixty.
 `generate` adds a few requests when it writes the release notes.
@@ -96,9 +96,9 @@ Chartula adds a missing trailing slash, so the URL works as GitHub's documentati
 
 ## What `generate` writes to GitHub
 
-`generate` writes the technical rendering as the release notes for the tag.
+`generate` writes the technical [rendering](glossary.md#rendering) as the release notes for the tag.
 
-- **A tag without a release** gets a new draft release.
+- **A tag without a release** gets a new [draft](glossary.md#draft) release.
   A draft is visible only to people with write access, so nothing goes public until someone publishes it.
   The run marks its link with `(draft)`.
 - **A tag with a release** keeps it as it is, and only the notes are replaced.

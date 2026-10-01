@@ -1,7 +1,7 @@
 # Run record
 
 Every `generate` run keeps what it did and what it cost in a file of its own, `chartula-runs/<time>-<tag>.json`, next to the other outputs.
-It holds the figures of the [run summary](costs-and-checks.md#reading-the-run-summary), the settings the run was made with, how each audience came out, and the complete facts the run rendered from.
+It holds the figures of the [run summary](costs-and-checks.md#reading-the-run-summary), the settings the run was made with, how each [audience](glossary.md#audience) came out, and the complete [facts](glossary.md#fact) the run rendered from.
 
 Comparing runs - a prompt change, another model, thinking on or off - then means comparing two files, not copying numbers out of a terminal.
 A figure written down later is a figure from memory; the record is the run's own.
@@ -12,7 +12,7 @@ The record is never published or uploaded.
 Token usage is a fact about the run, not about the release, so it stays out of `changelog.json` and the release notes.
 
 It holds no rendered text: the texts are in `changelog.json`.
-It does hold every pull request description, the faithfulness flags and any error message, so treat it like a local log.
+It does hold every pull request description, the faithfulness [flags](glossary.md#flag) and any error message, so treat it like a local log.
 The descriptions are why the facts live here and not in `changelog.json`: that file is published, and a description is what its author wrote for reviewers.
 
 Whether to commit it is yours to decide.
@@ -63,7 +63,7 @@ The file is UTF-8, indented JSON.
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `start` | string | Where the range started: `previous-tag` (found on its own), `since` (named with `--since`) or `first-commit` (a first tag, no start at all). |
+| `start` | string | Where the [range](glossary.md#range) started: `previous-tag` (found on its own), `since` (named with `--since`) or `first-commit` (a first tag, no start at all). |
 | `from` | string | The tag or commit the range starts after, as named or found. Absent for `first-commit`. |
 | `fromCommit` | string | The full hash `from` pointed to when the run read the range. Absent for `first-commit`. |
 | `toCommit` | string | The full hash the release tag pointed to when the run read the range. |
@@ -79,7 +79,7 @@ One entry per fact, in the fields of a [`changelog.json` change entry](changelog
 | --- | --- | --- |
 | `description` | string or null | The pull request description with HTML comments removed, since GitHub does not show them to a reader. `null` for a commit-based change, at `factBase.depth: title-only`, or when the body is empty or an unfilled template (nothing but headings and checklist items). |
 
-It is the whole fact base the model read, so a rendering can be traced back to its input even after a pull request was edited, and a stored run can be replayed or evaluated.
+It is the whole [fact base](glossary.md#fact-base) the model read, so a [rendering](glossary.md#rendering) can be traced back to its input even after a pull request was edited, and a stored run can be replayed or evaluated.
 `changelog.json` carries the same facts without their descriptions ([#260](https://github.com/goldbarth/chartula/issues/260)).
 An added optional field, so the record stays at version 3.
 Its size is `commits` under [`metrics.release`](#metrics).
@@ -102,11 +102,11 @@ A failed audience has no `flags`: it was never checked, and an empty list would 
 | `text` | string | What was flagged, and why. |
 | `pullRequest` | integer | The pull request whose fact the flagged passage rephrases. Absent when the flag concerns no single fact. |
 
-The thorough check names the pull request, and Chartula keeps the number only when the release has that pull request among its facts.
+The [thorough check](glossary.md#thorough-check) names the pull request, and Chartula keeps the number only when the release has that pull request among its facts.
 A number the release does not have, such as an issue a title mentions, stays in the flag's text as the check's lead, not as its `pullRequest`.
 A number the release does have is still the check's reading: Chartula verifies that the fact exists, not that the check picked the right one.
-The rule-based check's flags never have one: they name a number or a name that no fact contains.
-Neither does a claim about the release as a whole, a fact that came from a commit without a pull request, or a thorough check that could not be evaluated.
+The [rule-based check](glossary.md#rule-based-check)'s flags never have one: they name a number or a name that no fact contains.
+Neither does a [claim](glossary.md#claim) about the release as a whole, a fact that came from a commit without a pull request, or a thorough check that could not be evaluated.
 
 Flags from several runs group by `pullRequest`, so a finding that repeats is found by the fact it concerns rather than by how alike its wording is.
 
