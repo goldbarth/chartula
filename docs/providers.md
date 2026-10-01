@@ -1,6 +1,6 @@
 # Providers
 
-Chartula establishes the facts of a release without a model, then sends them to a model twice per audience: once to rephrase them, once to check the text against them.
+Chartula establishes the [facts](glossary.md#fact) of a release without a model, then sends them to a model twice per [audience](glossary.md#audience): once to rephrase them, once to check the text against them.
 This page sets up that model: Anthropic, OpenAI, a hosted endpoint that speaks OpenAI's dialect, or a server on your own machine.
 
 Two values of `llm.provider` cover all four.
@@ -127,7 +127,7 @@ Until a local model passes, read a local run's output line by line before you pu
 
 ### The context window is the first thing to get right
 
-Chartula sends the whole fact base in one call.
+Chartula sends the whole [fact base](glossary.md#fact-base) in one call.
 For a release of 18 changes with their descriptions, one call was around 11,000 tokens in the [comparison of 2026-09-25](costs-and-checks.md#the-model-comparison-of-2026-09-25), and it grows with the release.
 
 A local server does not refuse a prompt that is too long for its context window.
@@ -155,7 +155,7 @@ In the [run summary](costs-and-checks.md#reading-the-run-summary), an input-toke
 
 ### What to watch: the thorough check
 
-The thorough check asks the model for a verdict in a fixed JSON format, and two things can go wrong.
+The [thorough check](glossary.md#thorough-check) asks the model for a verdict in a fixed JSON format, and two things can go wrong.
 
 An endpoint that ignores the format answers in prose.
 Chartula reports that verdict as not evaluated, never as a clean check, so the run says the text went unverified.
@@ -183,7 +183,7 @@ Every model in the table supports the structured output the thorough check needs
 Prices change, so look them up at the source: [Anthropic](https://www.anthropic.com/pricing#api), [OpenAI](https://openai.com/api/pricing/).
 
 The [model comparison of 2026-09-25](costs-and-checks.md#the-model-comparison-of-2026-09-25) has the figures behind the notes, what they cannot tell, and the recommendations drawn from them.
-In short, `gpt-6-luna` rendered at the lowest cost, `gpt-6-sol` was the steadier checker, and thinking lowered no flag while it raised cost and duration.
+In short, `gpt-6-luna` rendered at the lowest cost, `gpt-6-sol` was the steadier checker, and thinking lowered no [flag](glossary.md#flag) while it raised cost and duration.
 Read the output of a cheaper setup before you adopt it, because changelog quality is what the saving could cost.
 The comparison runs for the Claude models follow.
 

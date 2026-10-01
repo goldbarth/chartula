@@ -1,6 +1,6 @@
 # Getting started
 
-This page takes you from nothing installed to a published release draft, one step after the other.
+This page takes you from nothing installed to a published release [draft](glossary.md#draft), one step after the other.
 Each step says what to run, what you should see, and where to look when you see something else.
 
 You need a GitHub repository with at least one tag and some merged pull requests, and a checkout of it on your machine.
@@ -105,7 +105,7 @@ Chartula takes the category of each change from the prefix of its title, `feat:`
 chartula preview
 ```
 
-`preview` reads the release and establishes its facts the way `generate` does, then stops before the model.
+`preview` reads the release and establishes its [facts](glossary.md#fact) the way `generate` does, then stops before the model.
 It makes no model call and writes nothing, so you can run it as often as you like.
 On Chartula's own `v0.1.0-preview.3`:
 
@@ -134,10 +134,10 @@ generate would make 4 model calls:
 ```
 
 Read it as the list of what your release notes will say.
-Each fact names its category and the renderings it will appear in; each dropped change names the setting that dropped it.
+Each fact names its category and the [renderings](glossary.md#rendering) it will appear in; each dropped change names the setting that dropped it.
 A change missing from the list, or under the wrong category, is fixed in the pull request title or in `chartula.yaml`, not in the output ([What goes into a release](what-goes-into-a-release.md) explains each decision).
 
-On a repository's first tag, `preview` asks before it reads every commit up to it, because that range can be long ([A first tag](what-goes-into-a-release.md#a-first-tag)).
+On a repository's first tag, `preview` asks before it reads every commit up to it, because that [range](glossary.md#range) can be long ([A first tag](what-goes-into-a-release.md#a-first-tag)).
 
 ## 6. Write the release notes with `chartula generate`
 
@@ -145,7 +145,7 @@ On a repository's first tag, `preview` asks before it reads every commit up to i
 chartula generate
 ```
 
-`generate` establishes the same facts, has the model write each audience from them, checks what the model wrote, and writes the results.
+`generate` establishes the same facts, has the model write each [audience](glossary.md#audience) from them, checks what the model wrote, and writes the results.
 It is the step that costs tokens: the calls `preview` listed.
 Its report, shortened:
 
@@ -179,7 +179,7 @@ Run metrics
 ```
 
 Read the entries under **Flagged for review** first.
-Each flag is a claim the checks could not find in the facts, and the rendering it belongs to is where the model most likely wrote more than your pull requests say.
+Each [flag](glossary.md#flag) is a [claim](glossary.md#claim) the checks could not find in the facts, and the rendering it belongs to is where the model most likely wrote more than your pull requests say.
 Nothing in `CHANGELOG.md`, the customer page or the draft marks a flagged entry, so read the flags before you close the terminal.
 The [run record](run-record.md) of step 8 keeps them, if you need them later.
 

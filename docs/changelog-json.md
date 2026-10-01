@@ -1,6 +1,6 @@
 # `changelog.json` format
 
-Chartula writes the release's facts and the audience texts to `changelog.json`, a machine-readable record of one release.
+Chartula writes the release's [facts](glossary.md#fact) and the [audience](glossary.md#audience) texts to `changelog.json`, a machine-readable record of one release.
 A tool that reacts to a release, such as a webhook, reads it instead of parsing Markdown.
 It is meant to be published.
 
@@ -12,7 +12,7 @@ The file is UTF-8, indented JSON.
 
 **It holds no pull request description.**
 A description is what its author wrote for reviewers - internal notes, measurements, links to internal systems - and publishing the file must not publish it.
-The file holds each change's title, number, link, category, flags, labels and closed issue numbers, the renderings, and how the file was made.
+The file holds each change's title, number, link, category, whether it is breaking and whether a reader can meet it, its labels and closed issue numbers, the [renderings](glossary.md#rendering), and how the file was made.
 The complete facts a run rendered from, descriptions included, stay on your machine in its [run record](run-record.md#facts).
 
 ## Schema
@@ -51,7 +51,7 @@ Each field is left out when the run does not have a value for it, never written 
 | `toolVersion` | string | The Chartula version that wrote the file, with the commit it was built from after a `+`. |
 | `provider` | string | The model provider as configured: `anthropic` or `openai-compatible`. |
 | `model` | string | The model id the renderings were written with. |
-| `promptHash` | string | `sha256:` and a hex digest of every instruction Chartula sends - each audience's system prompt and the thorough check's - without the facts. Two files with the same hash were rendered from the same instructions. |
+| `promptHash` | string | `sha256:` and a hex digest of every instruction Chartula sends - each audience's system prompt and the [thorough check](glossary.md#thorough-check)'s - without the facts. Two files with the same hash were rendered from the same instructions. |
 | `thinking` | string | The configured `llm.thinking`: `provider-default`, `disabled`, `low`, `medium`, `high` or `xhigh`, as the configuration spells it (`adaptive` is recorded as `high`). `provider-default` records the setting, not whether the model thought - some models think by default, others do not (see [`thinking`](providers.md#thinking)). |
 | `thoroughCheck` | boolean | Whether the thorough faithfulness check ran (`faithfulness.thorough`). |
 | `factBaseDepth` | string | The configured `factBase.depth`: `title-only` or `title-and-description`. A file written before #258 may hold `title-description-and-issues`, which read the same text as `title-and-description`. |
@@ -60,7 +60,7 @@ Each field is left out when the run does not have a value for it, never written 
 
 `thinking`, `thoroughCheck`, `factBaseDepth`, `checkModel` and `checkThinking` are the settings that move a run's cost and output most, so two files can be compared by what they were made with rather than by what someone remembers.
 
-Endpoint hosts, flags and check verdicts are deliberately not recorded: the file may be published, and a host can name an internal gateway.
+Endpoint hosts, [flags](glossary.md#flag) and check verdicts are deliberately not recorded: the file may be published, and a host can name an internal gateway.
 
 ## Stability
 

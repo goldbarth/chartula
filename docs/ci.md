@@ -68,15 +68,15 @@ Each step is there for a reason:
   They pass through environment variables rather than straight into the command, so a tag name cannot inject shell code.
 - **The artifact** keeps `CHANGELOG.md`, `release-<tag>.md`, `changelog.json` and the run record, which otherwise disappear with the runner.
 
-A failed audience or a refused publication ends the run with exit code `1`, so the job fails and GitHub notifies you.
+A failed [audience](glossary.md#audience) or a refused publication ends the run with exit code `1`, so the job fails and GitHub notifies you.
 
-A first tag, or a range with more commits than [`range.confirmAboveCommits`](configuration.md#range), is confirmed before it is read, and a job has no terminal to answer on.
+A first tag, or a [range](glossary.md#range) with more commits than [`range.confirmAboveCommits`](configuration.md#range), is confirmed before it is read, and a job has no terminal to answer on.
 So the job stops there with nothing spent and exit code `1`, and names the two ways on: `--since <ref>` to start later, or `--yes` to render the range as it is.
 Run that one release by hand or with the option added once, rather than adding `--yes` to the job for good, which would let every later range through unasked.
 
 ## What happens to the draft
 
-For a tag without a release, the job creates a draft release with the technical rendering as its notes.
+For a tag without a release, the job creates a [draft](glossary.md#draft) release with the technical [rendering](glossary.md#rendering) as its notes.
 A draft is visible only to people with write access, so nothing goes public until someone reads it and publishes it, on the release page or with `gh release edit <tag> --draft=false`.
 
 When another workflow of yours creates the release for the same tag, let it create a draft and run this job before anyone publishes.

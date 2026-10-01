@@ -11,14 +11,14 @@ There is no daemon and no interactive shell.
 
 | Command | What it does | Model calls | Writes files | Publishes |
 | --- | --- | --- | --- | --- |
-| `chartula preview` | Establishes the facts of a release and shows what `generate` would send. | none | no | no |
-| `chartula generate` | Establishes the same facts, has the model write each audience, checks the texts, and writes the outputs. | one per audience, and one check per rendering | yes | a draft of the release notes |
+| `chartula preview` | Establishes the [facts](glossary.md#fact) of a release and shows what `generate` would send. | none | no | no |
+| `chartula generate` | Establishes the same facts, has the model write each [audience](glossary.md#audience), checks the texts, and writes the outputs. | one per audience, and one check per [rendering](glossary.md#rendering) | yes | a [draft](glossary.md#draft) of the release notes |
 | `chartula generate --no-publish` | The same, without the release notes on GitHub. | as `generate` | yes | no |
 | `chartula doctor` | Checks everything a run needs. | one short call per model | no | no |
 | `chartula --version` | Prints the version and the commit it was built from. | none | no | no |
 | `chartula --help` | Prints the commands and options. | none | no | no |
 
-Run `preview`, `generate` and `doctor` from a checkout of the repository the release belongs to, because the range of the release is read with `git` from the current directory.
+Run `preview`, `generate` and `doctor` from a checkout of the repository the release belongs to, because the [range](glossary.md#range) of the release is read with `git` from the current directory.
 
 `-h`, `--help` and `help` print the help text as the first word, and so does `chartula` without arguments.
 `-h` and `--help` print it after a command too, such as `chartula generate --help`, and start nothing.
@@ -104,7 +104,7 @@ $ chartula generate --audience developers
 Unknown audience 'developers'. There are three: technical, customer, product.
 ```
 
-Each audience is one rendering call and one thorough check, so a run for one audience pays for one.
+Each audience is one rendering call and one [thorough check](glossary.md#thorough-check), so a run for one audience pays for one.
 An output whose audience was not rendered is not written: no `CHANGELOG.md` without `technical`, no `release-<tag>.md` without `customer`.
 `product` renders only when named, because it has no output file of its own and would otherwise cost a third of every run.
 
@@ -239,7 +239,7 @@ When a step fails, it is the last line shown, and the error follows below it.
 
 | Stream | What it carries |
 | --- | --- |
-| stdout | The result: the help text, the version, the `doctor` report, the `preview` report, and the `generate` report with its renderings, flags, written files and run summary. An error after the run started, as `Error: <message>`, and a range that was not confirmed, as `Stopped: <message>`. |
+| stdout | The result: the help text, the version, the `doctor` report, the `preview` report, and the `generate` report with its renderings, [flags](glossary.md#flag), written files and run summary. An error after the run started, as `Error: <message>`, and a range that was not confirmed, as `Stopped: <message>`. |
 | stderr | Everything about the run itself: the announced `--tag` and `--repo` defaults, the header naming the model and GitHub endpoints, the warning without a GitHub token, the `Range:` line and its question, the progress lines, a usage error, and a `Configuration error:`. |
 
 So `chartula generate > report.txt` keeps the report free of progress lines, and a CI log still shows where a run stood.

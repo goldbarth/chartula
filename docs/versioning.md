@@ -28,7 +28,7 @@ So a bug report and a run file name the exact build, and a tag names the release
 ## Before 1.0.0: preview and alpha
 
 Every release before 1.0.0 is `0.1.0-preview.N`.
-The `0.y.z` range is SemVer's range for initial development, where anything may change, and that is where Chartula is: options, the shape of each rendering and what `generate` publishes can still move with the feedback of the alpha.
+SemVer reserves `0.y.z` for initial development, where anything may change, and that is where Chartula is: options, the shape of each [rendering](glossary.md#rendering) and what `generate` publishes can still move with the feedback of the alpha.
 A `1.0.0-preview` would promise that the shape of 1.0 is known, and every correction would then cost a `2.0.0`.
 
 - **`0.1.0` stays fixed.** Before 1.0.0 the three parts carry no meaning, so a change to them would suggest a distinction that is not there.

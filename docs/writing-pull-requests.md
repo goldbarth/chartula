@@ -10,7 +10,7 @@ Another run words it differently, but where an entry stands and what it may say 
 ## Without any of it
 
 Chartula works on pull requests that follow no convention at all.
-It still reads every merged pull request of the release, links each entry to its pull request, keeps the facts out of the model's hands, and checks each text against them.
+It still reads every merged pull request of the release, links each entry to its pull request, keeps the [facts](glossary.md#fact) out of the model's hands, and checks each text against them.
 A title such as `wip` or `update` is replaced by the first informative line of the description, so an entry never reads as a placeholder.
 
 What it cannot do without input is tell a feature from a fix, or internal work from a change a reader meets.
@@ -39,7 +39,7 @@ The type decides the category, and the category decides where an entry stands an
 | no prefix | `Other` | under "Changed" | under "What's Changed" |
 
 A pull request titled `Rewrite comments for readability` is an `Other` change, so your customers read about your code comments.
-Titled `docs: rewrite comments for readability`, it stays a fact in `changelog.json` and reaches neither rendering.
+Titled `docs: rewrite comments for readability`, it stays a fact in `changelog.json` and reaches neither [rendering](glossary.md#rendering).
 
 This is the one rule worth enforcing, because it costs an author a few characters and decides more of the output than anything else.
 
@@ -86,7 +86,7 @@ feat(api)!: drop the v1 endpoint
 ```
 
 A breaking change stands first in its group of the technical notes, marked `**Breaking:**`, and at the top of the customer notes under "What needs action".
-No category filter drops it, and every audience sees it.
+No category filter drops it, and every [audience](glossary.md#audience) sees it.
 Without the marker, Chartula has no way to know, and the change reads like any other.
 
 ### Two sentences of description

@@ -1,13 +1,13 @@
 # What goes into a release
 
 Chartula decides what a release contains before any model sees it, with fixed rules and no guessing.
-So you can predict from this page which changes of a release appear, under which category, and for which audience.
+So you can predict from this page which changes of a release appear, under which category, and for which [audience](glossary.md#audience).
 The steps below run in this order.
 
 ## 1. The range
 
 A release is every commit after the previous tag, up to the release tag.
-Chartula reads that range with `git` from the checkout the run starts in.
+Chartula reads that [range](glossary.md#range) with `git` from the checkout the run starts in.
 For `v1.3.0` with `v1.2.0` before it, the release is `v1.2.0..v1.3.0`.
 
 ### A first tag
@@ -84,7 +84,7 @@ When that title says nothing - it is empty, starts with `Merge `, or is exactly 
 
 The description is the pull request body without its HTML comments, because GitHub does not show them to a reader.
 A body left with nothing but headings and checklist items is an unfilled template, and counts as no description.
-So a pull request template's placeholders never become facts.
+So a pull request template's placeholders never become [facts](glossary.md#fact).
 
 ## 3. Reverts
 
@@ -180,7 +180,7 @@ The audiences read this differently:
 | an `internal` label on a `Feature`, `Fix`, `Performance` or `Other` change | yes | no | yes |
 | none of the above | no | no | no |
 
-An `internal` label keeps a change away from customers, not from developers or product managers, so it narrows the customer rendering only.
+An `internal` label keeps a change away from customers, not from developers or product managers, so it narrows the customer [rendering](glossary.md#rendering) only.
 A change that reaches no rendering is still a fact in `changelog.json`.
 
 ```yaml

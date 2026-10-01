@@ -41,7 +41,7 @@ Configuration error: No Anthropic API key found in ANTHROPIC_API_KEY. Set one wi
 ```
 
 **Cause:** `llm.provider` is `anthropic`, the default, and `ANTHROPIC_API_KEY` is empty.
-`generate` refuses before it reads anything, because every audience would fail on the missing key.
+`generate` refuses before it reads anything, because every [audience](glossary.md#audience) would fail on the missing key.
 
 **Fix:** export the key, or set up another provider as [Providers](providers.md) shows.
 A local server with `llm.provider: openai-compatible` needs no key.
@@ -102,7 +102,7 @@ Without a token, the run warns at its start, and the message names the token as 
 Error: GitHub's rate limit is spent (403 Forbidden). A token in GITHUB_TOKEN raises it; see the warning at the start of the run.
 ```
 
-**Cause:** a run makes one GitHub request per commit in the range.
+**Cause:** a run makes one GitHub request per commit in the [range](glossary.md#range).
 Without a token, GitHub allows 60 requests an hour; with one, 5,000.
 
 **Fix:** set `GITHUB_TOKEN`, or wait for the limit to reset.
@@ -204,8 +204,8 @@ So the address is right, and the network is not the problem.
 
 **Fix:** update the server, or use one that follows the provider's API more closely.
 
-A failed call of the thorough check does not fail the audience.
-The rendering is kept and flagged as `The thorough check could not be evaluated`, with the same explanation, and names `faithfulness.model` when the check asks a model of its own.
+A failed call of the [thorough check](glossary.md#thorough-check) does not fail the audience.
+The [rendering](glossary.md#rendering) is kept and flagged as `The thorough check could not be evaluated`, with the same explanation, and names `faithfulness.model` when the check asks a model of its own.
 
 ### The answer does not match the facts
 
@@ -213,7 +213,7 @@ The rendering is kept and flagged as `The thorough check could not be evaluated`
   (failed) Changelog generation for 'v1.3.0' failed: the model's answer does not match the facts it was sent: no entry for fact 1, 2.
 ```
 
-**Cause:** the model was sent one fact per entry and returned entries for other facts, or none for some.
+**Cause:** the model was sent one [fact](glossary.md#fact) per entry and returned entries for other facts, or none for some.
 Chartula fails the audience rather than publish a rendering in which a change is missing or invented.
 
 **Fix:** run again, since a model does not fail the same way every time.
