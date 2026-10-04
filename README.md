@@ -7,10 +7,10 @@
 
 **Release notes written from your merged pull requests, and checked against them before you publish.**
 
-[![Status](https://img.shields.io/badge/status-alpha-blue?style=flat-square)](#try-it)
-[![CI](https://img.shields.io/github/actions/workflow/status/goldbarth/chartula/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/goldbarth/chartula/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](CONTRIBUTING.md)
+[![Status](https://img.shields.io/badge/status-alpha-1BA897?style=flat-square&labelColor=26201A)](#try-it)
+[![CI](https://img.shields.io/github/actions/workflow/status/goldbarth/chartula/ci.yml?branch=main&style=flat-square&label=CI&labelColor=26201A)](https://github.com/goldbarth/chartula/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-C68A35?style=flat-square&labelColor=26201A)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-C68A35?style=flat-square&labelColor=26201A)](CONTRIBUTING.md)
 
 </div>
 
