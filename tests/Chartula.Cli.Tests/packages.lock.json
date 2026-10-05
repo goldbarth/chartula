@@ -4,9 +4,9 @@
     "net10.0": {
       "coverlet.collector": {
         "type": "Direct",
-        "requested": "[10.0.1, )",
-        "resolved": "10.0.1",
-        "contentHash": "27jXSV/0DbVqF5jDrAxuQFZ9oaz6gmG03p8ttxAFk+X0M4woFYj7MoWDLCna5EGLb0CE6OE7X6ZH3Wt5smTtaA=="
+        "requested": "[10.1.0, )",
+        "resolved": "10.1.0",
+        "contentHash": "SlYCIHnBYxINSUpR75SiM5JEmnx11pqT+Ac/C/fUqTTA0dLPl9eYzmFXKKuxmQhL3ZdTQl4PBD3YdAxAauaKLQ=="
       },
       "Microsoft.Extensions.Configuration": {
         "type": "Direct",
@@ -57,8 +57,8 @@
       },
       "Anthropic": {
         "type": "Transitive",
-        "resolved": "12.49.0",
-        "contentHash": "uPz9LkpCfelVXZUxmnBKgdn6SyHwmdD0IYnJsvwJOk8SIlTEX62V1kr1EoxnmHSlUIcKIhGnZzvmuMHz+B9MMQ==",
+        "resolved": "12.53.0",
+        "contentHash": "NS4eDj4By+7C8RfhKQDq+/KKPd2m9HZvsflGJIJwT9MTNngNIyCkw6dnFwJp84wOClKHNDM6NXA9OXC8MfwAuQ==",
         "dependencies": {
           "Microsoft.Extensions.AI.Abstractions": "10.5.1"
         }
@@ -264,7 +264,7 @@
       "chartula": {
         "type": "Project",
         "dependencies": {
-          "Anthropic": "[12.49.0, )",
+          "Anthropic": "[12.53.0, )",
           "Chartula.Core": "[1.0.0, )",
           "Chartula.Infrastructure": "[1.0.0, )",
           "Microsoft.Extensions.AI.OpenAI": "[10.10.0, )",
