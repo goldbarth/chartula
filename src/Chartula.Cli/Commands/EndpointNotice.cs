@@ -34,9 +34,17 @@ internal static class EndpointNotice
             : string.Empty;
 
         return $"""
-            Model:  {llm.Provider} at {endpoint}, key from {llm.ApiKeyEnvironmentVariable}
+            Model:  {llm.Provider} at {endpoint}, {Credential(configuration, "key", llm.ApiKeyEnvironmentVariable)}
                     {llm.Model}, thinking {thinking}{checkLine}
-            GitHub: {gitHub.ApiBaseUrl}, token from {gitHub.TokenEnvironmentVariable}
+            GitHub: {gitHub.ApiBaseUrl}, {Credential(configuration, "token", gitHub.TokenEnvironmentVariable)}
             """;
     }
+
+    // An unset variable is not a source: "key from ANTHROPIC_API_KEY" above a warning that
+    // no key was found reads as a contradiction (#210). The variable is still named, so
+    // the line says what to set.
+    private static string Credential(IConfiguration configuration, string credential, string variable)
+        => string.IsNullOrWhiteSpace(configuration[variable])
+            ? $"unauthenticated, {variable} is not set"
+            : $"{credential} from {variable}";
 }

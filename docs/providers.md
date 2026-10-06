@@ -33,7 +33,8 @@ Model:  anthropic at its default endpoint, key from ANTHROPIC_API_KEY
 GitHub: https://api.github.com/, token from GITHUB_TOKEN
 ```
 
-The header names the variable a key is read from, not whether it is set.
+The header names the variable a key is read from, never its value.
+When the variable is not set, the line reads `unauthenticated, ANTHROPIC_API_KEY is not set` instead, so you see a missing key before the first call fails on it.
 
 ## Anthropic
 
