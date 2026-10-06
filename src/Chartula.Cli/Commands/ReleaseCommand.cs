@@ -99,12 +99,15 @@ internal static class ReleaseCommand
                 }
 
                 builder.AppendLine(audience.Text);
+                // A flag may concern any entry of the rendering, so the flags stand apart
+                // from the text instead of reading as a line of its last entry (#211).
                 if (audience.Flags.Count > 0)
                 {
-                    builder.AppendLine("  Flagged for review:");
+                    builder.AppendLine();
+                    builder.AppendLine("Flagged for review:");
                     foreach (FaithfulnessFlag flag in audience.Flags)
                     {
-                        AppendIndented(builder, "    ! ", flag.ToString());
+                        AppendIndented(builder, "  ! ", flag.ToString());
                     }
                 }
             }

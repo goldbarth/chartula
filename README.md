@@ -42,8 +42,8 @@ Fewer, not none.
 **What the check reported below it:**
 
 ```text
-  Flagged for review:
-    ! #252: "you can count on customer outcomes to state limits named in the facts" - #252 changed the customer prompt to require fact-bounded outcomes, but its measured runs still had outcome-related flags. The facts do not establish that customer outcomes now consistently state the limits in the facts.
+Flagged for review:
+  ! #252: "you can count on customer outcomes to state limits named in the facts" - #252 changed the customer prompt to require fact-bounded outcomes, but its measured runs still had outcome-related flags. The facts do not establish that customer outcomes now consistently state the limits in the facts.
 ```
 
 The pull request made overpromising entries rarer.

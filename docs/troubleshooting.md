@@ -251,8 +251,8 @@ An endpoint that reports the uncut length whatever it processed, or no usage at 
 ### A thorough check that verified nothing
 
 ```text
-  Flagged for review:
-    ! The thorough check could not be evaluated: the response did not match the expected format.
+Flagged for review:
+  ! The thorough check could not be evaluated: the response did not match the expected format.
 ```
 
 The run summary says the same for the whole run:
