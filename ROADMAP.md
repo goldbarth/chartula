@@ -19,9 +19,9 @@ Before Chartula is announced, a first run has to work for someone new to it, and
 
 ## After the launch, in this order
 
-1. **The model gets pull request text as quoted data.**
-   The text is delimited and limited in size, a breaking status says where it came from, a description edited after the merge is noticed, and a link is flagged until it is checked.
-   Removes the limitations "Pull request text goes to the model as it is" and "Breaking status comes from the text".
+1. **Pull request text is checked before the model reads it.**
+   A breaking status says where it came from, a description edited after the merge is noticed, and a link is flagged until it is checked.
+   Removes the limitation "Breaking status comes from the text", and the rest of "Pull request text is quoted, not trusted".
    No issue yet.
 2. **A run with flags stops and shows them before it writes anything, and a published release is not changed unasked.**
    A run in a working tree with uncommitted changes stops too.

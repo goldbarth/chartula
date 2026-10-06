@@ -199,6 +199,10 @@ labels:
 | `title-and-description` (default) | the title and the description | the issue numbers they close |
 
 `title-only` sends far less text, so a run costs less and the model has less to overstate, but it also has less to say.
+
+The title and the description reach the model between `<title>` and `<description>` tags, with an instruction to treat them as material to rephrase, never as instructions ([#337](https://github.com/goldbarth/chartula/issues/337)).
+A description longer than 8,000 characters is cut there, with a note that says how much is left out; the [run record](run-record.md#facts) keeps it whole.
+So a pasted log costs at most that much per call, and a description written to steer the model has a harder time doing it.
 The issue numbers are the numbers after `close`, `closes`, `closed`, `fix`, `fixes`, `fixed`, `resolve`, `resolves` or `resolved` and a `#`, as in `closes #12`.
 They come from the text the model reads, so a number in a rendering that the text closes is not flagged as invented.
 Chartula reads no issue, so the number is all a fact knows about it.

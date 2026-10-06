@@ -63,6 +63,6 @@ In scope is anything that lets content Chartula reads, or a setting it did not g
 Not a vulnerability, but still worth a normal issue:
 
 - an LLM rendering that states something the facts do not support - the faithfulness checks exist for that, and a miss is a bug
-- pull request text that steers what the model writes: it reaches the model as it is, a [known limitation](README.md#known-limitations) the roadmap addresses; text that makes Chartula send a credential, run a program or publish elsewhere is in scope
+- pull request text that steers what the model writes: it reaches the model quoted and bounded, which makes that harder but cannot rule it out, a [known limitation](README.md#known-limitations); text that makes Chartula send a credential, run a program or publish elsewhere is in scope
 - a vulnerability in a dependency that Chartula does not expose - please report it upstream
 - anything that needs the operator's own environment or machine to be compromised first
