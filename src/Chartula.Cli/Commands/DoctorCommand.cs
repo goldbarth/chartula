@@ -32,6 +32,14 @@ internal static class DoctorCommand
     /// <summary>The ceiling on the answer to an endpoint check. The answer only has to arrive.</summary>
     private const int EndpointCheckOutputTokens = 16;
 
+    /// <summary>
+    /// Where a binary install finds the template: the binary carries no copy of the repository.
+    /// The link points at this version's tag, not at main, because an unknown key is refused
+    /// and main may already list a key this version does not know.
+    /// </summary>
+    private static string TemplateHint { get; } =
+        $"To change them, copy https://github.com/goldbarth/chartula/blob/v{ToolVersion.Release}/chartula.example.yaml to chartula.yaml.";
+
     public static async Task<int> RunAsync(
         IReadOnlyList<string> args,
         string directory,
@@ -201,7 +209,7 @@ internal static class DoctorCommand
                 }
             }
 
-            report.Ok("config", file ?? $"no chartula.yaml in {directory}, so the defaults apply");
+            report.Ok("config", file ?? $"no chartula.yaml in {directory}, so the defaults apply\n{TemplateHint}");
             return configuration;
         }
         catch (InvalidOperationException ex)
