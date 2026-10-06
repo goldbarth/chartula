@@ -16,6 +16,7 @@ Checking the setup for a run in /work/my-repo
   ok    tag           v1.3.0, the nearest tag reachable from HEAD. Pass --tag to choose another.
   ok    repository    owner/name, from the 'origin' remote. Pass --repo to choose another.
   ok    config        no chartula.yaml in /work/my-repo, so the defaults apply
+                      To change them, copy https://github.com/goldbarth/chartula/blob/v0.1.0-preview.3/chartula.example.yaml to chartula.yaml.
   fail  model         anthropic at its default endpoint, model claude-sonnet-5
                       No Anthropic API key found in ANTHROPIC_API_KEY. Set one with: export ANTHROPIC_API_KEY=<your key> (create one at https://console.anthropic.com/settings/keys). For an endpoint that needs no key, set llm.provider to openai-compatible.
   skip  endpoint      not checked: needs the model settings and a key

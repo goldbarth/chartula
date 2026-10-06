@@ -2,6 +2,7 @@ using System.Collections;
 using System.Net;
 using System.Text;
 using Chartula.Cli.Commands;
+using Chartula.Cli.Composition;
 
 namespace Chartula.Cli.Tests.Commands;
 
@@ -285,6 +286,20 @@ public sealed class DoctorCommandTests : IDisposable
         (_, string output) = await DoctorAsync(Environment());
 
         AssertLine(output, "ok", "config", Path.Combine(_checkout, "chartula.yaml"));
+        Assert.DoesNotContain("chartula.example.yaml", output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Without_a_file_the_template_of_this_version_is_named()
+    {
+        await CreateCheckoutAsync();
+
+        (_, string output) = await DoctorAsync(Environment());
+
+        Assert.Contains(
+            $"https://github.com/goldbarth/chartula/blob/v{ToolVersion.Release}/chartula.example.yaml",
+            output,
+            StringComparison.Ordinal);
     }
 
     [Fact]
