@@ -115,13 +115,13 @@ $ export Chartula__Llm__BaseUrl=http://localhost:11434/v1
 $ OLLAMA_CONTEXT_LENGTH=24576 ollama serve &
 $ ollama pull <model>
 $ chartula preview
-Model:  openai-compatible at http://localhost:11434/v1, key from OPENAI_API_KEY
+Model:  openai-compatible at http://localhost:11434/v1, unauthenticated, OPENAI_API_KEY is not set
         <model>, thinking provider-default
 ```
 
 `ollama list` shows the ids of the models you have pulled.
 LM Studio serves the same dialect at `http://localhost:1234/v1`.
-The header names `OPENAI_API_KEY` although no key is set, because a local server does not read the `Authorization` header and the run needs none.
+The header says `unauthenticated` and the run continues, because a local server does not read the `Authorization` header and the run needs no key.
 
 No local model has passed the [model comparison](costs-and-checks.md#local-models) yet: `qwen3:14b` failed there as the rephrasing model and as the checker, and `granite4.1-guardian:8b` as the checker.
 Until a local model passes, read a local run's output line by line before you publish anything from it.
