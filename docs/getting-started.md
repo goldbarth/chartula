@@ -165,8 +165,9 @@ Generated changelog for v1.3.0
 ### What's New
 
 - ...
-  Flagged for review:
-    ! "..." - The facts say nothing about ...
+
+Flagged for review:
+  ! "..." - The facts say nothing about ...
 
 Wrote:
   - /work/my-repo/changelog.json

@@ -146,6 +146,24 @@ public sealed class ReleaseCommandOutputTests
             < text.IndexOf("- Search is here.", StringComparison.Ordinal));
     }
 
+    // #211: flags printed indented right under the text read as part of its last entry,
+    // although they may concern any entry of the rendering.
+    [Fact]
+    public async Task Flags_stand_apart_from_the_last_entry_of_their_rendering()
+    {
+        string text = await FormatAsync(new AudienceOutcome(
+            Audience.Customer,
+            Success: true,
+            "### What's New\n\n- Citation badges in chat.\n\n### Bug Fixes\n\n- Column headers line up.",
+            [new FaithfulnessFlag("\"in chat\" - the facts name no chat.", PullRequest: 7)],
+            Error: null));
+
+        Assert.Contains(
+            "- Column headers line up.\n\nFlagged for review:\n  ! #7: \"in chat\" - the facts name no chat.\n",
+            text,
+            StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task A_rendering_without_a_description_shows_no_empty_line_for_one()
     {
@@ -237,6 +255,6 @@ public sealed class ReleaseCommandOutputTests
                 Audience.Customer, Success: true, "- Added search", [new FaithfulnessFlag("The thorough check could not be evaluated: answered 404.\nThe endpoint said: no.")], Error: null));
 
         Assert.Contains("  (failed) answered 401 Unauthorized.\n           The endpoint rejected the key in ANTHROPIC_API_KEY.\n", text);
-        Assert.Contains("    ! The thorough check could not be evaluated: answered 404.\n      The endpoint said: no.\n", text);
+        Assert.Contains("  ! The thorough check could not be evaluated: answered 404.\n    The endpoint said: no.\n", text);
     }
 }
