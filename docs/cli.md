@@ -65,6 +65,7 @@ A value you did not pass is announced on stderr before the run starts, so `gener
 
 ```console
 $ chartula preview
+chartula · preview
 Using tag v1.3.0, the nearest tag reachable from HEAD. Pass --tag to choose another.
 Using repository owner/name, from the 'origin' remote. Pass --repo to choose another.
 ```
@@ -137,7 +138,8 @@ Reads the range and its pull requests, decides every fact the way `generate` doe
 
 ```console
 $ chartula preview --tag v0.1.0-preview.3
-Preview of v0.1.0-preview.3 - no model call was made, and nothing was written or published.
+Preview of v0.1.0-preview.3
+No model calls · no files written · no publication
 
 Release: 7 commits, 7 pull requests, 6 facts (6 with a description, 15,083 characters)
 
@@ -175,6 +177,17 @@ Establishes the same facts as `preview`, renders each audience with the model, c
 A token that cannot publish stops the run before the first model call ([What `generate` writes to GitHub](github.md#what-generate-writes-to-github)).
 Publishing is still the last step, so when GitHub refuses it for another reason, the files are already written.
 The summary lists them under `Wrote:`, names the refusal under `Not published:`, and the run exits with 1.
+
+The summary on stdout opens on how the run went, then shows each rendering under its audience's name:
+
+| First line | When |
+| --- | --- |
+| `Generated v1.3.0.` | Every audience rendered, and the checks flagged nothing. |
+| `Generated v1.3.0 with review flags: 2 in customer.` | Every audience rendered, and the checks flagged something; the flags follow their rendering. |
+| `Partially generated v1.3.0: 1 of 3 audiences failed.` | Some audiences failed; the ones that rendered are still written. Flags, if any, are named after a semicolon. |
+| `No audience rendered for v1.3.0.` | Every audience failed, so nothing was written. |
+
+"Generated" reports what the run did, not that the text is verified: a run without flags is one in which the checks found nothing ([Costs and checks](costs-and-checks.md)).
 
 ## `chartula doctor`
 

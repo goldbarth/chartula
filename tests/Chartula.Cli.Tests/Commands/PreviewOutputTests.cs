@@ -56,7 +56,7 @@ public sealed class PreviewOutputTests
         (int exitCode, string text) = await RunAsync(Preview());
 
         Assert.Equal(0, exitCode);
-        Assert.StartsWith("Preview of v1.0.0 - no model call was made, and nothing was written or published.\n", text);
+        Assert.StartsWith("Preview of v1.0.0\nNo model calls, no files written, no publication\n\n", text);
         Assert.Contains("Release: 3 commits, 2 pull requests, 2 facts (1 with a description, 12 characters)\n", text);
         Assert.Contains("Facts (2):\n  #1       Feature: feat: add search\n           technical, customer\n", text);
         Assert.Contains("  #4       Documentation, breaking: docs: rewrite the guide\n           in no rendering\n", text);

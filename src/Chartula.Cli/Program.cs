@@ -56,13 +56,13 @@ internal static class Program
         if (args[0] is DoctorCommand.Name)
         {
             // The report goes to stdout, so stdout decides how it is marked.
-            TerminalProfile report = TerminalProfile.Detect(
+            TerminalProfile doctorReport = TerminalProfile.Detect(
                 Console.IsOutputRedirected,
                 Environment.GetEnvironmentVariables(),
                 CommandLineArguments.HasFlag(args, TerminalProfile.PlainFlag),
                 Console.OutputEncoding);
             return await DoctorCommand.RunAsync(
-                args, Directory.GetCurrentDirectory(), Environment.GetEnvironmentVariables(), Console.Out, profile: report);
+                args, Directory.GetCurrentDirectory(), Environment.GetEnvironmentVariables(), Console.Out, profile: doctorReport);
         }
 
         PipelineMode mode = ParseMode(args[0], args)
@@ -80,17 +80,19 @@ internal static class Program
             return 1;
         }
 
+        // Progress and notices go to stderr and the report to stdout, so each stream
+        // decides how its own lines look.
+        bool plain = CommandLineArguments.HasFlag(args, TerminalProfile.PlainFlag);
+        TerminalProfile progress = TerminalProfile.Detect(
+            Console.IsErrorRedirected, Environment.GetEnvironmentVariables(), plain, Console.OutputEncoding);
+        TerminalProfile report = TerminalProfile.Detect(
+            Console.IsOutputRedirected, Environment.GetEnvironmentVariables(), plain, Console.OutputEncoding);
+
         IConfiguration configuration;
         ServiceProvider services;
         try
         {
             configuration = BuildConfiguration();
-            // Progress goes to stderr, so stderr decides whether it moves.
-            TerminalProfile progress = TerminalProfile.Detect(
-                Console.IsErrorRedirected,
-                Environment.GetEnvironmentVariables(),
-                CommandLineArguments.HasFlag(args, TerminalProfile.PlainFlag),
-                Console.OutputEncoding);
             services = BuildServices(configuration, requireApiKey: mode != PipelineMode.Preview, progress);
         }
         catch (InvalidOperationException ex)
@@ -102,6 +104,8 @@ internal static class Program
 
         using (services)
         {
+            Console.Error.WriteLine(StatusMarks.Heading(
+                progress.Unicode ? $"chartula · {args[0]}" : $"chartula {args[0]}", progress));
             string directory = Directory.GetCurrentDirectory();
             GitCliRepositoryReader checkout = services.GetRequiredService<GitCliRepositoryReader>();
             ReleaseTarget? target = await ReleaseTarget.ResolveAsync(
@@ -136,7 +140,8 @@ internal static class Program
                     ReplacePublished = CommandLineArguments.HasFlag(args, CommandLineArguments.ReplacePublished),
                 },
                 Console.Out,
-                CancellationToken.None);
+                CancellationToken.None,
+                report);
         }
     }
 
@@ -207,9 +212,9 @@ internal static class Program
     /// </summary>
     internal static string Usage =>
         """
-        Chartula - multi-audience, grounded changelog generator.
+        chartula - multi-audience, grounded changelog generator.
 
-        Usage:
+        Commands:
           chartula preview  [options]   Show the facts and what generate would send. Free.
           chartula generate [options]   Produce and write the outputs.
           chartula doctor   [options]   Check the setup a run needs, before a run spends anything.
@@ -217,7 +222,7 @@ internal static class Program
 
         Run it from a checkout of the repository the release belongs to.
 
-        Options:
+        Which release:
           --tag <tag>    The release tag. Default: the nearest tag reachable from HEAD.
           --repo <o/n>   The GitHub repository, as owner/name. Default: read from
                          the 'origin' remote.
@@ -226,7 +231,15 @@ internal static class Program
                          first commit for a first tag.
           --yes          Confirm a first tag or a large range up front, for a run
                          without a terminal to ask on.
+
+        What a run writes:
+          --audience <a> Render only this audience: technical, customer or product.
+                         Repeat it, or separate them with commas. Default:
+                         technical and customer; product renders only when named.
+                         An output whose audience was not rendered is not written.
           --no-publish   Write every file, but publish no GitHub release notes.
+
+        How it looks:
           --plain        Plain lines only: no spinner, no colour, no symbols beyond
                          ASCII. Also the default without a terminal, in CI, with
                          TERM=dumb, and without colour with NO_COLOR set.
@@ -239,7 +252,7 @@ internal static class Program
                          technical and customer; product renders only when named.
                          An output whose audience was not rendered is not written.
 
-        doctor takes --tag and --repo; --no-publish and --replace-published are for
+        doctor takes --tag, --repo and --plain; --no-publish and --replace-published are for
         generate only.
         An option a command does not take stops before anything starts.
 
