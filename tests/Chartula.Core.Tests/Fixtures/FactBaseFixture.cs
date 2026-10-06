@@ -26,8 +26,14 @@ public static class FactBaseFixture
     /// <summary>A release with no changes at all.</summary>
     public const string Empty = "empty-release";
 
+    /// <summary>
+    /// A real release, <c>v0.1.0-preview.3</c> of this repository, frozen from a run record:
+    /// its descriptions are hard-wrapped and hold fenced code blocks, as pull request bodies do (#315).
+    /// </summary>
+    public const string Real = "chartula-preview-3-release";
+
     /// <summary>Every fixture, for tests that must hold for all of them.</summary>
-    public static IReadOnlyList<string> All => [Typical, Breaking, CommitsOnly, InternalOnly, Empty];
+    public static IReadOnlyList<string> All => [Typical, Breaking, CommitsOnly, InternalOnly, Empty, Real];
 
     /// <summary>Every fixture as xUnit theory data.</summary>
     public static TheoryData<string> AllAsTheoryData
