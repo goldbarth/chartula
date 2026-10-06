@@ -47,7 +47,7 @@ public static class ChangelogJsonSerializer
             BuildRenderings(renderings),
             ToDocument(provenance));
 
-        return JsonSerializer.Serialize(document, ChangelogJsonContext.Default.ChangelogDocument);
+        return JsonSerializer.Serialize(document, ChangelogJsonContext.Readable.ChangelogDocument);
     }
 
     // The run record uses this too, so a run record and the changelog.json it wrote
@@ -90,11 +90,13 @@ public static class ChangelogJsonSerializer
 
     /// <summary>Reads a document back, for tests and downstream outputs.</summary>
     public static ChangelogDocument Deserialize(string json)
-        => JsonSerializer.Deserialize(json, ChangelogJsonContext.Default.ChangelogDocument)
+        => JsonSerializer.Deserialize(json, ChangelogJsonContext.Readable.ChangelogDocument)
            ?? throw new InvalidOperationException("changelog.json deserialized to null.");
 }
 
 /// <summary>Source-generated (reflection-free) context for the changelog format.</summary>
-[JsonSourceGenerationOptions(WriteIndented = true)]
 [JsonSerializable(typeof(ChangelogDocument))]
-internal sealed partial class ChangelogJsonContext : JsonSerializerContext;
+internal sealed partial class ChangelogJsonContext : JsonSerializerContext
+{
+    public static ChangelogJsonContext Readable { get; } = new(ReadableJson.Options());
+}

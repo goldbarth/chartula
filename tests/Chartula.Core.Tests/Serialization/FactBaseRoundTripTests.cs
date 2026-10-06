@@ -35,6 +35,29 @@ public sealed class FactBaseRoundTripTests
 
     // #260: a description is what its author wrote for reviewers. The file meant to be
     // published carries every other fact, and the renderings.
+    // #226: both files are read and diffed by people, so a character JSON does not require
+    // escaping is written as itself, not as a \u code.
+    [Fact]
+    public void Both_files_write_what_json_does_not_require_escaping_as_itself()
+    {
+        const string Title = "feat: Größe der `Liste` über 'Ansicht' + \"Filter\" <b>";
+        FactBase facts = new("v1.2.0", [new ChangeFact(Title, 7, null, ChangeCategory.Feature, true, false, [], [], "Für `Admins`.")]);
+
+        string changelog = ChangelogJsonSerializer.Serialize(
+            facts,
+            new Dictionary<Audience, string> { [Audience.Technical] = "- Größe der `Liste`" },
+            new RunProvenance("0.1.0-preview.3+abc", "anthropic", "claude-sonnet-5", null));
+        string record = RunRecordJsonSerializer.SerializeFacts(facts);
+
+        const string Written = """feat: Größe der `Liste` über 'Ansicht' + \"Filter\" <b>""";
+        Assert.Contains(Written, changelog, StringComparison.Ordinal);
+        Assert.Contains("- Größe der `Liste`", changelog, StringComparison.Ordinal);
+        Assert.Contains("\"0.1.0-preview.3+abc\"", changelog, StringComparison.Ordinal);
+        Assert.Contains(Written, record, StringComparison.Ordinal);
+        Assert.Contains("Für `Admins`.", record, StringComparison.Ordinal);
+        Assert.Equal(Title, RunRecordJsonSerializer.DeserializeFactBase(record).Changes[0].Title);
+    }
+
     [Fact]
     public void Changelog_json_carries_no_description_and_says_so_with_its_version()
     {

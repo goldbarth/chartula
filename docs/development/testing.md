@@ -63,7 +63,7 @@ To freeze a real release into a fixture:
      > tests/Chartula.Core.Tests/Fixtures/my-release.json
    ```
 
-   Not through `jq`: it writes the characters the record escapes as plain characters, so the comparison fails.
+   Not through `jq`: it writes some characters differently from the record, an emoji for one, so the comparison fails.
 3. Name a constant for it on `FactBaseFixture` and add it to `FactBaseFixture.All`. The project copies every `.json` in `Fixtures/` to the output, so nothing else changes.
 4. Run `dotnet test tests/Chartula.Core.Tests -c Release`.
 

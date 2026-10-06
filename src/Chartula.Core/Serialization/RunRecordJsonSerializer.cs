@@ -69,7 +69,7 @@ public static class RunRecordJsonSerializer
                     : null),
             record.Facts is { } facts ? [.. facts.Changes.Select(FactEntry.From)] : null);
 
-        return JsonSerializer.Serialize(document, RunRecordJsonContext.Default.RunRecordDocument);
+        return JsonSerializer.Serialize(document, RunRecordJsonContext.Readable.RunRecordDocument);
     }
 
     /// <summary>
@@ -81,7 +81,7 @@ public static class RunRecordJsonSerializer
         ArgumentNullException.ThrowIfNull(factBase);
         return JsonSerializer.Serialize(
             new RunRecordFacts(factBase.Tag, [.. factBase.Changes.Select(FactEntry.From)]),
-            RunRecordJsonContext.Default.RunRecordFacts);
+            RunRecordJsonContext.Readable.RunRecordFacts);
     }
 
     /// <summary>
@@ -90,7 +90,7 @@ public static class RunRecordJsonSerializer
     /// </summary>
     public static FactBase DeserializeFactBase(string json)
     {
-        RunRecordFacts read = JsonSerializer.Deserialize(json, RunRecordJsonContext.Default.RunRecordFacts)
+        RunRecordFacts read = JsonSerializer.Deserialize(json, RunRecordJsonContext.Readable.RunRecordFacts)
                               ?? throw new InvalidOperationException("The run record deserialized to null.");
         if (read.Facts is null)
         {
@@ -103,7 +103,7 @@ public static class RunRecordJsonSerializer
 
     /// <summary>Reads a record back, for tests and for comparing runs.</summary>
     public static RunRecordDocument Deserialize(string json)
-        => JsonSerializer.Deserialize(json, RunRecordJsonContext.Default.RunRecordDocument)
+        => JsonSerializer.Deserialize(json, RunRecordJsonContext.Readable.RunRecordDocument)
            ?? throw new InvalidOperationException("The run record deserialized to null.");
 
     // Use the CLI's own words, so the record names the command that produced it.
@@ -140,7 +140,9 @@ public static class RunRecordJsonSerializer
 }
 
 /// <summary>Source-generated (reflection-free) context for the run record format.</summary>
-[JsonSourceGenerationOptions(WriteIndented = true)]
 [JsonSerializable(typeof(RunRecordDocument))]
 [JsonSerializable(typeof(RunRecordFacts))]
-internal sealed partial class RunRecordJsonContext : JsonSerializerContext;
+internal sealed partial class RunRecordJsonContext : JsonSerializerContext
+{
+    public static RunRecordJsonContext Readable { get; } = new(ReadableJson.Options());
+}

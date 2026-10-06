@@ -88,11 +88,12 @@ Documentation	#246	docs: add the changelog Chartula generated for 0.1.0-preview.
 
 `select(.breaking) |` after `.changes[] |` keeps the breaking changes only, and `select(.userVisible) |` the ones a reader can meet.
 
-## Known issue: escaped characters
+## Characters
 
-The file escapes more than JSON requires: `+` is written as `\u002B`, and quotes, apostrophes, backticks, `<`, `>` and every character outside ASCII, such as `’` or `ü`, as `\u` and their code ([#226](https://github.com/goldbarth/chartula/issues/226)).
-Every JSON parser reads them back as the characters, so a consumer is not affected; a person reading or diffing the raw file is.
-The example below shows it in `toolVersion` and in the backticks of the technical rendering, which read as `\u0060`.
+The file escapes only what JSON requires, so backticks, quotes, `+` and characters outside ASCII, such as `ü`, appear as themselves and the file reads and diffs as text ([#226](https://github.com/goldbarth/chartula/issues/226)).
+An emoji is still written as two `\u` codes.
+The strings are not escaped for HTML: `<`, `>` and `&` appear as written, and they come from pull request titles, which anyone who can open a pull request writes, and from the text a model wrote from them.
+Escape them where you put them into a page, as you would any text you did not write.
 
 ## Stability
 
@@ -175,11 +176,11 @@ The file a real run wrote for Chartula's own `v0.1.0-preview.3`, rendered by `gp
     }
   ],
   "renderings": {
-    "technical": "### Added\n\n- Record the read range beside \u0060tag\u0060 in schema version 2 run records, including its start type, source ref, and resolved commit hashes. ([#251](https://github.com/goldbarth/chartula/pull/251))\n- Add a \u0060pullRequest\u0060 reference to each thorough-check flag when its number exists in the fact base. ([#250](https://github.com/goldbarth/chartula/pull/250))\n\n### Fixed\n\n- Fix thorough-check flags to include the reason alongside the quoted claim. ([#252](https://github.com/goldbarth/chartula/pull/252))\n- Refuse \u0060review.enabled: true\u0060 until an interactive reviewer exists. ([#247](https://github.com/goldbarth/chartula/pull/247))",
-    "customer": "### What\u0027s New\n\n- **Run range in records:** A version 2 run record now shows how its commit range was chosen, the starting reference, and the commits at both ends. You can use those commits to identify the range the run read, even if a reference moves later.\n- **Pull requests on review flags:** Review flags now show a pull request number when the check links a claim to a pull request in the release. You can use that number to find the fact behind the flag, but it reflects the check\u0027s reading rather than a verified match.\n\n### Bug Fixes\n\n- **Reasons and limits in review text:** Review flags could quote a claim without explaining why it was flagged, while customer entries could promise outcomes beyond what the facts supported. Flags now include their reasons, and customer entries are instructed to keep outcomes within the limits stated by the facts.\n- **Review mode configuration:** Review mode previously approved generated text without showing it to a person when enabled. It is now refused with a configuration error rather than approving text unseen; remove \u0060review.enabled: true\u0060 from \u0060chartula.yaml\u0060 or set it to \u0060false\u0060."
+    "technical": "### Added\n\n- Record the read range beside `tag` in schema version 2 run records, including its start type, source ref, and resolved commit hashes. ([#251](https://github.com/goldbarth/chartula/pull/251))\n- Add a `pullRequest` reference to each thorough-check flag when its number exists in the fact base. ([#250](https://github.com/goldbarth/chartula/pull/250))\n\n### Fixed\n\n- Fix thorough-check flags to include the reason alongside the quoted claim. ([#252](https://github.com/goldbarth/chartula/pull/252))\n- Refuse `review.enabled: true` until an interactive reviewer exists. ([#247](https://github.com/goldbarth/chartula/pull/247))",
+    "customer": "### What's New\n\n- **Run range in records:** A version 2 run record now shows how its commit range was chosen, the starting reference, and the commits at both ends. You can use those commits to identify the range the run read, even if a reference moves later.\n- **Pull requests on review flags:** Review flags now show a pull request number when the check links a claim to a pull request in the release. You can use that number to find the fact behind the flag, but it reflects the check's reading rather than a verified match.\n\n### Bug Fixes\n\n- **Reasons and limits in review text:** Review flags could quote a claim without explaining why it was flagged, while customer entries could promise outcomes beyond what the facts supported. Flags now include their reasons, and customer entries are instructed to keep outcomes within the limits stated by the facts.\n- **Review mode configuration:** Review mode previously approved generated text without showing it to a person when enabled. It is now refused with a configuration error rather than approving text unseen; remove `review.enabled: true` from `chartula.yaml` or set it to `false`."
   },
   "provenance": {
-    "toolVersion": "0.1.0-preview.3\u002Bdde0019754ac9f23ec2615fe85b58d3b88ca6b38",
+    "toolVersion": "0.1.0-preview.3+dde0019754ac9f23ec2615fe85b58d3b88ca6b38",
     "provider": "openai-compatible",
     "model": "gpt-6-sol",
     "promptHash": "sha256:18467240be1e8a49ca134d8d94ebaf281104fff70ad715fbc0c6b71dc048b5c1",
