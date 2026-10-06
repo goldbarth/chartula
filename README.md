@@ -63,7 +63,7 @@ Shortened to those parts:
   "repository": "goldbarth/chartula",
   "mode": "generate",
   "provenance": {
-    "toolVersion": "0.1.0-preview.3\u002B7620e6d95b62190d12f57ba345479b524674fea1",
+    "toolVersion": "0.1.0-preview.3+7620e6d95b62190d12f57ba345479b524674fea1",
     "provider": "openai-compatible",
     "model": "gpt-6-sol",
     "promptHash": "sha256:18467240be1e8a49ca134d8d94ebaf281104fff70ad715fbc0c6b71dc048b5c1",
@@ -84,7 +84,7 @@ Shortened to those parts:
       "rendered": true,
       "flags": [
         {
-          "text": "\u0022you can count on customer outcomes to state limits named in the facts\u0022 - #252 changed the customer prompt to require fact-bounded outcomes, but its measured runs still had outcome-related flags. The facts do not establish that customer outcomes now consistently state the limits in the facts.",
+          "text": "\"you can count on customer outcomes to state limits named in the facts\" - #252 changed the customer prompt to require fact-bounded outcomes, but its measured runs still had outcome-related flags. The facts do not establish that customer outcomes now consistently state the limits in the facts.",
           "pullRequest": 252
         }
       ]
