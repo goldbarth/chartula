@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using Chartula.Cli.Terminal;
 using Chartula.Core.Facts;
 using Chartula.Core.Llm;
 using Chartula.Core.Observability;
@@ -23,18 +24,20 @@ internal static class ReleaseCommand
         PipelineMode mode,
         ReleaseRequest request,
         TextWriter output,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        TerminalProfile? profile = null)
     {
+        TerminalProfile shown = profile ?? TerminalProfile.Plain;
         try
         {
             ReleaseOutcome outcome = await pipeline.RunAsync(request, mode, cancellationToken);
             if (outcome.Preview is { } preview)
             {
-                output.Write(FormatPreview(outcome, preview));
+                output.Write(FormatPreview(outcome, preview, shown));
                 return 0;
             }
 
-            output.Write(Format(outcome));
+            output.Write(Format(outcome, shown));
 
             // Exit with 1 when a requested audience or the publication failed.
             // Scripts and CI jobs read the exit code, not the output, so a failure must
@@ -60,14 +63,12 @@ internal static class ReleaseCommand
         }
     }
 
-    private static string Format(ReleaseOutcome outcome)
+    private static string Format(ReleaseOutcome outcome, TerminalProfile profile)
     {
         StringBuilder builder = new();
         int failed = outcome.Renderings.Count(audience => !audience.Success);
         bool nothingRendered = failed > 0 && failed == outcome.Renderings.Count;
-        builder.AppendLine(nothingRendered
-            ? $"No changelog generated for {outcome.Tag}: no audience rendered."
-            : $"Generated changelog for {outcome.Tag}");
+        builder.AppendLine(StatusMarks.Heading(Headline(outcome, failed, nothingRendered), profile));
         builder.AppendLine();
 
         // Print a repeated error only once. Two audiences failing the same way, for
@@ -76,7 +77,7 @@ internal static class ReleaseCommand
         Dictionary<string, Audience> firstFailedWith = [];
         foreach (AudienceOutcome audience in outcome.Renderings)
         {
-            builder.AppendLine($"--- {audience.Audience} ---");
+            builder.AppendLine(StatusMarks.Heading(audience.Audience.ToString(), profile));
             if (!audience.Success)
             {
                 string error = audience.Error ?? string.Empty;
@@ -132,12 +133,42 @@ internal static class ReleaseCommand
         return builder.ToString();
     }
 
+    /// <summary>
+    /// The first line says how the run went, not only that it ran (#339): flags or a failed
+    /// audience are the first thing to know, before the texts they concern.
+    /// "Generated" is a report on the run, not a seal: a run without flags is one in which
+    /// the checks found nothing, which does not make the text verified.
+    /// </summary>
+    private static string Headline(ReleaseOutcome outcome, int failed, bool nothingRendered)
+    {
+        if (nothingRendered)
+        {
+            return $"No audience rendered for {outcome.Tag}.";
+        }
+
+        List<string> flagged = [.. outcome.Renderings
+            .Where(static audience => audience.Success && audience.Flags.Count > 0)
+            .Select(static audience => $"{Number(audience.Flags.Count)} in {Name(audience.Audience)}")];
+        string flags = flagged.Count == 0 ? string.Empty : $"review flags: {string.Join(", ", flagged)}";
+
+        if (failed > 0)
+        {
+            string partial = $"Partially generated {outcome.Tag}: {failed} of {outcome.Renderings.Count} audiences failed";
+            return flags.Length == 0 ? partial + "." : $"{partial}; {flags}.";
+        }
+
+        return flags.Length == 0 ? $"Generated {outcome.Tag}." : $"Generated {outcome.Tag} with {flags}.";
+    }
+
     // Each fact on two lines, the audiences below it, so a long title does not push them
     // out of sight. Audience names are written as --audience takes them.
-    private static string FormatPreview(ReleaseOutcome outcome, ReleasePreview preview)
+    private static string FormatPreview(ReleaseOutcome outcome, ReleasePreview preview, TerminalProfile profile)
     {
         StringBuilder builder = new();
-        builder.AppendLine($"Preview of {outcome.Tag} - no model call was made, and nothing was written or published.");
+        builder.AppendLine(StatusMarks.Heading($"Preview of {outcome.Tag}", profile));
+        builder.AppendLine(profile.Unicode
+            ? "No model calls · no files written · no publication"
+            : "No model calls, no files written, no publication");
         builder.AppendLine();
         if (outcome.Metrics.Scope is { } scope)
         {

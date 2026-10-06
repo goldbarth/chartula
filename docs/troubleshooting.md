@@ -172,12 +172,12 @@ A failed call names the provider, the address it asked, the model and the status
 Audiences that failed for the same reason say it once:
 
 ```text
---- Technical ---
+Technical
   (failed) Changelog generation for 'v1.3.0' failed: openai-compatible at http://localhost:11434/v1/chat/completions answered 404 Not Found for model 'gpt-luna'.
            Either the endpoint does not serve that model id (check llm.model), or Chartula__Llm__BaseUrl is not the address of this provider's API - another provider's, or a wrong path such as a missing /v1.
            The endpoint said: ...
 
---- Customer ---
+Customer
   (failed) The same as Technical.
 ```
 

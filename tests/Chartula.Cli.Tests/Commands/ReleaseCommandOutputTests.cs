@@ -83,8 +83,8 @@ public sealed class ReleaseCommandOutputTests
         (int exitCode, string text) = await RunAsync(PipelineMode.Generate, false, false, false);
 
         Assert.Equal(1, exitCode);
-        Assert.StartsWith("No changelog generated for v1.0.0: no audience rendered.", text);
-        Assert.DoesNotContain("Generated changelog", text);
+        Assert.StartsWith("No audience rendered for v1.0.0.", text);
+        Assert.DoesNotContain("Generated", text);
         Assert.Contains("Nothing to write.", text);
     }
 
@@ -164,6 +164,32 @@ public sealed class ReleaseCommandOutputTests
             StringComparison.Ordinal);
     }
 
+    // #339: the first line says how the run went, before the texts it concerns.
+    [Fact]
+    public async Task The_first_line_says_whether_the_checks_flagged_anything_or_an_audience_failed()
+    {
+        AudienceOutcome clean = new(Audience.Technical, Success: true, "- Added search", [], Error: null);
+        AudienceOutcome flagged = new(
+            Audience.Customer, Success: true, "- Search is here.", [new FaithfulnessFlag("a"), new FaithfulnessFlag("b")], Error: null);
+        AudienceOutcome failed = new(Audience.Product, Success: false, Text: null, [], Error: "refused");
+
+        Assert.StartsWith("Generated v1.0.0.\n", await FormatAsync(clean));
+        Assert.StartsWith("Generated v1.0.0 with review flags: 2 in customer.\n", await FormatAsync(clean, flagged));
+        Assert.StartsWith(
+            "Partially generated v1.0.0: 1 of 3 audiences failed; review flags: 2 in customer.\n",
+            await FormatAsync(clean, flagged, failed));
+        Assert.StartsWith("Partially generated v1.0.0: 1 of 2 audiences failed.\n", await FormatAsync(clean, failed));
+    }
+
+    [Fact]
+    public async Task Each_rendering_stands_under_its_audience_name()
+    {
+        string text = await FormatAsync(new AudienceOutcome(Audience.Technical, Success: true, "### Added\n\n- Added search", [], Error: null));
+
+        Assert.Contains("\nTechnical\n### Added\n\n- Added search\n", text);
+        Assert.DoesNotContain("---", text);
+    }
+
     [Fact]
     public async Task A_rendering_without_a_description_shows_no_empty_line_for_one()
     {
@@ -228,8 +254,8 @@ public sealed class ReleaseCommandOutputTests
             Failed(Audience.Technical, Error), Failed(Audience.Customer, Error), Failed(Audience.Product, Error));
 
         Assert.Equal(2, text.Split("answered 404").Length);
-        Assert.Contains("--- Customer ---\n  (failed) The same as Technical.\n", text);
-        Assert.Contains("--- Product ---\n  (failed) The same as Technical.\n", text);
+        Assert.Contains("Customer\n  (failed) The same as Technical.\n", text);
+        Assert.Contains("Product\n  (failed) The same as Technical.\n", text);
     }
 
     [Fact]

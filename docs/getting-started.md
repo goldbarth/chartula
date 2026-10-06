@@ -118,7 +118,8 @@ On Chartula's own `v0.1.0-preview.3`:
 
 ```console
 $ chartula preview
-Preview of v0.1.0-preview.3 - no model call was made, and nothing was written or published.
+Preview of v0.1.0-preview.3
+No model calls · no files written · no publication
 
 Release: 7 commits, 7 pull requests, 6 facts (6 with a description, 15,083 characters)
 
@@ -158,14 +159,14 @@ Its report, shortened:
 
 ```console
 $ chartula generate
-Generated changelog for v1.3.0
+Generated v1.3.0 with review flags: 1 in customer.
 
---- Technical ---
+Technical
 ### Added
 
 - ...
 
---- Customer ---
+Customer
   description: ...
 
 ### What's New

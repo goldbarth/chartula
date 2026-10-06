@@ -24,7 +24,7 @@ public sealed class ArgumentCheckTests : IDisposable
         (int exitCode, string output, string error) = await CliProcess.RunChartulaAsync(_directory, NoCredentials, args);
 
         Assert.Equal(0, exitCode);
-        Assert.StartsWith("Chartula - multi-audience, grounded changelog generator.", output);
+        Assert.StartsWith("chartula - multi-audience, grounded changelog generator.", output);
         Assert.Empty(error);
     }
 
