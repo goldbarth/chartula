@@ -1,3 +1,5 @@
+using Chartula.Cli.Terminal;
+
 namespace Chartula.Cli.Commands;
 
 /// <summary>
@@ -34,9 +36,9 @@ internal static class CommandLineArguments
     /// </summary>
     private static readonly Dictionary<string, string[]> Commands = new(StringComparer.Ordinal)
     {
-        ["preview"] = [Tag, Repo, ReleaseStart.SinceOption, Audience, ConsoleRangeGate.YesFlag],
-        ["generate"] = [Tag, Repo, ReleaseStart.SinceOption, Audience, ConsoleRangeGate.YesFlag, NoPublish, ReplacePublished],
-        [DoctorCommand.Name] = [Tag, Repo],
+        ["preview"] = [Tag, Repo, ReleaseStart.SinceOption, Audience, ConsoleRangeGate.YesFlag, TerminalProfile.PlainFlag],
+        ["generate"] = [Tag, Repo, ReleaseStart.SinceOption, Audience, ConsoleRangeGate.YesFlag, NoPublish, ReplacePublished, TerminalProfile.PlainFlag],
+        [DoctorCommand.Name] = [Tag, Repo, TerminalProfile.PlainFlag],
     };
 
     /// <summary>Whether <paramref name="command"/> is one of the commands the CLI runs.</summary>

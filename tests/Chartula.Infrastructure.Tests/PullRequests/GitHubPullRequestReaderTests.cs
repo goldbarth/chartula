@@ -82,6 +82,10 @@ public sealed class GitHubPullRequestReaderTests
         public void Complete()
         {
         }
+
+        public void Fail()
+        {
+        }
     }
 
     [Fact]

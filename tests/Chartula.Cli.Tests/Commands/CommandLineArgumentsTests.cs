@@ -65,7 +65,9 @@ public sealed class CommandLineArgumentsTests
     [InlineData("generate", "--tag", "v1.0.0", "--repo", "octo/repo", "--since", "v0.9.0", "--audience", "technical,customer", "--yes", "--no-publish")]
     [InlineData("generate", "--replace-published")]
     [InlineData("preview", "--tag", "v1.0.0", "--audience", "technical", "--audience", "customer", "--yes")]
-    [InlineData("doctor", "--tag", "v1.0.0", "--repo", "octo/repo")]
+    [InlineData("doctor", "--tag", "v1.0.0", "--repo", "octo/repo", "--plain")]
+    [InlineData("preview", "--plain")]
+    [InlineData("generate", "--plain", "--no-publish")]
     [InlineData("generate")]
     public void Every_option_a_command_takes_passes(params string[] args)
         => Assert.Null(CommandLineArguments.Check(args));

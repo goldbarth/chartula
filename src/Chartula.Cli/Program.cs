@@ -1,6 +1,7 @@
 using Chartula.Cli.Commands;
 using Chartula.Cli.Composition;
 using Chartula.Cli.Configuration;
+using Chartula.Cli.Terminal;
 using Chartula.Core.Llm;
 using Chartula.Core.Pipeline;
 using Chartula.Infrastructure.History;
@@ -78,7 +79,13 @@ internal static class Program
         try
         {
             configuration = BuildConfiguration();
-            services = BuildServices(configuration, requireApiKey: mode != PipelineMode.Preview);
+            // Progress goes to stderr, so stderr decides whether it moves.
+            TerminalProfile progress = TerminalProfile.Detect(
+                Console.IsErrorRedirected,
+                Environment.GetEnvironmentVariables(),
+                CommandLineArguments.HasFlag(args, TerminalProfile.PlainFlag),
+                Console.OutputEncoding);
+            services = BuildServices(configuration, requireApiKey: mode != PipelineMode.Preview, progress);
         }
         catch (InvalidOperationException ex)
         {
@@ -140,10 +147,11 @@ internal static class Program
     /// key, and doctor reports the key on a line of its own, so both leave
     /// <paramref name="requireApiKey"/> off.
     /// </summary>
-    internal static ServiceProvider BuildServices(IConfiguration configuration, bool requireApiKey)
+    internal static ServiceProvider BuildServices(
+        IConfiguration configuration, bool requireApiKey, TerminalProfile? progress = null)
     {
         return new ServiceCollection()
-            .AddChartulaObservability()
+            .AddChartulaObservability(progress ?? TerminalProfile.Plain)
             .AddChartulaLlm(configuration, requireApiKey)
             .AddChartulaHistory()
             .AddChartulaPullRequests(configuration)
@@ -213,6 +221,9 @@ internal static class Program
           --yes          Confirm a first tag or a large range up front, for a run
                          without a terminal to ask on.
           --no-publish   Write every file, but publish no GitHub release notes.
+          --plain        Plain lines only: no spinner, no colour, no symbols beyond
+                         ASCII. Also the default without a terminal, in CI, with
+                         TERM=dumb, and without colour with NO_COLOR set.
           --replace-published
                          Replace the notes of a release that is already
                          published. Without it, generate stops before its first

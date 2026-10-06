@@ -34,6 +34,7 @@ An unknown first word prints `Unknown command '<word>'.` and the help text, and 
 | `--yes` | none | Off: a first tag or a large range is asked about in a terminal, and stops a run without one. | `preview`, `generate` |
 | `--audience` | `technical`, `customer`, `product` | `technical` and `customer` | `preview`, `generate` |
 | `--no-publish` | none | Off: `generate` publishes the release notes. | `generate` |
+| `--plain` | none | Off: on a terminal, progress moves and has colour ([While a run works](#while-a-run-works)). | `preview`, `generate`, `doctor` |
 | `--replace-published` | none | Off: `generate` stops on a tag whose release is already published. | `generate` |
 
 Options follow the command in any order, and a value follows its option after a space.
@@ -234,19 +235,33 @@ After the header, a run shows each step as it starts, with its count where it ha
 $ chartula generate --tag v1.3.0
 ...
 Range:  the commits after v1.2.0, up to v1.3.0 (100 commits)
-Reading pull requests   100/100 commits  4 s
-Rendering technical                      12 s
-Rendering customer                       14 s
-Checking technical                       3 s
-Checking customer                        5 s
+  · done Reading pull requests   100/100 commits  4 s
+  · done Rendering technical                      12 s
+  · done Rendering customer                       14 s
+  · done Checking technical                       3 s
+  ⠼      Checking customer                        5 s
 ```
 
-In a terminal the current line updates in place, and its time keeps counting while a model call runs.
+In a terminal the current step is one line with a spinner, redrawn in place, and its time keeps counting while a model call runs.
 So a slow step still shows it is working, and a run that is about to finish is not aborted and paid for again.
+A finished step keeps its line, marked `· done`: the step ended, which says nothing about whether its result is good.
+The step a run failed in is marked `× fail` instead, and the error follows below it.
+A step shorter than 150 ms shows no spinner, only its finished line.
 The steps are the ones the run takes: one GitHub request per commit, then one rendering per audience, then the checks of each rendering; a `preview` shows the first step only.
 There is no estimate of the time remaining, because how long a model call takes is not known before it returns.
 
-Without a terminal on stderr, as in CI, each step is one plain line as it starts, `Reading pull requests (100 commits)` or `Rendering technical`, with no control characters, so a job log stays readable.
+The spinner's glyph fades from amber to teal and back; that colour is decoration, and the words carry the meaning.
+How much a terminal shows depends on what it says it can do:
+
+| Terminal | Progress |
+| --- | --- |
+| `COLORTERM=truecolor` or `24bit` | The spinner fades. |
+| `TERM` with `256color`, or another colour terminal | The spinner in one fixed colour. |
+| `NO_COLOR` set to anything | The spinner without colour. |
+| A console whose encoding is not UTF-8 | `\| / - \` for the spinner, `.` and `x` for the marks. |
+| Not a terminal, `CI` set, `TERM=dumb`, or `--plain` | One plain line per step, as below. |
+
+Without a terminal on stderr, as in CI, or with `--plain`, each step is one plain line as it starts, `Reading pull requests (100 commits)` or `Rendering technical`, with no control characters and nothing beyond ASCII, so a job log stays readable.
 When a step fails, it is the last line shown, and the error follows below it.
 [A slow run](troubleshooting.md#a-slow-run) shows how to read the steps and the summary when a run takes long.
 

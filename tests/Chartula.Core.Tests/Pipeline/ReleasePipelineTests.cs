@@ -238,7 +238,8 @@ public sealed class ReleasePipelineTests
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => pipeline.RunAsync(Request(), PipelineMode.GenerateWithoutPublishing));
 
-        Assert.Equal(["ReadingPullRequests of 1", "complete"], progress.Events);
+        // #339: marked as failed, not completed, so the line above the error does not read as done.
+        Assert.Equal(["ReadingPullRequests of 1", "fail"], progress.Events);
     }
 
     private sealed class FailingPullRequestReader : IReleasePullRequestReader
