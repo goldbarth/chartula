@@ -105,7 +105,7 @@ So a git problem is described in the git adapter, not in the CLI that prints it.
 | The announced `--tag` and `--repo` defaults | `Cli/Commands/ReleaseTarget.cs` |
 | The run header and the missing token warning | `Cli/Commands/EndpointNotice.cs`, `Cli/Commands/GitHubTokenNotice.cs` |
 | The `Range:` line and its question | `Cli/Commands/ConsoleRangeGate.cs` |
-| The progress lines | `Cli/Commands/ConsoleRunProgress.cs` |
+| The progress lines | `Cli/Commands/ConsoleRunProgress.cs`, with the spinner and what a stream may show in `Cli/Terminal` (`QuietPulse`, `TerminalProfile`) |
 | The report: renderings, flags, written files, `Error:` and `Stopped:` | `Cli/Commands/ReleaseCommand.cs` |
 | The `preview` report | `Cli/Commands/ReleaseCommand.cs`, from `Core/Pipeline/ReleasePreview.cs` |
 | The run summary | `Core/Observability/RunReportFormatter.cs` |
@@ -126,6 +126,7 @@ So a git problem is described in the git adapter, not in the CLI that prints it.
 | The command line and the commands | `Cli/Program.cs`, `Cli/Commands` |
 | Reading the configuration | `Cli/Configuration`: `ChartulaConfiguration` (file, then environment), `ChartulaYamlReader` and `ChartulaYamlSchema` (the file and every key), one options type per section |
 | Wiring it all up | `Cli/Composition`, one `AddChartula*` extension per seam |
+| What a terminal may show: motion, colour, Unicode, `--plain` | `Cli/Terminal` |
 | The model providers | `Cli/Composition`: `LlmServiceCollectionExtensions` (builds the `IChatClient`), `OpenAiCompatibleChatClient`, `ClaudeThinkingSupport`, `ThoroughCheckModel`; the transport handlers `ModelRequestCountingHandler` (retries) and `ModelErrorResponseHandler` with `FailureDescribingChatClient` (failure messages) |
 | The GitHub client | `Cli/Composition/GitHubHttpClientFactory.cs` |
 | The run | `Core/Pipeline`: `ReleasePipeline`, the range rule `LargeRangeRule`, the gate `IReleaseRangeGate` |

@@ -272,14 +272,14 @@ An endpoint that enforces the format by constrained decoding returns a well-form
 ## A slow run
 
 A run shows each step while it works, on stderr.
-In a terminal, the current step's time keeps counting while the model call runs, and a finished step keeps its line with its time:
+In a terminal, the current step's time keeps counting next to a spinner while the model call runs, and a finished step keeps its line with its time:
 
 ```text
-Reading pull requests   3/3 commits      0 s
-Rendering technical                      4 s
-Rendering customer                       4 s
-Checking technical                       4 s
-Checking customer                        4 s
+  · done Reading pull requests   3/3 commits      0 s
+  · done Rendering technical                      4 s
+  · done Rendering customer                       4 s
+  · done Checking technical                       4 s
+  ⠴      Checking customer                        4 s
 ```
 
 So a step whose time still counts is working, and a run that is about to finish is not aborted and paid for again.

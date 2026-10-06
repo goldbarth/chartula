@@ -284,4 +284,6 @@ internal sealed class RecordingRunProgress : IRunProgress
     public void Advance(int done) => Events.Add($"advance {done}");
 
     public void Complete() => Events.Add("complete");
+
+    public void Fail() => Events.Add("fail");
 }

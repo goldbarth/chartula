@@ -83,12 +83,15 @@ public sealed class ReleasePipeline(
         ArgumentNullException.ThrowIfNull(request);
         try
         {
-            return await RunStepsAsync(request, mode, cancellationToken);
-        }
-        finally
-        {
-            // Also when a step failed: it stays the last line shown, above the error.
+            ReleaseOutcome outcome = await RunStepsAsync(request, mode, cancellationToken);
             _progress.Complete();
+            return outcome;
+        }
+        catch
+        {
+            // The step the run failed in stays the last line shown, marked, above the error.
+            _progress.Fail();
+            throw;
         }
     }
 

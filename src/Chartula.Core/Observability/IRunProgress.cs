@@ -19,11 +19,14 @@ public interface IRunProgress
     /// <summary>How many units of the current step are done.</summary>
     void Advance(int done);
 
-    /// <summary>
-    /// Ends the current step, also when the run failed in it, so it stays the last line
-    /// reached and the error that follows can be placed.
-    /// </summary>
+    /// <summary>Ends the current step: the run is through.</summary>
     void Complete();
+
+    /// <summary>
+    /// Ends the current step because the run failed in it, so it stays the last line
+    /// reached, marked as failed, and the error that follows can be placed (#339).
+    /// </summary>
+    void Fail();
 }
 
 /// <summary>The kinds of step a run takes.</summary>
@@ -58,6 +61,10 @@ public sealed class NullRunProgress : IRunProgress
     }
 
     public void Complete()
+    {
+    }
+
+    public void Fail()
     {
     }
 }
