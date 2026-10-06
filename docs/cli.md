@@ -178,39 +178,48 @@ The summary lists them under `Wrote:`, names the refusal under `Not published:`,
 
 ## `chartula doctor`
 
-Checks everything a run needs, one line per check, and says whether a run would start:
+Checks everything a run needs, one line per check in three groups (the repository, the model, GitHub), and says whether a run would start:
 
 ```console
 $ chartula doctor
-Checking the setup for a run in /work/my-repo
+chartula · doctor
+Checkout  /work/my-repo
 
-  ok    git           /usr/bin/git
-  ok    checkout      /work/my-repo, with its full history
-  ok    tag           v1.3.0, the nearest tag reachable from HEAD. Pass --tag to choose another.
-  ok    repository    owner/name, from the 'origin' remote. Pass --repo to choose another.
-  ok    config        /work/my-repo/chartula.yaml
-  ok    model         openai-compatible at http://localhost:11434/v1, model qwen3:14b-ctx24k, no key in OPENAI_API_KEY: a local server needs none
-  ok    endpoint      qwen3:14b-ctx24k answered, 98 tokens
-  ok    GitHub read   owner/name at https://api.github.com/, token from GITHUB_TOKEN
-  warn  GitHub write  GitHub does not let this run publish the release notes for v1.3.0 to owner/name (403 Forbidden).
-                      The request carried the token from GITHUB_TOKEN.
-                      Publishing needs a token with Contents read and write on owner/name.
-                      generate stops before its first model call. preview and generate --no-publish publish nothing and still run.
-  warn  PR titles     24 of the last 30 merged pull requests carry a Conventional Commits prefix, such as feat: or fix:.
-                      Without one, a change is Other, and internal work is not filtered out. For example: 'Update readme', 'Bump deps'
-                      docs/writing-pull-requests.md shows what a prefix changes in the output.
+Repository
+  ✓ ok    git           /usr/bin/git
+  ✓ ok    checkout      /work/my-repo, with its full history
+  ✓ ok    tag           v1.3.0, the nearest tag reachable from HEAD. Pass --tag to choose another.
+  ✓ ok    repository    owner/name, from the 'origin' remote. Pass --repo to choose another.
+  ✓ ok    config        /work/my-repo/chartula.yaml
 
-A run would start. The warnings above do not stop it, but read them before generate.
+Model
+  ✓ ok    model         openai-compatible at http://localhost:11434/v1, model qwen3:14b-ctx24k, no key in OPENAI_API_KEY: a local server needs none
+  ✓ ok    endpoint      qwen3:14b-ctx24k answered, 98 tokens
+
+GitHub
+  ✓ ok    GitHub read   owner/name at https://api.github.com/, token from GITHUB_TOKEN
+  ! warn  GitHub write  GitHub does not let this run publish the release notes for v1.3.0 to owner/name (403 Forbidden).
+                        The request carried the token from GITHUB_TOKEN.
+                        Publishing needs a token with Contents read and write on owner/name.
+                        generate stops before its first model call. preview and generate --no-publish publish nothing and still run.
+  ! warn  PR titles     24 of the last 30 merged pull requests carry a Conventional Commits prefix, such as feat: or fix:.
+                        Without one, a change is Other, and internal work is not filtered out. For example: 'Update readme', 'Bump deps'
+                        docs/writing-pull-requests.md shows what a prefix changes in the output.
+
+Setup checks completed with 2 warnings. preview and generate --no-publish would start; generate would stop at GitHub write.
 ```
 
 Each check asks what a run asks, through the same code, so a failed check shows the message the run would print.
 
 | Status | Meaning |
 | --- | --- |
-| `ok` | The check passed. |
-| `warn` | A run starts, but something limits it: no GitHub token, a token that cannot publish, or pull request titles without a prefix. |
-| `fail` | A run would stop there. |
-| `skip` | The check needs an earlier one that failed, so one missing piece does not bury the report under follow-on errors. |
+| `✓ ok` | The check passed. |
+| `! warn` | A run starts, but something limits it: no GitHub token, a token that cannot publish, or pull request titles without a prefix. |
+| `× fail` | A run would stop there. |
+| `– skip` | The check needs an earlier one that failed, so one missing piece does not bury the report under follow-on errors. |
+
+The last line counts the warnings and says what they mean for a run: a warning under `GitHub write` stops `generate` before its first model call, so the line says that `preview` and `generate --no-publish` would start, not that a run would.
+Without a terminal on stdout, or with `--plain`, each status is its word alone, such as `ok`, so a report pasted into an issue holds no symbols or colour codes.
 
 `doctor` writes no file, publishes nothing, and names variables, never their values.
 The endpoint check is the one that costs: it asks each model a run uses for an answer of at most 16 tokens, about a hundred with the prompt, because only an answer proves the key, the model id and the endpoint together.

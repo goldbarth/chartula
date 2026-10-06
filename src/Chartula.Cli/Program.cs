@@ -55,8 +55,14 @@ internal static class Program
 
         if (args[0] is DoctorCommand.Name)
         {
+            // The report goes to stdout, so stdout decides how it is marked.
+            TerminalProfile report = TerminalProfile.Detect(
+                Console.IsOutputRedirected,
+                Environment.GetEnvironmentVariables(),
+                CommandLineArguments.HasFlag(args, TerminalProfile.PlainFlag),
+                Console.OutputEncoding);
             return await DoctorCommand.RunAsync(
-                args, Directory.GetCurrentDirectory(), Environment.GetEnvironmentVariables(), Console.Out);
+                args, Directory.GetCurrentDirectory(), Environment.GetEnvironmentVariables(), Console.Out, profile: report);
         }
 
         PipelineMode mode = ParseMode(args[0], args)
