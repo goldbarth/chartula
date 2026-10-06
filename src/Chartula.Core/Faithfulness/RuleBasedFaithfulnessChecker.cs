@@ -32,6 +32,15 @@ public sealed partial class RuleBasedFaithfulnessChecker : IRuleBasedFaithfulnes
     [GeneratedRegex("`([^`]+)`|\"([^\"]+)\"", RegexOptions.CultureInvariant)]
     private static partial Regex QuotedName();
 
+    // A code fence: three or more backticks. A rendering is one line per entry, so a
+    // fenced block a description held lands on one line, where its backticks would pair
+    // with those of the code spans around it.
+    [GeneratedRegex("`{3,}", RegexOptions.CultureInvariant)]
+    private static partial Regex Fence();
+
+    [GeneratedRegex(@"\s+", RegexOptions.CultureInvariant)]
+    private static partial Regex Whitespace();
+
     public FaithfulnessReport Check(string output, FactBase factBase)
     {
         ArgumentNullException.ThrowIfNull(output);
@@ -40,9 +49,13 @@ public sealed partial class RuleBasedFaithfulnessChecker : IRuleBasedFaithfulnes
         string haystack = BuildHaystack(factBase);
         HashSet<string> allowedNumbers = CollectAllowedNumbers(factBase, haystack);
 
+        // The rendering and the facts are compared in the same form: a rendering folds
+        // every run of whitespace into one space (RenderingComposer.SingleLine), while a
+        // description keeps its line breaks, so a name it wraps would otherwise not be found (#315).
+        string comparable = Comparable(output);
         List<string> findings = [];
 
-        foreach (Match match in Number().Matches(output))
+        foreach (Match match in Number().Matches(comparable))
         {
             if (!allowedNumbers.Contains(match.Value))
             {
@@ -50,7 +63,7 @@ public sealed partial class RuleBasedFaithfulnessChecker : IRuleBasedFaithfulnes
             }
         }
 
-        foreach (Match match in QuotedName().Matches(output))
+        foreach (Match match in QuotedName().Matches(comparable))
         {
             string name = match.Groups[1].Success ? match.Groups[1].Value : match.Groups[2].Value;
             if (!haystack.Contains(name.ToLowerInvariant(), StringComparison.Ordinal))
@@ -68,8 +81,12 @@ public sealed partial class RuleBasedFaithfulnessChecker : IRuleBasedFaithfulnes
         IEnumerable<string> parts = new[] { factBase.Tag }
             .Concat(factBase.Changes.SelectMany(static change =>
                 new[] { change.Title, change.Description ?? string.Empty }));
-        return string.Join('\n', parts).ToLowerInvariant();
+        // Joined by a character no rendering contains, so a name cannot be found across
+        // the end of one fact and the start of the next.
+        return string.Join('\0', parts.Select(Comparable)).ToLowerInvariant();
     }
+
+    private static string Comparable(string text) => Whitespace().Replace(Fence().Replace(text, " "), " ");
 
     private static HashSet<string> CollectAllowedNumbers(FactBase factBase, string haystack)
     {

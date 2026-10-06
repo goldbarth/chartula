@@ -45,8 +45,9 @@ On top of them, the pipeline runs end to end on stored fact bases, and the promp
 | `commits-only-release` | Built from commits: no pull request numbers, links, labels or descriptions. |
 | `internal-only-release` | Nothing user-visible, so the customer rendering has nothing to say. |
 | `empty-release` | No changes at all. |
+| `chartula-preview-3-release` | `v0.1.0-preview.3` of this repository, frozen from a run record: hard-wrapped descriptions with fenced code blocks. |
 
-They differ along the axes the pipeline branches on, and `FactBaseFixtureTests` asserts that they still do, so the set cannot quietly collapse into five variations of the same release.
+They differ along the axes the pipeline branches on, and `FactBaseFixtureTests` asserts that they still do, so the set cannot quietly collapse into six variations of the same release.
 
 A fixture is the `tag` and `facts` of a [run record](../run-record.md#facts), byte for byte as the run wrote them.
 Not `changelog.json`: it leaves out the pull request descriptions, which the model reads.
@@ -66,10 +67,6 @@ To freeze a real release into a fixture:
    Not through `jq`: it writes some characters differently from the record, an emoji for one, so the comparison fails.
 3. Name a constant for it on `FactBaseFixture` and add it to `FactBaseFixture.All`. The project copies every `.json` in `Fixtures/` to the output, so nothing else changes.
 4. Run `dotnet test tests/Chartula.Core.Tests -c Release`.
-
-A release whose descriptions hold a fenced code block, or a phrase broken over two lines, fails `Text_that_only_repeats_the_facts_is_never_flagged` ([#315](https://github.com/goldbarth/chartula/issues/315)).
-The stand-in model echoes each fact on one line, as a rendering is, and the rule-based check then looks for the joined text in descriptions that still have their line breaks.
-Pick a release without them until that is fixed.
 
 ### Stand-in models
 

@@ -357,5 +357,10 @@ public sealed class FactBaseFixtureTests
         Assert.All(commitsOnly.Changes, change => Assert.Empty(change.Labels));
         Assert.DoesNotContain(internalOnly.Changes, change => change.IsUserVisible);
         Assert.Empty(FactBaseFixture.Load(FactBaseFixture.Empty).Changes);
+
+        // #315: the case the rule-based check once misread, a fenced block and wrapped lines.
+        FactBase real = FactBaseFixture.Load(FactBaseFixture.Real);
+        Assert.Contains(real.Changes, change => change.Description?.Contains("```", StringComparison.Ordinal) == true);
+        Assert.Contains(real.Changes, change => change.Description?.Contains('\n') == true);
     }
 }

@@ -75,6 +75,56 @@ public sealed class RuleBasedFaithfulnessCheckerTests
         Assert.False(report.HasFindings);
     }
 
+    // #315: a rendering is one line per entry, while a description keeps the line breaks
+    // its author typed, so the check compares both with whitespace folded.
+    [Fact]
+    public void Does_not_flag_a_quoted_name_the_facts_break_over_two_lines()
+    {
+        FactBase facts = Facts(new ChangeFact("feat: add export", 1, "https://x/1", ChangeCategory.Feature, true, false, [], [],
+            "The export now writes the release\nnotes  to a file."));
+
+        FaithfulnessReport report = _checker.Check("The export now writes \"the release notes to\" a file.", facts);
+
+        Assert.False(report.HasFindings);
+    }
+
+    // #315: folded onto one line, a fenced block's backticks would pair with the backticks
+    // of the code spans around it, and the text between them would be flagged.
+    [Fact]
+    public void Does_not_flag_text_around_a_fenced_block_the_rendering_repeats()
+    {
+        const string Description = "Run `chartula generate` like this:\n\n```console\n$ chartula generate --no-publish\n```\n\nEvery hash matches `v1.0.0`.";
+        FactBase facts = Facts(new ChangeFact("feat: add export", 1, "https://x/1", ChangeCategory.Feature, true, false, [], [], Description));
+
+        FaithfulnessReport report = _checker.Check(
+            "- Run `chartula generate` like this: ```console $ chartula generate --no-publish ``` Every hash matches `v1.0.0`.", facts);
+
+        Assert.False(report.HasFindings);
+    }
+
+    [Fact]
+    public void Still_flags_a_name_absent_from_the_facts_once_whitespace_is_folded()
+    {
+        FactBase facts = Facts(new ChangeFact("feat: add export", 1, "https://x/1", ChangeCategory.Feature, true, false, [], [],
+            "The export now writes the release\nnotes to a file."));
+
+        FaithfulnessReport report = _checker.Check("Adds `release\nfeeds`.", facts);
+
+        Assert.Contains(report.UnsupportedClaims, c => c.Text == "'release feeds' is not supported by the facts.");
+    }
+
+    [Fact]
+    public void Does_not_find_a_name_across_the_end_of_one_fact_and_the_start_of_the_next()
+    {
+        FactBase facts = Facts(
+            new ChangeFact("feat: add export", 1, "https://x/1", ChangeCategory.Feature, true, false, [], [], "Writes a file."),
+            new ChangeFact("fix: sort imports", 2, "https://x/2", ChangeCategory.Fix, true, false, [], [], null));
+
+        FaithfulnessReport report = _checker.Check("Adds `a file. fix: sort`.", facts);
+
+        Assert.True(report.HasFindings);
+    }
+
     [Fact]
     public void Runs_without_any_model_dependency()
     {
