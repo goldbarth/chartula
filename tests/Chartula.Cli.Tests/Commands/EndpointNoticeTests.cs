@@ -21,10 +21,21 @@ public sealed class EndpointNoticeTests
     [Fact]
     public void Names_the_default_endpoints_and_credential_variables()
     {
-        string notice = Notice();
+        string notice = Notice(("ANTHROPIC_API_KEY", "sk-ant-secret"), ("GITHUB_TOKEN", "gho_secret"));
 
         Assert.Contains("anthropic at its default endpoint, key from ANTHROPIC_API_KEY", notice);
         Assert.Contains("https://api.github.com/, token from GITHUB_TOKEN", notice);
+    }
+
+    // #210: an unset variable is not named as the source of a credential the run lacks.
+    [Fact]
+    public void Says_unauthenticated_when_a_credential_variable_is_unset_or_blank()
+    {
+        string notice = Notice(("GITHUB_TOKEN", "   "));
+
+        Assert.Contains("anthropic at its default endpoint, unauthenticated, ANTHROPIC_API_KEY is not set", notice);
+        Assert.Contains("https://api.github.com/, unauthenticated, GITHUB_TOKEN is not set", notice);
+        Assert.DoesNotContain(" from ", notice);
     }
 
     [Fact]
