@@ -2,6 +2,7 @@ using System.Text;
 using Chartula.Core.Categorization;
 using Chartula.Core.Facts;
 using Chartula.Core.Llm;
+using Chartula.Core.Prompting;
 
 namespace Chartula.Core.Generation;
 
@@ -92,11 +93,8 @@ public static class GroundedFactsFactory
                 statement.Append(" (action required)");
             }
 
-            statement.Append(": ").Append(change.Title);
-            if (!string.IsNullOrEmpty(change.Description))
-            {
-                statement.Append(" - ").Append(change.Description);
-            }
+            statement.Append(": ");
+            PullRequestQuote.Append(statement, change.Title, change.Description);
 
             statements.Add(statement.ToString());
             entries.Add(new PlannedEntry(

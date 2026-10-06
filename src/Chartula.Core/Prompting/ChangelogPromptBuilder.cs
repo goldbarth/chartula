@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using Chartula.Core.Facts;
 using Chartula.Core.Llm;
 
@@ -15,7 +16,7 @@ namespace Chartula.Core.Prompting;
 /// <para>
 /// The prompt does not define the structure of a rendering. Code adds headings, groups,
 /// order, markers and references around the entries (#96).
-/// The rules here are about the wording of an entry. The first five rules apply to
+/// The rules here are about the wording of an entry. The first six rules apply to
 /// every audience, each format block only to its own audience.
 /// </para>
 /// </summary>
@@ -67,6 +68,7 @@ public sealed partial class ChangelogPromptBuilder : IChangelogPromptBuilder
         system.AppendLine(RuleStaySparse);
         system.AppendLine(RuleOneEntryPerFact);
         system.AppendLine(RuleConsistentVoice);
+        system.AppendLine(RuleQuotedText);
         system.Append(AudienceGuidance(audience));
 
         // Use one line ending on every platform. AppendLine writes "\r\n" on Windows,
@@ -81,7 +83,9 @@ public sealed partial class ChangelogPromptBuilder : IChangelogPromptBuilder
         ArgumentNullException.ThrowIfNull(output);
         ArgumentNullException.ThrowIfNull(facts);
 
-        string user = string.Format(CultureInfo.InvariantCulture, FaithfulnessUserFormat, FormatFacts(facts), output);
+        // The rendering may repeat what a description said, so it is quoted like one.
+        string user = string.Format(
+            CultureInfo.InvariantCulture, FaithfulnessUserFormat, FormatFacts(facts), OutputTag().Replace(output, "&lt;"));
         return new ChangelogPrompt(FaithfulnessSystem, user);
     }
 
@@ -97,6 +101,9 @@ public sealed partial class ChangelogPromptBuilder : IChangelogPromptBuilder
         Audience.Product => AudienceProduct + ProductFormat,
         _ => string.Format(CultureInfo.InvariantCulture, AudienceFallbackFormat, audience),
     };
+
+    [GeneratedRegex(@"<(?=/?\s*output\b)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex OutputTag();
 
     private static string FormatFacts(GroundedFacts facts)
         => string.Join('\n', facts.Statements.Select(static statement => $"- {statement}"));

@@ -181,7 +181,7 @@ The [Roadmap](ROADMAP.md#after-the-launch-in-this-order) says which point remove
 **Source data**
 
 - **Facts are author text.** A wrong pull request title or description stays wrong, and the checks verify against that same text, not against the code.
-- **Pull request text goes to the model as it is.** It is neither delimited nor size-limited, and edits made to a pull request after its merge are not detected.
+- **Pull request text is quoted, not trusted.** Titles and descriptions reach the model between tags, with an instruction to treat them as data, and a description is cut at 8,000 characters ([#337](https://github.com/goldbarth/chartula/issues/337)). That makes text written to steer the model less likely to work, not impossible, and edits made to a pull request after its merge are not detected.
 - **Breaking status comes from the text.** A `BREAKING CHANGE:` footer or a `!` sets it. Links in pull request text are passed through unchecked.
 - **Two pull requests with the same change become two entries.**
 - **GitHub is the only source.** Chartula reads pull requests from GitHub or GitHub Enterprise, and from no other host.

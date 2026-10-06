@@ -2,4 +2,6 @@ Facts:
 - {fact}
 
 Output:
+<output>
 {output}
+</output>

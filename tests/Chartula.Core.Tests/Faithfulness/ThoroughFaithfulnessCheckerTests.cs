@@ -52,7 +52,7 @@ public sealed class ThoroughFaithfulnessCheckerTests
         await checker.CheckAsync("Fixed a parser bug. ([#7](https://example/pull/7))", Facts());
 
         Assert.Equal(
-            "[#7] Fix: fix: correct an off-by-one in the parser (https://example/pull/7) - Fixes a parser bug.",
+            "[#7] Fix (https://example/pull/7): <title>fix: correct an off-by-one in the parser</title> <description>Fixes a parser bug.</description>",
             Assert.Single(model.LastRequest!.Facts.Statements));
     }
 
@@ -99,7 +99,7 @@ public sealed class ThoroughFaithfulnessCheckerTests
 
         await checker.CheckAsync("Fixed a parser bug.", commitOnly);
 
-        Assert.Equal("Fix: fix: correct an off-by-one in the parser", Assert.Single(model.LastRequest!.Facts.Statements));
+        Assert.Equal("Fix: <title>fix: correct an off-by-one in the parser</title>", Assert.Single(model.LastRequest!.Facts.Statements));
     }
 
     [Fact]

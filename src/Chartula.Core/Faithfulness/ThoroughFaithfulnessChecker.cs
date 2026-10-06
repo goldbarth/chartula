@@ -1,6 +1,7 @@
 using System.Text;
 using Chartula.Core.Facts;
 using Chartula.Core.Llm;
+using Chartula.Core.Prompting;
 
 namespace Chartula.Core.Faithfulness;
 
@@ -101,16 +102,14 @@ public sealed class ThoroughFaithfulnessChecker(
                 statement.Append(" (breaking)");
             }
 
-            statement.Append(": ").Append(change.Title);
             if (change.Url is not null)
             {
                 statement.Append(" (").Append(change.Url).Append(')');
             }
 
-            if (!string.IsNullOrEmpty(change.Description))
-            {
-                statement.Append(" - ").Append(change.Description);
-            }
+            // The same quoted, cut text the rendering was written from.
+            statement.Append(": ");
+            PullRequestQuote.Append(statement, change.Title, change.Description);
 
             statements.Add(statement.ToString());
         }
