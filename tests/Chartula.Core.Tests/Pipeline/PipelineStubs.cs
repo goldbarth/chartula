@@ -97,12 +97,15 @@ internal sealed class SpyJsonWriter : IChangelogJsonWriter
 {
     public int Calls { get; private set; }
 
+    public IReadOnlyDictionary<Audience, string>? Renderings { get; private set; }
+
     public Task<string> WriteAsync(
         FactBase factBase,
         IReadOnlyDictionary<Audience, string>? renderings = null,
         CancellationToken cancellationToken = default)
     {
         Calls++;
+        Renderings = renderings;
         return Task.FromResult("changelog.json");
     }
 }
@@ -111,10 +114,13 @@ internal sealed class SpyMarkdownWriter : IChangelogMarkdownWriter
 {
     public int Calls { get; private set; }
 
+    public string? Body { get; private set; }
+
     public Task<string> WriteAsync(
         string tag, DateOnly? taggedAt, string body, CancellationToken cancellationToken = default)
     {
         Calls++;
+        Body = body;
         return Task.FromResult("CHANGELOG.md");
     }
 }
@@ -123,10 +129,13 @@ internal sealed class SpyReleaseNotesWriter : IReleaseNotesWriter
 {
     public int Calls { get; private set; }
 
+    public string? Body { get; private set; }
+
     public Task<string> WriteAsync(
         RepositoryCoordinates repository, string tag, string body, CancellationToken cancellationToken = default)
     {
         Calls++;
+        Body = body;
         return Task.FromResult("https://github.com/octo/repo/releases/tag/" + tag);
     }
 
@@ -160,10 +169,13 @@ internal sealed class ReadOnlyTokenReleaseNotesWriter(string message) : IRelease
 {
     public int Calls { get; private set; }
 
+    public string? Body { get; private set; }
+
     public Task<string> WriteAsync(
         RepositoryCoordinates repository, string tag, string body, CancellationToken cancellationToken = default)
     {
         Calls++;
+        Body = body;
         throw new InvalidOperationException(message);
     }
 

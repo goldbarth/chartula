@@ -60,6 +60,16 @@ public sealed class ReleasePipeline(
     IChangelogPromptBuilder? promptBuilder = null,
     IRunProgress? progress = null) : IReleasePipeline
 {
+    /// <summary>
+    /// What <c>CHANGELOG.md</c> and the release notes say for a release whose changes reach
+    /// no technical reader (#307), in place of a bare heading and an empty body, which read
+    /// like a run that lost its text. Chartula writes it, not the model, so the release
+    /// still costs no model call. It claims only what an empty technical rendering proves:
+    /// every change that is new, fixed, faster, breaking or labelled visible reaches it.
+    /// </summary>
+    public const string NothingForTechnicalReaders =
+        "This release has no features, fixes, performance improvements or breaking changes.";
+
     private readonly IRunMetrics _metrics = metrics ?? NullRunMetrics.Instance;
     private readonly IRunProgress _progress = progress ?? NullRunProgress.Instance;
     private readonly LargeRangeRule _largeRangeRule = largeRangeRule ?? LargeRangeRule.Default;
@@ -312,6 +322,13 @@ public sealed class ReleasePipeline(
 
         if (finalTexts.TryGetValue(Audience.Technical, out string? technical))
         {
+            // Only the two technical outputs get the sentence. changelog.json keeps the
+            // empty rendering, which its schema documents as "no change for that audience".
+            if (string.IsNullOrWhiteSpace(technical))
+            {
+                technical = NothingForTechnicalReaders;
+            }
+
             written.Add(await markdownWriter.WriteAsync(request.Tag, range.TaggedAt, technical, cancellationToken));
 
             // CHANGELOG.md is always written. Only publishing the release notes can be

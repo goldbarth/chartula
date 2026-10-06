@@ -54,6 +54,7 @@ Each value of `renderings` is the Markdown text of one rendering, as Chartula pu
 
 - **No release heading and no front matter.** `CHANGELOG.md` adds `## VERSION - DATE` around the technical text, and `release-<tag>.md` adds the front matter around the customer text; neither is in the file. So the customer page's description is not in the file either.
 - **An empty string** when the release has no change for that audience ([A release with nothing to say](outputs.md#a-release-with-nothing-to-say)).
+  The sentence that `CHANGELOG.md` and the release notes carry in that case is not in the file, so an empty string keeps meaning that there was nothing to render.
 - **`<` is escaped as `\<`** outside code spans, so a placeholder such as `release-<tag>.md` is shown rather than read as an HTML tag. A Markdown renderer shows the bracket; a consumer that uses the text as plain text removes the backslash.
 - **The product rendering is here only,** since it has no file of its own.
 

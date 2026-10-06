@@ -31,7 +31,10 @@ public sealed partial class FixturePipelineTests
         IChangelogModel model,
         IRunMetrics metrics,
         bool thoroughEnabled = true,
-        IRunProgress? progress = null)
+        IRunProgress? progress = null,
+        SpyJsonWriter? json = null,
+        SpyMarkdownWriter? markdown = null,
+        SpyReleaseNotesWriter? releaseNotes = null)
         => new(
             new StubCommitReader(),
             new StubPullRequestReader(),
@@ -40,10 +43,10 @@ public sealed partial class FixturePipelineTests
             new RuleBasedFaithfulnessChecker(),
             new ThoroughFaithfulnessChecker(model, new ThoroughFaithfulnessOptions(thoroughEnabled)),
             new ReviewCoordinator(new AutoApproveReviewer(), new ReviewOptions(Enabled: false)),
-            new SpyJsonWriter(),
-            new SpyMarkdownWriter(),
+            json ?? new SpyJsonWriter(),
+            markdown ?? new SpyMarkdownWriter(),
             new SpyCustomerPageWriter(),
-            new SpyReleaseNotesWriter(),
+            releaseNotes ?? new SpyReleaseNotesWriter(),
             metrics,
             progress: progress);
 
@@ -262,6 +265,30 @@ public sealed partial class FixturePipelineTests
         AudienceOutcome customer = outcome.Renderings.Single(r => r.Audience == Audience.Customer);
         Assert.True(customer.Success);
         Assert.Empty(customer.Text!);
+    }
+
+    // #307: a release with nothing for the technical reader still costs no model call, but
+    // CHANGELOG.md and the release notes say so instead of showing a bare heading and an
+    // empty body. changelog.json keeps the empty rendering it documents for that case.
+    [Theory]
+    [InlineData(FactBaseFixture.InternalOnly)]
+    [InlineData(FactBaseFixture.Empty)]
+    public async Task A_release_with_nothing_for_the_technical_reader_says_so_in_the_changelog_and_the_release_notes(string fixture)
+    {
+        FactBase factBase = FactBaseFixture.Load(fixture);
+        SpyJsonWriter json = new();
+        SpyMarkdownWriter markdown = new();
+        SpyReleaseNotesWriter releaseNotes = new();
+
+        ReleaseOutcome outcome = await BuildPipeline(
+                factBase, new UnreachableChangelogModel(), new RunMetrics(),
+                json: json, markdown: markdown, releaseNotes: releaseNotes)
+            .RunAsync(Request(factBase) with { Audiences = [Audience.Technical] }, PipelineMode.Generate);
+
+        Assert.Equal(ReleasePipeline.NothingForTechnicalReaders, markdown.Body);
+        Assert.Equal(ReleasePipeline.NothingForTechnicalReaders, releaseNotes.Body);
+        Assert.Equal(string.Empty, json.Renderings![Audience.Technical]);
+        Assert.Empty(Assert.Single(outcome.Renderings).Text!);
     }
 
     [Fact]

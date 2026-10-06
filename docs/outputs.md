@@ -223,10 +223,14 @@ It can hold text from private pull requests, so add `chartula-runs/` to your `.g
 A release whose changes reach none of a rendering's readers, such as one with only `chore:` and `docs:` pull requests, costs no model call for that rendering, since there is nothing to rephrase.
 Then:
 
-- `CHANGELOG.md` gets the release heading alone, such as `## 1.2.0 - 2026-09-09`, so the changelog still lists the release.
-- The release notes on GitHub are empty.
+- `CHANGELOG.md` gets the release heading and one sentence under it: "This release has no features, fixes, performance improvements or breaking changes."
+  So the changelog still lists the release, and a reader can tell it from a run that lost its text.
+- The release notes on GitHub carry the same sentence.
 - No `release-<tag>.md` is written.
 - `changelog.json` holds an empty text for that rendering.
+
+Chartula writes the sentence, not the model, so the release still costs no model call for it.
+It says only what an empty technical rendering proves: every change that is new, fixed, faster, breaking or labelled as visible reaches that rendering.
 
 [What is dropped](what-goes-into-a-release.md#6-what-is-dropped) says which changes leave a release before any rendering.
 
