@@ -7,13 +7,23 @@ A point that removes one of the [known limitations](README.md#known-limitations)
 ## Now: the launch
 
 The alpha is out: binaries for eight platforms with a one-command install, `chartula doctor`, `preview` and `generate`, the technical, customer and product renderings, both checks, and the four outputs.
-Before Chartula is announced, a first run has to work for someone new to it, and these points are left:
+Before Chartula is announced, a first run has to work for someone new to it.
+
+Done for that, and in the next release:
 
 - The run header says when a run has no GitHub token or no model key, instead of naming a variable that is empty ([#210](https://github.com/goldbarth/chartula/issues/210)).
 - "Flagged for review" stands apart from the entries, so it no longer reads as part of the last one ([#211](https://github.com/goldbarth/chartula/issues/211)).
-- A decision on whether `changelog.json` writes `+`, quotes and non-ASCII characters as they are, so a person can read and diff it ([#226](https://github.com/goldbarth/chartula/issues/226)).
+- `changelog.json` and the run record write backticks, quotes, `+` and non-ASCII characters as they are, so a person can read and diff them ([#226](https://github.com/goldbarth/chartula/issues/226)).
 - A release with nothing for developers says so in `CHANGELOG.md` and its release notes, instead of an empty heading and empty notes ([#307](https://github.com/goldbarth/chartula/issues/307)).
-- The documentation covers a first run from install to a published draft, and every page a user needs on the way; this has no issue.
+- `generate` stops on a tag whose release is already published, and replaces its notes only with `--replace-published` ([#334](https://github.com/goldbarth/chartula/issues/334)).
+- The documentation covers a first run from install to a published draft, and every page a user needs on the way.
+
+Left before the announcement:
+
+- The rule-based check no longer flags a quoted phrase that the facts break over two lines ([#315](https://github.com/goldbarth/chartula/issues/315)).
+- Pull request text reaches the model delimited and limited in size, the first part of point 1 below.
+- The terminal output gets a calmer, clearer form: one progress line that moves, `doctor` in groups, and a run summary that says whether it found flags.
+- `0.1.0-preview.4` ships all of the above as binaries.
 
 [Milestone: Launch](https://github.com/goldbarth/chartula/milestone/5)
 
@@ -23,9 +33,9 @@ Before Chartula is announced, a first run has to work for someone new to it, and
    The text is delimited and limited in size, a breaking status says where it came from, a description edited after the merge is noticed, and a link is flagged until it is checked.
    Removes the limitations "Pull request text goes to the model as it is" and "Breaking status comes from the text".
    No issue yet.
-2. **A run with flags stops and shows them before it writes anything, and a published release is not changed unasked.**
+2. **A run with flags stops and shows them before it writes anything.**
    A run in a working tree with uncommitted changes stops too.
-   Removes the limitations "Flags appear in the terminal only" and "A published release's notes are replaced unasked".
+   Removes the limitation "Flags appear in the terminal only".
    [#249](https://github.com/goldbarth/chartula/issues/249); the working tree has no issue yet.
 3. **A GitHub Action writes the release notes draft on every tag.**
    It downloads the release binary and verifies its checksum, and writes a draft only; the Marketplace listing follows.

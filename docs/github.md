@@ -101,8 +101,10 @@ Chartula adds a missing trailing slash, so the URL works as GitHub's documentati
 - **A tag without a release** gets a new [draft](glossary.md#draft) release.
   A draft is visible only to people with write access, so nothing goes public until someone publishes it.
   The run marks its link with `(draft)`.
-- **A tag with a release** keeps it as it is, and only the notes are replaced.
-  A draft stays a draft, and a published release stays published, so its readers see the new notes at once ([#249](https://github.com/goldbarth/chartula/issues/249)).
+- **A tag with a draft release** keeps it a draft, and only the notes are replaced.
+- **A tag with a published release** stops the run before its first model call, because its notes are public and may hold what someone wrote by hand ([#334](https://github.com/goldbarth/chartula/issues/334)).
+  `--replace-published` replaces them; the release stays published, so its readers see the new notes at once.
+  `chartula doctor` warns about it ahead of a run.
 - **A re-run** finds the draft of the earlier run and replaces its notes, instead of adding a second draft.
 
 Publish a draft after reading it, on the release page on GitHub or with the GitHub CLI:

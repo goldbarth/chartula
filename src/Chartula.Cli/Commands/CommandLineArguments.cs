@@ -14,6 +14,7 @@ internal static class CommandLineArguments
     private const string Repo = "--repo";
     private const string Audience = "--audience";
     private const string NoPublish = "--no-publish";
+    internal const string ReplacePublished = "--replace-published";
 
     /// <summary>What each value option takes, as the error for a missing value names it.</summary>
     private static readonly Dictionary<string, string> ValueOptions = new(StringComparer.Ordinal)
@@ -34,7 +35,7 @@ internal static class CommandLineArguments
     private static readonly Dictionary<string, string[]> Commands = new(StringComparer.Ordinal)
     {
         ["preview"] = [Tag, Repo, ReleaseStart.SinceOption, Audience, ConsoleRangeGate.YesFlag],
-        ["generate"] = [Tag, Repo, ReleaseStart.SinceOption, Audience, ConsoleRangeGate.YesFlag, NoPublish],
+        ["generate"] = [Tag, Repo, ReleaseStart.SinceOption, Audience, ConsoleRangeGate.YesFlag, NoPublish, ReplacePublished],
         [DoctorCommand.Name] = [Tag, Repo],
     };
 

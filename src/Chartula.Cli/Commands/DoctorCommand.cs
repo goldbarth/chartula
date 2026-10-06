@@ -333,12 +333,12 @@ internal static class DoctorCommand
             report.Ok("GitHub read", $"{repo} at {options.ApiBaseUrl}, token from {options.TokenEnvironmentVariable}");
         }
 
-        // Only generate publishes, so a token that may not is a warning, not a failure:
-        // preview and generate --no-publish still run.
+        // Only generate publishes, so a token that may not, or a release already published
+        // (#334), is a warning, not a failure: preview and generate --no-publish still run.
         try
         {
             await new GitHubReleaseNotesWriter(http, options.TokenEnvironmentVariable)
-                .EnsureCanWriteAsync(repository, tag, cancellationToken);
+                .EnsureCanWriteAsync(repository, tag, replacePublished: false, cancellationToken);
             report.Ok("GitHub write", $"the token can publish release notes to {repo}, which generate needs");
         }
         catch (InvalidOperationException ex)

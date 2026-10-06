@@ -128,7 +128,7 @@ chartula generate    # write the release notes, check them, and create a draft r
 ```
 
 `generate` writes `CHANGELOG.md`, `release-<tag>.md` and `changelog.json` into your checkout, and creates a [draft](docs/glossary.md#draft) release on GitHub that only people with write access see.
-On a tag whose release is already published, it replaces the published notes instead.
+On a tag whose release is already published, it stops before the first model call, and `--replace-published` replaces the published notes.
 `generate --no-publish` writes the files and leaves GitHub alone.
 [Outputs](docs/outputs.md) shows each file, and [GitHub](docs/github.md#the-token) the permissions the token needs.
 
@@ -193,7 +193,6 @@ The [Roadmap](ROADMAP.md#after-the-launch-in-this-order) says which point remove
 **Publishing**
 
 - **Only the release notes are a draft.** The customer page and `CHANGELOG.md` are written directly.
-- **A published release's notes are replaced unasked.** `generate` on a tag whose release is already published replaces its notes in public, with no draft in between ([#249](https://github.com/goldbarth/chartula/issues/249)). `--no-publish` leaves the release alone.
 
 **Installation and support**
 

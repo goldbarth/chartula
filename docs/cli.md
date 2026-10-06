@@ -34,6 +34,7 @@ An unknown first word prints `Unknown command '<word>'.` and the help text, and 
 | `--yes` | none | Off: a first tag or a large range is asked about in a terminal, and stops a run without one. | `preview`, `generate` |
 | `--audience` | `technical`, `customer`, `product` | `technical` and `customer` | `preview`, `generate` |
 | `--no-publish` | none | Off: `generate` publishes the release notes. | `generate` |
+| `--replace-published` | none | Off: `generate` stops on a tag whose release is already published. | `generate` |
 
 Options follow the command in any order, and a value follows its option after a space.
 `--audience` may be repeated; every other option may be given once.
@@ -114,6 +115,20 @@ An output whose audience was not rendered is not written: no `CHANGELOG.md` with
 The summary lists the notes under `Skipped (--no-publish)`, so a run you kept local still reads as complete.
 Use it to keep the record of a run without announcing a release, for example when you compare a prompt change or a model.
 `preview` publishes nothing either way.
+
+### `--replace-published`
+
+`generate` on a tag whose GitHub release is already published stops before its first model call, with the release's link:
+
+```text
+Error: The release for v1.2.0 is already published at https://github.com/owner/name/releases/tag/v1.2.0, and publishing would replace its notes in public.
+  Pass --replace-published to replace them.
+  The run stopped before any model call. --no-publish writes the files without publishing them.
+```
+
+`--replace-published` replaces the notes and leaves the release published.
+The run checks again just before it writes, so a release someone published while the run was rendering is not replaced either.
+A draft needs no option: `generate` replaces a draft's notes as before.
 
 ## `chartula preview`
 

@@ -137,6 +137,18 @@ public sealed class ReleasePipelineTests
         Assert.Equal(1, _releaseNotes.Calls);
     }
 
+    // #334: a published release's notes are replaced only when the run was told to, and
+    // the check and the write are told the same.
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task The_check_and_the_write_both_get_whether_a_published_release_may_be_replaced(bool replace)
+    {
+        await BuildPipeline().RunAsync(Request() with { ReplacePublished = replace }, PipelineMode.Generate);
+
+        Assert.Equal([replace, replace], _releaseNotes.ReplacePublished);
+    }
+
     [Fact]
     public async Task Preview_writes_and_publishes_nothing()
     {

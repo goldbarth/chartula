@@ -120,6 +120,7 @@ internal static class Program
                     Audiences = audiences,
                     Since = start.Since,
                     RangeConfirmed = CommandLineArguments.HasFlag(args, ConsoleRangeGate.YesFlag),
+                    ReplacePublished = CommandLineArguments.HasFlag(args, CommandLineArguments.ReplacePublished),
                 },
                 Console.Out,
                 CancellationToken.None);
@@ -212,12 +213,17 @@ internal static class Program
           --yes          Confirm a first tag or a large range up front, for a run
                          without a terminal to ask on.
           --no-publish   Write every file, but publish no GitHub release notes.
+          --replace-published
+                         Replace the notes of a release that is already
+                         published. Without it, generate stops before its first
+                         model call when the release is published.
           --audience <a> Render only this audience: technical, customer or product.
                          Repeat it, or separate them with commas. Default:
                          technical and customer; product renders only when named.
                          An output whose audience was not rendered is not written.
 
-        doctor takes --tag and --repo; --no-publish is for generate only.
+        doctor takes --tag and --repo; --no-publish and --replace-published are for
+        generate only.
         An option a command does not take stops before anything starts.
 
         """;
