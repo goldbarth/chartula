@@ -3,6 +3,7 @@ using System.Net;
 using System.Text;
 using Chartula.Cli.Commands;
 using Chartula.Cli.Composition;
+using Chartula.Cli.Terminal;
 
 namespace Chartula.Cli.Tests.Commands;
 
@@ -107,6 +108,7 @@ public sealed class DoctorCommandTests : IDisposable
         Hashtable environment,
         Func<HttpRequestMessage, HttpResponseMessage>? gitHub = null,
         Func<HttpRequestMessage, HttpResponseMessage>? model = null,
+        TerminalProfile? profile = null,
         params string[] args)
     {
         Directory.CreateDirectory(_checkout);
@@ -118,7 +120,8 @@ public sealed class DoctorCommandTests : IDisposable
             output,
             new DoctorTransports(
                 new Recording(_gitHubRequests, gitHub ?? GitHub()),
-                new Recording(_modelRequests, model ?? (_ => Json(HttpStatusCode.OK, Answer)))));
+                new Recording(_modelRequests, model ?? (_ => Json(HttpStatusCode.OK, Answer)))),
+            profile);
         return (exitCode, output.ToString());
     }
 
@@ -356,7 +359,59 @@ public sealed class DoctorCommandTests : IDisposable
         AssertLine(output, "warn", "GitHub write", "GitHub does not let this run publish the release notes for v1.0.0 to octo/repo (403 Forbidden).");
         Assert.Contains("Publishing needs a token with Contents read and write on octo/repo.", output);
         Assert.Contains("preview and generate --no-publish publish nothing and still run.", output);
-        Assert.Contains("The warnings above do not stop it", output);
+        Assert.EndsWith(
+            "Setup checks completed with 1 warning. preview and generate --no-publish would start; generate would stop at GitHub write.\n",
+            output.ReplaceLineEndings("\n"));
+    }
+
+    // #339: the checks in three groups under a header, in the order a run meets them.
+    [Fact]
+    public async Task The_checks_stand_in_three_groups_under_a_header()
+    {
+        await CreateCheckoutAsync();
+
+        (_, string output) = await DoctorAsync(Environment());
+
+        string[] lines = output.ReplaceLineEndings("\n").Split('\n');
+        Assert.Equal("chartula doctor", lines[0]);
+        Assert.Equal($"Checkout  {_checkout}", lines[1]);
+        int repository = Array.IndexOf(lines, "Repository");
+        int model = Array.IndexOf(lines, "Model");
+        int gitHub = Array.IndexOf(lines, "GitHub");
+        Assert.True(repository > 1 && repository < model && model < gitHub);
+        int config = Array.FindIndex(lines, line => line.StartsWith("  ok    config", StringComparison.Ordinal));
+        Assert.True(repository < config && config < model);
+        Assert.StartsWith("  ok    model", lines[model + 1]);
+        Assert.StartsWith("  ok    GitHub read", lines[gitHub + 1]);
+    }
+
+    // On a terminal a status is a symbol and its word; the word alone carries the meaning.
+    [Fact]
+    public async Task On_a_terminal_each_status_is_a_symbol_and_its_word()
+    {
+        await CreateCheckoutAsync();
+
+        (_, string output) = await DoctorAsync(
+            Environment(), GitHub(write: HttpStatusCode.Forbidden),
+            profile: new TerminalProfile(Live: true, ColorDepth.None, Unicode: true));
+
+        Assert.StartsWith("chartula · doctor\n", output.ReplaceLineEndings("\n"));
+        Assert.Contains("\n  ✓ ok    git           ", output.ReplaceLineEndings("\n"));
+        Assert.Contains("\n  ! warn  GitHub write  GitHub does not let this run publish", output.ReplaceLineEndings("\n"));
+        Assert.Contains("\n                        Publishing needs a token", output.ReplaceLineEndings("\n"));
+        Assert.DoesNotContain('\u001b', output);
+    }
+
+    [Fact]
+    public async Task A_warning_that_does_not_stop_a_run_says_a_run_would_start()
+    {
+        await CreateCheckoutAsync();
+
+        (int exitCode, string output) = await DoctorAsync(Environment(), GitHub(pulls: PullList("Update readme", "feat: A")));
+
+        Assert.Equal(0, exitCode);
+        AssertLine(output, "warn", "PR titles", "1 of the last 2 merged pull requests");
+        Assert.EndsWith("Setup checks completed with 1 warning. A run would start; read them before generate.\n", output.ReplaceLineEndings("\n"));
     }
 
     [Fact]

@@ -9,22 +9,28 @@ Search this page for the first words of your message.
 
 ```console
 $ chartula doctor
-Checking the setup for a run in /work/my-repo
+chartula · doctor
+Checkout  /work/my-repo
 
-  ok    git           /usr/bin/git
-  ok    checkout      /work/my-repo, with its full history
-  ok    tag           v1.3.0, the nearest tag reachable from HEAD. Pass --tag to choose another.
-  ok    repository    owner/name, from the 'origin' remote. Pass --repo to choose another.
-  ok    config        no chartula.yaml in /work/my-repo, so the defaults apply
-                      To change them, copy https://github.com/goldbarth/chartula/blob/v0.1.0-preview.3/chartula.example.yaml to chartula.yaml.
-  fail  model         anthropic at its default endpoint, model claude-sonnet-5
-                      No Anthropic API key found in ANTHROPIC_API_KEY. Set one with: export ANTHROPIC_API_KEY=<your key> (create one at https://console.anthropic.com/settings/keys). For an endpoint that needs no key, set llm.provider to openai-compatible.
-  skip  endpoint      not checked: needs the model settings and a key
-  ok    GitHub read   owner/name at https://api.github.com/, token from GITHUB_TOKEN
-  ok    GitHub write  the token can publish release notes to owner/name, which generate needs
-  ok    PR titles     all of the last 3 merged pull requests carry a Conventional Commits prefix
+Repository
+  ✓ ok    git           /usr/bin/git
+  ✓ ok    checkout      /work/my-repo, with its full history
+  ✓ ok    tag           v1.3.0, the nearest tag reachable from HEAD. Pass --tag to choose another.
+  ✓ ok    repository    owner/name, from the 'origin' remote. Pass --repo to choose another.
+  ✓ ok    config        no chartula.yaml in /work/my-repo, so the defaults apply
+                        To change them, copy https://github.com/goldbarth/chartula/blob/v0.1.0-preview.3/chartula.example.yaml to chartula.yaml.
 
-A run would stop. Fix what failed above, then run chartula doctor again.
+Model
+  × fail  model         anthropic at its default endpoint, model claude-sonnet-5
+                        No Anthropic API key found in ANTHROPIC_API_KEY. Set one with: export ANTHROPIC_API_KEY=<your key> (create one at https://console.anthropic.com/settings/keys). For an endpoint that needs no key, set llm.provider to openai-compatible.
+  – skip  endpoint      not checked: needs the model settings and a key
+
+GitHub
+  ✓ ok    GitHub read   owner/name at https://api.github.com/, token from GITHUB_TOKEN
+  ✓ ok    GitHub write  the token can publish release notes to owner/name, which generate needs
+  ✓ ok    PR titles     all of the last 3 merged pull requests carry a Conventional Commits prefix
+
+A run would stop. Fix the failed checks, then run chartula doctor again.
 ```
 
 Fix the lines marked `fail` from the top, because a later check often fails only for an earlier one.

@@ -27,9 +27,6 @@ internal sealed class ConsoleRunProgress(TextWriter output, TerminalProfile prof
     // Carriage return, then clear to the end of the line: the line is rewritten in place.
     private const string Rewrite = "\r\u001b[K";
 
-    private const string Red = "\u001b[31m";
-    private const string Reset = "\u001b[0m";
-
     private readonly TimeProvider _time = time ?? TimeProvider.System;
     private readonly Lock _lock = new();
 
@@ -112,9 +109,7 @@ internal sealed class ConsoleRunProgress(TextWriter output, TerminalProfile prof
     {
         if (profile.Live && _label is not null)
         {
-            string status = failed
-                ? Colored(Red, profile.Unicode ? "× fail" : "x fail")
-                : profile.Unicode ? "· done" : ". done";
+            string status = StatusMarks.Format(failed ? StatusMark.Fail : StatusMark.Done, profile);
             output.Write($"{Rewrite}{Line(status)}");
             output.WriteLine();
             output.Flush();
@@ -139,8 +134,6 @@ internal sealed class ConsoleRunProgress(TextWriter output, TerminalProfile prof
         string elapsed = Elapsed(_time.GetElapsedTime(_started));
         return $"  {status} {_label!.PadRight(LabelWidth)}{count.PadRight(CountWidth)}{elapsed}";
     }
-
-    private string Colored(string color, string text) => profile.Colors == ColorDepth.None ? text : color + text + Reset;
 
     private static string Label(ProgressStep step)
     {

@@ -1,6 +1,7 @@
 using System.Collections;
 using Chartula.Cli.Composition;
 using Chartula.Cli.Configuration;
+using Chartula.Cli.Terminal;
 using Chartula.Core.Categorization;
 using Chartula.Core.PullRequests;
 using Chartula.Infrastructure.History;
@@ -46,37 +47,55 @@ internal static class DoctorCommand
         IDictionary environment,
         TextWriter output,
         DoctorTransports? transports = null,
+        TerminalProfile? profile = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(args);
         ArgumentNullException.ThrowIfNull(environment);
         ArgumentNullException.ThrowIfNull(output);
 
-        Report report = new(output);
-        output.WriteLine($"Checking the setup for a run in {directory}");
-        output.WriteLine();
+        Report report = new(output, profile ?? TerminalProfile.Plain);
+        report.Header(directory);
 
-        // git and the checkout.
+        // The checks in the order a run meets them, in three groups (#339).
+        report.Group("Repository");
         GitExecutable? git = CheckGit(report, environment);
         GitCliRepositoryReader? checkout = await CheckCheckoutAsync(report, git, directory, cancellationToken);
         (string? tag, string? tagCommit) = await CheckTagAsync(report, checkout, args, directory, cancellationToken);
         RepositoryCoordinates? repository = await CheckRepositoryAsync(report, checkout, args, directory, cancellationToken);
 
-        // The configuration and the model.
         IConfiguration? configuration = CheckConfiguration(report, git, directory, environment);
+
+        report.Group("Model");
         LlmOptions? llm = CheckModel(report, configuration);
         await CheckEndpointAsync(report, configuration, llm, transports?.Model, cancellationToken);
 
-        // GitHub.
+        report.Group("GitHub");
         await CheckGitHubAsync(report, configuration, repository, tag, tagCommit, transports?.GitHub, cancellationToken);
 
         output.WriteLine();
-        output.WriteLine(report.Failed
-            ? "A run would stop. Fix what failed above, then run chartula doctor again."
-            : report.Warned
-                ? "A run would start. The warnings above do not stop it, but read them before generate."
-                : "A run would start.");
+        output.WriteLine(Verdict(report));
         return report.Failed ? 1 : 0;
+    }
+
+    // A warning does not stop a run, but one under GitHub write stops generate before its
+    // first model call. The verdict says so instead of promising a run that would stop.
+    private static string Verdict(Report report)
+    {
+        if (report.Failed)
+        {
+            return "A run would stop. Fix the failed checks, then run chartula doctor again.";
+        }
+
+        if (report.Warnings == 0)
+        {
+            return "Setup checks passed. A run would start.";
+        }
+
+        string warnings = report.Warnings == 1 ? "1 warning" : $"{report.Warnings} warnings";
+        return report.PublishingWarned
+            ? $"Setup checks completed with {warnings}. preview and generate --no-publish would start; generate would stop at GitHub write."
+            : $"Setup checks completed with {warnings}. A run would start; read them before generate.";
     }
 
     private static GitExecutable? CheckGit(Report report, IDictionary environment)
@@ -415,36 +434,64 @@ internal static class DoctorCommand
     /// Writes each check as it finishes, so a slow endpoint shows which check it is on.
     /// A check that cannot run for want of an earlier one is listed as not checked,
     /// rather than left out, so the list is the same length on every machine.
+    /// <para>
+    /// On a terminal each status is a symbol and its word, such as <c>✓ ok</c> (#339).
+    /// Plain output, as in a log or with <c>--plain</c>, keeps the word alone, so the report
+    /// pasted into an issue reads the same as before.
+    /// </para>
     /// </summary>
-    private sealed class Report(TextWriter output)
+    private sealed class Report(TextWriter output, TerminalProfile profile)
     {
         private const int CheckWidth = 13;
 
+        private readonly bool _marked = profile.Unicode;
+        private bool _grouped;
+
         public bool Failed { get; private set; }
 
-        public bool Warned { get; private set; }
+        public int Warnings { get; private set; }
 
-        public void Ok(string check, string detail) => Write("ok", check, detail);
+        /// <summary>Whether the warning was about publishing, which stops generate.</summary>
+        public bool PublishingWarned { get; private set; }
+
+        public void Header(string directory)
+        {
+            output.WriteLine(StatusMarks.Heading(profile.Unicode ? "chartula · doctor" : "chartula doctor", profile));
+            output.WriteLine($"Checkout  {directory}");
+        }
+
+        public void Group(string name)
+        {
+            output.WriteLine();
+            output.WriteLine(StatusMarks.Heading(name, profile));
+            _grouped = true;
+        }
+
+        public void Ok(string check, string detail) => Write(StatusMark.Ok, check, detail);
 
         public void Warn(string check, string detail)
         {
-            Warned = true;
-            Write("warn", check, detail);
+            Warnings++;
+            PublishingWarned |= check == "GitHub write";
+            Write(StatusMark.Warn, check, detail);
         }
 
         public void Fail(string check, string detail)
         {
             Failed = true;
-            Write("fail", check, detail);
+            Write(StatusMark.Fail, check, detail);
         }
 
-        public void Skip(string check, string reason) => Write("skip", check, $"not checked: {reason}");
+        public void Skip(string check, string reason) => Write(StatusMark.Skip, check, $"not checked: {reason}");
 
-        private void Write(string status, string check, string detail)
+        private void Write(StatusMark mark, string check, string detail)
         {
-            string indent = new(' ', 2 + 4 + 2 + CheckWidth + 1);
+            System.Diagnostics.Debug.Assert(_grouped, "Every check belongs to a group.");
+            string status = _marked ? StatusMarks.Format(mark, profile) : $"{StatusMarks.Word(mark),-4}";
+            int width = _marked ? 6 : 4;
+            string indent = new(' ', 2 + width + 2 + CheckWidth + 1);
             string[] lines = detail.ReplaceLineEndings("\n").Split('\n');
-            output.WriteLine($"  {status,-4}  {check,-CheckWidth} {lines[0].TrimEnd()}");
+            output.WriteLine($"  {status}  {check,-CheckWidth} {lines[0].TrimEnd()}");
             foreach (string line in lines.Skip(1).Where(line => line.Trim().Length > 0))
             {
                 output.WriteLine(indent + line.Trim());
