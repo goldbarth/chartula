@@ -12,8 +12,10 @@ namespace Chartula.Infrastructure.Releases;
 /// <see cref="HttpClient"/>. It uses no SDK, so it stays AOT-friendly.
 /// It looks up the release by tag:
 /// <list type="bullet">
-/// <item>An existing release is updated in place (PATCH). The update touches only the
-/// body, so a release someone already published stays published.</item>
+/// <item>A draft from an earlier run is updated in place (PATCH).</item>
+/// <item>A published release is updated in place only when the caller allows it, and the
+/// update touches only the body, so it stays published. Without that, the write is
+/// refused: its notes are public and may hold what someone wrote by hand (#334).</item>
 /// <item>A missing release is created as a draft (POST). A person reads the draft
 /// before publishing, so nothing goes public on its own.</item>
 /// </list>
@@ -29,6 +31,7 @@ public sealed class GitHubReleaseNotesWriter(HttpClient httpClient, string token
         RepositoryCoordinates repository,
         string tag,
         string body,
+        bool replacePublished,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(repository);
@@ -37,9 +40,16 @@ public sealed class GitHubReleaseNotesWriter(HttpClient httpClient, string token
 
         string basePath = $"repos/{repository.Owner}/{repository.Name}/releases";
 
+        // Checked again here, not only before the run: someone may have published the
+        // release while the run was rendering.
         Target target = new(repository, tag);
-        GitHubReleaseDto? existing = await GetByTagAsync(basePath, target, cancellationToken)
-                                     ?? await FindDraftByTagAsync(basePath, target, cancellationToken);
+        GitHubReleaseDto? published = await GetByTagAsync(basePath, target, cancellationToken);
+        if (published is not null && !replacePublished)
+        {
+            throw new InvalidOperationException(DescribePublished(published, target));
+        }
+
+        GitHubReleaseDto? existing = published ?? await FindDraftByTagAsync(basePath, target, cancellationToken);
         GitHubReleaseDto release = existing is not null
             ? await UpdateAsync($"{basePath}/{existing.Id}", target, body, cancellationToken)
             : await CreateAsync(basePath, target, body, cancellationToken);
@@ -54,26 +64,43 @@ public sealed class GitHubReleaseNotesWriter(HttpClient httpClient, string token
     /// Asks GitHub to draft release notes for the tag and throws away the answer.
     /// GitHub requires Contents write for that request and stores nothing, so it
     /// answers "may this token write releases?" without writing one.
+    /// Then it looks the release up, so a published one is found before the run pays for
+    /// anything, not when its notes are about to be replaced.
     /// </summary>
     public async Task EnsureCanWriteAsync(
         RepositoryCoordinates repository,
         string tag,
+        bool replacePublished,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(repository);
         ArgumentException.ThrowIfNullOrWhiteSpace(tag);
 
+        string basePath = $"repos/{repository.Owner}/{repository.Name}/releases";
         Target target = new(repository, tag);
         using StringContent content = JsonContent(GitHubReleaseJsonContext.Default.GenerateNotesRequest,
             new GenerateNotesRequest(tag));
         HttpResponseMessage response = await SendAsync(
-            () => httpClient.PostAsync($"repos/{repository.Owner}/{repository.Name}/releases/generate-notes",
-                content, cancellationToken),
+            () => httpClient.PostAsync($"{basePath}/generate-notes", content, cancellationToken),
             tag);
         using (response)
         {
             await EnsureSuccessAsync(response, target, cancellationToken, checking: true);
         }
+
+        if (!replacePublished && await GetByTagAsync(basePath, target, cancellationToken) is { } published)
+        {
+            throw new InvalidOperationException(DescribePublished(published, target));
+        }
+    }
+
+    private static string DescribePublished(GitHubReleaseDto published, Target target)
+    {
+        string where = published.HtmlUrl is { Length: > 0 } url ? $" at {url}" : string.Empty;
+        return $"""
+            The release for {target.Tag} is already published{where}, and publishing would replace its notes in public.
+              Pass --replace-published to replace them.
+            """;
     }
 
     /// <summary>

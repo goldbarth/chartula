@@ -131,20 +131,25 @@ internal sealed class SpyReleaseNotesWriter : IReleaseNotesWriter
 
     public string? Body { get; private set; }
 
+    /// <summary>What the check and the write were each told about replacing a published release.</summary>
+    public List<bool> ReplacePublished { get; } = [];
+
     public Task<string> WriteAsync(
-        RepositoryCoordinates repository, string tag, string body, CancellationToken cancellationToken = default)
+        RepositoryCoordinates repository, string tag, string body, bool replacePublished, CancellationToken cancellationToken = default)
     {
         Calls++;
         Body = body;
+        ReplacePublished.Add(replacePublished);
         return Task.FromResult("https://github.com/octo/repo/releases/tag/" + tag);
     }
 
     public int Checks { get; private set; }
 
     public Task EnsureCanWriteAsync(
-        RepositoryCoordinates repository, string tag, CancellationToken cancellationToken = default)
+        RepositoryCoordinates repository, string tag, bool replacePublished, CancellationToken cancellationToken = default)
     {
         Checks++;
+        ReplacePublished.Add(replacePublished);
         return Task.CompletedTask;
     }
 }
@@ -156,11 +161,11 @@ internal sealed class SpyReleaseNotesWriter : IReleaseNotesWriter
 internal sealed class RefusingReleaseNotesWriter(string message) : IReleaseNotesWriter
 {
     public Task<string> WriteAsync(
-        RepositoryCoordinates repository, string tag, string body, CancellationToken cancellationToken = default)
+        RepositoryCoordinates repository, string tag, string body, bool replacePublished, CancellationToken cancellationToken = default)
         => throw new InvalidOperationException(message);
 
     public Task EnsureCanWriteAsync(
-        RepositoryCoordinates repository, string tag, CancellationToken cancellationToken = default)
+        RepositoryCoordinates repository, string tag, bool replacePublished, CancellationToken cancellationToken = default)
         => Task.CompletedTask;
 }
 
@@ -172,7 +177,7 @@ internal sealed class ReadOnlyTokenReleaseNotesWriter(string message) : IRelease
     public string? Body { get; private set; }
 
     public Task<string> WriteAsync(
-        RepositoryCoordinates repository, string tag, string body, CancellationToken cancellationToken = default)
+        RepositoryCoordinates repository, string tag, string body, bool replacePublished, CancellationToken cancellationToken = default)
     {
         Calls++;
         Body = body;
@@ -180,7 +185,7 @@ internal sealed class ReadOnlyTokenReleaseNotesWriter(string message) : IRelease
     }
 
     public Task EnsureCanWriteAsync(
-        RepositoryCoordinates repository, string tag, CancellationToken cancellationToken = default)
+        RepositoryCoordinates repository, string tag, bool replacePublished, CancellationToken cancellationToken = default)
         => throw new InvalidOperationException(message);
 }
 

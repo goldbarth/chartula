@@ -63,6 +63,7 @@ public sealed class CommandLineArgumentsTests
     // line is checked first, and refused when any part of it cannot be read as meant.
     [Theory]
     [InlineData("generate", "--tag", "v1.0.0", "--repo", "octo/repo", "--since", "v0.9.0", "--audience", "technical,customer", "--yes", "--no-publish")]
+    [InlineData("generate", "--replace-published")]
     [InlineData("preview", "--tag", "v1.0.0", "--audience", "technical", "--audience", "customer", "--yes")]
     [InlineData("doctor", "--tag", "v1.0.0", "--repo", "octo/repo")]
     [InlineData("generate")]
@@ -78,6 +79,7 @@ public sealed class CommandLineArgumentsTests
     [InlineData("--since needs a value: --since <ref>.", "generate", "--since", "--no-publish")]
     [InlineData("--tag is given twice. Pass it once.", "generate", "--tag", "v1", "--tag", "v2")]
     [InlineData("--no-publish is an option of generate, not of preview.", "preview", "--no-publish")]
+    [InlineData("--replace-published is an option of generate, not of doctor.", "doctor", "--replace-published")]
     [InlineData("--since is an option of preview and generate, not of doctor.", "doctor", "--since", "v1")]
     [InlineData("Write --tag v1.0.0, with a space, not --tag=v1.0.0.", "generate", "--tag=v1.0.0")]
     [InlineData("Unexpected argument 'v1.0.0'. generate takes options only, such as --tag <release-tag>.", "generate", "v1.0.0")]

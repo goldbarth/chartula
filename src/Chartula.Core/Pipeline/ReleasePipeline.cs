@@ -246,7 +246,8 @@ public sealed class ReleasePipeline(
     {
         try
         {
-            await releaseNotesWriter.EnsureCanWriteAsync(request.Repository, request.Tag, cancellationToken);
+            await releaseNotesWriter.EnsureCanWriteAsync(
+                request.Repository, request.Tag, request.ReplacePublished, cancellationToken);
         }
         catch (InvalidOperationException ex)
         {
@@ -342,7 +343,7 @@ public sealed class ReleasePipeline(
                 try
                 {
                     written.Add(await releaseNotesWriter.WriteAsync(
-                        request.Repository, request.Tag, technical, cancellationToken));
+                        request.Repository, request.Tag, technical, request.ReplacePublished, cancellationToken));
                 }
                 catch (InvalidOperationException ex)
                 {

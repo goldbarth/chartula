@@ -41,7 +41,7 @@ public sealed class GitHubReleaseNotesWriterTests
             : Json(HttpStatusCode.Created, """{"id":1,"html_url":"https://github.com/octo/repo/releases/tag/v1.0.0"}"""));
         GitHubReleaseNotesWriter writer = new(Client(handler), "GITHUB_TOKEN");
 
-        string url = await writer.WriteAsync(Repo, "v1.0.0", "- Added search");
+        string url = await writer.WriteAsync(Repo, "v1.0.0", "- Added search", replacePublished: false);
 
         Assert.Equal("https://github.com/octo/repo/releases/tag/v1.0.0", url);
         Assert.Contains(handler.Requests, r => r.Method == HttpMethod.Post); // created
@@ -58,7 +58,7 @@ public sealed class GitHubReleaseNotesWriterTests
             : Json(HttpStatusCode.OK, """{"id":42,"html_url":"https://github.com/octo/repo/releases/tag/v1.0.0"}"""));
         GitHubReleaseNotesWriter writer = new(Client(handler), "GITHUB_TOKEN");
 
-        string url = await writer.WriteAsync(Repo, "v1.0.0", "- Added search");
+        string url = await writer.WriteAsync(Repo, "v1.0.0", "- Added search", replacePublished: true);
 
         Assert.Equal("https://github.com/octo/repo/releases/tag/v1.0.0", url);
         // Updates the found release (PATCH /releases/42), never creates a second one.
@@ -77,7 +77,7 @@ public sealed class GitHubReleaseNotesWriterTests
                 : new HttpResponseMessage(HttpStatusCode.NotFound) { Content = new StringContent("{}") });
         GitHubReleaseNotesWriter writer = new(Client(handler), "GITHUB_TOKEN");
 
-        string written = await writer.WriteAsync(Repo, "v1.0.0", "- Added search");
+        string written = await writer.WriteAsync(Repo, "v1.0.0", "- Added search", replacePublished: false);
 
         // Generated text is created as a draft that a person reads before it goes public.
         Assert.Contains("\"draft\":true", handler.LastBodyByMethod[HttpMethod.Post]);
@@ -96,7 +96,7 @@ public sealed class GitHubReleaseNotesWriterTests
             : Json(HttpStatusCode.OK, """{"id":7,"html_url":"https://github.com/octo/repo/releases/tag/untagged-7","draft":true}"""));
         GitHubReleaseNotesWriter writer = new(Client(handler), "GITHUB_TOKEN");
 
-        string written = await writer.WriteAsync(Repo, "v1.0.0", "- Added search");
+        string written = await writer.WriteAsync(Repo, "v1.0.0", "- Added search", replacePublished: false);
 
         Assert.Contains(handler.Requests, r => r.Method == HttpMethod.Patch && r.Path.EndsWith("/releases/7"));
         Assert.DoesNotContain(handler.Requests, r => r.Method == HttpMethod.Post);
@@ -113,7 +113,7 @@ public sealed class GitHubReleaseNotesWriterTests
             Json(HttpStatusCode.OK, """{"id":42,"html_url":"https://github.com/octo/repo/releases/tag/v1.0.0","draft":false}"""));
         GitHubReleaseNotesWriter writer = new(Client(handler), "GITHUB_TOKEN");
 
-        string written = await writer.WriteAsync(Repo, "v1.0.0", "- Added search");
+        string written = await writer.WriteAsync(Repo, "v1.0.0", "- Added search", replacePublished: true);
 
         Assert.DoesNotContain("draft", handler.LastBodyByMethod[HttpMethod.Patch]);
         Assert.Equal("https://github.com/octo/repo/releases/tag/v1.0.0", written);
@@ -127,7 +127,7 @@ public sealed class GitHubReleaseNotesWriterTests
         GitHubReleaseNotesWriter writer = new(Client(handler), "GITHUB_TOKEN");
 
         InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => writer.WriteAsync(Repo, "v1.0.0", "- x"));
+            () => writer.WriteAsync(Repo, "v1.0.0", "- x", replacePublished: false));
         Assert.Contains("500", ex.Message);
     }
 
@@ -138,7 +138,7 @@ public sealed class GitHubReleaseNotesWriterTests
         GitHubReleaseNotesWriter writer = new(Client(handler), "GITHUB_TOKEN");
 
         InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => writer.WriteAsync(Repo, "v1.0.0", "- x"));
+            () => writer.WriteAsync(Repo, "v1.0.0", "- x", replacePublished: false));
         Assert.Contains("GitHub", ex.Message);
     }
 
@@ -148,7 +148,7 @@ public sealed class GitHubReleaseNotesWriterTests
         GitHubReleaseNotesWriter writer = new(Client(new RoutingHandler(_ =>
             new HttpResponseMessage(HttpStatusCode.OK))), "GITHUB_TOKEN");
 
-        await Assert.ThrowsAsync<ArgumentException>(() => writer.WriteAsync(Repo, "  ", "- x"));
+        await Assert.ThrowsAsync<ArgumentException>(() => writer.WriteAsync(Repo, "  ", "- x", replacePublished: false));
     }
 
     // #219: reading needs no write access. So a read-only token is first refused when
@@ -180,7 +180,7 @@ public sealed class GitHubReleaseNotesWriterTests
         GitHubReleaseNotesWriter writer = new(client, "MY_TOKEN");
 
         InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => writer.WriteAsync(Repo, "v1.0.0", "- x"));
+            () => writer.WriteAsync(Repo, "v1.0.0", "- x", replacePublished: false));
 
         Assert.StartsWith("GitHub refused to publish the release notes for v1.0.0 to octo/repo (403 Forbidden).", ex.Message);
         Assert.Contains("the token from MY_TOKEN", ex.Message);
@@ -195,7 +195,7 @@ public sealed class GitHubReleaseNotesWriterTests
         GitHubReleaseNotesWriter writer = new(Client(RefusingCreate(HttpStatusCode.Unauthorized)), "MY_TOKEN");
 
         InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => writer.WriteAsync(Repo, "v1.0.0", "- x"));
+            () => writer.WriteAsync(Repo, "v1.0.0", "- x", replacePublished: false));
 
         Assert.Contains("(401 Unauthorized)", ex.Message);
         Assert.Contains("no token: MY_TOKEN is not set", ex.Message);
@@ -206,17 +206,60 @@ public sealed class GitHubReleaseNotesWriterTests
     [Fact]
     public async Task A_token_that_may_write_passes_the_check_and_nothing_is_written()
     {
-        RoutingHandler handler = new(_ => Json(HttpStatusCode.OK, """{"name":"v1.0.0","body":"notes"}"""));
+        RoutingHandler handler = new(request => request.Method == HttpMethod.Post
+            ? Json(HttpStatusCode.OK, """{"name":"v1.0.0","body":"notes"}""")
+            : Json(HttpStatusCode.NotFound, """{"message":"Not Found"}"""));
         HttpClient client = Client(handler);
         client.DefaultRequestHeaders.Authorization = new("Bearer", "read-write");
         GitHubReleaseNotesWriter writer = new(client, "GITHUB_TOKEN");
 
-        await writer.EnsureCanWriteAsync(Repo, "v1.0.0");
+        await writer.EnsureCanWriteAsync(Repo, "v1.0.0", replacePublished: false);
 
-        (HttpMethod method, string path) = Assert.Single(handler.Requests);
-        Assert.Equal(HttpMethod.Post, method);
-        Assert.Equal("/repos/octo/repo/releases/generate-notes", path);
+        // The permission, then whether a published release exists. Neither writes.
+        Assert.Equal(
+            [(HttpMethod.Post, "/repos/octo/repo/releases/generate-notes"), (HttpMethod.Get, "/repos/octo/repo/releases/tags/v1.0.0")],
+            handler.Requests);
         Assert.Equal("""{"tag_name":"v1.0.0"}""", handler.LastBodyByMethod[HttpMethod.Post]);
+    }
+
+    /// <summary>GitHub with a published release for v1.0.0, and a token that may write.</summary>
+    private static RoutingHandler Published()
+        => new(request => request.Method == HttpMethod.Post
+            ? Json(HttpStatusCode.OK, """{"name":"v1.0.0","body":"notes"}""")
+            : Json(HttpStatusCode.OK, """{"id":42,"tag_name":"v1.0.0","html_url":"https://github.com/octo/repo/releases/tag/v1.0.0","draft":false}"""));
+
+    // #334: the notes of a published release are public and may be hand-written. The check
+    // finds the release before the run pays for anything, and names the way on.
+    [Fact]
+    public async Task The_check_refuses_a_published_release_unless_replacing_it_was_asked_for()
+    {
+        RoutingHandler handler = Published();
+        GitHubReleaseNotesWriter writer = new(Client(handler), "GITHUB_TOKEN");
+
+        InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => writer.EnsureCanWriteAsync(Repo, "v1.0.0", replacePublished: false));
+        await writer.EnsureCanWriteAsync(Repo, "v1.0.0", replacePublished: true);
+
+        Assert.StartsWith(
+            "The release for v1.0.0 is already published at https://github.com/octo/repo/releases/tag/v1.0.0, and publishing would replace its notes in public.",
+            ex.Message);
+        Assert.Contains("Pass --replace-published to replace them.", ex.Message);
+        Assert.DoesNotContain(handler.Requests, r => r.Method == HttpMethod.Patch);
+    }
+
+    // #334: checked again when writing, since the release may have been published while
+    // the run was rendering.
+    [Fact]
+    public async Task Writing_refuses_a_published_release_unless_replacing_it_was_asked_for()
+    {
+        RoutingHandler handler = Published();
+        GitHubReleaseNotesWriter writer = new(Client(handler), "GITHUB_TOKEN");
+
+        InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => writer.WriteAsync(Repo, "v1.0.0", "- Added search", replacePublished: false));
+
+        Assert.Contains("Pass --replace-published to replace them.", ex.Message);
+        Assert.DoesNotContain(handler.Requests, r => r.Method == HttpMethod.Patch);
     }
 
     [Fact]
@@ -233,7 +276,7 @@ public sealed class GitHubReleaseNotesWriterTests
         GitHubReleaseNotesWriter writer = new(client, "MY_TOKEN");
 
         InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => writer.EnsureCanWriteAsync(Repo, "v1.0.0"));
+            () => writer.EnsureCanWriteAsync(Repo, "v1.0.0", replacePublished: false));
 
         Assert.StartsWith("GitHub does not let this run publish the release notes for v1.0.0 to octo/repo (403 Forbidden).", ex.Message);
         Assert.Contains("the token from MY_TOKEN", ex.Message);
@@ -249,7 +292,7 @@ public sealed class GitHubReleaseNotesWriterTests
             "MY_TOKEN");
 
         InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => writer.EnsureCanWriteAsync(Repo, "v1.0.0"));
+            () => writer.EnsureCanWriteAsync(Repo, "v1.0.0", replacePublished: false));
 
         Assert.StartsWith("GitHub does not let this run publish the release notes for v1.0.0 to octo/repo (401 Unauthorized).", ex.Message);
         Assert.Contains("no token: MY_TOKEN is not set", ex.Message);
@@ -261,7 +304,7 @@ public sealed class GitHubReleaseNotesWriterTests
         GitHubReleaseNotesWriter writer = new(Client(RefusingCreate(HttpStatusCode.UnprocessableEntity)), "GITHUB_TOKEN");
 
         InvalidOperationException ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => writer.WriteAsync(Repo, "v1.0.0", "- x"));
+            () => writer.WriteAsync(Repo, "v1.0.0", "- x", replacePublished: false));
 
         Assert.Equal(
             "GitHub API returned 422 Unprocessable Entity for release 'v1.0.0': Resource not accessible by personal access token",

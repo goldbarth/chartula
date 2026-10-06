@@ -80,7 +80,7 @@ For a tag without a release, the job creates a [draft](glossary.md#draft) releas
 A draft is visible only to people with write access, so nothing goes public until someone reads it and publishes it, on the release page or with `gh release edit <tag> --draft=false`.
 
 When another workflow of yours creates the release for the same tag, let it create a draft and run this job before anyone publishes.
-A release that is already published keeps its state, and Chartula replaces its notes in public ([#249](https://github.com/goldbarth/chartula/issues/249)); [What `generate` writes to GitHub](github.md#what-generate-writes-to-github) has the details.
+A release that is already published stops the job before its first model call, so a re-run does not replace public notes; add `--replace-published` to the command when it should ([What `generate` writes to GitHub](github.md#what-generate-writes-to-github)).
 
 `CHANGELOG.md` and the customer page are not committed by the job.
 The tag's checkout is not a branch, so download them from the artifact and commit them through a pull request of your own.

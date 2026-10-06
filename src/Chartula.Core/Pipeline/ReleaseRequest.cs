@@ -50,4 +50,11 @@ public sealed record ReleaseRequest(string Tag, RepositoryCoordinates Repository
     /// <see cref="LargeRangeRule"/> applies to.
     /// </summary>
     public bool RangeConfirmed { get; init; }
+
+    /// <summary>
+    /// Whether the notes of a release that is already published may be replaced
+    /// (<c>--replace-published</c>). They are public and may hold what someone wrote by
+    /// hand, so a run replaces them only when asked to (#334).
+    /// </summary>
+    public bool ReplacePublished { get; init; }
 }
