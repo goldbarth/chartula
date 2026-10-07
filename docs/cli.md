@@ -227,11 +227,11 @@ Each check asks what a run asks, through the same code, so a failed check shows 
 | Status | Meaning |
 | --- | --- |
 | `✓ ok` | The check passed. |
-| `! warn` | A run starts, but something limits it: no GitHub token, a token that cannot publish, or pull request titles without a prefix. |
+| `! warn` | A run starts, but something limits it: no GitHub token, a token that cannot publish, a release that is already published, or pull request titles without a prefix. |
 | `× fail` | A run would stop there. |
 | `– skip` | The check needs an earlier one that failed, so one missing piece does not bury the report under follow-on errors. |
 
-The last line counts the warnings and says what they mean for a run: a warning under `GitHub write` stops `generate` before its first model call, so the line says that `preview` and `generate --no-publish` would start, not that a run would.
+The last line counts the warnings and says what they mean for a run: a warning under `GitHub write`, for a token that may not publish or a release that is already published, stops `generate` before its first model call, so the line says that `preview` and `generate --no-publish` would start, not that a run would.
 Without a terminal on stdout, or with `--plain`, each status is its word alone, such as `ok`, so a report pasted into an issue holds no symbols or colour codes.
 
 `doctor` writes no file, publishes nothing, and names variables, never their values.
