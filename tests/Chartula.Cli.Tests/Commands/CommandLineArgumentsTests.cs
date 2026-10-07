@@ -37,6 +37,28 @@ public sealed class CommandLineArgumentsTests
     public void The_help_text_names_the_flag()
         => Assert.Contains("--no-publish", Program.Usage);
 
+    // Two pull requests each added an option to the help, and merging them left one option
+    // listed twice and another under the wrong heading. Each option stands once, in its group.
+    [Theory]
+    [InlineData("Which release:", "--tag", "--repo", "--since", "--yes")]
+    [InlineData("What a run writes:", "--audience", "--no-publish", "--replace-published")]
+    [InlineData("How it looks:", "--plain")]
+    public void The_help_lists_each_option_once_under_its_group(string group, params string[] options)
+    {
+        string[] lines = Program.Usage.ReplaceLineEndings("\n").Split('\n');
+        int start = Array.IndexOf(lines, group);
+        Assert.True(start >= 0, $"The help has no group '{group}'.");
+        string[] listed = [.. lines.Skip(start + 1).TakeWhile(static line => line.Length > 0)
+            .Where(static line => line.StartsWith("  --", StringComparison.Ordinal))
+            .Select(static line => line.Trim().Split(' ')[0])];
+
+        Assert.Equal(options, listed);
+        foreach (string option in options)
+        {
+            Assert.Single(lines, line => line.TrimStart().StartsWith(option + " ", StringComparison.Ordinal) || line.Trim() == option);
+        }
+    }
+
     [Fact]
     public void The_help_text_says_the_flag_leaves_out_only_the_release_notes()
     {

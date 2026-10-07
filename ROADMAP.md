@@ -16,13 +16,13 @@ Done for that, and in the next release:
 - `changelog.json` and the run record write backticks, quotes, `+` and non-ASCII characters as they are, so a person can read and diff them ([#226](https://github.com/goldbarth/chartula/issues/226)).
 - A release with nothing for developers says so in `CHANGELOG.md` and its release notes, instead of an empty heading and empty notes ([#307](https://github.com/goldbarth/chartula/issues/307)).
 - `generate` stops on a tag whose release is already published, and replaces its notes only with `--replace-published` ([#334](https://github.com/goldbarth/chartula/issues/334)).
+- The rule-based check no longer flags a quoted phrase that the facts break over two lines ([#315](https://github.com/goldbarth/chartula/issues/315)).
+- Pull request text reaches the model quoted between tags and cut at 8,000 characters per description ([#337](https://github.com/goldbarth/chartula/issues/337)).
+- The terminal output has one calm form: a progress line with a spinner, `doctor` in groups, and a run summary that says whether it found flags ([#339](https://github.com/goldbarth/chartula/issues/339)).
 - The documentation covers a first run from install to a published draft, and every page a user needs on the way.
 
 Left before the announcement:
 
-- The rule-based check no longer flags a quoted phrase that the facts break over two lines ([#315](https://github.com/goldbarth/chartula/issues/315)).
-- Pull request text reaches the model delimited and limited in size, the first part of point 1 below.
-- The terminal output gets a calmer, clearer form: one progress line that moves, `doctor` in groups, and a run summary that says whether it found flags.
 - `0.1.0-preview.4` ships all of the above as binaries.
 
 [Milestone: Launch](https://github.com/goldbarth/chartula/milestone/5)

@@ -238,19 +238,15 @@ internal static class Program
                          technical and customer; product renders only when named.
                          An output whose audience was not rendered is not written.
           --no-publish   Write every file, but publish no GitHub release notes.
+          --replace-published
+                         Replace the notes of a release that is already
+                         published. Without it, generate stops before its first
+                         model call when the release is published.
 
         How it looks:
           --plain        Plain lines only: no spinner, no colour, no symbols beyond
                          ASCII. Also the default without a terminal, in CI, with
                          TERM=dumb, and without colour with NO_COLOR set.
-          --replace-published
-                         Replace the notes of a release that is already
-                         published. Without it, generate stops before its first
-                         model call when the release is published.
-          --audience <a> Render only this audience: technical, customer or product.
-                         Repeat it, or separate them with commas. Default:
-                         technical and customer; product renders only when named.
-                         An output whose audience was not rendered is not written.
 
         doctor takes --tag, --repo and --plain; --no-publish and --replace-published are for
         generate only.
