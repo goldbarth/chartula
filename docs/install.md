@@ -55,7 +55,7 @@ Check it yourself with:
 chartula --version
 ```
 
-It prints the installed version and the commit it was built from, such as `chartula 0.1.0-preview.3+7620e6d...`.
+It prints the installed version and the commit it was built from, such as `chartula 0.1.0-preview.4+00f636c...`.
 A bug report or feedback form asks for this line, so it names the exact build you ran.
 
 To read a script before running it, open it in a browser: [install.sh](../install.sh), [install.ps1](../install.ps1).
@@ -67,18 +67,18 @@ All are optional.
 
 | Variable | Default | Effect |
 | --- | --- | --- |
-| `CHARTULA_VERSION` | the latest release | Installs this release tag instead, such as `v0.1.0-preview.3`. |
+| `CHARTULA_VERSION` | the latest release | Installs this release tag instead, such as `v0.1.0-preview.4`. |
 | `CHARTULA_INSTALL_DIR` | `~/.local/bin`; on Windows `%LOCALAPPDATA%\Programs\chartula` | Installs into this folder instead. |
 | `CHARTULA_DOWNLOAD_URL` | the GitHub release | Downloads from this folder instead, which must hold the binaries and `SHA256SUMS`: a mirror, or a local copy. |
 
 A pinned version keeps a CI job on the release you tested, so a new release cannot change its output unannounced:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/goldbarth/chartula/main/install.sh | CHARTULA_VERSION=v0.1.0-preview.3 sh
+curl -fsSL https://raw.githubusercontent.com/goldbarth/chartula/main/install.sh | CHARTULA_VERSION=v0.1.0-preview.4 sh
 ```
 
 ```powershell
-$env:CHARTULA_VERSION = 'v0.1.0-preview.3'; irm https://raw.githubusercontent.com/goldbarth/chartula/main/install.ps1 | iex
+$env:CHARTULA_VERSION = 'v0.1.0-preview.4'; irm https://raw.githubusercontent.com/goldbarth/chartula/main/install.ps1 | iex
 ```
 
 ### Alpine and Docker
