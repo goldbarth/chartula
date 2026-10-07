@@ -29,7 +29,7 @@ jobs:
 
       - name: Install Chartula
         env:
-          CHARTULA_VERSION: v0.1.0-preview.3
+          CHARTULA_VERSION: v0.1.0-preview.4
         run: |
           curl -fsSL "https://raw.githubusercontent.com/goldbarth/chartula/$CHARTULA_VERSION/install.sh" | sh
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"

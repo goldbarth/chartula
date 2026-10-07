@@ -56,15 +56,16 @@ Use a binary of the tagged commit, downloaded from the draft or [built from the 
 $ git fetch --tags
 $ export Chartula__Llm__Provider=openai-compatible
 $ export Chartula__Llm__BaseUrl=https://api.openai.com/v1
-$ export Chartula__Llm__Model=gpt-6-sol
-$ export Chartula__Llm__Thinking=disabled
+$ export Chartula__Llm__Model=gpt-6.1-sol
+$ export Chartula__Llm__Thinking=low
 $ export OPENAI_API_KEY=<key>
 $ export GITHUB_TOKEN=<token with Contents read and write on goldbarth/chartula>
 $ chartula preview --tag v0.1.0-preview.4
 $ chartula generate --tag v0.1.0-preview.4
 ```
 
-These are the settings `0.1.0-preview.2` and `0.1.0-preview.3` were generated with.
+These are the settings `0.1.0-preview.4` was generated with.
+`0.1.0-preview.2` and `0.1.0-preview.3` used `gpt-6-sol` with thinking `disabled`; `gpt-6.1-sol` refuses `disabled`, so `low` is the nearest setting it takes.
 They override the model that `chartula.yaml` pins, which the evaluation's measurements refer to; the note at the top of `CHANGELOG.md` records which settings each release used.
 Whatever settings you choose, write them into that note in step 6.
 
