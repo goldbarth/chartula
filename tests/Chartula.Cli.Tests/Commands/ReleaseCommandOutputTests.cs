@@ -102,6 +102,22 @@ public sealed class ReleaseCommandOutputTests
         Assert.DoesNotContain("Skipped", text);
     }
 
+    // #354: a publishing run without a technical rendering lists the notes it did not
+    // publish, under a heading that does not name an option nobody passed.
+    [Fact]
+    public async Task A_publishing_run_names_the_release_notes_it_could_not_publish()
+    {
+        string text = await RunAsync(
+            PipelineMode.Generate,
+            ["changelog.json"],
+            ["Release notes for v1.0.0 in octo/repo: they are the technical rendering, which failed"]);
+
+        Assert.Contains(
+            "Skipped:\n  - Release notes for v1.0.0 in octo/repo: they are the technical rendering, which failed\n",
+            text.ReplaceLineEndings("\n"));
+        Assert.DoesNotContain("--no-publish", text);
+    }
+
     [Fact]
     public async Task A_run_without_publishing_names_the_release_it_left_alone()
     {

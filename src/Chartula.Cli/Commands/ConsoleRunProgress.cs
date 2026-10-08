@@ -8,8 +8,9 @@ namespace Chartula.Cli.Commands;
 /// Shows a run's steps on stderr, so a changelog redirected from stdout stays clean (#283).
 /// On a live terminal the current step is one line with the Quiet Pulse spinner, its count
 /// and its elapsed time, redrawn in place (#339). A step that ends stays as a line of its
-/// own, marked <c>· done</c> or, for the step a run failed in, <c>× fail</c>; "done" says the
-/// step ended, not that its result is good.
+/// own, marked <c>· done</c> or <c>× fail</c>. A step is failed when the run stopped in it,
+/// or when its audience did not render and the run went on (#354). "done" says the step
+/// did its work, not that the result is good: a rendering with flags is done.
 /// Without a live terminal, as in CI or with <c>--plain</c>, each step is one plain line as
 /// it starts, with no control characters, so a job log stays readable and shows the step a
 /// run was in when it stopped.

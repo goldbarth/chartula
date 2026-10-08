@@ -5,6 +5,7 @@ using Chartula.Core.Generation;
 using Chartula.Core.Llm;
 using Chartula.Core.Rendering;
 using Chartula.Core.Tests.Generation;
+using Chartula.Core.Tests.Pipeline;
 
 namespace Chartula.Core.Tests.Rendering;
 
@@ -112,5 +113,32 @@ public sealed class ReleaseRendererTests
         public Task<FaithfulnessReport> CheckFaithfulnessAsync(
             FaithfulnessRequest request, CancellationToken cancellationToken = default)
             => throw new NotSupportedException();
+    }
+
+    // #354: the step of an audience that did not render stood as "done" directly above
+    // "Technical (failed)". It ends as failed, and the next audience starts as before.
+    [Fact]
+    public async Task An_audience_that_does_not_render_ends_its_step_as_failed_and_the_run_goes_on()
+    {
+        RecordingRunProgress progress = new();
+        ReleaseRenderer renderer = new(new FailingFor(Audience.Technical), progress);
+
+        IReadOnlyDictionary<Audience, ChangelogGenerationResult> renderings =
+            await renderer.RenderAsync(Sample(), [Audience.Technical, Audience.Customer]);
+
+        Assert.False(renderings[Audience.Technical].IsSuccess);
+        Assert.True(renderings[Audience.Customer].IsSuccess);
+        Assert.Equal(["Rendering Technical", "fail", "Rendering Customer"], progress.Events);
+    }
+
+    private sealed class FailingFor(Audience failing) : IReleaseChangelogGenerator
+    {
+        public RenderPlan Plan(FactBase factBase, Audience audience) => throw new NotSupportedException();
+
+        public Task<ChangelogGenerationResult> GenerateAsync(
+            FactBase factBase, Audience audience, CancellationToken cancellationToken = default)
+            => Task.FromResult(audience == failing
+                ? ChangelogGenerationResult.Failure("Status Code: Unauthorized")
+                : ChangelogGenerationResult.Success($"- {audience} text"));
     }
 }

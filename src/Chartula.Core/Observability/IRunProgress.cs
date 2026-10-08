@@ -23,8 +23,10 @@ public interface IRunProgress
     void Complete();
 
     /// <summary>
-    /// Ends the current step because the run failed in it, so it stays the last line
-    /// reached, marked as failed, and the error that follows can be placed (#339).
+    /// Ends the current step as failed. Either the run failed in it, so it stays the last
+    /// line reached and the error that follows can be placed (#339), or the step's own
+    /// work failed and the run goes on, as with an audience that did not render (#354).
+    /// A step may begin after it.
     /// </summary>
     void Fail();
 }

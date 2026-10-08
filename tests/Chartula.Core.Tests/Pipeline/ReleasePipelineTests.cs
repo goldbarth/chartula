@@ -203,6 +203,43 @@ public sealed class ReleasePipelineTests
         Assert.Contains("CHANGELOG.md", outcome.WrittenOutputs);
     }
 
+    // #354: publishing hung in the branch that writes the technical outputs, so a run
+    // without that rendering published nothing and listed nothing as skipped.
+    [Fact]
+    public async Task A_publishing_run_whose_technical_rendering_failed_says_the_release_notes_were_not_published()
+    {
+        ReleaseOutcome outcome = await BuildPipeline(new FailingRenderer(Audience.Technical))
+            .RunAsync(Request(), PipelineMode.Generate);
+
+        Assert.Equal(0, _releaseNotes.Calls);
+        Assert.Equal(
+            "Release notes for v1.0.0 in octo/repo: they are the technical rendering, which failed",
+            Assert.Single(outcome.SkippedOutputs));
+    }
+
+    [Fact]
+    public async Task A_publishing_run_without_the_technical_audience_says_the_release_notes_were_not_published()
+    {
+        ReleaseOutcome outcome = await BuildPipeline()
+            .RunAsync(Request() with { Audiences = [Audience.Customer] }, PipelineMode.Generate);
+
+        Assert.Equal(0, _releaseNotes.Calls);
+        Assert.Equal(
+            "Release notes for v1.0.0 in octo/repo: they are the technical rendering, which this run did not ask for",
+            Assert.Single(outcome.SkippedOutputs));
+    }
+
+    // Without publishing, the notes are skipped whatever became of the rendering, and
+    // the summary's heading already says why.
+    [Fact]
+    public async Task Without_publishing_the_release_notes_are_listed_as_skipped_even_when_technical_failed()
+    {
+        ReleaseOutcome outcome = await BuildPipeline(new FailingRenderer(Audience.Technical))
+            .RunAsync(Request(), PipelineMode.GenerateWithoutPublishing);
+
+        Assert.Equal("Release notes for v1.0.0 in octo/repo", Assert.Single(outcome.SkippedOutputs));
+    }
+
     [Fact]
     public async Task A_skipped_publication_is_named_rather_than_silent()
     {
