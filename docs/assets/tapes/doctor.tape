@@ -36,11 +36,15 @@ Set Theme { "name": "Goldbarth", "background": "#12100E", "foreground": "#FAF6F0
 
 # Truecolor, so the spinner's fade and the two colours of the summary show as designed.
 Env COLORTERM "truecolor"
-# The newest Sonnet, in place of the model Chartula pins by default. The clip's header
-# names it, and so does the caption beside the clip.
-Env Chartula__Llm__Model "claude-sonnet-5-5"
 
+# The recording must not depend on what the terminal that starts vhs has exported: a
+# provider or an endpoint left over from another run would be recorded as if it were
+# Chartula's default. So every Chartula setting is dropped, and one is set: the newest
+# Sonnet, in place of the model Chartula pins. The clip's header names it, and so does
+# the caption beside the clip. The keys are not Chartula settings and stay.
 Hide
+Type "for v in $(compgen -v Chartula__); do unset $v; done; export Chartula__Llm__Model=claude-sonnet-5-5"
+Enter
 Type "cd ~/demo/ServiceDeskLite && PS1='$ ' && clear"
 Enter
 Sleep 500ms
