@@ -95,6 +95,15 @@ Shortened to those parts:
 
 </details>
 
+**A run in the terminal.**
+`chartula generate --no-publish --audience customer` on [goldbarth/ServiceDeskLite](https://github.com/goldbarth/ServiceDeskLite) `v1.9.0`, a public repository, with Chartula `0.1.0-preview.5` and `claude-sonnet-5-5`, recorded on 2026-10-09.
+The clip plays at the speed the run had: nothing is sped up and no pause is cut.
+This run raised no flag, so it shows the progress and the summary of a clean run; the example above is what a flag looks like.
+
+![A terminal runs chartula generate: the run's header, each step with its spinner, then the customer rendering with its groups and entries, the files written and the run metrics.](docs/assets/generate.gif)
+
+The clip is recorded from [`docs/assets/tapes/generate.tape`](docs/assets/tapes/generate.tape), which holds the command and the settings, so it can be recorded again.
+
 ---
 
 ## Try it
