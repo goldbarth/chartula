@@ -29,7 +29,7 @@ Set Shell "bash"
 Set FontFamily "JetBrainsMono Nerd Font"
 Set FontSize 15
 Set LetterSpacing 0
-Set Width 1100
+Set Width 1140
 Set Height 900
 Set Padding 24
 Set TypingSpeed 55ms
