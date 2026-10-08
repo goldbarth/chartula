@@ -197,6 +197,11 @@ The summary on stdout opens on how the run went, then shows each rendering under
 
 "Generated" reports what the run did, not that the text is verified: a run without flags is one in which the checks found nothing ([Costs and checks](costs-and-checks.md)).
 
+In a terminal each rendering is laid out for reading: a group is a bold heading, an entry a bullet broken at the width of the window, a label and `Breaking:` are bold, code is coloured, and a link shows as its text, such as `(#294)`.
+The description of the customer page stands above its entries as the sentence it is on the page.
+Redirected, in CI and with `--plain`, the summary carries each rendering as Markdown, as the files hold it, with the description on a line that starts with `description:`.
+So what you read in the terminal is not what to copy from: the Markdown is in the files the run wrote, and in the plain summary.
+
 ## `chartula doctor`
 
 Checks everything a run needs, one line per check in three groups (the repository, the model, GitHub), and says whether a run would start:

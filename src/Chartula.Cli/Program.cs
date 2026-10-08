@@ -154,7 +154,8 @@ internal static class Program
                 },
                 Console.Out,
                 CancellationToken.None,
-                report);
+                report,
+                TerminalWidth.Current());
         }
     }
 

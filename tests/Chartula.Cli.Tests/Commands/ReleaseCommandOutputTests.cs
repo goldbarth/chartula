@@ -1,4 +1,5 @@
 using Chartula.Cli.Commands;
+using Chartula.Cli.Terminal;
 using Chartula.Core.Llm;
 using Chartula.Core.Pipeline;
 using Chartula.Core.PullRequests;
@@ -130,6 +131,41 @@ public sealed class ReleaseCommandOutputTests
         Assert.Contains("  - CHANGELOG.md", text);
         Assert.Contains("Skipped (--no-publish):", text);
         Assert.Contains("  - Release notes for v1.0.0 in octo/repo", text);
+    }
+
+    // #355: a terminal shows the rendering as text to read, and the description as the
+    // sentence that opens the page. Plain output, as in the test below, keeps the source.
+    [Fact]
+    public async Task On_a_terminal_a_rendering_is_shown_for_reading_and_not_as_markdown_source()
+    {
+        ReleaseOutcome outcome = new(
+            "v1.0.0",
+            PipelineMode.GenerateWithoutPublishing,
+            [
+                new AudienceOutcome(
+                    Audience.Customer, Success: true, "### What's New\n\n- **Search:** `find` is here. ([#7](https://x/pull/7))", [], Error: null)
+                {
+                    Description = "A release about finding things.",
+                },
+            ],
+            []);
+
+        StringWriter output = new();
+        await ReleaseCommand.RunAsync(
+            new StubPipeline(outcome),
+            PipelineMode.GenerateWithoutPublishing,
+            new ReleaseRequest("v1.0.0", new RepositoryCoordinates("octo", "repo")),
+            output,
+            CancellationToken.None,
+            new TerminalProfile(Live: true, ColorDepth.None, Unicode: true),
+            columns: 80);
+
+        Assert.Contains(
+            "Customer\n  A release about finding things.\n\n  What's New\n    • Search: `find` is here. (#7)\n\nNothing to write.",
+            output.ToString().ReplaceLineEndings("\n"),
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("description:", output.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("###", output.ToString(), StringComparison.Ordinal);
     }
 
     [Fact]
