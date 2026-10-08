@@ -12,7 +12,7 @@ public sealed class TerminalMarkdownTests
     private const string Reset = "\u001b[0m";
     private const string Bold = "\u001b[1m";
     private const string Cyan = "\u001b[36m";
-    private const string BoldAmber = "\u001b[1m\u001b[33m";
+    private const string BoldTeal = "\u001b[1m\u001b[36m";
 
     private static readonly TerminalProfile WithoutColor = new(Live: true, ColorDepth.None, Unicode: true);
     private static readonly TerminalProfile WithColor = new(Live: true, ColorDepth.Basic, Unicode: true);
@@ -43,7 +43,7 @@ public sealed class TerminalMarkdownTests
         string shown = Shown("### What needs action\n\n- **Breaking:** **Export:** It moved.", WithColor);
 
         Assert.Equal(
-            $"  {Bold}What needs action{Reset}\n    • {BoldAmber}Breaking:{Reset} {Bold}Export:{Reset} It moved.",
+            $"  {Bold}What needs action{Reset}\n    • {BoldTeal}Breaking:{Reset} {Bold}Export:{Reset} It moved.",
             shown);
     }
 

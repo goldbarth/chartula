@@ -220,7 +220,8 @@ internal static partial class TerminalMarkdown
     }
 
     // Weight for what names an entry, colour for what a reader types. A breaking change
-    // takes the amber a warning has, where the terminal can show it.
+    // takes both, the teal of the brand ramp in bold, so it is the one marker that stands
+    // out among the labels without reading as a warning of the run.
     private static string? Codes(Style style, ColorDepth colors) => (style, colors) switch
     {
         (_, ColorDepth.None) => null,
