@@ -30,13 +30,13 @@ internal static class EndpointNotice
         FaithfulnessOptions faithfulness = ThoroughCheckModel.Read(configuration);
         ThoroughCheckModel check = ThoroughCheckModel.Resolve(llm, faithfulness);
         string checkLine = faithfulness.Thorough && check.DiffersFrom(llm)
-            ? $"\n        thorough check: {check.Model}, thinking {ThinkingModeParser.Name(check.Thinking)}"
+            ? $"\n         thorough check: {check.Model}, thinking {ThinkingModeParser.Name(check.Thinking)}"
             : string.Empty;
 
         return $"""
-            Model:  {llm.Provider} at {endpoint}, {Credential(configuration, "key", llm.ApiKeyEnvironmentVariable)}
-                    {llm.Model}, thinking {thinking}{checkLine}
-            GitHub: {gitHub.ApiBaseUrl}, {Credential(configuration, "token", gitHub.TokenEnvironmentVariable)}
+            Model:   {llm.Provider} at {endpoint}, {Credential(configuration, "key", llm.ApiKeyEnvironmentVariable)}
+                     {llm.Model}, thinking {thinking}{checkLine}
+            GitHub:  {gitHub.ApiBaseUrl}, {Credential(configuration, "token", gitHub.TokenEnvironmentVariable)}
             """;
     }
 

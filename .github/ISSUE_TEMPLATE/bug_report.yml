@@ -98,10 +98,10 @@ body:
         They name the tag, the repository, the model and the endpoints the run used, which the command line alone does not show.
       placeholder: |
         Using tag v1.3.0, the nearest tag reachable from HEAD. Pass --tag to choose another.
-        Model:  anthropic at its default endpoint, key from ANTHROPIC_API_KEY
-                claude-sonnet-5, thinking provider-default
-        GitHub: https://api.github.com/, token from GITHUB_TOKEN
-        Range:  the commits after v1.2.0, up to v1.3.0 (100 commits)
+        Model:   anthropic at its default endpoint, key from ANTHROPIC_API_KEY
+                 claude-sonnet-5, thinking provider-default
+        GitHub:  https://api.github.com/, token from GITHUB_TOKEN
+        Range:   the commits after v1.2.0, up to v1.3.0 (100 commits)
       render: text
 
   - type: textarea

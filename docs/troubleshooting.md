@@ -147,10 +147,10 @@ Most CI systems check out this way by default.
 ### A first tag
 
 ```text
-Range:  every commit up to v0.1.0 (1 commit), the first tag
-        It costs 1 GitHub request. A preview sends nothing to the model.
-        To start later, pass --since <ref>: the commits after <ref>, up to v0.1.0.
-        No terminal to confirm this. Pass --yes to confirm it up front.
+Range:   every commit up to v0.1.0 (1 commit), the first tag
+         It costs 1 GitHub request. A preview sends nothing to the model.
+         To start later, pass --since <ref>: the commits after <ref>, up to v0.1.0.
+         No terminal to confirm this. Pass --yes to confirm it up front.
 Stopped: The range of v0.1.0 was not confirmed, so nothing was read from GitHub or sent to the model.
 ```
 

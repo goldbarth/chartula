@@ -88,7 +88,7 @@ Point Chartula at your server's API, in the environment only:
 $ export Chartula__GitHub__ApiBaseUrl=https://github.example.com/api/v3
 $ chartula preview
 ...
-GitHub: https://github.example.com/api/v3/, token from GITHUB_TOKEN
+GitHub:  https://github.example.com/api/v3/, token from GITHUB_TOKEN
 ```
 
 The header line every run prints names the API URL the requests go to and the token variable in effect, so a setting inherited from a shell profile or a CI runner shows before the first request.

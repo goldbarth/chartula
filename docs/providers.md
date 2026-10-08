@@ -28,9 +28,9 @@ An `openai-compatible` run starts without one, because a local server needs none
 Every run prints what is in effect to stderr before its first request, so a setting inherited from a shell profile or a CI runner shows before it costs anything:
 
 ```text
-Model:  anthropic at its default endpoint, key from ANTHROPIC_API_KEY
-        claude-sonnet-5, thinking provider-default
-GitHub: https://api.github.com/, token from GITHUB_TOKEN
+Model:   anthropic at its default endpoint, key from ANTHROPIC_API_KEY
+         claude-sonnet-5, thinking provider-default
+GitHub:  https://api.github.com/, token from GITHUB_TOKEN
 ```
 
 The header names the variable a key is read from, never its value.
@@ -49,8 +49,8 @@ llm:
 ```console
 $ export ANTHROPIC_API_KEY=<your key>
 $ chartula preview
-Model:  anthropic at its default endpoint, key from ANTHROPIC_API_KEY
-        claude-opus-5, thinking provider-default
+Model:   anthropic at its default endpoint, key from ANTHROPIC_API_KEY
+         claude-opus-5, thinking provider-default
 ```
 
 Create a key at [console.anthropic.com](https://console.anthropic.com/settings/keys).
@@ -68,8 +68,8 @@ llm:
 $ export Chartula__Llm__BaseUrl=https://api.openai.com/v1
 $ export OPENAI_API_KEY=<your key>
 $ chartula preview
-Model:  openai-compatible at https://api.openai.com/v1, key from OPENAI_API_KEY
-        gpt-6-sol, thinking provider-default
+Model:   openai-compatible at https://api.openai.com/v1, key from OPENAI_API_KEY
+         gpt-6-sol, thinking provider-default
 ```
 
 Create a key at [platform.openai.com](https://platform.openai.com/api-keys).
@@ -90,8 +90,8 @@ $ export Chartula__Llm__BaseUrl=https://api.groq.com/openai/v1
 $ export Chartula__Llm__ApiKeyEnvironmentVariable=GROQ_API_KEY
 $ export GROQ_API_KEY=<your key>
 $ chartula preview
-Model:  openai-compatible at https://api.groq.com/openai/v1, key from GROQ_API_KEY
-        llama-3.3-70b-versatile, thinking provider-default
+Model:   openai-compatible at https://api.groq.com/openai/v1, key from GROQ_API_KEY
+         llama-3.3-70b-versatile, thinking provider-default
 ```
 
 The model ids an endpoint serves are its own, so take them from its documentation or from `GET /v1/models`.
@@ -115,8 +115,8 @@ $ export Chartula__Llm__BaseUrl=http://localhost:11434/v1
 $ OLLAMA_CONTEXT_LENGTH=24576 ollama serve &
 $ ollama pull <model>
 $ chartula preview
-Model:  openai-compatible at http://localhost:11434/v1, unauthenticated, OPENAI_API_KEY is not set
-        <model>, thinking provider-default
+Model:   openai-compatible at http://localhost:11434/v1, unauthenticated, OPENAI_API_KEY is not set
+         <model>, thinking provider-default
 ```
 
 `ollama list` shows the ids of the models you have pulled.

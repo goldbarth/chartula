@@ -29,9 +29,9 @@ A first tag, or a range with more commits than [`range.confirmAboveCommits`](con
 ```console
 $ chartula generate --tag v0.1.0
 ...
-Range:  every commit up to v0.1.0 (69 commits), the first tag
-        It costs 69 GitHub requests, and every pull request in it goes to the model once per audience.
-        To start later, pass --since <ref>: the commits after <ref>, up to v0.1.0.
+Range:   every commit up to v0.1.0 (69 commits), the first tag
+         It costs 69 GitHub requests, and every pull request in it goes to the model once per audience.
+         To start later, pass --since <ref>: the commits after <ref>, up to v0.1.0.
 Render all 69 commits up to v0.1.0? [y/N] y
 This sends every pull request in the range to the model. Continue? [y/N] y
 ```

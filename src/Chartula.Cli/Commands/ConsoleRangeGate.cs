@@ -16,10 +16,11 @@ internal sealed class ConsoleRangeGate(TextReader input, TextWriter output, bool
 {
     public const string YesFlag = "--yes";
 
-    // Aligned with the "Model:" and "GitHub:" lines of the header.
-    private const string Indent = "        ";
+    // The column the values of "Model:" and "GitHub:" start on, which is also the one
+    // the step labels below the header start on (#351).
+    private const string Indent = "         ";
 
-    public void Announce(CommitRange range) => output.WriteLine($"Range:  {Describe(range)}");
+    public void Announce(CommitRange range) => output.WriteLine($"Range:   {Describe(range)}");
 
     public async Task<bool> ConfirmAsync(
         CommitRange range, bool sendsToModel = true, CancellationToken cancellationToken = default)

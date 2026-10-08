@@ -122,12 +122,13 @@ internal sealed class ConsoleRunProgress(TextWriter output, TerminalProfile prof
     {
         _shown = true;
         string glyph = QuietPulse.Glyph(_time.GetElapsedTime(_created), profile);
-        output.Write($"{Rewrite}{Line(glyph + "     ")}");
+        output.Write($"{Rewrite}{Line("     " + glyph)}");
         output.Flush();
     }
 
-    // The status takes six columns, a symbol and its word, where the spinner stands
-    // while the step runs, so the labels line up whatever the state.
+    // The status takes six columns, a symbol and its word. While the step runs the
+    // spinner stands in the last of them, next to the label it animates (#351), so the
+    // labels line up whatever the state and nothing moves when the step ends.
     private string Line(string status)
     {
         string count = _total is { } total ? $"{_done}/{Commits(total)}" : string.Empty;
