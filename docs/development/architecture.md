@@ -84,6 +84,7 @@ Neither changes the text; their flags reach the report (`ReleaseCommand`) and th
 **The rule-based check** (`Core/Faithfulness/RuleBasedFaithfulnessChecker.cs`) makes no model call.
 It joins the tag, the titles and the descriptions into one lowercase text, then flags every number of the rendering that is neither in that text nor a pull request or issue number of the release, and every name in backticks or double quotes the text does not contain.
 It compares both with every run of whitespace folded into one space and code fences taken out, because a rendering is one line per entry while a description keeps its line breaks and fenced blocks ([#315](https://github.com/goldbarth/chartula/issues/315)).
+A number written with thousands separators is read as one number and compared without them, so `8,000` backs `8000` and backs neither `8` nor `000` ([#350](https://github.com/goldbarth/chartula/issues/350)).
 
 **The thorough check** (`Core/Faithfulness/ThoroughFaithfulnessChecker.cs`) sends the facts, each opening on its pull request number such as `[#12]`, and the rendering to `IChangelogModel.CheckFaithfulnessAsync`.
 The model answers in a fixed shape: each unsupported claim with its quote, its reason and the pull request it concerns.
