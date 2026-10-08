@@ -67,4 +67,37 @@ public sealed class AudienceSelectionTests
         Assert.Contains("customer", error);
         Assert.Contains("product", error);
     }
+
+    // #353: a list with an empty place was read as the list without it, so a trailing
+    // comma ran as if it were not there. ADR 0005: refuse rather than guess.
+    [Theory]
+    [InlineData("product,")]
+    [InlineData(",product")]
+    [InlineData("technical,,customer")]
+    [InlineData(",")]
+    public void A_comma_with_no_audience_next_to_it_is_refused(string value)
+    {
+        Assert.False(AudienceSelection.TryParse(
+            ["generate", "--audience", value], out IReadOnlyCollection<Audience>? audiences, out string? error));
+
+        Assert.Null(audiences);
+        Assert.Equal(
+            "--audience has a comma with no audience next to it. Name each one, such as --audience technical,product. "
+            + "There are three: technical, customer, product.",
+            error);
+    }
+
+    // #353: Enum.TryParse reads "1" as the audience with that value, and "technical, 2" as two.
+    [Theory]
+    [InlineData("0")]
+    [InlineData("1")]
+    [InlineData("technical,2")]
+    public void A_number_is_not_an_audience(string value)
+    {
+        Assert.False(AudienceSelection.TryParse(
+            ["generate", "--audience", value], out IReadOnlyCollection<Audience>? audiences, out string? error));
+
+        Assert.Null(audiences);
+        Assert.StartsWith("Unknown audience '", error);
+    }
 }

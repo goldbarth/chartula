@@ -74,7 +74,8 @@ public sealed class ReleaseCommandOutputTests
         (int exitCode, string text) = await RunAsync(mode, false, true, true);
 
         Assert.Equal(1, exitCode);
-        Assert.Contains("1 of 3 audiences failed.", text);
+        // #353: apart from the list of outputs, which it read as an entry of.
+        Assert.Contains("\n\n1 of 3 audiences failed.\n", text.ReplaceLineEndings("\n"));
     }
 
     [Fact]

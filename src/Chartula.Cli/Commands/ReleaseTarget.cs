@@ -66,6 +66,21 @@ internal sealed partial record ReleaseTarget(string Tag, RepositoryCoordinates R
     }
 
     /// <summary>
+    /// What is wrong with the value of <c>--repo</c>, or null. It is read from the
+    /// arguments alone, so a run can refuse it where it refuses every other argument:
+    /// before its header, and before anything is read (#353).
+    /// </summary>
+    public static string? CheckRepositoryOption(IReadOnlyList<string> args)
+    {
+        ArgumentNullException.ThrowIfNull(args);
+
+        string? repoOption = CommandLineArguments.GetOption(args, "--repo");
+        return string.IsNullOrWhiteSpace(repoOption) || ReleaseCommand.TryParseRepository(repoOption, out _)
+            ? null
+            : $"Invalid option --repo '{repoOption}'. Expected <owner/name>.";
+    }
+
+    /// <summary>
     /// The repository from <c>--repo</c>, or from the <see cref="Remote"/> remote when it
     /// is not passed.
     /// Without a value, <see cref="Resolved{T}.Message"/> says why and what to pass.
@@ -84,7 +99,7 @@ internal sealed partial record ReleaseTarget(string Tag, RepositoryCoordinates R
         {
             return ReleaseCommand.TryParseRepository(repoOption, out RepositoryCoordinates passed)
                 ? new(passed, null)
-                : new(null, $"Invalid option --repo '{repoOption}'. Expected <owner/name>.");
+                : new(null, CheckRepositoryOption(args));
         }
 
         string? url = await readRemoteUrl();

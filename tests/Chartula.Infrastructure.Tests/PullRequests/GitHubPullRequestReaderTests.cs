@@ -273,7 +273,8 @@ public sealed class GitHubPullRequestReaderTests
             () => reader.GetMergedPullRequestsAsync(Repo, RangeWith("abc123")));
 
         Assert.StartsWith("GitHub's rate limit is spent (403 Forbidden).", ex.Message);
-        Assert.Contains("A token in GITHUB_TOKEN raises it", ex.Message);
+        // #353: the message stands on its own, since doctor prints it without the warning a run opens with.
+        Assert.EndsWith("Without a token GitHub allows 60 requests an hour; a token in GITHUB_TOKEN raises that to 5000.", ex.Message);
     }
 
     private const string NotFoundJson =

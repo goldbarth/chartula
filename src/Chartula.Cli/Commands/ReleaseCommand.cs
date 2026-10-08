@@ -120,6 +120,8 @@ internal static class ReleaseCommand
 
         if (failed > 0 && !nothingRendered)
         {
+            // Apart from the list above, which it would otherwise read as an entry of (#353).
+            builder.AppendLine();
             builder.AppendLine($"{failed} of {outcome.Renderings.Count} audiences failed.");
         }
 

@@ -112,4 +112,15 @@ public sealed class ReleaseTargetTests
         Assert.Null(target);
         Assert.Contains("Invalid option --repo 'name-only'", error.ToString(), StringComparison.Ordinal);
     }
+
+    // #353: the value is judged from the arguments alone, so a run refuses it before its header.
+    [Fact]
+    public void The_value_of_repo_is_checked_without_reading_the_checkout()
+    {
+        Assert.Equal(
+            "Invalid option --repo 'name-only'. Expected <owner/name>.",
+            ReleaseTarget.CheckRepositoryOption(["preview", "--repo", "name-only"]));
+        Assert.Null(ReleaseTarget.CheckRepositoryOption(["preview", "--repo", "owner/name"]));
+        Assert.Null(ReleaseTarget.CheckRepositoryOption(["preview"]));
+    }
 }

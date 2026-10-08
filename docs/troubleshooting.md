@@ -106,7 +106,7 @@ Error: GitHub's rate limit is spent (403 Forbidden). Wait until it resets and ru
 Without a token, the run warns at its start, and the message names the token as the remedy:
 
 ```text
-Error: GitHub's rate limit is spent (403 Forbidden). A token in GITHUB_TOKEN raises it; see the warning at the start of the run.
+Error: GitHub's rate limit is spent (403 Forbidden). Without a token GitHub allows 60 requests an hour; a token in GITHUB_TOKEN raises that to 5000.
 ```
 
 **Cause:** a run makes one GitHub request per commit in the [range](glossary.md#range).
