@@ -11,7 +11,7 @@ public sealed class TerminalMarkdownTests
 {
     private const string Reset = "\u001b[0m";
     private const string Bold = "\u001b[1m";
-    private const string Cyan = "\u001b[36m";
+    private const string AmberGlow = "\u001b[93m";
     private const string BoldTeal = "\u001b[1m\u001b[36m";
 
     private static readonly TerminalProfile WithoutColor = new(Live: true, ColorDepth.None, Unicode: true);
@@ -52,8 +52,21 @@ public sealed class TerminalMarkdownTests
     {
         const string Entry = "- Pass `--since <ref>` to `generate`.";
 
-        Assert.Equal($"    • Pass {Cyan}--since <ref>{Reset} to {Cyan}generate{Reset}.", Shown(Entry, WithColor));
+        Assert.Equal($"    • Pass {AmberGlow}--since <ref>{Reset} to {AmberGlow}generate{Reset}.", Shown(Entry, WithColor));
         Assert.Equal("    • Pass `--since <ref>` to `generate`.", Shown(Entry, WithoutColor));
+    }
+
+    // The two colours are the two roles of the brand ramp: teal for what the system marks,
+    // amber-glow for what the reader types. Next to each other they must not look alike.
+    [Theory]
+    [InlineData((int)ColorDepth.TrueColor, "\u001b[1m\u001b[38;2;45;212;191m", "\u001b[38;2;255;230;163m")]
+    [InlineData((int)ColorDepth.Ansi256, "\u001b[1m\u001b[38;5;43m", "\u001b[38;5;223m")]
+    [InlineData((int)ColorDepth.Basic, "\u001b[1m\u001b[36m", "\u001b[93m")]
+    public void The_breaking_marker_and_code_take_the_two_colours_of_the_ramp(int depth, string teal, string amberGlow)
+    {
+        string shown = Shown("- **Breaking:** `changelog.json` moved.", new TerminalProfile(Live: true, (ColorDepth)depth, Unicode: true));
+
+        Assert.Equal($"    • {teal}Breaking:{Reset} {amberGlow}changelog.json{Reset} moved.", shown);
     }
 
     // Variant (a) of the issue: the number says which pull request, and the URL is in CHANGELOG.md.
@@ -79,7 +92,7 @@ public sealed class TerminalMarkdownTests
     {
         string shown = Shown("- Write `[#1](url)` or `**bold**`.", WithColor);
 
-        Assert.Equal($"    • Write {Cyan}[#1](url){Reset} or {Cyan}**bold**{Reset}.", shown);
+        Assert.Equal($"    • Write {AmberGlow}[#1](url){Reset} or {AmberGlow}**bold**{Reset}.", shown);
     }
 
     [Fact]
@@ -118,8 +131,8 @@ public sealed class TerminalMarkdownTests
         string shown = Shown("- Pass `one two three four five six seven eight nine ten` here.", WithColor, columns: 40);
 
         string[] rows = shown.Split('\n');
-        Assert.Equal($"    • Pass {Cyan}one two three four five six{Reset}", rows[0]);
-        Assert.Equal($"      {Cyan}seven eight nine ten{Reset} here.", rows[1]);
+        Assert.Equal($"    • Pass {AmberGlow}one two three four five six{Reset}", rows[0]);
+        Assert.Equal($"      {AmberGlow}seven eight nine ten{Reset} here.", rows[1]);
     }
 
     [Fact]

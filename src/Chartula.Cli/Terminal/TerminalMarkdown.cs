@@ -219,9 +219,12 @@ internal static partial class TerminalMarkdown
         return row.ToString();
     }
 
-    // Weight for what names an entry, colour for what a reader types. A breaking change
-    // takes both, the teal of the brand ramp in bold, so it is the one marker that stands
-    // out among the labels without reading as a warning of the run.
+    // Weight for what names an entry, colour for what a reader types. The two colours are
+    // the two roles of the brand ramp, so they cannot be mistaken for each other:
+    // "Breaking:" is what the system marks, in teal (#2DD4BF) and bold, and code is what
+    // the reader types, in amber-glow (#FFE6A3), the ramp's tone for highlights. Not the
+    // identity amber (#E0A34B): a warning's mark has that, and code is no warning.
+    // With 256 colours each takes the nearest of the cube, with 16 cyan and bright yellow.
     private static string? Codes(Style style, ColorDepth colors) => (style, colors) switch
     {
         (_, ColorDepth.None) => null,
@@ -229,9 +232,9 @@ internal static partial class TerminalMarkdown
         (Style.Breaking, ColorDepth.TrueColor) => Bold + "\u001b[38;2;45;212;191m",
         (Style.Breaking, ColorDepth.Ansi256) => Bold + "\u001b[38;5;43m",
         (Style.Breaking, _) => Bold + "\u001b[36m",
-        (Style.Code, ColorDepth.TrueColor) => "\u001b[38;2;45;212;191m",
-        (Style.Code, ColorDepth.Ansi256) => "\u001b[38;5;43m",
-        (Style.Code, _) => "\u001b[36m",
+        (Style.Code, ColorDepth.TrueColor) => "\u001b[38;2;255;230;163m",
+        (Style.Code, ColorDepth.Ansi256) => "\u001b[38;5;223m",
+        (Style.Code, _) => "\u001b[93m",
         _ => null,
     };
 }
