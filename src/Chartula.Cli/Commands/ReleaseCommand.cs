@@ -25,7 +25,8 @@ internal static class ReleaseCommand
         ReleaseRequest request,
         TextWriter output,
         CancellationToken cancellationToken,
-        TerminalProfile? profile = null)
+        TerminalProfile? profile = null,
+        int? columns = null)
     {
         TerminalProfile shown = profile ?? TerminalProfile.Plain;
         try
@@ -37,7 +38,7 @@ internal static class ReleaseCommand
                 return 0;
             }
 
-            output.Write(Format(outcome, shown));
+            output.Write(Format(outcome, shown, columns));
 
             // Exit with 1 when a requested audience or the publication failed.
             // Scripts and CI jobs read the exit code, not the output, so a failure must
@@ -63,7 +64,7 @@ internal static class ReleaseCommand
         }
     }
 
-    private static string Format(ReleaseOutcome outcome, TerminalProfile profile)
+    private static string Format(ReleaseOutcome outcome, TerminalProfile profile, int? columns)
     {
         StringBuilder builder = new();
         int failed = outcome.Renderings.Count(audience => !audience.Success);
@@ -93,13 +94,24 @@ internal static class ReleaseCommand
             }
             else
             {
-                if (!string.IsNullOrWhiteSpace(audience.Description))
+                // A terminal shows the rendering as text to read. Plain and redirected
+                // output keep the Markdown as the files hold it, since there it is copied
+                // or read by a program (#355).
+                if (profile.Live)
                 {
-                    builder.AppendLine($"  description: {audience.Description}");
-                    builder.AppendLine();
+                    AppendForReading(builder, audience, profile, columns);
+                }
+                else
+                {
+                    if (!string.IsNullOrWhiteSpace(audience.Description))
+                    {
+                        builder.AppendLine($"  description: {audience.Description}");
+                        builder.AppendLine();
+                    }
+
+                    builder.AppendLine(audience.Text);
                 }
 
-                builder.AppendLine(audience.Text);
                 // A flag may concern any entry of the rendering, so the flags stand apart
                 // from the text instead of reading as a line of its last entry (#211).
                 if (audience.Flags.Count > 0)
@@ -238,6 +250,28 @@ internal static class ReleaseCommand
     private static string Name(Audience audience) => audience.ToString().ToLowerInvariant();
 
     private static string Number(long value) => value.ToString("N0", CultureInfo.InvariantCulture);
+
+    // The description is the sentence that opens the customer page, so it stands above
+    // the entries as that sentence, not as the key of a front matter the reader is not
+    // looking at.
+    private static void AppendForReading(
+        StringBuilder builder, AudienceOutcome audience, TerminalProfile profile, int? columns)
+    {
+        if (!string.IsNullOrWhiteSpace(audience.Description))
+        {
+            foreach (string row in TerminalMarkdown.Render(audience.Description, profile, columns))
+            {
+                builder.AppendLine(row);
+            }
+
+            builder.AppendLine();
+        }
+
+        foreach (string row in TerminalMarkdown.Render(audience.Text ?? string.Empty, profile, columns))
+        {
+            builder.AppendLine(row);
+        }
+    }
 
     /// <summary>
     /// Appends <paramref name="text"/> after <paramref name="prefix"/>, with further lines
