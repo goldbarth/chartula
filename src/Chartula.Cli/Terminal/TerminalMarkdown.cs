@@ -225,9 +225,9 @@ internal static partial class TerminalMarkdown
     {
         (_, ColorDepth.None) => null,
         (Style.Strong, _) => Bold,
-        (Style.Breaking, ColorDepth.TrueColor) => Bold + "\u001b[38;2;224;163;75m",
-        (Style.Breaking, ColorDepth.Ansi256) => Bold + "\u001b[38;5;179m",
-        (Style.Breaking, _) => Bold + "\u001b[33m",
+        (Style.Breaking, ColorDepth.TrueColor) => Bold + "\u001b[38;2;45;212;191m",
+        (Style.Breaking, ColorDepth.Ansi256) => Bold + "\u001b[38;5;43m",
+        (Style.Breaking, _) => Bold + "\u001b[36m",
         (Style.Code, ColorDepth.TrueColor) => "\u001b[38;2;45;212;191m",
         (Style.Code, ColorDepth.Ansi256) => "\u001b[38;5;43m",
         (Style.Code, _) => "\u001b[36m",
