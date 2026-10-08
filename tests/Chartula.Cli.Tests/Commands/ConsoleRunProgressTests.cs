@@ -87,6 +87,29 @@ public sealed class ConsoleRunProgressTests
         Assert.Equal(["  × fail Reading pull requests   1/3 commits      0 s"], Lines(output));
     }
 
+    // #354: an audience that does not render fails its step and the run goes on.
+    [Fact]
+    public void A_step_that_failed_keeps_its_mark_and_the_next_step_is_drawn_as_before()
+    {
+        StringWriter output = new();
+        ManualTime time = new();
+        ConsoleRunProgress progress = new(output, LiveWithoutColor, time, NoWidth);
+
+        progress.Begin(new ProgressStep(RunStep.Rendering, Audience.Technical));
+        time.Pass(TimeSpan.FromSeconds(3));
+        progress.Fail();
+        progress.Begin(new ProgressStep(RunStep.Rendering, Audience.Customer));
+        time.Pass(TimeSpan.FromSeconds(5));
+        progress.Advance(0);
+        string running = output.ToString().Split("\r\u001b[K").Last();
+        progress.Complete();
+
+        Assert.Equal("       ⠋ Rendering customer                       5 s", running);
+        Assert.Equal(
+            ["  × fail Rendering technical                      3 s", "  · done Rendering customer                       5 s"],
+            Lines(output));
+    }
+
     // A quick step shows only its result: the spinner would flash and be gone.
     [Fact]
     public void A_step_quicker_than_the_delay_shows_no_spinner()

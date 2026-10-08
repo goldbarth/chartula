@@ -121,6 +121,8 @@ An output whose audience was not rendered is not written: no `CHANGELOG.md` with
 
 `generate --no-publish` writes every file `generate` writes and leaves the GitHub release notes alone.
 The summary lists the notes under `Skipped (--no-publish)`, so a run you kept local still reads as complete.
+A publishing run that has no technical rendering, because it failed or because `--audience` left it out, lists the notes under `Skipped` with that reason, since the notes are the technical rendering.
+So a run never ends without saying what became of the release notes.
 Use it to keep the record of a run without announcing a release, for example when you compare a prompt change or a model.
 `preview` publishes nothing either way.
 
@@ -274,8 +276,9 @@ Range:   the commits after v1.2.0, up to v1.3.0 (100 commits)
 
 In a terminal the current step is one line with a spinner, redrawn in place, and its time keeps counting while a model call runs.
 So a slow step still shows it is working, and a run that is about to finish is not aborted and paid for again.
-A finished step keeps its line, marked `· done`: the step ended, which says nothing about whether its result is good.
-The step a run failed in is marked `× fail` instead, and the error follows below it.
+A finished step keeps its line, marked `· done`: the step did its work, which says nothing about whether its result is good, so a rendering with review flags is done too.
+A step is marked `× fail` instead when the run stopped in it, and the error follows below it, or when its audience did not render and the run went on with the next one.
+So the steps and the summary agree: an audience the summary reports as failed is not listed as done above it.
 A step shorter than 150 ms shows no spinner, only its finished line.
 In a window narrower than the line, the line gives up parts until it fits in one row: first the spacing and the word "commits", then the time, then the count, and at last the end of the label.
 The width is read with every redraw, so a window resized during a step is right from the next one on.

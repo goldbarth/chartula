@@ -324,6 +324,7 @@ public sealed class ReleasePipeline(
                 cancellationToken));
         }
 
+        string releaseNotes = $"Release notes for {request.Tag} in {request.Repository.Owner}/{request.Repository.Name}";
         if (finalTexts.TryGetValue(Audience.Technical, out string? technical))
         {
             // Only the two technical outputs get the sentence. changelog.json keeps the
@@ -355,9 +356,20 @@ public sealed class ReleasePipeline(
             }
             else
             {
-                skipped.Add($"Release notes for {request.Tag} "
-                    + $"in {request.Repository.Owner}/{request.Repository.Name}");
+                skipped.Add(releaseNotes);
             }
+        }
+        else if (mode == PipelineMode.Generate)
+        {
+            // Nothing above ran, so nothing was published. A publishing run has to say so
+            // and why, or it reads as a run that only lost one of its files (#354).
+            bool asked = request.Audiences is null || request.Audiences.Contains(Audience.Technical);
+            skipped.Add($"{releaseNotes}: they are the technical rendering, which "
+                + (asked ? "failed" : "this run did not ask for"));
+        }
+        else
+        {
+            skipped.Add(releaseNotes);
         }
 
         return (written, skipped, publishFailure);

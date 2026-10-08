@@ -45,7 +45,16 @@ public sealed class ReleaseRenderer(IReleaseChangelogGenerator generator, IRunPr
         foreach (Audience audience in Wanted(audiences))
         {
             _progress.Begin(new ProgressStep(RunStep.Rendering, audience));
-            renderings[audience] = await _generator.GenerateAsync(factBase, audience, cancellationToken);
+            ChangelogGenerationResult rendering = await _generator.GenerateAsync(factBase, audience, cancellationToken);
+            renderings[audience] = rendering;
+
+            // The run goes on with the next audience, but this step did not do its work.
+            // Left to end with the next one, it would stand as done above the summary
+            // that reports the audience as failed (#354).
+            if (!rendering.IsSuccess)
+            {
+                _progress.Fail();
+            }
         }
 
         return renderings;
