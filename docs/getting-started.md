@@ -93,6 +93,14 @@ Fix each `fail`, then run `chartula doctor` again, until it ends with `A run wou
 - **`warn`** lets a run start, but limits it: no GitHub token, a token that may not publish, or pull request titles without a Conventional Commits prefix.
 - **`skip`** is a check that waits for an earlier one; it runs once that one passes.
 
+With the key and the token set, `doctor` on a public repository, [goldbarth/ServiceDeskLite](https://github.com/goldbarth/ServiceDeskLite), looks like this:
+
+![A terminal runs chartula doctor: every check of the repository and the model is ok, and two warnings stand under GitHub, one for a release that is already published and one for a pull request title without a prefix.](assets/doctor.gif)
+
+Two warnings remain, and both are what the repository is like: its release for the tag is already published, and one of its last thirty pull requests has a title without a prefix.
+So the last line says which commands would start, and `generate --no-publish` is the next one to run there.
+The clip is recorded from [`assets/tapes/doctor.tape`](assets/tapes/doctor.tape) with Chartula `0.1.0-preview.5` and `claude-sonnet-5-5` on 2026-10-09, at the speed the command had.
+
 When a message is not enough, these pages go further:
 
 | Check | Where to look |
