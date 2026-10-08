@@ -90,7 +90,7 @@ So a release that cannot be installed or does not run shows up within minutes of
 Commit it in a pull request, as written, with one edit by hand: a line for the release in the note at the top of the file, naming the settings of the run:
 
 ```markdown
-> - `0.1.0-preview.4`: provider `openai-compatible`, model `gpt-6-sol`, thinking `disabled`.
+> - `0.1.0-preview.4`: provider `openai-compatible`, model `gpt-6.1-sol`, thinking `low`.
 ```
 
 Add an option to the line when the run used one that changes the output, such as `--audience technical`.
