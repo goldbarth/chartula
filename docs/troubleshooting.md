@@ -18,7 +18,7 @@ Repository
   ✓ ok    tag           v1.3.0, the nearest tag reachable from HEAD. Pass --tag to choose another.
   ✓ ok    repository    owner/name, from the 'origin' remote. Pass --repo to choose another.
   ✓ ok    config        no chartula.yaml in /work/my-repo, so the defaults apply
-                        To change them, copy https://github.com/goldbarth/chartula/blob/v0.1.0-preview.4/chartula.example.yaml to chartula.yaml.
+                        To change them, copy https://github.com/goldbarth/chartula/blob/v0.1.0-preview.5/chartula.example.yaml to chartula.yaml.
 
 Model
   × fail  model         anthropic at its default endpoint, model claude-sonnet-5
