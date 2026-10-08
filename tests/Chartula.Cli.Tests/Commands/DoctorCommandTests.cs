@@ -109,6 +109,7 @@ public sealed class DoctorCommandTests : IDisposable
         Func<HttpRequestMessage, HttpResponseMessage>? gitHub = null,
         Func<HttpRequestMessage, HttpResponseMessage>? model = null,
         TerminalProfile? profile = null,
+        int? columns = null,
         params string[] args)
     {
         Directory.CreateDirectory(_checkout);
@@ -121,7 +122,8 @@ public sealed class DoctorCommandTests : IDisposable
             new DoctorTransports(
                 new Recording(_gitHubRequests, gitHub ?? GitHub()),
                 new Recording(_modelRequests, model ?? (_ => Json(HttpStatusCode.OK, Answer)))),
-            profile);
+            profile,
+            columns);
         return (exitCode, output.ToString());
     }
 
@@ -400,6 +402,42 @@ public sealed class DoctorCommandTests : IDisposable
         Assert.Contains("\n  ! warn  GitHub write  GitHub does not let this run publish", output.ReplaceLineEndings("\n"));
         Assert.Contains("\n                        Publishing needs a token", output.ReplaceLineEndings("\n"));
         Assert.DoesNotContain('\u001b', output);
+    }
+
+    // #349: left to the terminal, a long detail wraps onto column 0 and no longer reads as
+    // part of its check. Broken between words, every row keeps the indent of the details.
+    [Fact]
+    public async Task On_a_terminal_a_detail_longer_than_the_window_keeps_its_indent()
+    {
+        await CreateCheckoutAsync();
+
+        (_, string output) = await DoctorAsync(
+            AnthropicWithoutKey(), profile: new TerminalProfile(Live: true, ColorDepth.None, Unicode: true), columns: 100);
+
+        string[] lines = output.ReplaceLineEndings("\n").Split('\n');
+        int model = Array.FindIndex(lines, static line => line.StartsWith("  × fail  model ", StringComparison.Ordinal));
+        Assert.Equal("                        No Anthropic API key found in ANTHROPIC_API_KEY. Set one with: export", lines[model + 1]);
+        Assert.Equal("                        ANTHROPIC_API_KEY=<your key> (create one at", lines[model + 2]);
+        Assert.All(
+            lines.Skip(model).TakeWhile(static line => line.Length > 0),
+            static line => Assert.True(line.Length < 100, line));
+    }
+
+    // The check with the longest detail: Anthropic's defaults and no key.
+    private static Hashtable AnthropicWithoutKey() => Environment(
+        ("Chartula__Llm__Provider", null), ("Chartula__Llm__Model", null), ("Chartula__Llm__BaseUrl", null));
+
+    // A log has no width: plain output is never broken, whatever the console reports.
+    [Fact]
+    public async Task Plain_output_is_never_broken()
+    {
+        await CreateCheckoutAsync();
+
+        (_, string output) = await DoctorAsync(AnthropicWithoutKey(), columns: 80);
+
+        Assert.Contains(
+            "No Anthropic API key found in ANTHROPIC_API_KEY. Set one with: export ANTHROPIC_API_KEY=<your key> (create one at",
+            output);
     }
 
     [Fact]

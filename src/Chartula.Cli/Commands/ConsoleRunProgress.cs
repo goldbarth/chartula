@@ -13,21 +13,32 @@ namespace Chartula.Cli.Commands;
 /// Without a live terminal, as in CI or with <c>--plain</c>, each step is one plain line as
 /// it starts, with no control characters, so a job log stays readable and shows the step a
 /// run was in when it stopped.
+/// <para>
+/// A line redrawn in place has to fit in one row, so it is fitted to the terminal's width
+/// each time it is written (#349): first without the padding and the word "commits", then
+/// without the time, then without the count, and at last with the label cut.
+/// </para>
 /// </summary>
 /// <param name="output">Where the steps go: stderr.</param>
 /// <param name="profile">What <paramref name="output"/> may show.</param>
 /// <param name="time">The clock; the system clock unless a test sets one.</param>
-internal sealed class ConsoleRunProgress(TextWriter output, TerminalProfile profile, TimeProvider? time = null)
+/// <param name="width">The terminal's columns, asked for each line; the console's unless a test sets it.</param>
+internal sealed class ConsoleRunProgress(
+    TextWriter output, TerminalProfile profile, TimeProvider? time = null, Func<int?>? width = null)
     : IRunProgress, IDisposable
 {
     // Wide enough for "Reading pull requests" and "Rendering technical".
     private const int LabelWidth = 24;
     private const int CountWidth = 17;
 
+    // The indent, the six status columns and the space before the label.
+    private const int StatusColumns = 9;
+
     // Carriage return, then clear to the end of the line: the line is rewritten in place.
     private const string Rewrite = "\r\u001b[K";
 
     private readonly TimeProvider _time = time ?? TimeProvider.System;
+    private readonly Func<int?> _width = width ?? TerminalWidth.Current;
     private readonly Lock _lock = new();
 
     // One clock for every spinner of the run, so the fade continues from step to step.
@@ -120,6 +131,13 @@ internal sealed class ConsoleRunProgress(TextWriter output, TerminalProfile prof
 
     private void Draw()
     {
+        // Narrower than the spinner and its indent, every frame would wrap and leave a
+        // row behind. The step then shows its finished line only.
+        if (_width() is { } columns && TerminalWidth.Room(columns) < StatusColumns)
+        {
+            return;
+        }
+
         _shown = true;
         string glyph = QuietPulse.Glyph(_time.GetElapsedTime(_created), profile);
         output.Write($"{Rewrite}{Line("     " + glyph)}");
@@ -133,7 +151,30 @@ internal sealed class ConsoleRunProgress(TextWriter output, TerminalProfile prof
     {
         string count = _total is { } total ? $"{_done}/{Commits(total)}" : string.Empty;
         string elapsed = Elapsed(_time.GetElapsedTime(_started));
-        return $"  {status} {_label!.PadRight(LabelWidth)}{count.PadRight(CountWidth)}{elapsed}";
+        string text = $"{_label!.PadRight(LabelWidth)}{count.PadRight(CountWidth)}{elapsed}";
+        if (_width() is { } columns)
+        {
+            text = Fit(text, elapsed, Math.Max(0, TerminalWidth.Room(columns) - StatusColumns));
+        }
+
+        return $"  {status} {text}";
+    }
+
+    // The widest form that fits. Whole parts go before a part is cut, so a narrow line
+    // never ends in half a number: the count says more than the time where a step has
+    // one, and the label is what says which step this is.
+    private string Fit(string full, string elapsed, int room)
+    {
+        if (full.Length <= room)
+        {
+            return full;
+        }
+
+        string label = _label!;
+        string[] narrower = _total is { } total
+            ? [$"{label} {_done}/{Number(total)} {elapsed}", $"{label} {_done}/{Number(total)}", label]
+            : [$"{label} {elapsed}", label];
+        return narrower.FirstOrDefault(text => text.Length <= room) ?? label[..room];
     }
 
     private static string Label(ProgressStep step)
@@ -148,8 +189,9 @@ internal sealed class ConsoleRunProgress(TextWriter output, TerminalProfile prof
         };
     }
 
-    private static string Commits(int count)
-        => count == 1 ? "1 commit" : $"{count.ToString("N0", CultureInfo.InvariantCulture)} commits";
+    private static string Commits(int count) => count == 1 ? "1 commit" : $"{Number(count)} commits";
+
+    private static string Number(int count) => count.ToString("N0", CultureInfo.InvariantCulture);
 
     private static string Elapsed(TimeSpan elapsed)
         => elapsed.TotalSeconds < 60

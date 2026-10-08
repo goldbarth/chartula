@@ -16,6 +16,10 @@ public sealed class ConsoleRunProgressTests
 
     private static readonly TerminalProfile LiveWithoutColor = new(Live: true, ColorDepth.None, Unicode: true);
 
+    // A width that cannot be read: the line is written as if nothing were known. The tests
+    // on the line's form pass it, so they do not depend on the console of the test runner.
+    private static readonly Func<int?> NoWidth = static () => null;
+
     [Fact]
     public void Without_a_live_terminal_each_step_is_one_plain_line_as_it_starts()
     {
@@ -40,7 +44,7 @@ public sealed class ConsoleRunProgressTests
     {
         StringWriter output = new();
         ManualTime time = new();
-        ConsoleRunProgress progress = new(output, LiveWithoutColor, time);
+        ConsoleRunProgress progress = new(output, LiveWithoutColor, time, NoWidth);
 
         progress.Begin(Reading, 100);
         time.Pass(TimeSpan.FromSeconds(4));
@@ -56,7 +60,7 @@ public sealed class ConsoleRunProgressTests
     {
         StringWriter output = new();
         ManualTime time = new();
-        ConsoleRunProgress progress = new(output, LiveWithoutColor, time);
+        ConsoleRunProgress progress = new(output, LiveWithoutColor, time, NoWidth);
 
         progress.Begin(new ProgressStep(RunStep.Rendering, Audience.Technical));
         time.Pass(TimeSpan.FromSeconds(72));
@@ -74,7 +78,7 @@ public sealed class ConsoleRunProgressTests
     {
         StringWriter output = new();
         ManualTime time = new();
-        ConsoleRunProgress progress = new(output, LiveWithoutColor, time);
+        ConsoleRunProgress progress = new(output, LiveWithoutColor, time, NoWidth);
 
         progress.Begin(Reading, 3);
         progress.Advance(1);
@@ -89,7 +93,7 @@ public sealed class ConsoleRunProgressTests
     {
         StringWriter output = new();
         ManualTime time = new();
-        ConsoleRunProgress progress = new(output, LiveWithoutColor, time);
+        ConsoleRunProgress progress = new(output, LiveWithoutColor, time, NoWidth);
 
         progress.Begin(Reading, 2);
         time.Pass(TimeSpan.FromMilliseconds(100));
@@ -105,7 +109,7 @@ public sealed class ConsoleRunProgressTests
     {
         StringWriter output = new();
         ManualTime time = new();
-        ConsoleRunProgress progress = new(output, new TerminalProfile(Live: true, ColorDepth.None, Unicode: false), time);
+        ConsoleRunProgress progress = new(output, new TerminalProfile(Live: true, ColorDepth.None, Unicode: false), time, NoWidth);
 
         progress.Begin(Reading, 3);
         time.Pass(TimeSpan.FromSeconds(1));
@@ -123,7 +127,7 @@ public sealed class ConsoleRunProgressTests
     {
         StringWriter output = new();
         ManualTime time = new();
-        ConsoleRunProgress progress = new(output, new TerminalProfile(Live: true, ColorDepth.None, Unicode: false), time);
+        ConsoleRunProgress progress = new(output, new TerminalProfile(Live: true, ColorDepth.None, Unicode: false), time, NoWidth);
 
         progress.Begin(Reading, 3);
         time.Pass(TimeSpan.FromSeconds(1));
@@ -142,7 +146,7 @@ public sealed class ConsoleRunProgressTests
     {
         StringWriter output = new();
         ManualTime time = new();
-        ConsoleRunProgress progress = new(output, LiveWithoutColor, time);
+        ConsoleRunProgress progress = new(output, LiveWithoutColor, time, NoWidth);
 
         progress.Begin(Reading, 3);
         time.Pass(TimeSpan.FromSeconds(4));
@@ -163,11 +167,123 @@ public sealed class ConsoleRunProgressTests
         Assert.Equal(running[mark.Length..], ended[mark.Length..]);
     }
 
+    // #349: a line wider than the terminal wraps, the carriage return goes back to the start
+    // of its last row only, and every frame leaves a row behind. So the line gives up whole
+    // parts until it fits: the padding and the word "commits", the time, the count.
+    [Theory]
+    [InlineData(80, "       ⠋ Reading pull requests   37/100 commits   4 s")]
+    [InlineData(54, "       ⠋ Reading pull requests   37/100 commits   4 s")]
+    [InlineData(53, "       ⠋ Reading pull requests 37/100 4 s")]
+    [InlineData(42, "       ⠋ Reading pull requests 37/100 4 s")]
+    [InlineData(41, "       ⠋ Reading pull requests 37/100")]
+    [InlineData(38, "       ⠋ Reading pull requests 37/100")]
+    [InlineData(37, "       ⠋ Reading pull requests")]
+    [InlineData(31, "       ⠋ Reading pull requests")]
+    [InlineData(30, "       ⠋ Reading pull request")]
+    [InlineData(10, "       ⠋ ")]
+    public void A_running_step_is_fitted_to_the_width_of_the_terminal(int columns, string expected)
+    {
+        StringWriter output = new();
+        ManualTime time = new();
+        ConsoleRunProgress progress = new(output, LiveWithoutColor, time, () => columns);
+
+        progress.Begin(Reading, 100);
+        time.Pass(TimeSpan.FromSeconds(4));
+        progress.Advance(37);
+
+        Assert.Equal(expected, output.ToString().Split("\r\u001b[K").Last());
+    }
+
+    // A step without a count keeps its time for as long as there is room for it.
+    [Theory]
+    [InlineData(48, "  · done Rendering technical 1 min 12 s")]
+    [InlineData(39, "  · done Rendering technical")]
+    public void A_finished_step_is_fitted_to_the_same_width(int columns, string expected)
+    {
+        StringWriter output = new();
+        ManualTime time = new();
+        ConsoleRunProgress progress = new(output, LiveWithoutColor, time, () => columns);
+
+        progress.Begin(new ProgressStep(RunStep.Rendering, Audience.Technical));
+        time.Pass(TimeSpan.FromSeconds(72));
+        progress.Complete();
+
+        Assert.Equal([expected], Lines(output));
+    }
+
+    // What the issue asks for, at every width a line can be drawn in: no frame and no
+    // finished line reaches the last column, so none wraps and none is left behind.
+    [Fact]
+    public void No_line_is_wider_than_the_terminal_at_any_width()
+    {
+        for (int columns = 10; columns <= 70; columns++)
+        {
+            StringWriter output = new();
+            ManualTime time = new();
+            int width = columns;
+            ConsoleRunProgress progress = new(output, LiveWithoutColor, time, () => width);
+
+            progress.Begin(Reading, 1_000);
+            time.Pass(TimeSpan.FromSeconds(125));
+            progress.Advance(999);
+            progress.Begin(new ProgressStep(RunStep.Rendering, Audience.Technical));
+            time.Pass(TimeSpan.FromSeconds(125));
+            progress.Fail();
+
+            string[] drawn = output.ToString().Replace(Environment.NewLine, "\n")
+                .Split(["\r\u001b[K", "\n"], StringSplitOptions.RemoveEmptyEntries);
+            Assert.NotEmpty(drawn);
+            Assert.All(drawn, line => Assert.True(line.Length < width, $"{width} columns: '{line}'"));
+        }
+    }
+
+    // Narrower than the spinner and its indent there is nothing to fit: the step shows no
+    // frames, and its finished line once.
+    [Fact]
+    public void Below_ten_columns_a_step_draws_no_frames()
+    {
+        StringWriter output = new();
+        ManualTime time = new();
+        ConsoleRunProgress progress = new(output, LiveWithoutColor, time, static () => 9);
+
+        progress.Begin(Reading, 3);
+        time.Pass(TimeSpan.FromSeconds(1));
+        progress.Advance(1);
+        progress.Advance(2);
+
+        Assert.Empty(output.ToString());
+
+        progress.Complete();
+
+        Assert.Equal(["  · done "], Lines(output));
+    }
+
+    // The width is asked for with every line, so a window resized during a step is right
+    // from the next frame on.
+    [Fact]
+    public void A_resize_during_a_step_shows_in_the_next_frame()
+    {
+        StringWriter output = new();
+        ManualTime time = new();
+        int columns = 80;
+        ConsoleRunProgress progress = new(output, LiveWithoutColor, time, () => columns);
+
+        progress.Begin(Reading, 100);
+        time.Pass(TimeSpan.FromSeconds(4));
+        progress.Advance(37);
+        columns = 40;
+        progress.Advance(38);
+
+        Assert.Equal(
+            ["       ⠋ Reading pull requests   37/100 commits   4 s", "       ⠋ Reading pull requests 38/100"],
+            output.ToString().Split("\r\u001b[K", StringSplitOptions.RemoveEmptyEntries));
+    }
+
     [Fact]
     public void Completing_twice_or_without_a_step_writes_nothing_more()
     {
         StringWriter output = new();
-        ConsoleRunProgress progress = new(output, LiveWithoutColor, new ManualTime());
+        ConsoleRunProgress progress = new(output, LiveWithoutColor, new ManualTime(), NoWidth);
 
         progress.Complete();
         progress.Complete();

@@ -48,13 +48,14 @@ internal static class DoctorCommand
         TextWriter output,
         DoctorTransports? transports = null,
         TerminalProfile? profile = null,
+        int? columns = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(args);
         ArgumentNullException.ThrowIfNull(environment);
         ArgumentNullException.ThrowIfNull(output);
 
-        Report report = new(output, profile ?? TerminalProfile.Plain);
+        Report report = new(output, profile ?? TerminalProfile.Plain, columns);
         report.Header(directory);
 
         // The checks in the order a run meets them, in three groups (#339).
@@ -439,10 +440,19 @@ internal static class DoctorCommand
     /// Plain output, as in a log or with <c>--plain</c>, keeps the word alone, so the report
     /// pasted into an issue reads the same as before.
     /// </para>
+    /// <para>
+    /// On a terminal a detail longer than the window is broken between words and keeps its
+    /// indent (#349). Left to the terminal, it wraps onto column 0 and no longer reads as
+    /// part of its check. Plain output is never broken: a log has no width.
+    /// </para>
     /// </summary>
-    private sealed class Report(TextWriter output, TerminalProfile profile)
+    private sealed class Report(TextWriter output, TerminalProfile profile, int? columns)
     {
         private const int CheckWidth = 13;
+
+        // Below this a detail broken into rows is a column of single words, and the
+        // terminal's own wrapping reads no worse.
+        private const int NarrowestDetail = 20;
 
         private readonly bool _marked = profile.Unicode;
         private bool _grouped;
@@ -490,11 +500,19 @@ internal static class DoctorCommand
             string status = _marked ? StatusMarks.Format(mark, profile) : $"{StatusMarks.Word(mark),-4}";
             int width = _marked ? 6 : 4;
             string indent = new(' ', 2 + width + 2 + CheckWidth + 1);
-            string[] lines = detail.ReplaceLineEndings("\n").Split('\n');
-            output.WriteLine($"  {status}  {check,-CheckWidth} {lines[0].TrimEnd()}");
-            foreach (string line in lines.Skip(1).Where(line => line.Trim().Length > 0))
+            string[] lines = [.. detail.ReplaceLineEndings("\n").Split('\n')
+                .Where(static (line, index) => index == 0 || line.Trim().Length > 0)
+                .SelectMany(Rows)];
+            output.WriteLine($"  {status}  {check,-CheckWidth} {lines[0]}");
+            foreach (string line in lines.Skip(1))
             {
-                output.WriteLine(indent + line.Trim());
+                output.WriteLine(indent + line);
+            }
+
+            IEnumerable<string> Rows(string line)
+            {
+                int room = profile.Live && columns is { } known ? TerminalWidth.Room(known) - indent.Length : 0;
+                return room >= NarrowestDetail ? TerminalWidth.Wrap(line.Trim(), room) : [line.Trim()];
             }
         }
     }
