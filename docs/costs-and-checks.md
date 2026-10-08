@@ -101,6 +101,7 @@ So read the flags before you publish, because no output file marks a flagged ent
 
 **The [rule-based check](glossary.md#rule-based-check)** always runs and makes no model call.
 It flags a number in the text that no fact contains, and a quoted or backticked name that appears in no fact.
+A number is the same with and without its thousands separators, so `8000` is backed by a pull request that says `8,000`.
 So it is free, and it catches only what a lookup can decide.
 
 **The thorough check** asks a model whether each claim of the rendering is backed by the facts, one call per rendering.

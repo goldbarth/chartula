@@ -24,7 +24,12 @@ namespace Chartula.Core.Faithfulness;
 /// </remarks>
 public sealed partial class RuleBasedFaithfulnessChecker : IRuleBasedFaithfulnessChecker
 {
-    [GeneratedRegex(@"\d+(?:\.\d+)*", RegexOptions.CultureInvariant)]
+    // A number with thousands separators, such as "8,000" or "1,234.50", or a plain run
+    // of digits with its dots, such as "8000", "1.5" or "10.0.1". The first form needs a
+    // comma directly followed by exactly three digits, so "1, 2, 3" and "12,34" stay
+    // lists. Three-digit numbers listed without a space, "100,200", read as one number:
+    // text alone cannot tell them from a hundred thousand, and prose puts the space.
+    [GeneratedRegex(@"\d{1,3}(?:,\d{3})+(?!\d)(?:\.\d+)*|\d+(?:\.\d+)*", RegexOptions.CultureInvariant)]
     private static partial Regex Number();
 
     // Spans in backticks or double quotes: the usual shape of an invented API,
@@ -57,7 +62,7 @@ public sealed partial class RuleBasedFaithfulnessChecker : IRuleBasedFaithfulnes
 
         foreach (Match match in Number().Matches(comparable))
         {
-            if (!allowedNumbers.Contains(match.Value))
+            if (!allowedNumbers.Contains(WithoutSeparators(match.Value)))
             {
                 findings.Add($"The number '{match.Value}' is not supported by the facts.");
             }
@@ -88,9 +93,13 @@ public sealed partial class RuleBasedFaithfulnessChecker : IRuleBasedFaithfulnes
 
     private static string Comparable(string text) => Whitespace().Replace(Fence().Replace(text, " "), " ");
 
+    // "8,000" and "8000" are one number (#350). Compared as written, the facts' "8,000"
+    // did not back a rendering's "8000", and read as "8" and "000" it backed both of those.
+    private static string WithoutSeparators(string number) => number.Replace(",", string.Empty, StringComparison.Ordinal);
+
     private static HashSet<string> CollectAllowedNumbers(FactBase factBase, string haystack)
     {
-        HashSet<string> allowed = new(Number().Matches(haystack).Select(static m => m.Value));
+        HashSet<string> allowed = new(Number().Matches(haystack).Select(static m => WithoutSeparators(m.Value)));
         foreach (ChangeFact change in factBase.Changes)
         {
             if (change.Number is { } number)
