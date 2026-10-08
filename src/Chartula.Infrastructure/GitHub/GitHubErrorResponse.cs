@@ -66,7 +66,7 @@ internal sealed class GitHubErrorResponse
         {
             string remedy = WithToken
                 ? "Wait until it resets and run again."
-                : $"A token in {tokenVariable} raises it; see the warning at the start of the run.";
+                : $"Without a token GitHub allows 60 requests an hour; a token in {tokenVariable} raises that to 5000.";
             return $"GitHub's rate limit is spent ({Status}). {remedy}";
         }
 

@@ -165,6 +165,8 @@ internal static class CommandLineArguments
     /// Every value given for <paramref name="name"/>, whether the option was repeated
     /// or given once with comma-separated values.
     /// Both styles are common, and neither is worth making a person remember.
+    /// An empty value, as a trailing comma leaves, is kept: whether it is an error is for
+    /// the option to say, and dropped here it would be accepted in silence (#353).
     /// </summary>
     public static IReadOnlyList<string> GetOptions(IReadOnlyList<string> args, string name)
     {
@@ -176,8 +178,7 @@ internal static class CommandLineArguments
                 continue;
             }
 
-            values.AddRange(args[i + 1]
-                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+            values.AddRange(args[i + 1].Split(',', StringSplitOptions.TrimEntries));
         }
 
         return values;

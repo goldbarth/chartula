@@ -23,6 +23,7 @@ Run `preview`, `generate` and `doctor` from a checkout of the repository the rel
 `-h`, `--help` and `help` print the help text as the first word, and so does `chartula` without arguments.
 `-h` and `--help` print it after a command too, such as `chartula generate --help`, and start nothing.
 An unknown first word prints `Unknown command '<word>'.` and the help text, and exits with 1.
+`chartula version` is such a word; its line also names `chartula --version`.
 
 ## Options
 
@@ -78,6 +79,7 @@ No --tag given, and no tag is reachable from HEAD in '/work/my-repo'. Pass --tag
 
 $ chartula preview --repo name-only
 Invalid option --repo 'name-only'. Expected <owner/name>.
+chartula --help lists every command and its options.
 ```
 
 ### `--since` and `--yes`
@@ -105,7 +107,11 @@ A name that is not an audience stops the run before it reads anything:
 ```console
 $ chartula generate --audience developers
 Unknown audience 'developers'. There are three: technical, customer, product.
+chartula --help lists every command and its options.
 ```
+
+A list with an empty place, such as `--audience product,`, is refused the same way, and so is a number.
+So a slip of the keyboard stops the run instead of rendering an audience you did not name.
 
 Each audience is one rendering call and one [thorough check](glossary.md#thorough-check), so a run for one audience pays for one.
 An output whose audience was not rendered is not written: no `CHANGELOG.md` without `technical`, no `release-<tag>.md` without `customer`.

@@ -77,7 +77,7 @@ When the limit runs out, the run stops partway through and names it:
 
 ```console
 $ chartula preview
-Error: GitHub's rate limit is spent (403 Forbidden). A token in GITHUB_TOKEN raises it; see the warning at the start of the run.
+Error: GitHub's rate limit is spent (403 Forbidden). Without a token GitHub allows 60 requests an hour; a token in GITHUB_TOKEN raises that to 5000.
 ```
 
 ## GitHub Enterprise

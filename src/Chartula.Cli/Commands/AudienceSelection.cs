@@ -27,6 +27,9 @@ internal static class AudienceSelection
     /// Returns false and fills <paramref name="error"/> for a name that is not an audience.
     /// Otherwise a misspelling would render nothing and look like a release with
     /// nothing to say.
+    /// A name is one of the three words and nothing else (#353): a list with an empty place,
+    /// such as <c>product,</c>, and a number, which <see cref="Enum.TryParse{TEnum}(string, bool, out TEnum)"/>
+    /// reads as the audience with that value, are refused rather than guessed at.
     /// </summary>
     public static bool TryParse(
         IReadOnlyList<string> args,
@@ -46,12 +49,18 @@ internal static class AudienceSelection
         List<Audience> parsed = [];
         foreach (string name in named)
         {
-            if (!Enum.TryParse(name, ignoreCase: true, out Audience audience)
-                || !Enum.IsDefined(audience))
+            string three = string.Join(", ", Enum.GetNames<Audience>().Select(n => n.ToLowerInvariant()));
+            if (name.Length == 0)
             {
-                error = $"Unknown audience '{name}'. There are three: "
-                        + string.Join(", ", Enum.GetNames<Audience>().Select(n => n.ToLowerInvariant()))
-                        + ".";
+                error = $"--audience has a comma with no audience next to it. Name each one, such as "
+                        + $"--audience technical,product. There are three: {three}.";
+                return false;
+            }
+
+            if (!Enum.GetNames<Audience>().Contains(name, StringComparer.OrdinalIgnoreCase)
+                || !Enum.TryParse(name, ignoreCase: true, out Audience audience))
+            {
+                error = $"Unknown audience '{name}'. There are three: {three}.";
                 return false;
             }
 

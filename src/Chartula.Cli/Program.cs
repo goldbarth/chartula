@@ -34,7 +34,11 @@ internal static class Program
 
         if (!CommandLineArguments.IsCommand(args[0]))
         {
-            Console.Error.WriteLine($"Unknown command '{args[0]}'.");
+            // The one unknown word whose meaning is not in doubt. It is still refused, and
+            // told what to type (#353).
+            Console.Error.WriteLine(args[0].Equals("version", StringComparison.OrdinalIgnoreCase)
+                ? $"Unknown command '{args[0]}'. For the installed version, run chartula {VersionFlag}."
+                : $"Unknown command '{args[0]}'.");
             PrintUsage();
             return 1;
         }
@@ -48,9 +52,7 @@ internal static class Program
 
         if (CommandLineArguments.Check(args) is { } argumentError)
         {
-            Console.Error.WriteLine(argumentError);
-            Console.Error.WriteLine("chartula --help lists every command and its options.");
-            return 1;
+            return RefuseArguments(argumentError);
         }
 
         if (args[0] is DoctorCommand.Name)
@@ -73,16 +75,22 @@ internal static class Program
         PipelineMode mode = ParseMode(args[0], args)
                             ?? throw new InvalidOperationException($"'{args[0]}' is a command without a pipeline mode.");
 
+        // Every value that can be judged from the arguments alone is judged here, so a
+        // refused argument prints the same two lines whichever one it is, and no header
+        // of a run that never started (#353).
         if (!AudienceSelection.TryParse(args, out IReadOnlyCollection<Audience>? audiences, out string? audienceError))
         {
-            Console.Error.WriteLine(audienceError);
-            return 1;
+            return RefuseArguments(audienceError!);
         }
 
         if (!ReleaseStart.TryParse(args, out ReleaseStart start, out string? startError))
         {
-            Console.Error.WriteLine(startError);
-            return 1;
+            return RefuseArguments(startError!);
+        }
+
+        if (ReleaseTarget.CheckRepositoryOption(args) is { } repositoryError)
+        {
+            return RefuseArguments(repositoryError);
         }
 
         // Progress and notices go to stderr and the report to stdout, so each stream
@@ -205,6 +213,13 @@ internal static class Program
 
     private const string VersionFlag = "--version";
 
+    private static int RefuseArguments(string error)
+    {
+        Console.Error.WriteLine(error);
+        Console.Error.WriteLine("chartula --help lists every command and its options.");
+        return 1;
+    }
+
     /// <summary>
     /// The version with the commit it was built from, in the form <c>changelog.json</c>
     /// records as <c>toolVersion</c>, so a bug report names the same build a run file does.
@@ -250,8 +265,8 @@ internal static class Program
 
         How it looks:
           --plain        Plain lines only: no spinner, no colour, no symbols beyond
-                         ASCII. Also the default without a terminal, in CI, with
-                         TERM=dumb, and without colour with NO_COLOR set.
+                         ASCII. Also the default without a terminal, in CI and
+                         with TERM=dumb. NO_COLOR takes the colour only.
 
         doctor takes --tag, --repo and --plain; --no-publish and --replace-published are for
         generate only.
