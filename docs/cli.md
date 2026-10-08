@@ -256,12 +256,12 @@ After the header, a run shows each step as it starts, with its count where it ha
 ```console
 $ chartula generate --tag v1.3.0
 ...
-Range:  the commits after v1.2.0, up to v1.3.0 (100 commits)
+Range:   the commits after v1.2.0, up to v1.3.0 (100 commits)
   · done Reading pull requests   100/100 commits  4 s
   · done Rendering technical                      12 s
   · done Rendering customer                       14 s
   · done Checking technical                       3 s
-  ⠼      Checking customer                        5 s
+       ⠼ Checking customer                        5 s
 ```
 
 In a terminal the current step is one line with a spinner, redrawn in place, and its time keeps counting while a model call runs.

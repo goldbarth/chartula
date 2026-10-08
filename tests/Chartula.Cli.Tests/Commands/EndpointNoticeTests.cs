@@ -27,6 +27,18 @@ public sealed class EndpointNoticeTests
         Assert.Contains("https://api.github.com/, token from GITHUB_TOKEN", notice);
     }
 
+    // #351: the header's values share the column the step labels below it start on, so the
+    // two do not sit one column apart.
+    [Fact]
+    public void Every_value_starts_on_the_column_of_the_step_labels()
+    {
+        string notice = Notice(("Chartula__Faithfulness__Model", "claude-opus-5"));
+
+        Assert.Equal(
+            ["Model:   a", "         c", "         t", "GitHub:  h"],
+            notice.ReplaceLineEndings("\n").Split('\n').Select(static line => line[..10]));
+    }
+
     // #210: an unset variable is not named as the source of a credential the run lacks.
     [Fact]
     public void Says_unauthenticated_when_a_credential_variable_is_unset_or_blank()

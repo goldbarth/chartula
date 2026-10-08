@@ -47,7 +47,7 @@ public sealed class ConsoleRunProgressTests
         progress.Advance(37);
 
         string last = output.ToString().Split("\r\u001b[K").Last();
-        Assert.Equal("  ⠋      Reading pull requests   37/100 commits   4 s", last);
+        Assert.Equal("       ⠋ Reading pull requests   37/100 commits   4 s", last);
     }
 
     // A finished step keeps its line with the time it took, so the steps read as a list.
@@ -114,6 +114,53 @@ public sealed class ConsoleRunProgressTests
 
         Assert.All(output.ToString(), character => Assert.True(character < 128));
         Assert.Equal(["  x fail Reading pull requests   1/3 commits      1 s"], Lines(output));
+    }
+
+    // #351: the glyph is read with the step it belongs to. One space, because an ASCII
+    // frame that touches the label would read "|Reading".
+    [Fact]
+    public void Without_unicode_the_spinner_stands_one_space_before_its_label_too()
+    {
+        StringWriter output = new();
+        ManualTime time = new();
+        ConsoleRunProgress progress = new(output, new TerminalProfile(Live: true, ColorDepth.None, Unicode: false), time);
+
+        progress.Begin(Reading, 3);
+        time.Pass(TimeSpan.FromSeconds(1));
+        progress.Advance(1);
+
+        string last = output.ToString().Split("\r\u001b[K").Last();
+        Assert.Equal("       - Reading pull requests   1/3 commits      1 s", last);
+    }
+
+    // #351: the mark fills the columns the spinner stood at the end of, so the label, the
+    // count and the time of a step do not move when it ends.
+    [Theory]
+    [InlineData(false, "  · done ")]
+    [InlineData(true, "  × fail ")]
+    public void Only_the_status_columns_change_when_a_step_ends(bool failed, string mark)
+    {
+        StringWriter output = new();
+        ManualTime time = new();
+        ConsoleRunProgress progress = new(output, LiveWithoutColor, time);
+
+        progress.Begin(Reading, 3);
+        time.Pass(TimeSpan.FromSeconds(4));
+        progress.Advance(1);
+        string running = output.ToString().Split("\r\u001b[K").Last();
+        if (failed)
+        {
+            progress.Fail();
+        }
+        else
+        {
+            progress.Complete();
+        }
+
+        string ended = Lines(output).Single();
+        Assert.Equal("       ⠋ ", running[..mark.Length]);
+        Assert.Equal(mark, ended[..mark.Length]);
+        Assert.Equal(running[mark.Length..], ended[mark.Length..]);
     }
 
     [Fact]

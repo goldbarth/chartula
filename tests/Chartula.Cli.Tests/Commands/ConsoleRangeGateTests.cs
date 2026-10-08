@@ -28,7 +28,7 @@ public sealed class ConsoleRangeGateTests
 
         gate.Announce(FirstTag);
 
-        Assert.Equal("Range:  every commit up to v0.1.0 (100 commits), the first tag", output.ToString().TrimEnd());
+        Assert.Equal("Range:   every commit up to v0.1.0 (100 commits), the first tag", output.ToString().TrimEnd());
     }
 
     [Fact]
@@ -38,7 +38,7 @@ public sealed class ConsoleRangeGateTests
 
         gate.Announce(Range(from: "v0.0.9", commits: 1));
 
-        Assert.Equal("Range:  the commits after v0.0.9, up to v0.1.0 (1 commit)", output.ToString().TrimEnd());
+        Assert.Equal("Range:   the commits after v0.0.9, up to v0.1.0 (1 commit)", output.ToString().TrimEnd());
     }
 
     [Fact]

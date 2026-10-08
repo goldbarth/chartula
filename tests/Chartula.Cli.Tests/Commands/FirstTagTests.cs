@@ -37,7 +37,7 @@ public sealed class FirstTagTests : IDisposable
             "preview", "--tag", "v0.1.0", "--repo", "owner/does-not-exist");
 
         Assert.Equal(1, exitCode);
-        Assert.Contains("Range:  every commit up to v0.1.0 (2 commits), the first tag", error);
+        Assert.Contains("Range:   every commit up to v0.1.0 (2 commits), the first tag", error);
         Assert.Contains("--since <ref>: the commits after <ref>, up to v0.1.0", error);
         Assert.Contains("Pass --yes to confirm it up front.", error);
         Assert.Contains("Stopped: The range of v0.1.0 was not confirmed", output);
@@ -61,7 +61,7 @@ public sealed class FirstTagTests : IDisposable
             "preview", "--tag", "v0.1.0", "--repo", "owner/does-not-exist", "--yes");
 
         Assert.Equal(1, exitCode);
-        Assert.Contains("Range:  every commit up to v0.1.0 (2 commits), the first tag", error);
+        Assert.Contains("Range:   every commit up to v0.1.0 (2 commits), the first tag", error);
         Assert.DoesNotContain("Stopped:", output);
         Assert.DoesNotContain("[y/N]", error);
         Assert.Contains("127.0.0.1", output);

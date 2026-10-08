@@ -133,7 +133,7 @@ public sealed class ThoroughCheckModelTests
         string own = EndpointNotice.For(Configure("llm:\n  model: claude-sonnet-5\nfaithfulness:\n  model: claude-opus-5\n  thinking: disabled"));
 
         Assert.DoesNotContain("thorough check:", same);
-        Assert.Contains("        thorough check: claude-opus-5, thinking disabled", own);
+        Assert.Contains("         thorough check: claude-opus-5, thinking disabled", own);
     }
 
     /// <summary>Records every request body and answers each with a valid reply for its call.</summary>
