@@ -233,6 +233,8 @@ Each check asks what a run asks, through the same code, so a failed check shows 
 
 The last line counts the warnings and says what they mean for a run: a warning under `GitHub write`, for a token that may not publish or a release that is already published, stops `generate` before its first model call, so the line says that `preview` and `generate --no-publish` would start, not that a run would.
 Without a terminal on stdout, or with `--plain`, each status is its word alone, such as `ok`, so a report pasted into an issue holds no symbols or colour codes.
+On a terminal, a detail longer than the window is broken between words and keeps its indent, so it still reads as part of its check; a URL is never broken.
+Plain output is not broken at all, because a log has no width.
 
 `doctor` writes no file, publishes nothing, and names variables, never their values.
 The endpoint check is the one that costs: it asks each model a run uses for an answer of at most 16 tokens, about a hundred with the prompt, because only an answer proves the key, the model id and the endpoint together.
@@ -269,6 +271,9 @@ So a slow step still shows it is working, and a run that is about to finish is n
 A finished step keeps its line, marked `· done`: the step ended, which says nothing about whether its result is good.
 The step a run failed in is marked `× fail` instead, and the error follows below it.
 A step shorter than 150 ms shows no spinner, only its finished line.
+In a window narrower than the line, the line gives up parts until it fits in one row: first the spacing and the word "commits", then the time, then the count, and at last the end of the label.
+The width is read with every redraw, so a window resized during a step is right from the next one on.
+So a narrow pane shows less of a step, but never a new line per frame.
 The steps are the ones the run takes: one GitHub request per commit, then one rendering per audience, then the checks of each rendering; a `preview` shows the first step only.
 There is no estimate of the time remaining, because how long a model call takes is not known before it returns.
 

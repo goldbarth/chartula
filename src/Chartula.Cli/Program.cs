@@ -62,7 +62,12 @@ internal static class Program
                 CommandLineArguments.HasFlag(args, TerminalProfile.PlainFlag),
                 Console.OutputEncoding);
             return await DoctorCommand.RunAsync(
-                args, Directory.GetCurrentDirectory(), Environment.GetEnvironmentVariables(), Console.Out, profile: doctorReport);
+                args,
+                Directory.GetCurrentDirectory(),
+                Environment.GetEnvironmentVariables(),
+                Console.Out,
+                profile: doctorReport,
+                columns: TerminalWidth.Current());
         }
 
         PipelineMode mode = ParseMode(args[0], args)
