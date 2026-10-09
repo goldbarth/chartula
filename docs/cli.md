@@ -302,7 +302,7 @@ How much a terminal shows depends on what it says it can do:
 | A console whose encoding is not UTF-8 | `\| / - \` for the spinner, `.` and `x` for the marks. |
 | Not a terminal, `CI` set, `TERM=dumb`, or `--plain` | One plain line per step, as below. |
 
-Without a terminal on stderr, as in CI, or with `--plain`, each step is one plain line as it starts, `Reading pull requests (100 commits)` or `Rendering technical`, with no control characters and nothing beyond ASCII, so a job log stays readable.
+Without a terminal on stderr, as in CI, or with `--plain`, each step is one plain line as it starts, `Reading pull requests (100 commits)` or `Rendering technical`, so a job log stays readable. A redirected stream carries no control characters. On a terminal, the .NET runtime writes one keypad application-mode sequence; `--plain` does not remove it.
 When a step fails, it is the last line shown, and the error follows below it.
 [A slow run](troubleshooting.md#a-slow-run) shows how to read the steps and the summary when a run takes long.
 

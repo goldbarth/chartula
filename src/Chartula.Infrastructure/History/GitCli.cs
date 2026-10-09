@@ -21,6 +21,7 @@ internal static class GitCli
             WorkingDirectory = workingDirectory,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
+            RedirectStandardInput = true,
             UseShellExecute = false,
         };
         foreach (string argument in arguments)
@@ -41,6 +42,7 @@ internal static class GitCli
 
         Task<string> standardOutput = process.StandardOutput.ReadToEndAsync(cancellationToken);
         Task<string> standardError = process.StandardError.ReadToEndAsync(cancellationToken);
+        process.StandardInput.Close();
         await process.WaitForExitAsync(cancellationToken);
 
         return new GitResult(process.ExitCode, await standardOutput, await standardError);
