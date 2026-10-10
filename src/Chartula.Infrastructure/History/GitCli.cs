@@ -21,6 +21,10 @@ internal static class GitCli
             WorkingDirectory = workingDirectory,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
+            // No command a run calls reads stdin, and it is redirected all the same. A child
+            // that inherits it counts for the .NET runtime as one that uses the terminal, and
+            // the runtime sets the terminal up again when that child exits: its keypad mode
+            // sequence, once more after every git call (#348).
             RedirectStandardInput = true,
             UseShellExecute = false,
         };
@@ -42,6 +46,8 @@ internal static class GitCli
 
         Task<string> standardOutput = process.StandardOutput.ReadToEndAsync(cancellationToken);
         Task<string> standardError = process.StandardError.ReadToEndAsync(cancellationToken);
+        // Closed before git is waited for, so a git that does ask for input reads the end
+        // of it and fails, instead of waiting on a pipe nobody writes to.
         process.StandardInput.Close();
         await process.WaitForExitAsync(cancellationToken);
 
