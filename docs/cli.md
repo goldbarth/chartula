@@ -303,6 +303,10 @@ How much a terminal shows depends on what it says it can do:
 | Not a terminal, `CI` set, `TERM=dumb`, or `--plain` | One plain line per step, as below. |
 
 Without a terminal on stderr, as in CI, or with `--plain`, each step is one plain line as it starts, `Reading pull requests (100 commits)` or `Rendering technical`, with no control characters and nothing beyond ASCII, so a job log stays readable.
+That is what Chartula writes; the .NET runtime it runs on adds one sequence of its own, `ESC [ ? 1 h ESC =`, which switches the keypad to application mode.
+It is written once per run, before the first line, and to the terminal itself whenever stdout or stdin is one, whatever stderr is.
+`--plain`, `CI` and `NO_COLOR` do not remove it; `TERM=dumb` does.
+A stream redirected into a file or a pipe never carries it, so a job log is only affected where the job allocates a pseudo terminal or the session is recorded, as with `script`; set `TERM=dumb` there to keep the recording free of it.
 When a step fails, it is the last line shown, and the error follows below it.
 [A slow run](troubleshooting.md#a-slow-run) shows how to read the steps and the summary when a run takes long.
 
