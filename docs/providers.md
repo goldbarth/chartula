@@ -125,8 +125,9 @@ Model:   openai-compatible at http://localhost:11434/v1, unauthenticated, OPENAI
 LM Studio serves the same dialect at `http://localhost:1234/v1`.
 The header says `unauthenticated` and the run continues, because a local server does not read the `Authorization` header and the run needs no key.
 
-No local model has passed the [model comparison](costs-and-checks.md#local-models) yet: `qwen3:14b` failed there as the rephrasing model and as the checker, and `granite4.1-guardian:8b` as the checker.
-Until a local model passes, read a local run's output line by line before you publish anything from it.
+The [September comparison](costs-and-checks.md#local-models) recorded an invented entry from `qwen3:14b`, contradictory reasons in its flags, and thinking logs in flags from `granite4.1-guardian:8b`.
+Those observations concern two local configurations and establish no quality ranking for other local models.
+Read a local run's output line by line before publishing it.
 
 ### The context window is the first thing to get right
 
@@ -170,25 +171,36 @@ On such an endpoint, a clean check says less than it seems.
 ## Choosing a model
 
 `llm.model` is passed to the provider as written, so any id the provider serves works.
-These are the ids Chartula has been run with:
+These are the hosted model ids recorded in the dated comparisons:
 
 | Model id | Provider | Compared | Notes |
 | --- | --- | --- | --- |
-| `gpt-6-sol` | OpenAI | 2026-09-25 | The steadier checker. |
-| `gpt-6-luna` | OpenAI | 2026-09-25 | The cheapest to rephrase with. |
-| `claude-sonnet-5` | Anthropic | pending | The default. |
-| `claude-opus-5` | Anthropic | pending | The top tier. |
-| `claude-opus-4-8` | Anthropic | pending | |
-| `claude-haiku-4-5` | Anthropic | pending | A 200K context and 64K output: keep `maxOutputTokens` at or below 64000. |
+| `gpt-6-sol` | OpenAI | 2026-09-25 | Writing, checking and thinking settings on one release. |
+| `gpt-6-luna` | OpenAI | 2026-09-25, 2026-10-09 | Lowest October cost on small, typical and large releases when also checking; neither October combination using it to write completed the sparse-description case. |
+| `gpt-6.1-sol` | OpenAI | 2026-10-09 | Writing and checking together completed 12/12 runs across four scenarios. |
+| `gpt-6-astra` | OpenAI | 2026-10-09 | Writing with `gpt-6.1-sol` checking completed 6/6 runs; only typical and sparse-description releases were measured. |
+| `claude-haiku-5-5` | Anthropic | 2026-10-09 | Writing and checking together completed 10/12 runs; writing with Sonnet checking completed 11/12. |
+| `claude-sonnet-5-5` | Anthropic | 2026-10-09 | Writing and checking together completed 12/12 runs across four scenarios. |
+| `claude-opus-5-5` | Anthropic | 2026-10-09 | Writing with Sonnet checking completed 5/6 runs; only typical and sparse-description releases were measured. |
+
+Chartula's configured Anthropic default is still `claude-sonnet-5`.
+That exact id was not in these comparisons; the Sonnet 5.5 figures do not measure the default.
+The earlier unmeasured Anthropic ids are omitted from the comparison table.
+Completion means that both requested audiences rendered, not that their text was accurate or ready to publish.
 
 Anthropic's model ids are complete as written, so do not append a date suffix.
 Every model in the table supports the structured output the thorough check needs.
 Prices change, so look them up at the source: [Anthropic](https://www.anthropic.com/pricing#api), [OpenAI](https://openai.com/api/pricing/).
 
-The [model comparison of 2026-09-25](costs-and-checks.md#the-model-comparison-of-2026-09-25) has the figures behind the notes, what they cannot tell, and the recommendations drawn from them.
-In short, `gpt-6-luna` rendered at the lowest cost, `gpt-6-sol` was the steadier checker, and thinking lowered no [flag](glossary.md#flag) while it raised cost and duration.
-Read the output of a cheaper setup before you adopt it, because changelog quality is what the saving could cost.
-For the October measurements with OpenAI and Anthropic across four release scenarios, see [What to expect from Chartula](what-to-expect.md).
+The [October comparison](costs-and-checks.md#the-provider-comparison-of-2026-10-09) measures OpenAI and Anthropic under the same release, prompt and input conditions within each scenario.
+The [September comparison](costs-and-checks.md#the-model-comparison-of-2026-09-25) measures settings with an earlier Chartula version and prompt; its figures are kept separate.
+
+If completing both audiences is your first concern, try the measured Sol / Sol or Sonnet / Sonnet settings on your release: each completed all twelve October attempts.
+For a lower bill, the cheap writer/checker pairs cost less on the releases they completed, but both lost audiences on sparse descriptions and Haiku / Haiku also lost one on the typical release.
+With a cheap writer and a more expensive checker, checking was about 94% of the mean cost on the typical release.
+Use the lowest thinking setting your model accepts as a cost-conscious starting point; extra thinking has no demonstrated text-quality benefit in these measurements.
+Read the outputs and flags before adopting a configuration: these runs do not establish the best writer or the most accurate checker.
+[What to expect from Chartula](what-to-expect.md) shows the output examples and charts.
 
 ## `thinking`
 

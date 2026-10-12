@@ -3,7 +3,7 @@
 These assets present captured measurements from [chartula-evals](https://github.com/goldbarth/chartula-evals) inside Chartula's documentation.
 The page is [What to expect from Chartula](../../what-to-expect.md).
 The charts show measured cost, duration and completion; they do not score text quality or confirm checker flags.
-This presentation continues [#324](https://github.com/goldbarth/chartula/issues/324), which tracks the Anthropic comparison and its documentation.
+This presentation documents the comparison tracked by [#324](https://github.com/goldbarth/chartula/issues/324), alongside the measured-model table and recommendations in the provider and cost guides.
 
 ## Data
 
