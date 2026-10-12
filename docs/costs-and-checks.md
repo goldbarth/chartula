@@ -4,6 +4,8 @@ A `generate` run pays your model provider for two kinds of calls: one [rendering
 This page shows how to see the size of a run before you pay for it, how to read what it cost afterwards, and whether the thorough check earns its share.
 It ends with what a measured comparison of models and settings found.
 
+For a quick view of what using Chartula can cost and how long it can take, [What to expect from Chartula](what-to-expect.md) shows measured examples across four release scenarios, with charts and completion counts.
+
 ## Before a run: the size `preview` shows
 
 `chartula preview` makes no model call and costs no tokens.
@@ -108,7 +110,7 @@ So it is free, and it catches only what a lookup can decide.
 It catches what a lookup cannot: a claim of degree, a distorted meaning, a change described as delivered that a later pull request removed.
 It is on by default, and `faithfulness.thorough: false` turns it off ([Configuration](configuration.md#faithfulness)).
 It can run on another model than the rendering, with `faithfulness.model`.
-So you can render with one model and check with a cheaper or a steadier one.
+So you can render with one model and check with another, at a different cost.
 
 ## Does the thorough check earn its tokens?
 
@@ -124,12 +126,13 @@ In this run the check spent 22,765 of the run's 45,452 tokens, about half, and f
 
 Read the line across several of your releases, not one:
 
-- **It keeps catching claims:** the check earns its tokens, so keep it on.
-- **It catches nothing, release after release:** the rule-based check already finds everything the model finds, and the tokens buy nothing.
+- **Its flags identify changes you would make:** compare that review value with the check's cost and keep it on when it helps.
+- **It adds no useful findings across your releases:** consider using the rule-based check alone, with your own reading of the output.
 
 Then read what it flagged, because a count says nothing about whether a flag is justified.
 A check that flags a lot of supported passages costs you reading time on top of its tokens.
-In the [comparison of 2026-09-25](#the-model-comparison-of-2026-09-25), the rule-based check found nothing in 42 runs, and the thorough check was the only one that caught anything.
+In the [comparison of 2026-09-25](#the-model-comparison-of-2026-09-25), the rule-based check reported no flags in 42 complete runs, and every flag came from the thorough check.
+That observation alone does not establish the thorough check's accuracy or value.
 
 ## Estimating the cost of a run
 
@@ -181,6 +184,79 @@ A flag that repeats across runs is found by the pull request it concerns, not by
 So a flag that every run raises, like `#233` here, is the first one to read.
 The fields are described in the [run record](run-record.md#schema).
 
+## The provider comparison of 2026-10-09
+
+The October comparison in [chartula-evals](https://github.com/goldbarth/chartula-evals) ran OpenAI and Anthropic against the same four real releases.
+The [captured run measurements](assets/expectations/october-runs.csv), [summaries](assets/expectations/october-summary.csv) and [source provenance](assets/expectations/provenance.json) retain its figures, model settings, source paths and checksums.
+The original comparison report is `sweeps/cmp-2026-10-stats/report.md` in that repository.
+[What to expect from Chartula](what-to-expect.md) presents the charts and a generated entry for each audience.
+
+All 84 attempts used Chartula `0.1.0-preview.5+541842d`, the same prompt, `title-and-description`, technical and customer audiences, and the thorough check on.
+Within each scenario, both providers used identical facts and release commits.
+Every configuration ran three times and used each model's lowest accepted thinking setting: disabled for Luna and Haiku, low for Sol, Astra, Sonnet and Opus.
+Premium writers were measured only on the typical and sparse-description releases.
+
+### Typical release: writing and checking together
+
+This was ServiceDeskLite `v1.9.0`, with 19 pull requests, 18 facts and 17 entries per audience.
+The first model writes and the second checks.
+Cost is USD at the historical list prices without cache; cost and duration are medians of complete runs, with their observed min-max range.
+Completion counts include every attempt, including those in which Chartula refused an audience's answer.
+
+| Provider | Writing / checking | Complete / attempts | Cost $ (range) | Duration s (range) |
+| --- | --- | ---: | ---: | ---: |
+| OpenAI | Luna / Luna | 3/3 | 0.0055 (0.0053-0.0057) | 29.5 (23.0-30.9) |
+| OpenAI | Luna / Sol | 3/3 | 0.0511 (0.0511-0.0534) | 33.2 (31.1-33.5) |
+| OpenAI | Sol / Sol | 3/3 | 0.1071 (0.1065-0.1092) | 54.0 (50.3-54.6) |
+| OpenAI | Astra / Sol | 3/3 | 0.3586 (0.3559-0.3594) | 52.5 (50.2-54.3) |
+| Anthropic | Haiku / Haiku | 2/3 | 0.0103 (0.0102-0.0104) | 36.6 (36.6-36.7) |
+| Anthropic | Haiku / Sonnet | 3/3 | 0.0857 (0.0854-0.0865) | 29.8 (28.7-31.0) |
+| Anthropic | Sonnet / Sonnet | 3/3 | 0.1824 (0.1817-0.1851) | 36.5 (36.0-38.6) |
+| Anthropic | Opus / Sonnet | 2/3 | 0.2694 (0.2679-0.2708) | 42.1 (41.8-42.4) |
+
+Sol here is `gpt-6.1-sol`, and the three Anthropic ids end in `5-5`.
+[Providers](providers.md#choosing-a-model) lists the full model ids.
+The two 2/3 rows use two observations for their medians.
+With Luna / Sol and Haiku / Sonnet, checking accounted for about 94% of the mean cost.
+Changing only the writer's price tier can therefore leave most of the bill intact.
+
+### Completion across the releases
+
+| Writing / checking | Small | Typical | Large | Sparse descriptions |
+| --- | ---: | ---: | ---: | ---: |
+| Luna / Luna | 3/3 | 3/3 | 3/3 | 0/3 |
+| Luna / Sol | 3/3 | 3/3 | 3/3 | 0/3 |
+| Sol / Sol | 3/3 | 3/3 | 3/3 | 3/3 |
+| Astra / Sol | not measured | 3/3 | not measured | 3/3 |
+| Haiku / Haiku | 3/3 | 2/3 | 3/3 | 2/3 |
+| Haiku / Sonnet | 2/3 | 3/3 | 3/3 | 3/3 |
+| Sonnet / Sonnet | 3/3 | 3/3 | 3/3 | 3/3 |
+| Opus / Sonnet | not measured | 2/3 | not measured | 3/3 |
+
+The sparse-description release was Ingestor `v3.2.0`: 15 pull requests, ten facts, only two with descriptions.
+The two Luna writer configurations produced no complete run there; Haiku / Haiku produced two.
+Sol / Sol and Sonnet / Sonnet completed every measured scenario, twelve runs each.
+The ten incomplete attempts still made model calls and spent tokens; their smaller bills are not prices for a complete release.
+
+### What these figures support
+
+The cheap writer/checker pairs had lower complete-run costs than the middle-model pairs in every scenario in which both completed.
+For the typical release, Haiku / Sonnet cost less than Sonnet / Sonnet and completed all three attempts; on the small release it lost an audience in one attempt.
+Opus / Sonnet cost more than Sonnet / Sonnet on the typical release, completed fewer attempts there, and has no measured small or large release.
+Those observations do not establish that paying more buys better text or a more accurate check.
+
+Start by checking completion on a release like yours, then compare the cost of writing and checking together.
+If completion across these scenarios is your priority, Sol / Sol and Sonnet / Sonnet are measured starting points, with no guarantee for another release.
+Keep descriptions when they contain useful source information, and use `preview` to inspect what your release will send before choosing a model.
+Use flags to guide your reading; choose whether the thorough check earns its cost from the findings you confirm in your own workflow.
+
+Three repeats per configuration describe these releases, not reliable failure probabilities or confidence intervals.
+The texts were not scored and flags were not judged.
+Each configuration generated new text, so changing the checker did not isolate the checker alone.
+The models use different accepted thinking settings and tokenizers; this compares complete configurations, not equally capable models.
+The September comparison below used an earlier version and prompt and cannot serve as an extra October repetition.
+Neither historical price calculation is a current quote or an invoice verification.
+
 ## The model comparison of 2026-09-25
 
 The measurements behind this section live in [chartula-evals](https://github.com/goldbarth/chartula-evals): the [evaluation](https://github.com/goldbarth/chartula-evals/blob/main/sweeps/servicedesklite-v1.9.0-evaluation.md), the [statistics report](https://github.com/goldbarth/chartula-evals/blob/main/sweeps/servicedesklite-v1.9.0-stats/report.md), and the charts [axis A](https://github.com/goldbarth/chartula-evals/blob/main/sweeps/servicedesklite-v1.9.0-stats/axis-a.svg) and [axis B](https://github.com/goldbarth/chartula-evals/blob/main/sweeps/servicedesklite-v1.9.0-stats/axis-b.svg).
@@ -199,7 +275,8 @@ What follows summarizes them; the figures are from there.
 - Three runs per setting cannot tell a difference of one flag per run from noise.
 - A flag count says nothing about whether a flag is justified, or about how well a text reads. The texts were not scored.
 - One release of one repository was measured. How cost grows with the size of a release was not.
-- The Claude models were not measured yet. Their comparison runs follow, and this section adds them when they exist.
+- This September comparison did not include Claude models.
+  [What to expect from Chartula](what-to-expect.md) adds the October measurements for OpenAI and Anthropic across four release scenarios.
 
 So read the findings below as a starting point for your own runs, not as a verdict on a model.
 
@@ -218,10 +295,11 @@ Both models checked by `gpt-6-sol` with `thinking: disabled`:
 | `gpt-6-sol` | `medium` | 0.118 | 76 (69-94) | 3 |
 | `gpt-6-sol` | `high` | 0.170 | 170 (161-208) | 3 |
 
-Thinking lowered the flags at no level, and raised duration and cost.
+The flag ranges overlap, so these three repetitions do not establish an effect of thinking on flag counts or text quality.
+Thinking raised duration and cost.
 With `gpt-6-sol`, `high` cost 62% more than `disabled` and took 4.3 times as long.
 A run rendered by `gpt-6-luna` cost about half of one rendered by `gpt-6-sol`, and of its $0.051 the check on `gpt-6-sol` took $0.048.
-So `thinking: disabled` is the setting to start from, and with a cheap rendering model the thorough check is most of the bill.
+For these September models, `thinking: disabled` is a cost-conscious starting point; with a cheap rendering model the thorough check is most of the bill.
 
 ### Which model checks
 
@@ -232,10 +310,11 @@ Rendering and checking on `gpt-6-luna` and `gpt-6-sol` in every combination, `th
 | `gpt-6-luna` | 6 flags per run | 4 (3-4) |
 | `gpt-6-sol` | 5 (4-8) | 3 (3-4) |
 
-The flags depended on the checker more than on the renderer.
+The configurations using `gpt-6-luna` to check reported more flags.
 `gpt-6-luna` as the checker flagged more, but at least 7 of its 35 flags said in their own reasoning that the passage was supported; none of `gpt-6-sol`'s 88 flags did.
 `gpt-6-luna` checked for $0.0025 per run, against $0.048 for `gpt-6-sol`.
-So a cheaper checker costs less in tokens and more in reading time, since you sort out its false alarms by hand.
+The contradictory reasons are observations from the earlier evaluation's reading of those flags, not a measured false-alarm rate.
+Every configuration wrote new text, so these runs do not isolate the checker or establish which checker is more accurate.
 
 ### The thorough check, on and off
 
@@ -255,7 +334,7 @@ Whether the other flags were justified was not assessed.
 So turning the check off saves close to half the cost and leaves the rendering unchecked by anything but a lookup.
 
 `title-only` sent 87% fewer input tokens and cost 78% less, and the flags fell from 3 to 1.
-Fewer flags here means less material, not better text: without a description, a rendering has less to stretch.
+Fewer flags here can reflect less source material; they do not establish better text.
 What the texts lost in content was not measured.
 So `title-only` suits a repository whose descriptions add nothing to the title ([Configuration](configuration.md#factbase)).
 
@@ -278,16 +357,19 @@ It flagged 0, 28 and 17 claims in three runs, and 13 of the 17 said in their own
 `granite4.1-guardian:8b` failed as the checker too.
 It kept to the response format, but 2 of its 7 flags held its thinking log where the reason belongs, and one check call took 618 s with a retry.
 
-So no local model has passed yet, and a local run's output needs a line-by-line reading before anything from it is published.
+These observations concern the two local configurations measured in September, not all local models.
+Read a local run's output line by line before publishing it; these runs establish no local text-quality ranking.
 
 ### Recommendations
 
-As of 2026-09-25, for a release like the one measured:
+The September figures support choices about cost and input, with the October completion results above adding more release scenarios:
 
-- **Keep the thorough check on.** It was the only check that caught anything, and it caught the same wrong claim in every run.
-- **Start with `thinking: disabled`**, for rendering and checking. Thinking raised cost and duration and lowered no flag.
-- **Check with the steadier model.** Among the `gpt-6` models, that is `gpt-6-sol`, whatever model renders.
-- **Render with the cheaper model**, if your own reading of its output holds up. `gpt-6-luna` rendered for $0.003 of a $0.051 run.
+- **Assess the thorough check by useful findings.** It was the only source of flags in September, but flag counts alone do not establish its value.
+- **Start with the lowest accepted thinking setting**, for writing and checking, when controlling cost and time matters.
+  Additional thinking cost more and took longer in September; a text-quality benefit was not measured.
+- **Compare whole configurations.** A cheaper writer can leave an expensive checker as most of the bill.
+  Fewer flags do not identify the more accurate checker.
+- **Try a cheaper writer on your own release and review the result.** Luna cost about $0.003 to write the September release, but both Luna writer configurations lost audiences on the October sparse-description case.
 - **Keep the [fact base](glossary.md#fact-base) at `title-and-description`** unless your descriptions add nothing to the titles.
 
 [Providers](providers.md#choosing-a-model) lists the model ids Chartula has been run with.

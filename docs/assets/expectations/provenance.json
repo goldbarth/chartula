@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "description": "Aggregate measurements for Chartula documentation, without raw PR text or credentials.",
+  "sourceRepository": "https://github.com/goldbarth/chartula-evals",
+  "series": {
+    "october": {
+      "measuredAt": "2026-10-09",
+      "toolVersion": "0.1.0-preview.5+541842dfb1ab40a7bea084297f46a550b5927042",
+      "priceTable": "sweeps/prices-2026-10-09.json"
+    },
+    "september": {
+      "measuredAt": "2026-09-25",
+      "toolVersion": "0.1.0-preview.3+7620e6d95b62190d12f57ba345479b524674fea1",
+      "priceTable": "sweeps/prices-2026-09-25.json"
+    }
+  },
+  "sourceFiles": [
+    {
+      "path": "sweeps/results/october/runs.csv",
+      "sha256": "17f53521e805f991fe7870c16ae8828a7a45b0912032ddfa92b03985f1eefc53"
+    },
+    {
+      "path": "sweeps/results/october/configurations.csv",
+      "sha256": "0f8ef5bfff8218fb0ea11f194ff96fb694094f586e8099124012e3355226f7f3"
+    },
+    {
+      "path": "sweeps/results/september/runs.csv",
+      "sha256": "25c80b176fefa159c75ccdd955ce0e5d0a794d2bb3d0e1e0a173e4aa1134975f"
+    },
+    {
+      "path": "sweeps/results/september/configurations.csv",
+      "sha256": "e8ff4626f6f02768bd8a84b0e7685cb7fee28bed9d283e078530ff7f29d38d60"
+    }
+  ],
+  "dataFiles": [
+    {
+      "path": "october-runs.csv",
+      "sha256": "7d66cbfa02fe04f2aa21f29d16a02f78c8db8181552f81600aa9c403ac654b89"
+    },
+    {
+      "path": "october-summary.csv",
+      "sha256": "fc2743404edf4ab3f66016d14744944115ba26e4213f15c20c7744b5592617de"
+    },
+    {
+      "path": "september-runs.csv",
+      "sha256": "a8aadb8e08b7de326a03048fb238587aa75499b025fcf6107d862850713abcfc"
+    },
+    {
+      "path": "september-summary.csv",
+      "sha256": "070661bd0af65fe7adb24af6886ae837a5650cffbc5ccb554ae38df6b23d533f"
+    }
+  ]
+}
