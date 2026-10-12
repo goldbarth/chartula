@@ -7,9 +7,9 @@ A point that removes one of the [known limitations](README.md#known-limitations)
 ## Now: the launch
 
 The alpha is out: binaries for eight platforms with a one-command install, `chartula doctor`, `preview` and `generate`, the technical, customer and product renderings, both checks, and the four outputs.
-Before Chartula is announced, a first run has to work for someone new to it.
+Before Chartula was announced, a first run had to work for someone new to it.
 
-Done for that, and in the next release:
+Done for that, and shipped in `0.1.0-preview.5`:
 
 - The run header says when a run has no GitHub token or no model key, instead of naming a variable that is empty ([#210](https://github.com/goldbarth/chartula/issues/210)).
 - "Flagged for review" stands apart from the entries, so it no longer reads as part of the last one ([#211](https://github.com/goldbarth/chartula/issues/211)).
@@ -20,12 +20,11 @@ Done for that, and in the next release:
 - Pull request text reaches the model quoted between tags and cut at 8,000 characters per description ([#337](https://github.com/goldbarth/chartula/issues/337)).
 - The terminal output has one calm form: a progress line with a spinner, `doctor` in groups, and a run summary that says whether it found flags ([#339](https://github.com/goldbarth/chartula/issues/339)).
 - The documentation covers a first run from install to a published draft, and every page a user needs on the way.
+- The provider and cost pages say what a release cost and how long it took on OpenAI and Anthropic models, from measured runs ([#324](https://github.com/goldbarth/chartula/issues/324)).
 
-Left before the announcement:
+Nothing is left before the announcement.
 
-- `0.1.0-preview.4` ships all of the above as binaries.
-
-[Milestone: Launch](https://github.com/goldbarth/chartula/milestone/5)
+[Milestone: Launch](https://github.com/goldbarth/chartula/milestone/5), closed.
 
 ## After the launch, in this order
 
