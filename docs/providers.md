@@ -3,6 +3,8 @@
 Chartula establishes the [facts](glossary.md#fact) of a release without a model, then sends them to a model twice per [audience](glossary.md#audience): once to rephrase them, once to check the text against them.
 This page sets up that model: Anthropic, OpenAI, a hosted endpoint that speaks OpenAI's dialect, or a server on your own machine.
 
+[What to expect from Chartula](what-to-expect.md) shows measured costs, waiting times and completed runs with OpenAI and Anthropic configurations before you choose your setup.
+
 Two values of `llm.provider` cover all four.
 `anthropic`, the default, talks to Anthropic's API.
 `openai-compatible` talks to anything that serves the OpenAI chat-completions dialect at a URL you give it: OpenAI itself, a hosted alternative, or Ollama, LM Studio, llama.cpp and vLLM on your machine.
@@ -186,7 +188,7 @@ Prices change, so look them up at the source: [Anthropic](https://www.anthropic.
 The [model comparison of 2026-09-25](costs-and-checks.md#the-model-comparison-of-2026-09-25) has the figures behind the notes, what they cannot tell, and the recommendations drawn from them.
 In short, `gpt-6-luna` rendered at the lowest cost, `gpt-6-sol` was the steadier checker, and thinking lowered no [flag](glossary.md#flag) while it raised cost and duration.
 Read the output of a cheaper setup before you adopt it, because changelog quality is what the saving could cost.
-The comparison runs for the Claude models follow.
+For the October measurements with OpenAI and Anthropic across four release scenarios, see [What to expect from Chartula](what-to-expect.md).
 
 ## `thinking`
 

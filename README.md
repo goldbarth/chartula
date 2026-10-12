@@ -22,6 +22,8 @@ So you know which lines to read first before you publish.
 Chartula is a single binary for Linux, macOS and Windows.
 It runs in your checkout or your CI job with your own model key or a local model, without a server and without a subscription.
 
+[What to expect from Chartula](docs/what-to-expect.md) shows real output and measured costs, waiting times and completed runs, with charts across four release scenarios.
+
 > *Chartula* (Latin) - "a small document, a little note". Which is exactly what a changelog entry is.
 
 ---
@@ -217,6 +219,7 @@ The [Roadmap](ROADMAP.md#after-the-launch-in-this-order) says which point remove
 
 | Document | What it covers |
 | --- | --- |
+| [What to expect](docs/what-to-expect.md) | Real output, measured costs and waiting times, completed runs, and what you still need to review. |
 | [Getting started](docs/getting-started.md) | The first run, step by step: install, `doctor`, `preview`, `generate`, and publishing the draft. |
 | [Install](docs/install.md) | Platforms, the install scripts and their settings, a download by hand, building from source, updating and uninstalling. |
 | [Providers](docs/providers.md) | Setting up Anthropic, OpenAI, a hosted endpoint or a local server, choosing a model, and `thinking`. |

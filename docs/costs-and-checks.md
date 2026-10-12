@@ -4,6 +4,8 @@ A `generate` run pays your model provider for two kinds of calls: one [rendering
 This page shows how to see the size of a run before you pay for it, how to read what it cost afterwards, and whether the thorough check earns its share.
 It ends with what a measured comparison of models and settings found.
 
+For a quick view of what using Chartula can cost and how long it can take, [What to expect from Chartula](what-to-expect.md) shows measured examples across four release scenarios, with charts and completion counts.
+
 ## Before a run: the size `preview` shows
 
 `chartula preview` makes no model call and costs no tokens.
@@ -199,7 +201,8 @@ What follows summarizes them; the figures are from there.
 - Three runs per setting cannot tell a difference of one flag per run from noise.
 - A flag count says nothing about whether a flag is justified, or about how well a text reads. The texts were not scored.
 - One release of one repository was measured. How cost grows with the size of a release was not.
-- The Claude models were not measured yet. Their comparison runs follow, and this section adds them when they exist.
+- This September comparison did not include Claude models.
+  [What to expect from Chartula](what-to-expect.md) adds the October measurements for OpenAI and Anthropic across four release scenarios.
 
 So read the findings below as a starting point for your own runs, not as a verdict on a model.
 
