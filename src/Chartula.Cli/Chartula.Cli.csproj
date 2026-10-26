@@ -40,7 +40,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Anthropic" Version="12.55.0" />
+    <PackageReference Include="Anthropic" Version="13.3.0" />
     <!-- Pinned to the Microsoft.Extensions.AI version Chartula.Core references, so this
          package does not upgrade the shared abstractions package under the domain. -->
     <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="10.10.1" />
