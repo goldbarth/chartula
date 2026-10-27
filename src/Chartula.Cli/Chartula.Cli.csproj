@@ -40,13 +40,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Anthropic" Version="12.55.0" />
+    <PackageReference Include="Anthropic" Version="12.60.0" />
     <!-- Pinned to the Microsoft.Extensions.AI version Chartula.Core references, so this
          package does not upgrade the shared abstractions package under the domain. -->
-    <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="10.10.1" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.12" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.12" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
+    <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="10.11.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.14" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.14" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.14" />
     <PackageReference Include="YamlDotNet" Version="18.1.0" />
   </ItemGroup>
 
